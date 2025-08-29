@@ -7,6 +7,7 @@ import { createTray } from './tray.js';
 import { createMenu } from './menu.js';
 import path from 'path';
 import { loadUserSettings, saveUserSettings } from './utils/localUserSettingsUtils.js'
+import { log } from './utils/log.js';
 
 app.on("ready", ()=>
 {
@@ -62,13 +63,15 @@ app.on("ready", ()=>
 
     // Send settings to UI.
     mainWindow.webContents.on('did-finish-load', () => {
+      log(`sending userSettings to IO; language: ${userSettings.lang}.`);
       Ipc.Electron.send("userSettings", userSettings, mainWindow);
     });
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes locally.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
+      log(`catching change of userSettings from UI, ${settings.lang}`)
         saveUserSettings(userDataPath, userSettingsFile, settings);
-        createMenu(mainWindow, settings.lang);
+        createMenu(mainWindow, settings.lang); // We have to recreate the menu here to update the language.
     });
 
     // Create tray, menu and handle close events.

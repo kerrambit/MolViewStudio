@@ -1,13 +1,5 @@
-import { app } from 'electron';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import path from 'path';
-
-function log(message: string) {
-    try {
-        const logFile = path.join(app.getPath('userData'), 'app.log');
-        appendFileSync(logFile, `[${new Date().toISOString()}] ${message}\n`);
-    } catch {}
-}
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { log } from './log.js'
 
 export function loadUserSettings(userDataPath: string, userSettingsFile: string): UserSettings {
     try {
