@@ -4,7 +4,6 @@
 
 type EventPayloadMapping = {
     data: string;
-    userSettings: UserSettings;
     requestUserSettings: UserSettings;
     changeUserSettings: UserSettings;
 };
@@ -18,10 +17,6 @@ interface Window {
         ) => UnsubscribeFunction;
 
         requestUserSettings: () => Promise<UserSettings>;
-
-        onUserSettings: (
-            callback: (data: UserSettings) => void
-        ) => UnsubscribeFunction;
 
         changeUserSettings: (settings: UserSettings) => void;
     };

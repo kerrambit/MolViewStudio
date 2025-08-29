@@ -1,5 +1,5 @@
 /**
- * Definition of Electron to IPC Renderer API.
+ * Definition of Mol* App (Electron) API. This way, UI can communicate with Electron.
  * See https://www.electronjs.org/docs/latest/tutorial/context-isolation.
  */
 
@@ -45,12 +45,6 @@ electron.contextBridge.exposeInMainWorld("electron", {
     },
 
     requestUserSettings: () => Ipc.Ui.invoke("requestUserSettings"),
-
-    onUserSettings: (callback: (data: UserSettings) => void) => {
-        return Ipc.Ui.on("userSettings", (payload: UserSettings) => {
-            callback(payload);
-        });
-    },
 
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);

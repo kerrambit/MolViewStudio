@@ -12,7 +12,7 @@ export function Counter() {
         const unsubscribe = window.electron.subscribeData((data) => {
             console.log(data);
         });
-        return unsubscribe; // We will unsubscribe if the component unmounts, or any dependency in dependency array changes.
+        return unsubscribe;
     }, []);
 
     return (
