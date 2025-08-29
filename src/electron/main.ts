@@ -10,7 +10,6 @@ import {
     loadUserSettings,
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
-import { log } from "./utils/log.js";
 
 app.on("ready", () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -72,7 +71,6 @@ app.on("ready", () => {
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes locally.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
-        log(`catching change of userSettings from UI, ${settings.lang}`);
         saveUserSettings(userDataPath, userSettingsFile, settings);
         createMenu(mainWindow, settings.lang); // We have to recreate the menu here to update the language.
     });
