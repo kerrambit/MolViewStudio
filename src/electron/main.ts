@@ -61,10 +61,8 @@ app.on("ready", ()=>
     // Load the settings.
     const userSettings: UserSettings = loadUserSettings(userDataPath, userSettingsFile);
 
-    // Send settings to UI.
-    mainWindow.webContents.on('did-finish-load', () => {
-      log(`sending userSettings to IO; language: ${userSettings.lang}.`);
-      Ipc.Electron.send("userSettings", userSettings, mainWindow);
+        Ipc.Electron.handle("requestUserSettings", () => {
+      return userSettings;
     });
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes locally.

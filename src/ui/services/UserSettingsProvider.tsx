@@ -23,15 +23,14 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
     }, [settings]);
 
   useEffect(() => {
-    const unsubscribe = window.electron.onUserSettings((newSettings: UserSettings) => {
-      setSettings(newSettings);
-      if (newSettings.lang && newSettings.lang !== i18n.language) {
-        i18n.changeLanguage(newSettings.lang);
-      }
-    });
+  window.electron.requestUserSettings().then((newSettings: UserSettings) => {
+    setSettings(newSettings);
+    if (newSettings.lang && newSettings.lang !== i18n.language) {
+      i18n.changeLanguage(newSettings.lang);
+    }
+  });
+}, []);
 
-    return unsubscribe;
-  }, []);
 
   return (
     <UserSettingsContext.Provider value={{ settings, setSettings }}>

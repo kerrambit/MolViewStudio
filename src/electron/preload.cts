@@ -38,6 +38,8 @@ electron.contextBridge.exposeInMainWorld('electron', {
 
   getStaticData: () => Ipc.Ui.invoke('getStaticData'),
 
+  requestUserSettings: () => Ipc.Ui.invoke("requestUserSettings"),
+
   onUserSettings: (callback: (data: UserSettings) => void) => {
     return Ipc.Ui.on("userSettings", (payload: UserSettings) => {
       callback(payload);
