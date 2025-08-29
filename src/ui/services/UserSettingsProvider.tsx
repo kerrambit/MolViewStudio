@@ -4,13 +4,13 @@ import '../i18n';
 
 type UserSettingsContextType = {
   settings: UserSettings;
-  setSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
+  setSettings: React.Dispatch<React.SetStateAction<UserSettings | null>>;
 };
 
 export const UserSettingsContext = createContext<UserSettingsContextType | null>(null);
 
 export function UserSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<UserSettings>({ lang: "en" });
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const didMount = useRef(false);
   const { i18n } = useTranslation();
 
@@ -19,7 +19,9 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
         didMount.current = true;
         return;
       }
-      window.electron.changeUserSettings(settings);
+      if (settings) {
+        window.electron.changeUserSettings(settings);
+      }
     }, [settings]);
 
   useEffect(() => {
@@ -30,6 +32,10 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
     }
   });
 }, []);
+
+if (!settings) {
+    return <div>Loading...</div>;
+  }
 
 
   return (
