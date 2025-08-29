@@ -1,0 +1,35 @@
+/**
+ * File with global types definitions.
+ */
+
+type EventPayloadMapping = {
+    data: string;
+    getStaticData: string;
+    userSettings: UserSettings,
+    changeUserSettings: UserSettings
+}
+
+type UnsubscribeFunction = () => void;
+
+interface Window {
+  electron: {
+
+    subscribeData: (
+      callback: (data: string) => void
+    ) => UnsubscribeFunction;
+
+    getStaticData: () => Promise<string>;
+
+    onUserSettings: (
+      callback: (data: UserSettings) => void
+    ) => UnsubscribeFunction;
+    
+    changeUserSettings: (settings: UserSettings) => void;
+  };
+}
+
+type Language = "en" | "de";
+
+type UserSettings = {
+  lang: Language;
+}

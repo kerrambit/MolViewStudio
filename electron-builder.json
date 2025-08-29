@@ -1,0 +1,16 @@
+{
+  "appId": "com.kerrambit.molstarapp",
+  "files": ["dist-electron", "dist-react"],
+  "extraResources": ["dist-electron/preload.cjs", "src/assets/**"],
+  "icon": "./desktopIcon.png",
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage",
+    "category": "Science"
+  },
+  "win": {
+    "target": ["portable", "msi"]
+  }
+}
