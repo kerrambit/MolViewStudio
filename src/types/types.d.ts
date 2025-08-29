@@ -5,34 +5,33 @@
 type EventPayloadMapping = {
     data: string;
     getStaticData: string;
-    userSettings: UserSettings,
-    requestUserSettings: UserSettings,
-    changeUserSettings: UserSettings
-}
+    userSettings: UserSettings;
+    requestUserSettings: UserSettings;
+    changeUserSettings: UserSettings;
+};
 
 type UnsubscribeFunction = () => void;
 
 interface Window {
-  electron: {
+    electron: {
+        subscribeData: (
+            callback: (data: string) => void
+        ) => UnsubscribeFunction;
 
-    subscribeData: (
-      callback: (data: string) => void
-    ) => UnsubscribeFunction;
+        getStaticData: () => Promise<string>;
 
-    getStaticData: () => Promise<string>;
+        requestUserSettings: () => Promise<UserSettings>;
 
-    requestUserSettings: () => Promise<UserSettings>;
+        onUserSettings: (
+            callback: (data: UserSettings) => void
+        ) => UnsubscribeFunction;
 
-    onUserSettings: (
-      callback: (data: UserSettings) => void
-    ) => UnsubscribeFunction;
-    
-    changeUserSettings: (settings: UserSettings) => void;
-  };
+        changeUserSettings: (settings: UserSettings) => void;
+    };
 }
 
 type Language = "en" | "de";
 
 type UserSettings = {
-  lang: Language;
-}
+    lang: Language;
+};

@@ -1,51 +1,61 @@
 import { app, BrowserWindow, Menu } from "electron";
 import { isDev } from "./utils/util.js";
 import { getTranslationsPath } from "./pathResolver.js";
-import { readFileSync } from 'fs';
+import { readFileSync } from "fs";
 import path from "path";
 
 export function createMenu(mainWindow: BrowserWindow, lang: Language) {
     const translations = loadLocalTranslation(lang);
-    
-    Menu.setApplicationMenu(Menu.buildFromTemplate([
-        {
-            label: process.platform === 'darwin' ? undefined : "Mol* App",
-            type: "submenu",
-            submenu: [
-                {
-                    label: translations.devtools,
-                    click: () => mainWindow.webContents.openDevTools(),
-                    visible: isDev(),
-                },
-                {
-                    label: translations.quitElectron,
-                    click: () => { app.quit(); }
-                }
-            ]
-        }
-    ]));
+
+    Menu.setApplicationMenu(
+        Menu.buildFromTemplate([
+            {
+                label: process.platform === "darwin" ? undefined : "Mol* App",
+                type: "submenu",
+                submenu: [
+                    {
+                        label: translations.devtools,
+                        click: () => mainWindow.webContents.openDevTools(),
+                        visible: isDev(),
+                    },
+                    {
+                        label: translations.quitElectron,
+                        click: () => {
+                            app.quit();
+                        },
+                    },
+                ],
+            },
+        ])
+    );
 }
 
 type MenuTranslations = {
-    quitElectron: string,
-    devtools: string,
-}
+    quitElectron: string;
+    devtools: string;
+};
 
 function loadLocalTranslation(lang: Language): MenuTranslations {
-  const translationsPath = getTranslationsPath();
+    const translationsPath = getTranslationsPath();
 
-  const enJson = readFileSync(path.join(translationsPath, 'en', 'translation.json'), 'utf-8');
-  const deJson = readFileSync(path.join(translationsPath, 'de', 'translation.json'), 'utf-8');
+    const enJson = readFileSync(
+        path.join(translationsPath, "en", "translation.json"),
+        "utf-8"
+    );
+    const deJson = readFileSync(
+        path.join(translationsPath, "de", "translation.json"),
+        "utf-8"
+    );
 
-  let t;
-  if (lang === 'en') {
-    t = JSON.parse(enJson);
-  } else if (lang === 'de') {
-    t = JSON.parse(deJson);
-  }
+    let t;
+    if (lang === "en") {
+        t = JSON.parse(enJson);
+    } else if (lang === "de") {
+        t = JSON.parse(deJson);
+    }
 
-  return {
-      quitElectron: t.menu["Quit Mol* App"],
-      devtools: t.menu["DevTools"],
-  }
+    return {
+        quitElectron: t.menu["Quit Mol* App"],
+        devtools: t.menu["DevTools"],
+    };
 }
