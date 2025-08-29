@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import { isDev } from "./utils/util.js";
 import { getAssetsPath, getPreloadPath, getUiPath } from "./pathResolver.js";
-import { getStaticData, pollData } from "./logicMocker.js";
+import { pollData } from "./logicMocker.js";
 import { Ipc } from "./Ipc.Electron.js";
 import { createTray } from "./tray.js";
 import { createMenu } from "./menu.js";
@@ -50,12 +50,7 @@ app.on("ready", () => {
     // Electron can send information in certain interval to UI component.
     pollData(mainWindow);
 
-    // We register a handler for a request coming from a renderer.
-    Ipc.Electron.handle("getStaticData", () => {
-        return getStaticData();
-    });
-
-    // Create generic user data path.
+    // Create user data path and filepah.
     const userDataPath = app.getPath("userData");
     const userSettingsFile = path.join(userDataPath, "userSettings.json");
 
@@ -65,19 +60,22 @@ app.on("ready", () => {
         userSettingsFile
     );
 
+    // If UI requests user settings, send it.
     Ipc.Electron.handle("requestUserSettings", () => {
         return userSettings;
     });
 
-    // If there is a change of settings coming from UI, we have to update menu, and store changes locally.
+    // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
         saveUserSettings(userDataPath, userSettingsFile, settings);
-        createMenu(mainWindow, settings.lang); // We have to recreate the menu here to update the language.
+        createMenu(mainWindow, settings.lang); // We have to recreate the menu to update the language.
     });
 
-    // Create tray, menu and handle close events.
+    // Create tray and menu.
     createTray(mainWindow);
     createMenu(mainWindow, userSettings.lang);
+
+    // Handle close events.
     handleCloseEvents(mainWindow);
 
     // Once main window is ready, we close splash window and show the main window.

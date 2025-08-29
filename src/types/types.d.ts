@@ -4,7 +4,6 @@
 
 type EventPayloadMapping = {
     data: string;
-    getStaticData: string;
     userSettings: UserSettings;
     requestUserSettings: UserSettings;
     changeUserSettings: UserSettings;
@@ -17,8 +16,6 @@ interface Window {
         subscribeData: (
             callback: (data: string) => void
         ) => UnsubscribeFunction;
-
-        getStaticData: () => Promise<string>;
 
         requestUserSettings: () => Promise<UserSettings>;
 

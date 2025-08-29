@@ -41,7 +41,6 @@ export function saveUserSettings(
             JSON.stringify(settings, null, 2),
             "utf-8"
         );
-        console.log("User settings saved successfully");
     } catch (e) {
         console.error("Failed to save user settings:", e);
     }
