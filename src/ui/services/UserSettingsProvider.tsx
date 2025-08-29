@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useState, useEffect, type ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../i18n';
 
@@ -11,11 +11,16 @@ export const UserSettingsContext = createContext<UserSettingsContextType | null>
 
 export function UserSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<UserSettings>({ lang: "en" });
+  const didMount = useRef(false);
   const { i18n } = useTranslation();
 
    useEffect(() => {
-    window.electron.changeUserSettings(settings);
-  }, [settings]);
+      if (!didMount.current) {
+        didMount.current = true;
+        return;
+      }
+      window.electron.changeUserSettings(settings);
+    }, [settings]);
 
   useEffect(() => {
     const unsubscribe = window.electron.onUserSettings((newSettings: UserSettings) => {
