@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import reactLogo from "../assets/react.svg";
-import "./Counter.css";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import "./Counter.css";
 
 export function Counter() {
     const [count, setCount] = useState(0);
