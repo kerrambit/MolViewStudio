@@ -1,15 +1,17 @@
-import { app, BrowserWindow } from 'electron';
-import { isDev } from './utils/util.js';
-import { getAssetsPath, getPreloadPath, getUiPath } from './pathResolver.js';
-import { getStaticData, pollData } from './logicMocker.js';
-import { Ipc } from './Ipc.Electron.js';
-import { createTray } from './tray.js';
-import { createMenu } from './menu.js';
-import path from 'path';
-import { loadUserSettings, saveUserSettings } from './utils/localUserSettingsUtils.js'
+import { app, BrowserWindow } from "electron";
+import { isDev } from "./utils/util.js";
+import { getAssetsPath, getPreloadPath, getUiPath } from "./pathResolver.js";
+import { pollData } from "./logicMocker.js";
+import { Ipc } from "./Ipc.Electron.js";
+import { createTray } from "./tray.js";
+import { createMenu } from "./menu.js";
+import path from "path";
+import {
+    loadUserSettings,
+    saveUserSettings,
+} from "./utils/localUserSettingsUtils.js";
 
-app.on("ready", ()=>
-{
+app.on("ready", () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
     const mainWindow = new BrowserWindow({
         width: 1280,
@@ -20,24 +22,24 @@ app.on("ready", ()=>
             contextIsolation: true,
             nodeIntegration: false,
             webSecurity: true,
-        }
+        },
     });
 
     // For development, use Vite Hot Reload Server on port 5123, see vite.config.ts.
     if (isDev()) {
         mainWindow.loadURL("http://localhost:5123/");
-        mainWindow.webContents.openDevTools()
+        mainWindow.webContents.openDevTools();
     } else {
         mainWindow.loadFile(getUiPath());
     }
 
     // Create splash window.
     const splash = new BrowserWindow({
-        width: 450, 
-        height: 300, 
-        transparent: true, 
-        frame: false, 
-        alwaysOnTop: true 
+        width: 450,
+        height: 300,
+        transparent: true,
+        frame: false,
+        alwaysOnTop: true,
     });
 
     splash.loadFile(path.join(getAssetsPath(), "splash.jpg"));
@@ -48,62 +50,62 @@ app.on("ready", ()=>
     // Electron can send information in certain interval to UI component.
     pollData(mainWindow);
 
-    // We register a handler for a request coming from a renderer.
-    Ipc.Electron.handle("getStaticData", () => {
-        return getStaticData();
-    });
-
-    // Create generic user data path.
-    const userDataPath = app.getPath('userData');
-    const userSettingsFile = path.join(userDataPath, 'userSettings.json');
+    // Create user data path and filepah.
+    const userDataPath = app.getPath("userData");
+    const userSettingsFile = path.join(userDataPath, "userSettings.json");
 
     // Load the settings.
-    const userSettings: UserSettings = loadUserSettings(userDataPath, userSettingsFile);
+    const userSettings: UserSettings = loadUserSettings(
+        userDataPath,
+        userSettingsFile
+    );
 
-    // Send settings to UI.
-    mainWindow.webContents.on('did-finish-load', () => {
-      Ipc.Electron.send("userSettings", userSettings, mainWindow);
+    // If UI requests user settings, send it.
+    Ipc.Electron.handle("requestUserSettings", () => {
+        return userSettings;
     });
 
-    // If there is a change of settings coming from UI, we have to update menu, and store changes locally.
+    // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
         saveUserSettings(userDataPath, userSettingsFile, settings);
-        createMenu(mainWindow, settings.lang);
+        createMenu(mainWindow, settings.lang); // We have to recreate the menu to update the language.
     });
 
-    // Create tray, menu and handle close events.
+    // Create tray and menu.
     createTray(mainWindow);
     createMenu(mainWindow, userSettings.lang);
+
+    // Handle close events.
     handleCloseEvents(mainWindow);
 
     // Once main window is ready, we close splash window and show the main window.
-    mainWindow.once('ready-to-show', () => {
-    setTimeout(() => {
-      splash.close();
-      mainWindow.show();
-    }, 1500);
-  });
-})
+    mainWindow.once("ready-to-show", () => {
+        setTimeout(() => {
+            splash.close();
+            mainWindow.show();
+        }, 1500);
+    });
+});
 
 function handleCloseEvents(mainWindow: BrowserWindow) {
-  let willClose = false;
+    let willClose = false;
 
-  mainWindow.on('close', (e) => {
-    if (willClose) {
-      return;
-    }
-    e.preventDefault();
-    mainWindow.hide();
-    if (app.dock) {
-      app.dock.hide();
-    }
-  });
+    mainWindow.on("close", (e) => {
+        if (willClose) {
+            return;
+        }
+        e.preventDefault();
+        mainWindow.hide();
+        if (app.dock) {
+            app.dock.hide();
+        }
+    });
 
-  app.on('before-quit', () => {
-    willClose = true;
-  });
+    app.on("before-quit", () => {
+        willClose = true;
+    });
 
-  mainWindow.on('show', () => {
-    willClose = false;
-  });
+    mainWindow.on("show", () => {
+        willClose = false;
+    });
 }

@@ -8,7 +8,3 @@ export function pollData(window: BrowserWindow) {
         Ipc.Electron.send("data", "Data.", window);
     }, DELAY_IN_MILISECONDS);
 }
-
-export function getStaticData(): string {
-    return "Static data.";
-}
