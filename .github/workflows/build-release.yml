@@ -1,8 +1,8 @@
-name: Build and Release Electron App
+name: Build and Release Mol* App
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev, feat-* ]
     tags:
       - 'v*.*.*'
   pull_request:
@@ -86,14 +86,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+          path: artifacts
+
+      - name: Display downloaded files (debug)
+        run: |
+          echo "Downloaded files:"
+          find artifacts -type f -name "*" | head -20
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            linux-build/*
-            windows-build/*
-            mac-build/*
+            artifacts/*
           generate_release_notes: true
           draft: false
           prerelease: false
