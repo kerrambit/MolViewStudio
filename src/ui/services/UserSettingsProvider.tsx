@@ -4,6 +4,7 @@ import React, {
     useEffect,
     type ReactNode,
     useRef,
+    useContext,
 } from "react";
 import { useTranslation } from "react-i18next";
 import "../i18n";
@@ -12,6 +13,14 @@ type UserSettingsContextType = {
     settings: UserSettings;
     setSettings: React.Dispatch<React.SetStateAction<UserSettings | null>>;
 };
+
+export function useUserSettings() {
+    const context = useContext(UserSettingsContext);
+    if (!context) {
+        throw new Error("Settings must be used within UserSettingsProvider");
+    }
+    return context;
+}
 
 export const UserSettingsContext =
     createContext<UserSettingsContextType | null>(null);
