@@ -26,4 +26,5 @@ type Language = "en" | "de";
 
 type UserSettings = {
     lang: Language;
+    serverPort: number;
 };
