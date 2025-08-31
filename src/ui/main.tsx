@@ -4,18 +4,22 @@ import { StrictMode } from "react";
 import routes from "./router/routes.tsx";
 import { UserSettingsProvider } from "./services/UserSettingsProvider.tsx";
 import { ThemeProvider } from "./services/ThemeProvider.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "@mantine/core/styles.css";
 import "./index.css";
 
 const router = createMemoryRouter(routes);
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <ThemeProvider>
-            <UserSettingsProvider>
-                <RouterProvider router={router} />
-            </UserSettingsProvider>
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+                <UserSettingsProvider>
+                    <RouterProvider router={router} />
+                </UserSettingsProvider>
+            </ThemeProvider>
+        </QueryClientProvider>
     </StrictMode>
 );
