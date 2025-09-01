@@ -128,7 +128,10 @@ function runServer(serverPort: number): Promise<void> {
             );
         }
 
-        const serverProcess = spawn(serverPath, args, { stdio: "inherit" });
+        const serverProcess = spawn(serverPath, args, {
+            stdio: "inherit",
+            windowsHide: true,
+        });
 
         serverProcess.on("error", (err) => {
             reject(new Error(`Failed to start server process: ${err.message}`));
