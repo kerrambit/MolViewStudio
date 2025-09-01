@@ -1,6 +1,7 @@
 import { app } from "electron";
 import path from "path";
 import { isDev } from "./utils/util.js";
+import { log } from "./utils/log.js";
 
 export function getPreloadPath(): string {
     return path.join(
@@ -20,7 +21,7 @@ export function getServerPath(): string {
             ? "MolStarAppServer.exe"
             : "MolStarAppServer";
 
-    console.log(
+    log(
         `Server path for developemnt: ${path.join(
             app.getAppPath(),
             "dist-server",
