@@ -204,6 +204,17 @@ function handleCloseEvents(
 
 function quitServerProcess(serverProcess: ChildProcess | null) {
     if (serverProcess) {
-        serverProcess.kill();
+        // Kill entire process tree on Windows.
+        if (process.platform === "win32" && serverProcess.pid) {
+            spawn(
+                "taskkill",
+                ["/pid", serverProcess.pid.toString(), "/t", "/f"],
+                {
+                    stdio: "ignore",
+                }
+            );
+        } else {
+            serverProcess.kill();
+        }
     }
 }
