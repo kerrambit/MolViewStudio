@@ -54,13 +54,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build server
+        run: npm run build:server
+
       - name: Build application
         run: npm run ${{ matrix.script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build server
-        run: npm run build:server
 
       - name: Upload build artifacts (Linux)
         if: matrix.platform == 'linux'
