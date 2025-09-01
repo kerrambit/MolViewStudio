@@ -3,6 +3,7 @@ import { isDev } from "./utils/util.js";
 import { getTranslationsPath } from "./pathResolver.js";
 import { readFileSync } from "fs";
 import path from "path";
+import { logger } from "./utils/logger.js";
 
 export function createMenu(mainWindow: BrowserWindow, lang: Language) {
     const translations = loadLocalTranslation(lang);
@@ -35,27 +36,42 @@ type MenuTranslations = {
     devtools: string;
 };
 
+// TODO: these translation should be memoized somehow
 function loadLocalTranslation(lang: Language): MenuTranslations {
     const translationsPath = getTranslationsPath();
 
-    const enJson = readFileSync(
-        path.join(translationsPath, "en", "translation.json"),
-        "utf-8"
-    );
-    const deJson = readFileSync(
-        path.join(translationsPath, "de", "translation.json"),
-        "utf-8"
+    logger.info(
+        `Translations will be read from <${translationsPath}> and used for Menu creation.`
     );
 
-    let t;
-    if (lang === "en") {
-        t = JSON.parse(enJson);
-    } else if (lang === "de") {
-        t = JSON.parse(deJson);
+    try {
+        const enJson = readFileSync(
+            path.join(translationsPath, "en", "translation.json"),
+            "utf-8"
+        );
+        const deJson = readFileSync(
+            path.join(translationsPath, "de", "translation.json"),
+            "utf-8"
+        );
+
+        let t;
+        if (lang === "en") {
+            t = JSON.parse(enJson);
+        } else if (lang === "de") {
+            t = JSON.parse(deJson);
+        }
+
+        return {
+            quitElectron: t.menu["Quit Mol* App"],
+            devtools: t.menu["DevTools"],
+        };
+    } catch (err) {
+        logger.warn(
+            `Error occured when reading translations. Default values will be used. Details: <${err}>.`
+        );
+        return {
+            quitElectron: "Quit Mol* App",
+            devtools: "DevTools",
+        };
     }
-
-    return {
-        quitElectron: t.menu["Quit Mol* App"],
-        devtools: t.menu["DevTools"],
-    };
 }

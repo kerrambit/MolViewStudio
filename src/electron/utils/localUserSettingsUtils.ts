@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { logger } from "./logger.js";
 
 export function loadUserSettings(
     userDataPath: string,
@@ -22,7 +23,10 @@ export function loadUserSettings(
         );
 
         return defaultSettings;
-    } catch (e) {
+    } catch (err) {
+        logger.warn(
+            `Failed to load user settings! Default values will be used. Details: <${err}>.`
+        );
         return defaultSettings;
     }
 }
@@ -41,7 +45,7 @@ export function saveUserSettings(
             JSON.stringify(settings, null, 2),
             "utf-8"
         );
-    } catch (e) {
-        console.error("Failed to save user settings:", e);
+    } catch (err) {
+        logger.error(`Failed to save user settings! Details: <${err}>.`);
     }
 }
