@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain, WebFrameMain } from "electron";
 import { getUiPath } from "./pathResolver.js";
 import { isDev } from "./utils/util.js";
 import { pathToFileURL } from "url";
+import { logger } from "./utils/logger.js";
 
 /**
  * Using IPC adapters for Electron side.
@@ -45,13 +46,17 @@ export class Ipc {
 export function validateEventFrame(frame: WebFrameMain | null) {
     console.log(frame?.url);
 
+    // Frame has either navigated or been destroyed.
     if (frame === null) {
-        return; // Frame has either navigated or been destroyed.
+        return;
     }
     if (isDev() && new URL(frame.url).host === "localhost:5123") {
         return;
     }
     if (frame.url !== pathToFileURL(getUiPath()).toString()) {
+        logger.warn(
+            `While validating event frame, malicious event may have occured!`
+        );
         throw new Error("Malicious Event Occured!");
     }
 }

@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, Tray } from "electron";
 import { getAssetsPath } from "./pathResolver.js";
 import path from "path";
 
+// TODO: use system language for this, default English
 export function createTray(mainWindow: BrowserWindow) {
     const tray = new Tray(
         path.join(

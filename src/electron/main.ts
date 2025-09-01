@@ -18,6 +18,7 @@ import {
 } from "./utils/localUserSettingsUtils.js";
 import { ChildProcess, spawn } from "child_process";
 import { existsSync } from "fs";
+import { logger } from "./utils/logger.js";
 
 app.on("ready", () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -54,6 +55,10 @@ app.on("ready", () => {
     splash.loadFile(path.join(getAssetsPath(), "splash.jpg"));
     splash.center();
 
+    // Initialize logging.
+    logger.initialize();
+    logger.info("Application has started.");
+
     // ------------------------------------------------------------- //
 
     // Electron can send information in certain interval to UI component.
@@ -68,6 +73,7 @@ app.on("ready", () => {
         userDataPath,
         userSettingsFile
     );
+    logger.info(`User settings has been loaded from <${userSettingsFile}>.`);
 
     // If UI requests user settings, send it.
     Ipc.Electron.handle("requestUserSettings", () => {
@@ -77,6 +83,7 @@ app.on("ready", () => {
     // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
         saveUserSettings(userDataPath, userSettingsFile, settings);
+        logger.info(`User settings has been saved.`);
         createMenu(mainWindow, settings.lang); // We have to recreate the menu to update the language.
     });
 
@@ -92,13 +99,15 @@ app.on("ready", () => {
     ])
         .then((results) => {
             const serverProcess = results[0];
-            console.log("Server is ready."); // TODO: log this (+ PID)
+            logger.info(
+                `Server with PID: <${serverProcess.pid}> is running on <localhost:${userSettings.serverPort}>.`
+            );
             splash.close();
             mainWindow.show();
             handleCloseEvents(mainWindow, serverProcess);
         })
         .catch((err) => {
-            console.error("Server failed to start:", err); // TODO: log this
+            logger.error(`Server failed to start! Details: ${err}.`);
             splash.close();
             mainWindow.show();
             handleCloseEvents(mainWindow, null);
@@ -110,9 +119,7 @@ function runServer(serverPort: number): Promise<ChildProcess> {
         const serverPath = getServerPath();
 
         if (!existsSync(serverPath)) {
-            console.error(
-                "Server binary was not found!" // TODO: log this
-            );
+            logger.error(`Server binary was not found on <${serverPath}>!`);
         }
 
         const args = [
@@ -136,14 +143,23 @@ function runServer(serverPort: number): Promise<ChildProcess> {
             stdio: "inherit",
             windowsHide: true,
         });
+        logger.info(
+            `Server process has been spawned with arguments: <${args.join(
+                " "
+            )}>`
+        );
 
         serverProcess.on("error", (err) => {
-            reject(new Error(`Failed to start server process: ${err.message}`));
+            reject(
+                new Error(
+                    `Failed to start server process! Details: <${err.message}>.`
+                )
+            );
         });
 
         serverProcess.on("exit", (code) => {
             if (code !== 0) {
-                reject(new Error(`Server process exited with code ${code}`));
+                reject(new Error(`Server process exited with code <${code}>.`));
             }
         });
 
@@ -152,7 +168,9 @@ function runServer(serverPort: number): Promise<ChildProcess> {
                 const attempt = () => {
                     http.get(url, () => res()).on("error", () => {
                         if (retries <= 0)
-                            return rej(new Error("Server did not start!"));
+                            return rej(
+                                new Error("Failed to start server process!")
+                            );
                         retries--;
                         setTimeout(attempt, delay);
                     });
@@ -181,7 +199,7 @@ function handleCloseEvents(
 
     mainWindow.on("close", (e) => {
         if (willClose) {
-            console.log("Closing the app!"); // TODO: log
+            logger.info("Application and server will be closed.");
             quitServerProcess(serverProcess);
             serverProcess = null;
             return;

@@ -1,7 +1,6 @@
 import { app } from "electron";
 import path from "path";
 import { isDev } from "./utils/util.js";
-import { log } from "./utils/log.js";
 
 export function getPreloadPath(): string {
     return path.join(
@@ -21,23 +20,10 @@ export function getServerPath(): string {
             ? "MolStarAppServer.exe"
             : "MolStarAppServer";
 
-    log(
-        `Server path for developemnt: ${path.join(
-            app.getAppPath(),
-            "dist-server",
-            executable
-        )}, and for production: ${path.join(
-            app.getAppPath(),
-            "..",
-            executable
-        )}.`
-    );
-
     if (isDev()) {
         return path.join(app.getAppPath(), "dist-server", executable);
     } else {
         return path.join(app.getAppPath(), "..", executable);
-        // return path.join(process.resourcesPath, executable);
     }
 }
 
