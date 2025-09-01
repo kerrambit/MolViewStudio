@@ -16,7 +16,7 @@ import {
     loadUserSettings,
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
-import { spawn, spawnSync } from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import { existsSync } from "fs";
 
 app.on("ready", () => {
@@ -50,6 +50,7 @@ app.on("ready", () => {
         alwaysOnTop: true,
     });
 
+    // Show splash screen.
     splash.loadFile(path.join(getAssetsPath(), "splash.jpg"));
     splash.center();
 
@@ -83,25 +84,28 @@ app.on("ready", () => {
     createTray(mainWindow);
     createMenu(mainWindow, userSettings.lang);
 
-    // Handle close events.
-    handleCloseEvents(mainWindow);
-
     // Start the server and show splash screen for at least 1.5 seconds (splash screen will be displayed as long as server is starting).
-    const splashDelay = new Promise((resolve) => setTimeout(resolve, 1500));
-    Promise.all([runServer(userSettings.serverPort), splashDelay])
-        .then(() => {
-            console.log("Server is ready."); // TODO: log this
+    // We also handle close events here: mainly stopping the server when app is being stopped.
+    Promise.all([
+        runServer(userSettings.serverPort),
+        (resolve: () => {}) => setTimeout(resolve, 1500),
+    ])
+        .then((results) => {
+            const serverProcess = results[0];
+            console.log("Server is ready."); // TODO: log this (+ PID)
             splash.close();
             mainWindow.show();
+            handleCloseEvents(mainWindow, serverProcess);
         })
         .catch((err) => {
             console.error("Server failed to start:", err); // TODO: log this
             splash.close();
             mainWindow.show();
+            handleCloseEvents(mainWindow, null);
         });
 });
 
-function runServer(serverPort: number): Promise<void> {
+function runServer(serverPort: number): Promise<ChildProcess> {
     return new Promise((resolve, reject) => {
         const serverPath = getServerPath();
 
@@ -158,16 +162,28 @@ function runServer(serverPort: number): Promise<void> {
         };
 
         waitForServer(`http://localhost:${serverPort}/health`)
-            .then(() => resolve())
+            .then(() => resolve(serverProcess))
             .catch((err) => reject(err));
     });
 }
 
-function handleCloseEvents(mainWindow: BrowserWindow) {
+/**
+ * Implements the "minimize to tray/background" behavior. This behavior is used by some other apps such as Discord or Teams.
+ * Function also stops and quits the server process.
+ * @param mainWindow main window to close
+ * @param serverProcess server process or null if there is no server process to stop
+ */
+function handleCloseEvents(
+    mainWindow: BrowserWindow,
+    serverProcess: ChildProcess | null
+): void {
     let willClose = false;
 
     mainWindow.on("close", (e) => {
         if (willClose) {
+            console.log("Closing the app!"); // TODO: log
+            quitServerProcess(serverProcess);
+            serverProcess = null;
             return;
         }
         e.preventDefault();
@@ -184,4 +200,10 @@ function handleCloseEvents(mainWindow: BrowserWindow) {
     mainWindow.on("show", () => {
         willClose = false;
     });
+}
+
+function quitServerProcess(serverProcess: ChildProcess | null) {
+    if (serverProcess) {
+        serverProcess.kill();
+    }
 }
