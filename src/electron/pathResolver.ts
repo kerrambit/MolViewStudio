@@ -1,6 +1,7 @@
 import { app } from "electron";
 import path from "path";
 import { isDev } from "./utils/util.js";
+import { log } from "./utils/log.js";
 
 export function getPreloadPath(): string {
     return path.join(
@@ -12,6 +13,32 @@ export function getPreloadPath(): string {
 
 export function getUiPath(): string {
     return path.join(app.getAppPath(), "dist-react/index.html");
+}
+
+export function getServerPath(): string {
+    const executable =
+        process.platform === "win32"
+            ? "MolStarAppServer.exe"
+            : "MolStarAppServer";
+
+    log(
+        `Server path for developemnt: ${path.join(
+            app.getAppPath(),
+            "dist-server",
+            executable
+        )}, and for production: ${path.join(
+            app.getAppPath(),
+            "..",
+            executable
+        )}.`
+    );
+
+    if (isDev()) {
+        return path.join(app.getAppPath(), "dist-server", executable);
+    } else {
+        return path.join(app.getAppPath(), "..", executable);
+        // return path.join(process.resourcesPath, executable);
+    }
 }
 
 export function getAssetsPath() {

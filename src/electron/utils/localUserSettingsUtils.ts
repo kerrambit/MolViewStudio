@@ -4,6 +4,7 @@ export function loadUserSettings(
     userDataPath: string,
     userSettingsFile: string
 ): UserSettings {
+    const defaultSettings: UserSettings = { lang: "en", serverPort: 41050 };
     try {
         if (!existsSync(userDataPath)) {
             mkdirSync(userDataPath, { recursive: true });
@@ -11,10 +12,9 @@ export function loadUserSettings(
 
         if (existsSync(userSettingsFile)) {
             const content = readFileSync(userSettingsFile, "utf-8");
-            return JSON.parse(content);
+            return { ...defaultSettings, ...JSON.parse(content) };
         }
 
-        const defaultSettings: UserSettings = { lang: "en" };
         writeFileSync(
             userSettingsFile,
             JSON.stringify(defaultSettings, null, 2),
@@ -23,7 +23,7 @@ export function loadUserSettings(
 
         return defaultSettings;
     } catch (e) {
-        return { lang: "en" };
+        return defaultSettings;
     }
 }
 
