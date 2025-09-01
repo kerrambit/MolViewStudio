@@ -19,7 +19,25 @@ export function getServerPath(): string {
         process.platform === "win32"
             ? "MolStarAppServer.exe"
             : "MolStarAppServer";
-    return path.join(app.getAppPath(), "dist-server", executable);
+
+    console.log(
+        `Server path for developemnt: ${path.join(
+            app.getAppPath(),
+            "dist-server",
+            executable
+        )}, and for production: ${path.join(
+            app.getAppPath(),
+            "..",
+            executable
+        )}.`
+    );
+
+    if (isDev()) {
+        return path.join(app.getAppPath(), "dist-server", executable);
+    } else {
+        return path.join(app.getAppPath(), "..", executable);
+        // return path.join(process.resourcesPath, executable);
+    }
 }
 
 export function getAssetsPath() {
