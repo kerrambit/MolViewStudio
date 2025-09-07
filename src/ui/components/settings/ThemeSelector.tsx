@@ -1,49 +1,33 @@
-import { ActionIcon, Group, Stack, Text } from "@mantine/core";
-import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
+import { Group, Stack } from "@mantine/core";
 import { useTheme } from "../../services/ThemeProvider";
-import { IconMoon, IconSun } from "@tabler/icons-react";
+import { Button } from "../common/Button/Button";
+import { useTranslation } from "react-i18next";
 
 export function ThemeSelector() {
-    const { setThemeType, availableThemesTypes } = useTheme();
+    const { t } = useTranslation();
 
-    const { setColorScheme } = useMantineColorScheme();
-    const computedColorScheme = useComputedColorScheme("light");
-
-    const themeNames = {
-        ocean: "Ocean Blue",
-        forest: "Forest Green",
-    };
+    const { setThemeType, availableThemeTypes, niceThemeTypeNames } =
+        useTheme();
 
     return (
         <Stack gap="md">
-            <Text fw={500}>Choose Theme:</Text>
             <Group>
-                {availableThemesTypes.map((_theme) => (
-                    <button key={_theme} onClick={() => setThemeType(_theme)}>
-                        {themeNames[_theme]}
-                    </button>
+                {availableThemeTypes.map((_theme) => (
+                    <Button
+                        variant={"secondary"}
+                        key={_theme}
+                        tooltip={t(
+                            `Choose color theme ${niceThemeTypeNames[_theme]}.`
+                        )}
+                        ariaLabel={t(
+                            `Choose color theme ${niceThemeTypeNames[_theme]}.`
+                        )}
+                        onClick={() => setThemeType(_theme)}
+                    >
+                        {niceThemeTypeNames[_theme]}
+                    </Button>
                 ))}
             </Group>
-
-            <Text fw={500} mt="md">
-                Light/Dark Mode:
-            </Text>
-            <ActionIcon
-                onClick={() =>
-                    setColorScheme(
-                        computedColorScheme === "light" ? "dark" : "light"
-                    )
-                }
-                variant="filled"
-                aria-label="Theme Toggle"
-                size="xl"
-            >
-                {computedColorScheme === "light" ? (
-                    <IconMoon size={20} />
-                ) : (
-                    <IconSun size={20} />
-                )}
-            </ActionIcon>
         </Stack>
     );
 }
