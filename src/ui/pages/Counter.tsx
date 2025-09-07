@@ -3,6 +3,7 @@ import reactLogo from "../assets/react.svg";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./Counter.css";
+import { Button } from "../components/common/Button/Button";
 
 export function Counter() {
     const [count, setCount] = useState(0);
@@ -29,9 +30,9 @@ export function Counter() {
             </div>
             <h1>{t("Counter")}</h1>
             <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
+                <Button onClick={() => setCount((count) => count + 1)}>
                     {t("count is")} {count}
-                </button>
+                </Button>
             </div>
         </>
     );
