@@ -34,32 +34,3 @@ h1 {
   line-height: 1.1;
   color: var(--mantine-primary-color-6);
 }
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  background-color: var(--mantine-primary-color-1);
-  color: var(--mantine-primary-color-7);
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-
-button:hover {
-  border-color: var(--mantine-primary-color-4);
-  background-color: var(--mantine-primary-color-2);
-}
-
-button:focus,
-button:focus-visible {
-  outline: 4px auto var(--mantine-primary-color-5);
-}
-
-button.selected {
-  background-color: var(--mantine-primary-color-6);
-  color: white;
-  border-color: var(--mantine-primary-color-7);
-  box-shadow: 0 0 8px var(--mantine-primary-color-4);
-}

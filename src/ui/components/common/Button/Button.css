@@ -1,0 +1,175 @@
+.button {
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s, transform 0.15s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: top;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+.button--small {
+  padding: 0.4em 0.8em;
+  font-size: 0.875em;
+  min-height: 2rem;
+}
+
+.button--medium {
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  min-height: 2.5rem;
+}
+
+.button--large {
+  padding: 0.8em 1.6em;
+  font-size: 1.125em;
+  min-height: 3rem;
+}
+
+/* Primary button */
+
+.button--primary {
+  background-color: var(--mantine-primary-color-5);
+  border: 2px solid var(--mantine-primary-color-7);
+  color: var(--mantine-color-white);
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-mantine-color-scheme="dark"] .button--primary {
+  border: 2px solid var(--mantine-primary-color-2);
+}
+
+.button--primary:hover:not(:disabled) {
+  background-color: var(--mantine-primary-color-6);
+}
+
+.button--primary:focus,
+.button--primary:focus-visible {
+  background-color: var(--mantine-primary-color-6);
+  outline: 2px solid var(--mantine-primary-color-3);
+  outline-offset: 0.15px;
+}
+
+[data-mantine-color-scheme="dark"] .button--primary:focus,
+[data-mantine-color-scheme="dark"] .button--primary:focus-visible {
+  background-color: var(--mantine-primary-color-6);
+  outline: 2px solid var(--mantine-primary-color-3);
+  outline-offset: 0.15px;
+}
+
+/* Secondary button */
+
+.button--secondary {
+  background-color: var(--mantine-primary-color-1);
+  color: var(--mantine-primary-color-7);
+  border: 2px solid var(--mantine-primary-color-7);
+}
+
+[data-mantine-color-scheme="dark"] .button--secondary {
+  border: 2px solid var(--mantine-primary-color-5);
+}
+
+.button--secondary:hover:not(:disabled) {
+  background-color: var(--mantine-primary-color-2);
+}
+
+.button--secondary:focus,
+.button--secondary:focus-visible {
+  background-color: var(--mantine-primary-color-2);
+  outline: 2px solid var(--mantine-primary-color-3);
+  outline-offset: 0.15px;
+}
+
+/* Ghost button */
+
+.button--ghost {
+  background-color: transparent;
+  color: var(--mantine-primary-color-6);
+  border: 1px solid var(--mantine-primary-color-2);
+}
+
+[data-mantine-color-scheme="dark"] .button--ghost{
+  background-color: transparent;
+  color: white;
+  border: 1px solid var(--mantine-primary-color-7);
+}
+
+.button--ghost:hover:not(:disabled) {
+  background-color: var(--mantine-primary-color-1);
+}
+
+[data-mantine-color-scheme="dark"] .button--ghost:hover:not(:disabled) {
+  background-color: transparent;
+  border: 1px solid var(--mantine-primary-color-2);
+}
+
+.button--ghost:focus,
+.button--ghost:focus-visible {
+  background-color: var(--mantine-primary-color-1);
+   border: 1px solid var(--mantine-primary-color-5);
+}
+
+[data-mantine-color-scheme="dark"] .button--ghost:focus,
+.button--ghost:focus-visible {
+  background-color: transparent;
+  border: 1px solid var(--mantine-primary-color-2);
+  outline: 1.75px solid var(--mantine-primary-color-2);
+  outline-offset: 0.15px;
+}
+
+/* ----------------- */
+
+.button--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.button__icon svg,
+.button__icon--left svg,
+.button__icon--right svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+}
+
+.button__icon--left {
+  margin-right: 0.25em;
+  margin-left: -0.25em;
+}
+
+.button__icon--right {
+  margin-left: 0.25em;
+  margin-right: -0.25em;
+}
+
+.button:has(.button__icon--left):not(:has(.button__label)),
+.button:has(.button__icon--right):not(:has(.button__label)) {
+  aspect-ratio: 1;
+}
+
+.button--small:has(.button__icon--left):not(:has(.button__label)),
+.button--small:has(.button__icon--right):not(:has(.button__label)) {
+  padding: 0.4em;
+  min-width: 2rem;
+}
+
+.button--medium:has(.button__icon--left):not(:has(.button__label)),
+.button--medium:has(.button__icon--right):not(:has(.button__label)) {
+  padding: 0.6em;
+  min-width: 2.5rem;
+}
+
+.button--large:has(.button__icon--left):not(:has(.button__label)),
+.button--large:has(.button__icon--right):not(:has(.button__label)) {
+  padding: 0.8em;
+  min-width: 3rem;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(2.15px);
+}
