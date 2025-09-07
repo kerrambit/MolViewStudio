@@ -1,6 +1,6 @@
 import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
 import { IconMoon, IconSun } from "@tabler/icons-react";
-import { Button } from "../common/Button/Button";
+import { Button } from "../common/button/Button";
 import { useTranslation } from "react-i18next";
 
 export function SchemeSelector() {

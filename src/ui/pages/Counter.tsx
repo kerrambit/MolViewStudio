@@ -3,7 +3,7 @@ import reactLogo from "../assets/react.svg";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./Counter.css";
-import { Button } from "../components/common/Button/Button";
+import { Button } from "../components/common/button/Button";
 
 export function Counter() {
     const [count, setCount] = useState(0);

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useUserSettings } from "../services/UserSettingsProvider";
 import { ThemeSelector } from "../components/settings/ThemeSelector";
-import { Button } from "../components/common/Button/Button";
+import { Button } from "../components/common/button/Button";
 import { SchemeSelector } from "../components/settings/SchemeSelector";
 
 export default function Settings() {

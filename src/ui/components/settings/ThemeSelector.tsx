@@ -1,6 +1,6 @@
 import { Group, Stack } from "@mantine/core";
 import { useTheme } from "../../services/ThemeProvider";
-import { Button } from "../common/Button/Button";
+import { Button } from "../common/button/Button";
 import { useTranslation } from "react-i18next";
 
 export function ThemeSelector() {
