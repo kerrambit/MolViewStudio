@@ -2,12 +2,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useUserSettings } from "../services/UserSettingsProvider";
 import { ThemeSelector } from "../components/settings/ThemeSelector";
-import { Text } from "@mantine/core";
-import { useTheme } from "../services/ThemeProvider";
+import { Button } from "../components/common/button/Button";
+import { SchemeSelector } from "../components/settings/SchemeSelector";
 
 export default function Settings() {
     const { t, i18n } = useTranslation();
-    const { themeType, theme } = useTheme();
 
     const { settings, setSettings } = useUserSettings();
 
@@ -21,33 +20,40 @@ export default function Settings() {
             <nav>
                 <Link to="/">{t("Home")}</Link> |{" "}
                 <Link to="/settings">{t("Settings")}</Link> |{" "}
-                <Link to="/counter">{t("Counter")}</Link> |{" "}
-                <Link to="/server-status">Server status</Link> |{" "}
+                <Link to="/counter">{t("Counter")}</Link>
             </nav>
             <h1>{t("Settings")}</h1>
-            <div>
-                <Text fw={500} mb="md">
-                    Custom Theme Component
-                </Text>
-                <Text mb="sm">Current theme: {themeType}</Text>
-            </div>
-            <div>
-                <button
-                    color={theme.primaryColor}
-                    className={settings.lang === "en" ? "selected" : ""}
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    verticalAlign: "center",
+                    gap: ".5rem",
+                }}
+            >
+                <Button
+                    label={t("English")}
+                    tooltip={t("Choose language English.")}
+                    ariaLabel={t("Choose language English.")}
+                    disabled={false}
+                    variant={"secondary"}
+                    size="medium"
                     onClick={() => changeLanguage("en")}
-                >
-                    English
-                </button>
-                <button
-                    color={theme.primaryColor}
-                    className={settings.lang === "de" ? "selected" : ""}
+                ></Button>
+                <Button
+                    label={t("German")}
+                    tooltip={t("Choose language German.")}
+                    ariaLabel={t("Choose language German.")}
+                    disabled={false}
+                    variant={"secondary"}
+                    size="medium"
                     onClick={() => changeLanguage("de")}
-                >
-                    Deutsch
-                </button>
+                ></Button>
             </div>
-            <ThemeSelector></ThemeSelector>
+            <div>
+                <ThemeSelector></ThemeSelector>
+                <SchemeSelector></SchemeSelector>
+            </div>
         </div>
     );
 }

@@ -5,13 +5,14 @@ import {
     type ReactNode,
     useContext,
 } from "react";
-import { themes, type ThemeType } from "./themes";
+import { themes, type ThemeType } from "../misc/themes";
 import { MantineProvider, useMantineTheme } from "@mantine/core";
 
 type ThemeContextType = {
     themeType: ThemeType;
     setThemeType: (theme: ThemeType) => void;
-    availableThemesTypes: ThemeType[];
+    availableThemeTypes: ThemeType[];
+    niceThemeTypeNames: Record<ThemeType, string>;
 };
 
 export function useTheme() {
@@ -21,8 +22,8 @@ export function useTheme() {
         throw new Error("useTheme must be used within CustomThemeProvider");
     }
     return {
-        ...context,
         theme: mantineTheme,
+        ...context,
     };
 }
 
@@ -31,11 +32,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [currentThemeType, setCurrentThemeType] =
         useState<ThemeType>("ocean");
-    const availableThemesTypes: ThemeType[] = ["ocean", "forest"];
+
+    const availableThemeTypes: ThemeType[] = Object.keys(themes) as ThemeType[];
 
     useEffect(() => {
         const savedTheme = localStorage.getItem("custom-theme") as ThemeType;
-        if (savedTheme && availableThemesTypes.includes(savedTheme)) {
+        if (savedTheme && availableThemeTypes.includes(savedTheme)) {
             setCurrentThemeType(savedTheme);
         }
     }, []);
@@ -45,12 +47,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("custom-theme", theme);
     };
 
+    const niceThemeTypeNames = {
+        ocean: "Ocean Blue",
+        forest: "Forest Green",
+        sunset: "Sunset Orange",
+        royal: "Royal Purple",
+        crimson: "Crimson Red",
+        golden: "Golden Yellow",
+        teal: "Deep Teal",
+        lavender: "Lavender Pink",
+        charcoal: "Charcoal Gray",
+        sky: "Sky Blue",
+        emerald: "Emerald Green",
+        amber: "Amber Warm",
+    };
+
     return (
         <ThemeContext.Provider
             value={{
                 themeType: currentThemeType,
                 setThemeType,
-                availableThemesTypes,
+                availableThemeTypes,
+                niceThemeTypeNames,
             }}
         >
             <MantineProvider theme={themes[currentThemeType]}>

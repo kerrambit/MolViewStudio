@@ -5,6 +5,9 @@
 type EventPayloadMapping = {
     data: string;
     requestUserSettings: UserSettings;
+    requestApplicationExit: void;
+    requestToOpenDevTools: void;
+    requestEnvironment: Environment;
     changeUserSettings: UserSettings;
 };
 
@@ -18,9 +21,19 @@ interface Window {
 
         requestUserSettings: () => Promise<UserSettings>;
 
+        requestApplicationExit: () => Promise<void>;
+
+        requestToOpenDevTools: () => Promise<void>;
+
+        requestEnvironment: () => Promise<Environment>;
+
         changeUserSettings: (settings: UserSettings) => void;
     };
 }
+
+type Environment = {
+    isDev: boolean;
+};
 
 type Language = "en" | "de";
 
