@@ -9,6 +9,7 @@ import {
     IconUserCog,
 } from "@tabler/icons-react";
 import { useTheme } from "../../../services/ThemeProvider";
+import { useEffect, useState } from "react";
 
 interface MenuProps {
     className?: string;
@@ -16,7 +17,13 @@ interface MenuProps {
 
 export function Menu({ className = "" }: MenuProps) {
     const { theme } = useTheme();
-    const isDev = true; // TODO: create electron API endpoint for this
+
+    const [isDev, setIsDev] = useState(false);
+    useEffect(() => {
+        window.electron.requestEnvironment().then((env) => {
+            setIsDev(env.isDev);
+        });
+    }, []);
 
     return (
         <div className={className}>
@@ -24,7 +31,12 @@ export function Menu({ className = "" }: MenuProps) {
                 <span title="Mol* App (Version 0.0.1)" className="menu__title">
                     Mol* App{" "}
                     {isDev ? (
-                        <Badge color={theme.primaryColor}>DEV</Badge>
+                        <Badge
+                            title="You are in developer mode."
+                            color={theme.primaryColor}
+                        >
+                            DEV
+                        </Badge>
                     ) : (
                         <></>
                     )}
@@ -67,22 +79,29 @@ export function Menu({ className = "" }: MenuProps) {
                         Settings...
                     </MantineMenu.Item>
 
-                    <MantineMenu.Divider />
+                    {isDev && (
+                        <>
+                            <MantineMenu.Divider />
 
-                    <MantineMenu.Label>For developers</MantineMenu.Label>
-                    <MantineMenu.Item
-                        leftSection={
-                            <IconUserCog
-                                size={14}
-                                onClick={() => console.log("Open DevTools")}
-                            />
-                        }
-                    >
-                        Open DevTools
-                    </MantineMenu.Item>
+                            <MantineMenu.Label>
+                                For developers
+                            </MantineMenu.Label>
+                            <MantineMenu.Item
+                                onClick={() => {
+                                    window.electron.requestToOpenDevTools();
+                                }}
+                                leftSection={<IconUserCog size={14} />}
+                            >
+                                Open DevTools
+                            </MantineMenu.Item>
+                        </>
+                    )}
 
                     <MantineMenu.Divider />
                     <MantineMenu.Item
+                        onClick={() => {
+                            window.electron.requestApplicationExit();
+                        }}
                         leftSection={<IconCircleDashedX size={14} />}
                     >
                         Exit

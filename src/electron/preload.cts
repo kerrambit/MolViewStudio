@@ -46,6 +46,12 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     requestUserSettings: () => Ipc.Ui.invoke("requestUserSettings"),
 
+    requestApplicationExit: () => Ipc.Ui.invoke("requestApplicationExit"),
+
+    requestToOpenDevTools: () => Ipc.Ui.invoke("requestToOpenDevTools"),
+
+    requestEnvironment: () => Ipc.Ui.invoke("requestEnvironment"),
+
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);
     },

@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, Menu } from "electron";
 import { isDev } from "./utils/util.js";
 import {
     getAssetsPath,
@@ -10,7 +10,6 @@ import { pollData } from "./logicMocker.js";
 import { Ipc } from "./Ipc.Electron.js";
 import http from "http";
 import { createTray } from "./tray.js";
-import { createMenu } from "./menu.js";
 import path from "path";
 import {
     loadUserSettings,
@@ -80,16 +79,32 @@ app.on("ready", () => {
         return userSettings;
     });
 
+    // If UI requests to quit the application, exit procedure is executed.
+    Ipc.Electron.handle("requestApplicationExit", () => {
+        app.quit();
+    });
+
+    // If UI requests to open DevTools, and the application is in dev mode, allow it.
+    Ipc.Electron.handle("requestToOpenDevTools", () => {
+        if (isDev()) {
+            mainWindow.webContents.openDevTools();
+        }
+    });
+
     // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
         saveUserSettings(userDataPath, userSettingsFile, settings);
         logger.info(`User settings has been saved.`);
-        createMenu(mainWindow, settings.lang); // We have to recreate the menu to update the language.
     });
 
-    // Create tray and menu.
+    // UI can request environmanet information.
+    Ipc.Electron.handle("requestEnvironment", () => {
+        return { isDev: isDev() };
+    });
+
+    // Create tray.
     createTray(mainWindow);
-    createMenu(mainWindow, userSettings.lang);
+    Menu.setApplicationMenu(null);
 
     // Start the server and show splash screen for at least 1.5 seconds (splash screen will be displayed as long as server is starting).
     // We also handle close events here: mainly stopping the server when app is being stopped.
