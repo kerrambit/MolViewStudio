@@ -20,8 +20,7 @@ export default function Settings() {
             <nav>
                 <Link to="/">{t("Home")}</Link> |{" "}
                 <Link to="/settings">{t("Settings")}</Link> |{" "}
-                <Link to="/counter">{t("Counter")}</Link> |{" "}
-                <Link to="/server-status">Server status</Link> |{" "}
+                <Link to="/counter">{t("Counter")}</Link>
             </nav>
             <h1>{t("Settings")}</h1>
             <div
