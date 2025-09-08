@@ -1,0 +1,44 @@
+.menu__title  {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+    color: #333;
+}
+
+[data-mantine-color-scheme="dark"] .menu__title  {
+    color: #ccc !important;
+}
+
+.menu__toggle {
+    color: #333 !important;
+    background-color: transparent !important;
+    border-right: 1px solid #ccc !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    padding: 4px 12px !important;
+    border-radius: 3px !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-mantine-color-scheme="dark"] .menu__toggle {
+    color: #ccc !important;
+}
+
+.menu__toggle--first {
+    border-left: 1px solid #ccc !important;
+}
+
+[data-mantine-color-scheme="dark"] .menu__toggle--first {
+    border-left: 1px solid #ccc !important;
+}
+
+.menu__toggle:hover {
+    background-color: #e5e5e5 !important;
+    border-color: #999 !important;
+    color: #222 !important;
+}
+
+[data-mantine-color-scheme="dark"] .menu__toggle:hover {
+    background-color: #615f5f !important;
+    border-color: #999 !important;
+    color: #ccc !important;
+}
