@@ -14,7 +14,7 @@ interface MenuProps {
     className?: string;
 }
 
-export function Menu({ className = "", ...props }: MenuProps) {
+export function Menu({ className = "" }: MenuProps) {
     const { theme } = useTheme();
     const isDev = true; // TODO: create electron API endpoint for this
 
