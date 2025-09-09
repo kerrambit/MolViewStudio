@@ -11,7 +11,9 @@ export class Ipc {
     static Electron = class {
         static handle<Key extends keyof EventPayloadMapping>(
             key: Key,
-            handler: () => EventPayloadMapping[Key]
+            handler: () =>
+                | Promise<EventPayloadMapping[Key]>
+                | EventPayloadMapping[Key]
         ) {
             ipcMain.handle(key, (event) => {
                 validateEventFrame(event.senderFrame);
