@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from "electron";
+import { app, BrowserWindow, dialog, Menu } from "electron";
 import { isDev } from "./utils/util.js";
 import {
     getAssetsPath,
@@ -16,7 +16,7 @@ import {
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
 import { ChildProcess, spawn } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { logger } from "./utils/logger.js";
 
 app.on("ready", () => {
@@ -102,8 +102,64 @@ app.on("ready", () => {
         return { isDev: isDev() };
     });
 
+    Ipc.Electron.handle("openFileExplorer", async () => {
+        const openDialogResult = await dialog.showOpenDialog({
+            properties: ["openFile"],
+            filters: [
+                {
+                    name: "All Files",
+                    extensions: ["*"],
+                },
+                {
+                    name: "Structural Files",
+                    extensions: ["pdb", "cif", "mcif", "sdf"],
+                },
+                {
+                    name: "CVSX Files",
+                    extensions: ["cvsx"],
+                },
+            ],
+        });
+
+        if (
+            openDialogResult.canceled ||
+            openDialogResult.filePaths.length === 0
+        ) {
+            return null;
+        }
+
+        const filePath = openDialogResult.filePaths[0];
+
+        try {
+            const fileName = path.basename(filePath);
+            const fileExtension = path.extname(filePath).toLowerCase().slice(1);
+
+            let fileContent;
+            if (fileExtension === "cvsx") {
+                fileContent = readFileSync(filePath);
+                fileContent = new Uint8Array(fileContent);
+            } else {
+                fileContent = readFileSync(filePath, "utf8");
+            }
+
+            return {
+                path: filePath,
+                extension: fileExtension,
+                name: fileName,
+                binary: fileExtension === "cvsx",
+                content: fileContent,
+            };
+        } catch (err) {
+            logger.error(
+                `While reading file <${filePath}>, an error occured: <${err}>!`
+            );
+            throw new Error(`Failed to read file: ${err}`);
+        }
+    });
+
     // Create tray.
     createTray(mainWindow);
+    // Do not create any menu (Linux and Win).
     Menu.setApplicationMenu(null);
 
     // Start the server and show splash screen for at least 1.5 seconds (splash screen will be displayed as long as server is starting).

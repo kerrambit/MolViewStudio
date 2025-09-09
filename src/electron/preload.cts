@@ -52,6 +52,8 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     requestEnvironment: () => Ipc.Ui.invoke("requestEnvironment"),
 
+    openFileExplorer: () => Ipc.Ui.invoke("openFileExplorer"),
+
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);
     },

@@ -7,6 +7,7 @@ type EventPayloadMapping = {
     requestUserSettings: UserSettings;
     requestApplicationExit: void;
     requestToOpenDevTools: void;
+    openFileExplorer: FileData | null;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
 };
@@ -27,6 +28,8 @@ interface Window {
 
         requestEnvironment: () => Promise<Environment>;
 
+        openFileExplorer: () => Promise<FileData | null>;
+
         changeUserSettings: (settings: UserSettings) => void;
     };
 }
@@ -34,6 +37,14 @@ interface Window {
 type Environment = {
     isDev: boolean;
 };
+
+interface FileData {
+    path: string;
+    extension: string;
+    name: string;
+    binary: boolean;
+    content: string | Uint8Array<ArrayBuffer>;
+}
 
 type Language = "en" | "de";
 
