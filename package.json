@@ -21,6 +21,7 @@
     "test:unit": "vitest src"
   },
   "dependencies": {
+    "molstar-wrapper": "file:src/molstar-wrapper",
     "@mantine/core": "^8.2.7",
     "@mantine/form": "^8.2.7",
     "@mantine/hooks": "^8.2.7",
