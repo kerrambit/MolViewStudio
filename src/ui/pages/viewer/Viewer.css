@@ -1,0 +1,12 @@
+.msp-plugin {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.viewer {
+    height: 100%;
+    padding-bottom: "2em";
+    display: "flex";
+    flex-direction: "column";
+}
