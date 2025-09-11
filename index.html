@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:41050; style-src 'self' 'unsafe-inline'; script-src 'self';"/>
+     <meta http-equiv="Content-Security-Policy" content=
+        "default-src 'self'
+        http://localhost:41050
+        https://files.rcsb.org/download/3PTB.pdb
+        https://webchem.ncbr.muni.cz/molstar-state/list
+        https://rawcdn.githack.com/molstar/molstar-volseg/2c677ab0f1b7b7d27f292e0bd209de83e732d216/vs_toolkit/sample_cvsx/emd-1832.cvsx
+        https://www.ebi.ac.uk/emdb/api/entry/map/1832;
+        img-src 'self' data: blob: https:;
+        style-src 'self' 'unsafe-inline';
+        script-src 'self';"/>
     <title>Mol* App</title>
   </head>
   <body>
