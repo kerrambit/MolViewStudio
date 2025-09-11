@@ -51,7 +51,11 @@ jobs:
           pip install pyinstaller
           pip install -r src/server/requirements.txt
 
-      - name: Install dependencies
+      - name: Install main project dependencies
+        run: npm ci
+
+      - name: Install molstar-wrapper dependencies
+        working-directory: ./src/molstar-wrapper
         run: npm ci
 
       - name: Build server
