@@ -1,7 +1,7 @@
 {
   "Home": "Heimseite",
   "Settings": "Einstellung",
-  "Counter": "Zähler",
+  "Viewer": "Betrachter",
   "count is": "Zählen ist",
   "menu": {
     "Quit Mol* App": "Mol* App verlassen",
@@ -15,5 +15,10 @@
       "Server has ended with an error": "Der Server hat mit einem Fehler beendet",
       "Go to Settings for more information.": "Weitere Informationen finden Sie unter „Einstellungen“."
     }
+  },
+  "viewer": {
+    "Clean": "Betrachter Reinigen",
+    "Load structure from file...": "Struktur aus Datei laden...",
+    "Load default PBD structure": "Standard-PBD-Struktur laden"
   }
 }

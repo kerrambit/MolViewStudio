@@ -1,7 +1,7 @@
 {
   "Home": "Home",
   "Settings": "Settings",
-  "Counter": "Counter",
+  "Viewer": "Viewer",
   "count is": "count is",
   "menu": {
     "Quit Mol* App": "Quit Mol* App",
@@ -15,5 +15,10 @@
       "Server has ended with an error": "Server has ended with an error",
       "Go to Settings for more information.": "Go to Settings for more information."
     }
+  },
+  "viewer": {
+    "Clean": "Clean",
+    "Load structure from file...": "Load structure from file...",
+    "Load default PBD structure": "Load default PBD structure"
   }
 }

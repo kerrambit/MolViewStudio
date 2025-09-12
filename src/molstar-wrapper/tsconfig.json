@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+     "types": ["../types/types"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src"]
+}

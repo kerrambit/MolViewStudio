@@ -19,6 +19,7 @@ test-results
 playwright-report
 tmp
 __pycache__
+src/molstar-wrapper/build
 
 # Editor directories and files
 .vscode/*
