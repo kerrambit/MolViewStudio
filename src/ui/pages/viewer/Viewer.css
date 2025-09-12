@@ -2,6 +2,7 @@
   position: relative !important;
   width: 100% !important;
   height: 100% !important;
+  border: 2px solid var(--mantine-primary-color-7);
 }
 
 .viewer {
