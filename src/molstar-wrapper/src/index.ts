@@ -40,7 +40,7 @@ export async function initMolstar(
     });
 
     molstar.behaviors.interaction.click.subscribe(
-        ({ current, button, modifiers }) => {
+        ({ current, button /*, modifiers*/ }) => {
             if (!current.loci) return;
 
             if (button === ButtonsType.Flag.Secondary) {
