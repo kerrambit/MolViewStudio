@@ -91,3 +91,8 @@ export function Viewer() {
         </div>
     );
 }
+
+async function loadStructureFromFile() {
+    const fileData = await window.electron.openFileExplorer();
+    molstarLoadStructureFromFile(fileData);
+}

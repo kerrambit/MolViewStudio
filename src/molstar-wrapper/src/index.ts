@@ -2,7 +2,9 @@ import { createPluginUI } from "molstar/lib/mol-plugin-ui";
 import { renderReact18 } from "molstar/lib/mol-plugin-ui/react18";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { DefaultPluginUISpec } from "molstar/lib/mol-plugin-ui/spec";
-// import { Asset } from "molstar/lib/mol-util/assets";
+import { StructureElement } from "molstar/lib/mol-model/structure";
+import { ButtonsType } from "molstar/lib/mol-util/input/input-observer";
+import { Asset } from "molstar/lib/mol-util/assets";
 
 interface MolstarProps {
     showControls: boolean;
@@ -37,32 +39,27 @@ export async function initMolstar(
         },
     });
 
-    // molstar.behaviors.interaction.click.subscribe(
-    //     ({ current, button, modifiers }) => {
-    //         if (!current.loci) return;
+    molstar.behaviors.interaction.click.subscribe(
+        ({ current, button, modifiers }) => {
+            if (!current.loci) return;
 
-    //         if (button === 2) {
-    //             console.log("Right click!");
-    //         }
+            if (button === ButtonsType.Flag.Secondary) {
+            }
 
-    //         console.log("Clicked!", { current, button, modifiers });
+            if (StructureElement.Loci.is(current.loci)) {
+                const location = StructureElement.Loci.getFirstLocation(
+                    current.loci
+                );
+                if (location) {
+                    const element = location.unit.model.atomicHierarchy.atoms;
+                    const name = element.type_symbol.value(0);
+                    console.log(`Clicked on element: ${name}.`);
+                }
+            }
+        }
+    );
 
-    //         if (StructureElement.Loci.is(current.loci)) {
-    //             const location = StructureElement.Loci.getFirstLocation(
-    //                 current.loci
-    //             );
-    //             if (location) {
-    //                 const element = location.unit.model.atomicHierarchy.atoms;
-    //                 const name = element.type_symbol.value(0);
-    //                 console.log(`Clicked on: ${name}.`);
-    //             }
-    //         }
-    //     }
-    // );
-
-    // molstar.behaviors.interaction.hover.subscribe(({ current }) => {
-    //     console.log("Hovered:", current);
-    // });
+    // molstar.behaviors.interaction.hover.subscribe(({ current }) => {});
 
     return molstar;
 }
@@ -99,30 +96,34 @@ export async function loadDefaultPbdStructure() {
     return preset;
 }
 
-// export async function loadStructureFromFile() {
-//     if (!molstar) throw new Error("Molstar is not initialized!");
+export async function loadStructureFromFile(fileData: FileData | null) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
 
-//     await molstar.clear();
+    if (!fileData) return false;
 
-//     const fileData = await window.electron.openFileExplorer();
-//     if (!fileData) return;
+    await molstar.clear();
 
-//     const file = new File([fileData.content], fileData.name);
-//     const assetFile = Asset.File(file);
+    const file = new File([fileData.content], fileData.name);
+    const assetFile = Asset.File(file);
 
-//     const fileResult = await molstar.builders.data.readFile({
-//         file: assetFile,
-//         isBinary: fileData.binary,
-//     });
+    try {
+        const fileResult = await molstar.builders.data.readFile({
+            file: assetFile,
+            isBinary: fileData.binary,
+        });
 
-//     const trajectory = await molstar.builders.structure.parseTrajectory(
-//         fileResult.data,
-//         fileData.extension as any
-//     );
-//     const preset = await molstar.builders.structure.hierarchy.applyPreset(
-//         trajectory,
-//         "default"
-//     );
+        const trajectory = await molstar.builders.structure.parseTrajectory(
+            fileResult.data,
+            fileData.extension as any
+        );
 
-//     return preset;
-// }
+        await molstar.builders.structure.hierarchy.applyPreset(
+            trajectory,
+            "default"
+        );
+    } catch (error) {
+        return false; // TODO: log error
+    }
+
+    return true;
+}
