@@ -2,7 +2,8 @@
   position: relative !important;
   width: 100% !important;
   height: 100% !important;
-  border: 2px solid var(--mantine-primary-color-7);
+  border: 1px solid var(--mantine-primary-color-7);
+  box-shadow: 0 0 20px 1px  var(--mantine-primary-color-2);
 }
 
 .viewer {
