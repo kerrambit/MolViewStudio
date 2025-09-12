@@ -12,7 +12,6 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --outfile=./build/js/molstarWrapper.js --global-name=molstarLib",
-    "watch": "esbuild src/index.ts --bundle --outfile=./build/js/molstarWrapper.js --global-name=molstarLib --watch"
+    "build": "esbuild src/index.ts --bundle --outfile=./build/js/molstarWrapper.js --global-name=molstarLib"
   }
 }
