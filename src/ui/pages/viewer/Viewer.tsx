@@ -9,6 +9,7 @@ import {
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
+import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
 export function Viewer() {
     const { t } = useTranslation();

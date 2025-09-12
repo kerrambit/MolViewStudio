@@ -21,7 +21,6 @@
     "test:unit": "vitest src"
   },
   "dependencies": {
-    "molstar-wrapper": "file:src/molstar-wrapper",
     "@mantine/core": "^8.2.7",
     "@mantine/form": "^8.2.7",
     "@mantine/hooks": "^8.2.7",
@@ -29,6 +28,7 @@
     "@tanstack/react-query": "^5.85.6",
     "electron-log": "^5.4.3",
     "i18next": "^25.3.2",
+    "molstar-wrapper": "file:src/molstar-wrapper",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^15.6.1",
@@ -52,6 +52,7 @@
     "postcss": "^8.5.6",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
+    "sass-embedded": "^1.92.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",
     "vite": "^7.0.4",
