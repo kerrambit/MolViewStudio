@@ -2,21 +2,24 @@ import { createPluginUI } from "molstar/lib/mol-plugin-ui";
 import { renderReact18 } from "molstar/lib/mol-plugin-ui/react18";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { DefaultPluginUISpec } from "molstar/lib/mol-plugin-ui/spec";
-import { StructureElement } from "molstar/lib/mol-model/structure";
-import { ButtonsType } from "molstar/lib/mol-util/input/input-observer";
+// import { StructureElement } from "molstar/lib/mol-model/structure";
+// import { ButtonsType } from "molstar/lib/mol-util/input/input-observer";
 import { Asset } from "molstar/lib/mol-util/assets";
 import { PluginState } from "molstar/lib/mol-plugin/state";
+import { Color } from "molstar/lib/mol-util/color";
 
 interface MolstarProps {
     showControls: boolean;
     isExpanded: boolean;
+    darkMode: boolean;
 }
 
 let molstar: PluginUIContext | undefined;
 
 export async function initMolstar(
     container: HTMLDivElement,
-    props: MolstarProps
+    props: MolstarProps,
+    snapshot: PluginState.Snapshot | null
 ) {
     if (molstar) return molstar;
 
@@ -36,29 +39,36 @@ export async function initMolstar(
                     isExpanded: props.isExpanded,
                 },
             },
+            canvas3d: {
+                renderer: {
+                    backgroundColor: props.darkMode
+                        ? Color.fromRgb(76, 72, 72)
+                        : Color.fromRgb(255, 255, 255),
+                },
+            },
             behaviors: [...DefaultPluginUISpec().behaviors],
         },
     });
 
-    molstar.behaviors.interaction.click.subscribe(
-        ({ current, button /*, modifiers*/ }) => {
-            if (!current.loci) return;
+    // molstar.behaviors.interaction.click.subscribe(
+    //     ({ current, button /*, modifiers*/ }) => {
+    //         if (!current.loci) return;
 
-            if (button === ButtonsType.Flag.Secondary) {
-            }
+    //         if (button === ButtonsType.Flag.Secondary) {
+    //         }
 
-            if (StructureElement.Loci.is(current.loci)) {
-                const location = StructureElement.Loci.getFirstLocation(
-                    current.loci
-                );
-                if (location) {
-                    const element = location.unit.model.atomicHierarchy.atoms;
-                    const name = element.type_symbol.value(0);
-                    console.log(`Clicked on element: ${name}.`);
-                }
-            }
-        }
-    );
+    //         if (StructureElement.Loci.is(current.loci)) {
+    //             const location = StructureElement.Loci.getFirstLocation(
+    //                 current.loci
+    //             );
+    //             if (location) {
+    //                 const element = location.unit.model.atomicHierarchy.atoms;
+    //                 const name = element.type_symbol.value(0);
+    //                 console.log(`Clicked on element: ${name}.`);
+    //             }
+    //         }
+    //     }
+    // );
 
     // molstar.behaviors.interaction.hover.subscribe(({ current }) => {});
 

@@ -19,12 +19,18 @@ export function Viewer() {
     const { t } = useTranslation();
     const parentRef = createRef<HTMLDivElement>();
     const { snapshot, setSnapshot } = useMolstar();
+    const colorScheme = useComputedColorScheme();
 
     useEffect(() => {
-        initMolstar(parentRef.current as HTMLDivElement, {
-            showControls: true,
-            isExpanded: false,
-        }).then(() => {
+        initMolstar(
+            parentRef.current as HTMLDivElement,
+            {
+                showControls: true,
+                isExpanded: false,
+                darkMode: colorScheme === "dark",
+            },
+            snapshot
+        ).then(() => {
             translateMolstarUi(parentRef);
         });
 
