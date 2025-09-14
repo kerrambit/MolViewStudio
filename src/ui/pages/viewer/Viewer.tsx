@@ -8,14 +8,17 @@ import {
     loadDefaultPbdStructure,
     disposeMolstar,
     loadStructureFromFile as molstarLoadStructureFromFile,
+    getSnapshot,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
+import { useMolstar } from "../../services/MolstarProvider";
 
 export function Viewer() {
     const { t } = useTranslation();
     const parentRef = createRef<HTMLDivElement>();
+    const { snapshot, setSnapshot } = useMolstar();
 
     useEffect(() => {
         initMolstar(parentRef.current as HTMLDivElement, {
@@ -26,9 +29,11 @@ export function Viewer() {
         });
 
         return () => {
+            const freshSnapshot = getSnapshot();
+            setSnapshot(freshSnapshot);
             disposeMolstar();
         };
-    }, []);
+    }, [setSnapshot]);
 
     return (
         <div className="viewer">

@@ -5,6 +5,7 @@ import { DefaultPluginUISpec } from "molstar/lib/mol-plugin-ui/spec";
 import { StructureElement } from "molstar/lib/mol-model/structure";
 import { ButtonsType } from "molstar/lib/mol-util/input/input-observer";
 import { Asset } from "molstar/lib/mol-util/assets";
+import { PluginState } from "molstar/lib/mol-plugin/state";
 
 interface MolstarProps {
     showControls: boolean;
@@ -61,10 +62,20 @@ export async function initMolstar(
 
     // molstar.behaviors.interaction.hover.subscribe(({ current }) => {});
 
+    if (snapshot) {
+        molstar.state.setSnapshot(snapshot);
+    }
+
     return molstar;
 }
 
+export function getSnapshot() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    return molstar.state.getSnapshot();
+}
+
 export function disposeMolstar() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
     molstar?.dispose();
     molstar = undefined;
 }
