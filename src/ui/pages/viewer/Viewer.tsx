@@ -1,4 +1,4 @@
-import { useEffect, createRef, type RefObject } from "react";
+import { useEffect, createRef, type RefObject, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../components/common/button/Button";
@@ -14,12 +14,14 @@ import {
 import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { useMolstar } from "../../services/MolstarProvider";
+import { LoadingOverlay, useComputedColorScheme } from "@mantine/core";
 
 export function Viewer() {
     const { t } = useTranslation();
     const parentRef = createRef<HTMLDivElement>();
     const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
+    const [molstarLoading, setMolstarLoading] = useState(true);
 
     useEffect(() => {
         initMolstar(
@@ -32,6 +34,7 @@ export function Viewer() {
             snapshot
         ).then(() => {
             translateMolstarUi(parentRef);
+            setMolstarLoading(false);
         });
 
         return () => {
@@ -48,7 +51,15 @@ export function Viewer() {
                 <Link to="/settings">{t("Settings")}</Link> |{" "}
                 <Link to="/viewer">{t("Viewer")}</Link> |{" "}
             </nav>
-            <div style={{ display: "flex", height: "95%" }}>
+            <div
+                style={{ display: "flex", height: "95%", position: "relative" }}
+            >
+                <LoadingOverlay
+                    visible={molstarLoading}
+                    zIndex={1000}
+                    overlayProps={{ radius: "sm", blur: 2 }}
+                    loaderProps={{ type: "oval" }}
+                />
                 <div
                     style={{
                         display: "flex",
