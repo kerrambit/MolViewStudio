@@ -7,6 +7,7 @@ import { DefaultPluginUISpec } from "molstar/lib/mol-plugin-ui/spec";
 import { Asset } from "molstar/lib/mol-util/assets";
 import { PluginState } from "molstar/lib/mol-plugin/state";
 import { Color } from "molstar/lib/mol-util/color";
+import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 
 interface MolstarProps {
     showControls: boolean;
@@ -82,6 +83,45 @@ export async function initMolstar(
 export function getSnapshot() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     return molstar.state.getSnapshot();
+}
+
+export type CameraState = {
+    position?: Vec3;
+    up?: Vec3;
+    target?: Vec3;
+};
+
+export function getCameraState(): CameraState {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    if (!molstar.canvas3d?.camera)
+        throw new Error("Molstar camera is not accessible!");
+
+    return {
+        position: Vec3.clone(molstar.canvas3d?.camera.position),
+        up: Vec3.clone(molstar.canvas3d?.camera.up),
+        target: Vec3.clone(molstar.canvas3d?.camera.target),
+    };
+}
+
+export type Base64Png = string;
+
+export async function getCanvasImageAsUri(): Promise<Base64Png | undefined> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const helper = molstar.helpers.viewportScreenshot;
+    return await helper?.getImageDataUri();
+}
+
+export function setCamera(cameraState: CameraState) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const { position, up, target } = cameraState;
+
+    molstar.canvas3d?.camera.setState({
+        position: position ?? molstar.canvas3d?.camera.position,
+        up: up ?? molstar.canvas3d?.camera.up,
+        target: target ?? molstar.canvas3d?.camera.target,
+    });
 }
 
 export function disposeMolstar() {
