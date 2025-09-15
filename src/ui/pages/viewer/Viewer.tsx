@@ -9,6 +9,11 @@ import {
     disposeMolstar,
     loadStructureFromFile as molstarLoadStructureFromFile,
     getSnapshot,
+    type CameraState,
+    getCameraState,
+    setCamera,
+    getCanvasImageAsUri,
+    type Base64Png,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -22,6 +27,12 @@ export function Viewer() {
     const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
+
+    type CameraView = CameraState & {
+        id: string;
+        thumbnail?: Base64Png;
+    };
+    const [views, setViews] = useState<CameraView[]>([]);
 
     useEffect(() => {
         initMolstar(
@@ -93,6 +104,78 @@ export function Viewer() {
                     >
                         {t("viewer.Load default PBD structure")}
                     </Button>
+                    <Button
+                        size="small"
+                        onClick={() => {
+                            setViews(() => []);
+                        }}
+                    >
+                        {t("viewer.Clear views")}
+                    </Button>
+                    <Button
+                        size="small"
+                        onClick={() => {
+                            // TODO: check that any data were uploaded, empty view should not be saved
+                            const cameraData = getCameraState();
+                            getCanvasImageAsUri()
+                                .then((img) => {
+                                    setViews((prev) => [
+                                        ...prev,
+                                        {
+                                            ...cameraData,
+                                            id: crypto.randomUUID(),
+                                            thumbnail: img,
+                                        },
+                                    ]);
+                                })
+                                .catch(() => {
+                                    setViews((prev) => [
+                                        ...prev,
+                                        {
+                                            ...cameraData,
+                                            id: crypto.randomUUID(),
+                                        },
+                                    ]);
+                                });
+                        }}
+                    >
+                        {t("viewer.Save view")}
+                    </Button>
+                    <div
+                        style={{
+                            maxWidth: "15em",
+                        }}
+                    >
+                        <b>Views:</b>
+                        {views.map((view, index) => (
+                            <div
+                                key={`$view:${view.id}`}
+                                style={{
+                                    cursor: "grab",
+                                    border: "1px solid var(--mantine-primary-color-7)",
+                                }}
+                                onClick={() => {
+                                    setCamera({
+                                        position: view.position,
+                                        up: view.up,
+                                        target: view.target,
+                                    });
+                                }}
+                            >
+                                <h6 key={`id:${view.id}`}>{index + 1}. View</h6>
+                                <img
+                                    key={`$img:${view.id}`}
+                                    src={view.thumbnail}
+                                    style={{
+                                        border: "2px solid var(--mantine-primary-color-4)",
+                                    }}
+                                    width={"100%"}
+                                    height={"100%"}
+                                    alt={`${index + 1}. view thumbnail`}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
                 <main style={{ flex: 1, padding: "1em", minHeight: 0 }}>
                     <div
