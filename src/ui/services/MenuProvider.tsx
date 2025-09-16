@@ -33,6 +33,7 @@ export type MenuIcon = {
 };
 
 export type Section = {
+    id: string;
     title?: string;
     items: MenuItem[];
     visible?: () => boolean;
@@ -46,6 +47,7 @@ export type Action = {
 };
 
 export type MenuItem = {
+    id: string;
     title: string;
     icon?: MenuIcon;
     task: Dropdown | Action;
@@ -62,6 +64,9 @@ export type Menu = RootMenuItem[];
 type MenuContextType = {
     menu: Menu;
     setMenu: React.Dispatch<React.SetStateAction<Menu>>;
+    retrieveIdByTitle: (name: string) => string | undefined;
+    deleteRootMenuItem: (id: string) => RootMenuItem | undefined;
+    addRootMenuItem: (item: RootMenuItem) => void;
 };
 
 export const MenuContext = createContext<MenuContextType | null>(null);
@@ -76,7 +81,29 @@ export function useMenu() {
 
 export function MenuProvider({ children }: { children: ReactNode }) {
     const [isDev, setIsDev] = useState(false);
+
     const [menu, setMenu] = useState<Menu>(() => createInitialMenu(false));
+
+    const deleteRootMenuItem = (id: string) => {
+        let toDelete: RootMenuItem | undefined;
+
+        setMenu((prevMenu) => {
+            toDelete = prevMenu.find((item) => item.id === id);
+            return prevMenu.filter((item) => item.id !== id);
+        });
+
+        return toDelete;
+    };
+
+    const retrieveIdByTitle = (name: string) => {
+        return menu.find((item) => item.title === name)?.id;
+    };
+
+    const addRootMenuItem = (item: RootMenuItem) => {
+        setMenu((prev) => {
+            return [...prev, item];
+        });
+    };
 
     useEffect(() => {
         window.electron.requestEnvironment().then((env) => {
@@ -89,14 +116,24 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     }, [isDev]);
 
     return (
-        <MenuContext.Provider value={{ menu, setMenu }}>
+        <MenuContext.Provider
+            value={{
+                menu,
+                setMenu,
+                retrieveIdByTitle,
+                deleteRootMenuItem,
+                addRootMenuItem,
+            }}
+        >
             {children}
         </MenuContext.Provider>
     );
 }
 
 function createInitialMenu(isDev: boolean): Menu {
+    // TODO: translate titles
     const openFileInViewer: MenuItem = {
+        id: crypto.randomUUID(),
         title: "Open file in viewer",
         icon: { icon: IconFolderOpen, position: "left" },
         task: {
@@ -107,6 +144,7 @@ function createInitialMenu(isDev: boolean): Menu {
         },
     };
     const processFile: MenuItem = {
+        id: crypto.randomUUID(),
         title: "Process file",
         icon: { icon: IconFolderOpen, position: "left" },
         task: {
@@ -117,6 +155,7 @@ function createInitialMenu(isDev: boolean): Menu {
         },
     };
     const exampleFile: MenuItem = {
+        id: crypto.randomUUID(),
         title: "/home/user/data/emd-1832.cvsx",
         icon: { icon: IconChartBubbleFilled, position: "left" },
         task: {
@@ -127,21 +166,24 @@ function createInitialMenu(isDev: boolean): Menu {
         },
     };
     const openRecentFile: MenuItem = {
+        id: crypto.randomUUID(),
         title: "Open recent file",
         icon: { icon: IconFileTime, position: "left" },
-        task: [{ items: [exampleFile] }],
+        task: [{ id: crypto.randomUUID(), items: [exampleFile] }],
     };
     const openDevTools: MenuItem = {
+        id: crypto.randomUUID(),
         title: "Open DevTools",
         icon: { icon: IconUserCog, position: "left" },
         task: {
             action: () => {
                 window.electron.requestToOpenDevTools();
             },
-            type: "secondary",
+            type: "direct",
         },
     };
     const exit: MenuItem = {
+        id: crypto.randomUUID(),
         title: "Exit",
         icon: { icon: IconCircleDashedX, position: "left" },
         task: {
@@ -152,9 +194,11 @@ function createInitialMenu(isDev: boolean): Menu {
         },
     };
     const generalFileSection: Section = {
+        id: crypto.randomUUID(),
         items: [openFileInViewer, processFile, openRecentFile],
     };
     const devFileSection: Section = {
+        id: crypto.randomUUID(),
         title: "For developers",
         visible: () => {
             return isDev;
@@ -162,14 +206,17 @@ function createInitialMenu(isDev: boolean): Menu {
         items: [openDevTools],
     };
     const exitSection: Section = {
+        id: crypto.randomUUID(),
         items: [exit],
     };
     const file: RootMenuItem = {
+        id: crypto.randomUUID(),
         title: "File",
         task: [generalFileSection, devFileSection, exitSection],
         priority: 1,
     };
     const settings: RootMenuItem = {
+        id: crypto.randomUUID(),
         title: "Settings",
         task: {
             action: () => {
@@ -177,9 +224,10 @@ function createInitialMenu(isDev: boolean): Menu {
             },
             type: "direct",
         },
-        priority: 8,
+        priority: 5,
     };
     const help: RootMenuItem = {
+        id: crypto.randomUUID(),
         title: "Help",
         task: [],
         priority: 10,
