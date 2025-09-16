@@ -12,6 +12,7 @@ import {
 } from "../../../services/MenuProvider";
 
 import "./Menu.css";
+import React from "react";
 
 interface MenuProps {
     className?: string;
@@ -43,15 +44,16 @@ export function Menu({ className = "" }: MenuProps) {
                     <></>
                 )}
             </span>
-            {/* TODO: sort root menu items based on priority */}
-            {menu.map((menuItem, index) => {
-                return renderRootMenuItem(menuItem, index);
-            })}
+            {menu
+                .sort((a, b) => a.priority - b.priority)
+                .map((menuItem, index) => (
+                    <React.Fragment key={menuItem.id}>
+                        {renderRootMenuItem(menuItem, index)}
+                    </React.Fragment>
+                ))}
         </div>
     );
 }
-
-// TODO: for all .map function usage, we need to assign unique key
 
 function renderSection(section: Section, index: number) {
     return (
@@ -62,7 +64,11 @@ function renderSection(section: Section, index: number) {
                     {section.title && (
                         <MantineMenu.Label>{section.title}</MantineMenu.Label>
                     )}
-                    {section.items.map((item) => renderMenuItem(item))}
+                    {section.items.map((item) => (
+                        <React.Fragment key={item.id}>
+                            {renderMenuItem(item)}
+                        </React.Fragment>
+                    ))}
                 </>
             )}
         </>
@@ -72,9 +78,11 @@ function renderSection(section: Section, index: number) {
 function renderSubDropdown(dropdown: Dropdown) {
     return (
         <MantineMenu.Sub.Dropdown>
-            {dropdown.map((section, index) => {
-                return renderSection(section, index);
-            })}
+            {dropdown.map((section, index) => (
+                <React.Fragment key={section.id}>
+                    {renderSection(section, index)}
+                </React.Fragment>
+            ))}
         </MantineMenu.Sub.Dropdown>
     );
 }
@@ -82,9 +90,11 @@ function renderSubDropdown(dropdown: Dropdown) {
 function renderDropdown(dropdown: Dropdown) {
     return (
         <MantineMenu.Dropdown>
-            {dropdown.map((section, index) => {
-                return renderSection(section, index);
-            })}
+            {dropdown.map((section, index) => (
+                <React.Fragment key={section.id}>
+                    {renderSection(section, index)}
+                </React.Fragment>
+            ))}
         </MantineMenu.Dropdown>
     );
 }
