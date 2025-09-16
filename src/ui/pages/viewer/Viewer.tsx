@@ -20,19 +20,36 @@ import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { useMolstar } from "../../services/MolstarProvider";
 import { LoadingOverlay, useComputedColorScheme } from "@mantine/core";
+import {
+    useMenu,
+    type MenuItem,
+    type RootMenuItem,
+    type Section,
+} from "../../services/MenuProvider";
+import type { TFunction } from "i18next";
 
 export function Viewer() {
     const { t } = useTranslation();
-    const parentRef = createRef<HTMLDivElement>();
     const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
+    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
+
+    const edit = createEditRootMenuItem(t);
+    useEffect(() => {
+        addRootMenuItem(edit);
+        return () => {
+            deleteRootMenuItem(edit.id);
+        };
+    }, []);
 
     type CameraView = CameraState & {
         id: string;
         thumbnail?: Base64Png;
     };
     const [views, setViews] = useState<CameraView[]>([]);
+
+    const parentRef = createRef<HTMLDivElement>();
 
     useEffect(() => {
         initMolstar(
@@ -80,14 +97,6 @@ export function Viewer() {
                         paddingLeft: "0.5em",
                     }}
                 >
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            clearViewer();
-                        }}
-                    >
-                        {t("viewer.Clean")}
-                    </Button>
                     <Button
                         size="small"
                         onClick={() => {
@@ -218,4 +227,30 @@ async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
         'button[title="Toggle Controls Panel"]'
     ) as HTMLButtonElement;
     if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
+}
+
+function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
+    // TODO: use this icon: https://fontawesome.com/icons/broom?f=classic&s=solid.
+    const clearViewerItem: MenuItem = {
+        id: crypto.randomUUID(),
+        title: t("menu.pageSpecific.viewer.Clear viewer"),
+        task: {
+            action: () => {
+                clearViewer();
+            },
+            type: "direct",
+        },
+    };
+    const section: Section = {
+        id: crypto.randomUUID(),
+        items: [clearViewerItem],
+    };
+    const edit: RootMenuItem = {
+        id: crypto.randomUUID(),
+        title: "Edit",
+        task: [section],
+        priority: 3,
+    };
+
+    return edit;
 }

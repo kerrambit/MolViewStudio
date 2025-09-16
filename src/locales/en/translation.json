@@ -4,8 +4,16 @@
   "Viewer": "Viewer",
   "count is": "count is",
   "menu": {
-    "Quit Mol* App": "Quit Mol* App",
-    "DevTools": "DevTools"
+    "file": {
+      "File": "File",
+      "Quit Mol* App": "Quit Mol* App",
+      "DevTools": "DevTools"
+    },
+    "pageSpecific": {
+      "viewer": {
+        "Clear viewer": "Clear viewer"
+      }
+    }
   },
   "global": {
     "ServerStatus": {
@@ -17,7 +25,6 @@
     }
   },
   "viewer": {
-    "Clean": "Clean",
     "Load structure from file...": "Load structure from file...",
     "Load default PBD structure": "Load default PBD structure"
   }
