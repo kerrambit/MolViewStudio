@@ -3,6 +3,7 @@ import Home from "../pages/Home.tsx";
 import Settings from "../pages/Settings.tsx";
 import MainLayout from "../layouts/MainLayout.tsx";
 import { Viewer } from "../pages/viewer/Viewer.tsx";
+import { SidebarPage } from "../pages/SidebarPage.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -16,6 +17,7 @@ const routes: RouteObject[] = [
             { path: "home", Component: Home },
             { path: "settings", Component: Settings },
             { path: "viewer", Component: Viewer },
+            { path: "sidebar", Component: SidebarPage },
         ],
     },
     {

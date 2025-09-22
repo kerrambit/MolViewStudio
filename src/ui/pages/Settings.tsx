@@ -21,6 +21,7 @@ export default function Settings() {
                 <Link to="/">{t("Home")}</Link> |{" "}
                 <Link to="/settings">{t("Settings")}</Link> |{" "}
                 <Link to="/viewer">{t("Viewer")}</Link> |{" "}
+                <Link to="/sidebar">{t("Sidebar page")}</Link> |{" "}
             </nav>
             <h1>{t("Settings")}</h1>
             <div
