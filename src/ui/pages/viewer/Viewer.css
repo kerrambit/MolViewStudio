@@ -7,8 +7,10 @@
 }
 
 .viewer {
-    height: 100%;
-    padding-bottom: "2em";
-    display: "flex";
-    flex-direction: "column";
+  height: 100%;
+  padding-bottom: "2em";
+  display: "flex";
+  flex-direction: "column";
+  /* border-style: dashed;
+  border-color: rgb(179, 54, 58); */
 }

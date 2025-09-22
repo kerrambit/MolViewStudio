@@ -1,0 +1,13 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-width: 15%;
+    flex: 1;
+    padding-left: 1em;
+    padding-right: 1em;
+    margin-left: .5em;
+    background-color: var(--mantine-primary-color-1);
+    /* box-sizing: border-box;
+    border: 2px dotted red; */
+}

@@ -9,6 +9,7 @@ export default function Home() {
                 <Link to="/">{t("Home")}</Link> |{" "}
                 <Link to="/settings">{t("Settings")}</Link> |{" "}
                 <Link to="/viewer">{t("Viewer")}</Link> |{" "}
+                <Link to="/sidebar">{t("Sidebar page")}</Link> |{" "}
             </nav>
             <h1>{t("Home")}</h1>
         </div>

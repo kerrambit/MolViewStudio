@@ -4,6 +4,7 @@
   font-weight: 400;
   color: var(--mantine-color-text);
   background-color: var(--mantine-color-body);
+  overflow: hidden;
   
   font-synthesis: none;
   text-rendering: optimizeLegibility;
