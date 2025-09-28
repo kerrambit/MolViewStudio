@@ -1,5 +1,5 @@
 import { Navigate, type RouteObject } from "react-router-dom";
-import Home from "../pages/Home.tsx";
+import Home from "../pages/home/Home.tsx";
 import Settings from "../pages/Settings.tsx";
 import MainLayout from "../layouts/MainLayout.tsx";
 import { Viewer } from "../pages/viewer/Viewer.tsx";
