@@ -25,6 +25,7 @@ export default function Home() {
                     onRejectHandler(rejections);
                 }}
                 enableMultipleInputFiles={false}
+                allowedExtensions={["pbd"]}
             >
                 {renderDropzoneButtonsArea(actions)}
             </Dropzone>
