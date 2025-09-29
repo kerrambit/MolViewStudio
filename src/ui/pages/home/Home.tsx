@@ -12,99 +12,43 @@ import "@mantine/dropzone/styles.css";
 export default function Home() {
     const navigate = useNavigate();
     const { setFileData, setRegime } = useFileData();
+
+    const actions = { setFileData, setRegime, navigate };
+
     return (
         <div className="home">
             <Dropzone
                 onDrop={(files: FileWithPath[]) => {
-                    onDropHandler(files, setFileData, setRegime, navigate);
+                    onDropHandler(files, actions);
                 }}
                 onReject={(rejections: FileRejection[]) => {
                     onRejectHandler(rejections);
                 }}
                 enableMultipleInputFiles={false}
-                accept={{
-                    "image/png": [".pbd"],
-                }}
             >
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: "1em",
-                    }}
-                >
-                    <div style={{ pointerEvents: "auto" }}>
-                        <Button
-                            variant="ghost"
-                            onClick={() => {
-                                loggerUi.info(`Open file in viewer...`);
-                                window.electron
-                                    .openFileExplorer()
-                                    .then((fileData) => {
-                                        if (fileData) {
-                                            loggerUi.info(
-                                                `File <${fileData.path}> was selected.`
-                                            );
-                                            setFileData(fileData);
-                                            setRegime("toView");
-                                            navigate("/viewer");
-                                        } else {
-                                            loggerUi.error(`File was null!`);
-                                        }
-                                    })
-                                    .catch((error) => {
-                                        loggerUi.error(`${error}`);
-                                    });
-                            }}
-                        >
-                            Open file in viewer...
-                        </Button>
-                    </div>
-                    <div style={{ pointerEvents: "auto" }}>
-                        <Button
-                            variant="ghost"
-                            onClick={() => {
-                                loggerUi.info(`Process file...`);
-                                window.electron
-                                    .openFileExplorer()
-                                    .then((fileData) => {
-                                        if (fileData) {
-                                            loggerUi.info(
-                                                `File <${fileData.path}> was selected.`
-                                            );
-                                            setFileData(fileData);
-                                            setRegime("toProcess");
-                                            navigate("/viewer");
-                                        } else {
-                                            loggerUi.error(`File was null!`);
-                                        }
-                                    })
-                                    .catch((error) => {
-                                        loggerUi.error(`${error}`);
-                                    });
-                            }}
-                        >
-                            Process file...
-                        </Button>
-                    </div>
-                </div>
+                {renderDropzoneButtonsArea(actions)}
             </Dropzone>
         </div>
     );
 }
 
+// TODO: the part with file extensions must be reimplemented, basically this should be defined in one place (one file), similir thing happens also in electron/main.tsx
 function onDropHandler(
-    files: FileWithPath[],
-    setFileData: (fileData: FileData) => void,
-    setRegime: (regime: FileRegime) => void,
-    navigate: NavigateFunction
+    files: File[],
+    actions: {
+        setFileData: (fileData: FileData) => void;
+        setRegime: (regime: FileRegime) => void;
+        navigate: NavigateFunction;
+    }
 ) {
     if (files.length === 0) return;
 
-    loggerUi.info(`Dropzone accepted these files: <${files}>.`);
+    loggerUi.info(
+        `Dropzone accepted these files: ${files.map(
+            (file) => `<${file.name}>`
+        )}. Only the first file will be handled!`
+    );
     const file = files[0];
-    loggerUi.info(`Only the first file will be handled!`);
 
     const name = file.name;
     const extension = name.includes(".")
@@ -113,9 +57,10 @@ function onDropHandler(
     const path = (file as any).path ?? "";
 
     const binaryExtensions = ["cvsx"];
-    const toProcessExtensions: string[] = [];
+    const processableExtensions: string[] = [];
+
     const isBinary = binaryExtensions.includes(extension);
-    const isToProcess = toProcessExtensions.includes(extension);
+    const isToProcess = processableExtensions.includes(extension);
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -131,17 +76,25 @@ function onDropHandler(
                 : (result as string),
         };
 
-        loggerUi.info(`Converted file data: <${fileData}>.`);
         loggerUi.info(
-            `Based on <${
+            `Converted file data: <${JSON.stringify({
+                name: fileData.name,
+                extension: fileData.extension,
+                path: fileData.path,
+                binary: fileData.binary,
+            })}>.`
+        );
+        loggerUi.info(
+            `Based on file extenstions: <${
                 fileData.extension
             }>, the file data regime was set to <${
                 isToProcess ? "toProcess" : "toView"
             }>.`
         );
-        setFileData(fileData);
-        setRegime(isToProcess ? "toProcess" : "toView");
-        navigate("/viewer");
+
+        actions.setFileData(fileData);
+        actions.setRegime(isToProcess ? "toProcess" : "toView");
+        actions.navigate("/viewer");
     };
 
     if (isBinary) {
@@ -152,5 +105,77 @@ function onDropHandler(
 }
 
 function onRejectHandler(rejections: FileRejection[]) {
-    loggerUi.warn(`Dropzone rejected these files: <${rejections}>.`);
+    loggerUi.warn(
+        `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`
+    );
+}
+
+function renderDropzoneButtonsArea(actions: {
+    setFileData: (fileData: FileData) => void;
+    setRegime: (regime: FileRegime) => void;
+    navigate: NavigateFunction;
+}) {
+    return (
+        <div className="home__buttonsArea">
+            <div style={{ pointerEvents: "auto" }}>
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        dropzoneButtonHandler(
+                            {
+                                label: "Open file in viewer...",
+                                regime: "toView",
+                            },
+                            actions
+                        );
+                    }}
+                >
+                    Open file in viewer...
+                </Button>
+            </div>
+            <div style={{ pointerEvents: "auto" }}>
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        dropzoneButtonHandler(
+                            {
+                                label: "Process file...",
+                                regime: "toProcess",
+                            },
+                            actions
+                        );
+                    }}
+                >
+                    Process file...
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function dropzoneButtonHandler(
+    config: { label: string; regime: FileRegime },
+    actions: {
+        setFileData: (fileData: FileData) => void;
+        setRegime: (regime: FileRegime) => void;
+        navigate: NavigateFunction;
+    }
+) {
+    loggerUi.info(config.label);
+
+    window.electron
+        .openFileExplorer()
+        .then((fileData) => {
+            if (fileData) {
+                loggerUi.info(`File <${fileData.path}> was selected.`);
+                actions.setFileData(fileData);
+                actions.setRegime(config.regime);
+                actions.navigate("/viewer");
+            } else {
+                loggerUi.error(`File was null!`);
+            }
+        })
+        .catch((error) => {
+            loggerUi.error(`${error}`);
+        });
 }

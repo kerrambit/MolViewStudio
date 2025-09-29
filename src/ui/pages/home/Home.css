@@ -4,3 +4,10 @@
     width: 100%;
     height: 100%;
 }
+
+.home__buttonsArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+}
