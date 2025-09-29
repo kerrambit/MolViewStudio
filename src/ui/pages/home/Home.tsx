@@ -31,7 +31,8 @@ export default function Home() {
                 }}
                 enableMultipleInputFiles={false}
                 accept={{
-                    "application/octet-stream": [".pdb"],
+                    "text/plain": [".pdb"],
+                    "image/png": [".png"],
                 }}
             >
                 <div
