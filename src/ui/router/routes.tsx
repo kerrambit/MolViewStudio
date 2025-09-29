@@ -1,9 +1,9 @@
 import { Navigate, type RouteObject } from "react-router-dom";
 import Home from "../pages/home/Home.tsx";
 import Settings from "../pages/Settings.tsx";
-import MainLayout from "../layouts/MainLayout.tsx";
 import { Viewer } from "../pages/viewer/Viewer.tsx";
 import { SidebarPage } from "../pages/SidebarPage.tsx";
+import { MainLayoutWithMenuNavigation } from "../layouts/MainLayoutWithMenuNavigation.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -12,7 +12,7 @@ const routes: RouteObject[] = [
     },
     {
         path: "/",
-        Component: MainLayout,
+        Component: MainLayoutWithMenuNavigation,
         children: [
             { path: "home", Component: Home },
             { path: "settings", Component: Settings },

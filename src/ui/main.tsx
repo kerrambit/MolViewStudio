@@ -5,7 +5,6 @@ import { UserSettingsProvider } from "./services/UserSettingsProvider.tsx";
 import { ThemeProvider } from "./services/ThemeProvider.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MolstarProvider } from "./services/MolstarProvider.tsx";
-import { MenuProvider } from "./services/MenuProvider.tsx";
 import { FileDataProvider } from "./services/FileDataProvider.tsx";
 
 import "@mantine/core/styles.css";
@@ -18,13 +17,11 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
         <ThemeProvider>
             <UserSettingsProvider>
-                <MenuProvider>
-                    <FileDataProvider>
-                        <MolstarProvider>
-                            <RouterProvider router={router} />
-                        </MolstarProvider>
-                    </FileDataProvider>
-                </MenuProvider>
+                <FileDataProvider>
+                    <MolstarProvider>
+                        <RouterProvider router={router}></RouterProvider>
+                    </MolstarProvider>
+                </FileDataProvider>
             </UserSettingsProvider>
         </ThemeProvider>
     </QueryClientProvider>

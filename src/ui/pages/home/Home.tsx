@@ -1,5 +1,4 @@
-import { Link, useNavigate, type NavigateFunction } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { Dropzone } from "../../components/common/dropzone/Dropzone";
 import { Button } from "../../components/common/button/Button";
 import type { FileRejection, FileWithPath } from "@mantine/dropzone";
@@ -11,17 +10,10 @@ import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
 
 export default function Home() {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const { setFileData, setRegime } = useFileData();
     return (
         <div className="home">
-            <nav>
-                <Link to="/">{t("Home")}</Link> |{" "}
-                <Link to="/settings">{t("Settings")}</Link> |{" "}
-                <Link to="/viewer">{t("Viewer")}</Link> |{" "}
-                <Link to="/sidebar">{t("Sidebar page")}</Link> |{" "}
-            </nav>
             <Dropzone
                 onDrop={(files: FileWithPath[]) => {
                     onDropHandler(files, setFileData, setRegime, navigate);
@@ -113,7 +105,7 @@ function onDropHandler(
 
     loggerUi.info(`Dropzone accepted these files: <${files}>.`);
     const file = files[0];
-    loggerUi.warn(`Only the first file will be handled!`);
+    loggerUi.info(`Only the first file will be handled!`);
 
     const name = file.name;
     const extension = name.includes(".")
