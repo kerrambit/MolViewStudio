@@ -23,8 +23,7 @@ export default function Home() {
                 }}
                 enableMultipleInputFiles={false}
                 accept={{
-                    "text/plain": [".pdb"],
-                    "image/png": [".png"],
+                    "image/png": [".pbd"],
                 }}
             >
                 <div
