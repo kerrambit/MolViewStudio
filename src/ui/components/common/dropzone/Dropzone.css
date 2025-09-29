@@ -2,7 +2,7 @@
     display: flex;
     justify-content: center;
     height: 100%;
-    width: 100%;        
+    width: 100%;       
 }
 
 .dropzone__body {
@@ -10,11 +10,11 @@
     flex-direction: column;
     justify-content: center;
     height: 100%;
-    gap: 5em;            
+    gap: 5em;
 }
 
 .dropzone__state {
     display: flex;
     justify-content: center;
-    align-items: center;      
+    align-items: center;
 }
