@@ -1,6 +1,6 @@
 import { type FileRejection } from "@mantine/dropzone";
 import { useDropzone } from "react-dropzone";
-import { IconDragDrop, type ReactNode } from "@tabler/icons-react";
+import { IconDragDrop, IconX, type ReactNode } from "@tabler/icons-react";
 
 import "./Dropzone.css";
 
@@ -13,37 +13,19 @@ export interface DropzoneProps {
 }
 
 export function Dropzone(props: DropzoneProps) {
-    const { /*acceptedFiles, fileRejections,*/ getRootProps, getInputProps } =
-        useDropzone({
-            validator: createValidator(props.allowedExtensions ?? []),
-            noClick: true,
-            multiple: props.enableMultipleInputFiles,
-            onDropAccepted(files, _) {
-                props.onDrop(files);
-            },
-            onDropRejected(fileRejections, _) {
-                if (props.onReject) {
-                    props.onReject(fileRejections);
-                }
-            },
-        });
-
-    // const acceptedFileItems = acceptedFiles.map((file) => (
-    //     <li key={file.path}>
-    //         {file.path} - {file.size} bytes
-    //     </li>
-    // ));
-
-    // const fileRejectionItems = fileRejections.map(({ file, errors }) => (
-    //     <li key={file.path}>
-    //         {file.path} - {file.size} bytes
-    //         <ul>
-    //             {errors.map((e) => (
-    //                 <li key={e.code}>{e.message}</li>
-    //             ))}
-    //         </ul>
-    //     </li>
-    // ));
+    const { fileRejections, getRootProps, getInputProps } = useDropzone({
+        validator: createValidator(props.allowedExtensions ?? []),
+        noClick: true,
+        multiple: props.enableMultipleInputFiles,
+        onDropAccepted(files, _) {
+            props.onDrop(files);
+        },
+        onDropRejected(fileRejections, _) {
+            if (props.onReject) {
+                props.onReject(fileRejections);
+            }
+        },
+    });
 
     return (
         <section className="container dropzone">
@@ -52,39 +34,51 @@ export function Dropzone(props: DropzoneProps) {
                 <div className="dropzone__body">
                     {props.children}
                     <div className="dropzone__state">
-                        <IconDragDrop
-                            size={160}
-                            color="var(--mantine-color-dimmed)"
-                            stroke={1.5}
-                        />
+                        {fileRejections.length > 0 ? (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <IconX
+                                    size={160}
+                                    color="var(--mantine-color-red-filled)"
+                                    stroke={2}
+                                />
+                                <p className="dropzone__error">
+                                    Some files were rejected. Please check the
+                                    file types and try again.
+                                    <br />
+                                    Details: <br />
+                                    {fileRejections
+                                        .flatMap((rej) =>
+                                            rej.errors.map((err) => err.message)
+                                        )
+                                        .map((msg, idx, arr) => (
+                                            <span key={idx}>
+                                                {msg}
+                                                {idx < arr.length - 1
+                                                    ? ", "
+                                                    : null}
+                                                <br />
+                                            </span>
+                                        ))}
+                                </p>
+                            </div>
+                        ) : (
+                            <IconDragDrop
+                                size={160}
+                                color="var(--mantine-color-dimmed)"
+                                stroke={1.5}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
         </section>
     );
-
-    // return (
-    //     <MantineDropZone
-    //         className="dropzone"
-    //         onDrop={props.onDrop}
-    //         onReject={props.onReject}
-    //         activateOnClick={false}
-    //         multiple={props.enableMultipleInputFiles}
-    //     >
-    //         <div className="dropzone__body">
-    //             {props.children}
-    //             <div className="dropzone__state">
-    //                 <MantineDropZone.Idle>
-    //                     <IconDragDrop
-    //                         size={160}
-    //                         color="var(--mantine-color-dimmed)"
-    //                         stroke={1.5}
-    //                     />
-    //                 </MantineDropZone.Idle>
-    //             </div>
-    //         </div>
-    //     </MantineDropZone>
-    // );
 }
 
 function createValidator(allowedExtensions: string[]) {
@@ -96,7 +90,9 @@ function createValidator(allowedExtensions: string[]) {
         ) {
             return {
                 code: "unsupported-file-extension",
-                message: `Unsupported extension <${file.name}>!`,
+                message: `Unsupported extension <${extension}> for file <${
+                    file.name
+                }>! Supported extensions are ${allowedExtensions.join(", ")}.`,
             };
         }
 

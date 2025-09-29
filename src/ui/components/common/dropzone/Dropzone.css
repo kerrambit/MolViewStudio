@@ -18,3 +18,10 @@
     justify-content: center;
     align-items: center;
 }
+
+.dropzone__error {
+  margin-top: 2.5em;
+  color: var(--mantine-color-red-filled);
+  font-size: 0.9rem;
+  text-align: center;
+}
