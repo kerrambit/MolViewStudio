@@ -70,7 +70,6 @@ jobs:
         with:
           name: windows-build
           path: |
-            dist/*.exe
             dist/*.msi
 
       # - name: Upload build artifacts (macOS)
