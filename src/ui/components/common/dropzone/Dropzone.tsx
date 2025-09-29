@@ -35,6 +35,7 @@ export function Dropzone(props: DropzoneProps) {
                     {props.children}
                     <div className="dropzone__state">
                         {fileRejections.length > 0 ? (
+                            // TODO: do this via notifications
                             <div
                                 style={{
                                     display: "flex",
