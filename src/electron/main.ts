@@ -102,6 +102,7 @@ app.on("ready", () => {
         return { isDev: isDev() };
     });
 
+    // TODO: we should probably return File here and not custom FileData and unify the file processing in UI's dropzone component
     Ipc.Electron.handle("openFileExplorer", async () => {
         const openDialogResult = await dialog.showOpenDialog({
             properties: ["openFile"],

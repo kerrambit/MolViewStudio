@@ -27,6 +27,7 @@ import {
     type Section,
 } from "../../services/MenuProvider";
 import type { TFunction } from "i18next";
+import { useFileData } from "../../services/FileDataProvider";
 
 export function Viewer() {
     const { t } = useTranslation();
@@ -34,6 +35,7 @@ export function Viewer() {
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
+    const { fileData, regime } = useFileData();
 
     const edit = createEditRootMenuItem(t);
     useEffect(() => {
@@ -63,6 +65,9 @@ export function Viewer() {
         ).then(() => {
             translateMolstarUi(parentRef);
             setMolstarLoading(false);
+            if (regime === "toView" && fileData && !snapshot) {
+                molstarLoadStructureFromFile(fileData);
+            }
         });
 
         return () => {

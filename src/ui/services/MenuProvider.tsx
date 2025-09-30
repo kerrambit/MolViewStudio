@@ -17,6 +17,7 @@ import {
     type Icon,
     type IconProps,
 } from "@tabler/icons-react";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 
 /**
  * The action can be either:
@@ -81,8 +82,10 @@ export function useMenu() {
 
 export function MenuProvider({ children }: { children: ReactNode }) {
     const [isDev, setIsDev] = useState(false);
-
-    const [menu, setMenu] = useState<Menu>(() => createInitialMenu(false));
+    const navigate = useNavigate();
+    const [menu, setMenu] = useState<Menu>(() =>
+        createInitialMenu(false, navigate)
+    );
 
     const deleteRootMenuItem = (id: string) => {
         let toDelete: RootMenuItem | undefined;
@@ -112,7 +115,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-        setMenu(createInitialMenu(isDev));
+        setMenu(createInitialMenu(isDev, navigate));
     }, [isDev]);
 
     return (
@@ -130,7 +133,7 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     );
 }
 
-function createInitialMenu(isDev: boolean): Menu {
+function createInitialMenu(isDev: boolean, navigate: NavigateFunction): Menu {
     // TODO: translate titles
     const openFileInViewer: MenuItem = {
         id: crypto.randomUUID(),
@@ -220,7 +223,7 @@ function createInitialMenu(isDev: boolean): Menu {
         title: "Settings",
         task: {
             action: () => {
-                console.log("Open settings");
+                navigate("/settings");
             },
             type: "direct",
         },
