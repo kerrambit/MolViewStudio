@@ -1,14 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { useUserSettings } from "../services/UserSettingsProvider";
 import { ThemeSelector } from "../components/settings/ThemeSelector";
 import { Button } from "../components/common/button/Button";
 import { SchemeSelector } from "../components/settings/SchemeSelector";
-import { IconArrowLeft } from "@tabler/icons-react";
 
-export default function Settings() {
+export default function OldSettings() {
     const { t, i18n } = useTranslation();
-    const navigate = useNavigate();
 
     const { settings, setSettings } = useUserSettings();
 
@@ -19,13 +16,6 @@ export default function Settings() {
 
     return (
         <div>
-            <Button
-                onClick={() => {
-                    navigate(-1);
-                }}
-                icon={IconArrowLeft}
-                variant="secondary"
-            ></Button>
             <h1>{t("Settings")}</h1>
             <div
                 style={{
