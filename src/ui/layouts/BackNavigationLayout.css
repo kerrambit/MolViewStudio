@@ -26,18 +26,27 @@
 }
 
 .layout__back-link {
+  color: var(--color-grey-dark) !important;
+  background-color: transparent !important;
+  transition: all 0.15s ease !important;
   cursor: pointer;
   font-weight: bold;
+  font-size: 13px !important;
+  border-radius: 6px;
   padding: 0.35em 20px;
   margin-left: 0.25em;
-  border-radius: 6px;
+}
+
+[data-mantine-color-scheme="dark"] .layout__back-link {
+    color: var(--color-grey-light) !important;
 }
 
 .layout__back-link:hover {
-  background-color: var(--color-grey-light);
+    background-color: var(--color-grey-light-hover) !important;
+    border-color: var(--color-grey) !important;
 }
 
 [data-mantine-color-scheme="dark"] .layout__back-link:hover {
-  background-color: var(--color-grey-dark);
+    background-color: var(--color-grey-dark-hover) !important;
+    border-color: var(--color-grey) !important;
 }
-
