@@ -16,7 +16,7 @@ export default function Watermark(props: WatermarkProps) {
                 transform: "translate(-50%, -50%)",
                 zIndex: 0,
                 pointerEvents: "none",
-                opacity: 0.45,
+                opacity: 0.25,
             }}
         />
     );
