@@ -34,10 +34,10 @@
 }
 
 .layout__back-link:hover {
-  background-color: #ccc;
+  background-color: var(--color-grey-light);
 }
 
 [data-mantine-color-scheme="dark"] .layout__back-link:hover {
-  background-color: #191919;
+  background-color: var(--color-grey-dark);
 }
 

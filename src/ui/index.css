@@ -10,8 +10,18 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Varibles served mainly for a top menu color pallete. */
+  --color-dark: #242424;
+  --color-grey-dark: #333;
+  --color-grey-dark-hover: #474646;
+  --color-light: #faf7f7;
+  --color-grey-light: #ccc;
+  --color-grey-light-hover: #e5e5e5;
+  --color-grey: #999;
 }
 
+/* TODO: remove when navigation links are gone in Viewer page */
 a {
   font-weight: 500;
   color: var(--mantine-primary-color-6);
