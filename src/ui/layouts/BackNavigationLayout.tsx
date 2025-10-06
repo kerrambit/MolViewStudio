@@ -17,13 +17,6 @@ export function BackNavigationLayout() {
                     >
                         Go back
                     </span>
-                    <span
-                        className="layout__back-link"
-                        onClick={() => navigate("/old-settings")}
-                        title="Go to the previous page."
-                    >
-                        Old settings page
-                    </span>
                 </TopBar>
             </div>
             <div className="layout__content">

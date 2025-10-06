@@ -5,7 +5,7 @@ import { Viewer } from "../pages/viewer/Viewer.tsx";
 import { SidebarPage } from "../pages/SidebarPage.tsx";
 import { MainLayoutWithMenuNavigation } from "../layouts/MainLayoutWithMenuNavigation.tsx";
 import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
-import OldSettings from "../pages/OldSettings.tsx";
+import { UiSettings } from "../pages/settings/UiSettings.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -29,10 +29,9 @@ const routes: RouteObject[] = [
             { index: true, Component: Settings },
             {
                 path: "general",
-                Component: Settings,
                 children: [
                     { path: "language", Component: Settings },
-                    { path: "ui", Component: Settings },
+                    { path: "ui", Component: UiSettings },
                     { path: "notifications", Component: Settings },
                     { path: "help", Component: Settings },
                 ],
@@ -54,7 +53,6 @@ const routes: RouteObject[] = [
             },
             {
                 path: "formats",
-                Component: Settings,
                 children: [
                     { path: "input", Component: Settings },
                     { path: "export", Component: Settings },
@@ -62,18 +60,12 @@ const routes: RouteObject[] = [
             },
             {
                 path: "processing",
-                Component: Settings,
                 children: [
                     { path: "general", Component: Settings },
                     { path: "per-format", Component: Settings },
                 ],
             },
         ],
-    },
-    {
-        path: "/old-settings",
-        Component: BackNavigationLayout,
-        children: [{ index: true, Component: OldSettings }],
     },
     {
         path: "*",
