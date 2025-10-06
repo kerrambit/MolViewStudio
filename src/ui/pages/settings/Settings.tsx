@@ -1,25 +1,14 @@
-import {
-    useLocation,
-    useNavigate,
-    type NavigateFunction,
-} from "react-router-dom";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { IconSettingsFilled } from "@tabler/icons-react";
 import Watermark from "../../components/common/watermark/Watermark";
 
 import "./Settings.css";
 
 export default function Settings() {
-    const location = useLocation();
     const navigate = useNavigate();
-
-    const pathParts = location.pathname
-        .split("/")
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1));
 
     return (
         <div className="settings">
-            {/* <h1>{pathParts.join(" - ")}</h1> */}
             <h1>Settings</h1>
             <Watermark icon={IconSettingsFilled} />
             {renderTree(navigate)}
