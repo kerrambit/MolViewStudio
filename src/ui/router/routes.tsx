@@ -6,6 +6,7 @@ import { SidebarPage } from "../pages/SidebarPage.tsx";
 import { MainLayoutWithMenuNavigation } from "../layouts/MainLayoutWithMenuNavigation.tsx";
 import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
 import { UiSettings } from "../pages/settings/UiSettings.tsx";
+import { LanguageSettings } from "../pages/settings/LanguageSettings.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -30,7 +31,7 @@ const routes: RouteObject[] = [
             {
                 path: "general",
                 children: [
-                    { path: "language", Component: Settings },
+                    { path: "language", Component: LanguageSettings },
                     { path: "ui", Component: UiSettings },
                     { path: "notifications", Component: Settings },
                     { path: "help", Component: Settings },
