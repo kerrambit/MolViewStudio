@@ -11,7 +11,7 @@ export function SchemeSelector() {
     return (
         <div>
             <Button
-                variant={"primary"}
+                variant={"secondary"}
                 size="large"
                 tooltip={t("Toggle scheme.")}
                 ariaLabel={t("Toggle scheme.")}

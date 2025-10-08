@@ -1,17 +1,17 @@
 .menu__title  {
     margin-left: 0.5em;
     margin-right: 0.5em;
-    color: #333;
+    color: var(--color-grey-dark);
 }
 
 [data-mantine-color-scheme="dark"] .menu__title  {
-    color: #ccc !important;
+    color: var(--color-grey-light) !important;
 }
 
 .menu__toggle {
-    color: #333 !important;
+    color: var(--color-grey-dark) !important;
     background-color: transparent !important;
-    border-right: 1px solid #ccc !important;
+    border-right: 1px solid var(--color-grey-light) !important;
     font-weight: 500 !important;
     font-size: 13px !important;
     padding: 4px 12px !important;
@@ -20,25 +20,23 @@
 }
 
 [data-mantine-color-scheme="dark"] .menu__toggle {
-    color: #ccc !important;
+    color: var(--color-grey-light) !important;
 }
 
 .menu__toggle--first {
-    border-left: 1px solid #ccc !important;
+    border-left: 1px solid var(--color-grey-light) !important;
 }
 
 [data-mantine-color-scheme="dark"] .menu__toggle--first {
-    border-left: 1px solid #ccc !important;
+    border-left: 1px solid var(--color-grey-light) !important;
 }
 
 .menu__toggle:hover {
-    background-color: #e5e5e5 !important;
-    border-color: #999 !important;
-    color: #222 !important;
+    background-color: var(--color-grey-light-hover) !important;
+    border-color: var(--color-grey) !important;
 }
 
 [data-mantine-color-scheme="dark"] .menu__toggle:hover {
-    background-color: #615f5f !important;
-    border-color: #999 !important;
-    color: #ccc !important;
+    background-color: var(--color-grey-dark-hover) !important;
+    border-color: var(--color-grey) !important;
 }

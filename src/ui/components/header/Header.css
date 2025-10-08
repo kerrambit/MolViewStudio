@@ -1,25 +1,3 @@
-.header {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    background-color: rgb(250, 247, 247);
-    border-bottom-style: solid;
-    border-bottom-width: 1px;
-    border-bottom-color: var(--mantine-primary-color-3);
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 0.25em;
-    padding-top: 0.25em;
-    /* border-style: dashed;
-    border-color: #23cf17; */
-}
-
-[data-mantine-color-scheme="dark"] .header {
-    background-color: rgb(41, 40, 40);
-    /* border-style: dashed;
-    border-color: #23cf17; */
-}
-
 .header__right-side {
     display: flex;
     justify-content: space-around;
