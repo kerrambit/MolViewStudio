@@ -7,13 +7,15 @@ import {
     initMolstar,
     loadDefaultPbdStructure,
     disposeMolstar,
-    loadStructureFromFile as molstarLoadStructureFromFile,
+    loadDataFromFile,
     getSnapshot,
     type CameraState,
     getCameraState,
     setCamera,
     getCanvasImageAsUri,
     type Base64Png,
+    loadDefaultMVSJFile,
+    loadDefaultMVSXFile,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -63,7 +65,7 @@ export function Viewer() {
             },
             snapshot
         ).then(() => {
-            translateMolstarUi(parentRef);
+            // translateMolstarUi(parentRef);
             setMolstarLoading(false);
             if (regime === "toView" && fileData && !snapshot) {
                 molstarLoadStructureFromFile(fileData);
@@ -118,6 +120,22 @@ export function Viewer() {
                         }}
                     >
                         {t("viewer.Load default PBD structure")}
+                    </Button>
+                    <Button
+                        size="small"
+                        onClick={() => {
+                            loadDefaultMVSJFile();
+                        }}
+                    >
+                        {"Load default MVSJ structure"}
+                    </Button>
+                    <Button
+                        size="small"
+                        onClick={() => {
+                            loadDefaultMVSXFile();
+                        }}
+                    >
+                        {"Load default MVSX structure"}
                     </Button>
                     <Button
                         size="small"
@@ -208,32 +226,32 @@ export function Viewer() {
 
 async function loadStructureFromFile() {
     const fileData = await window.electron.openFileExplorer();
-    molstarLoadStructureFromFile(fileData);
+    loadDataFromFile(fileData);
 }
 
-async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
-    const btn = parent.current?.querySelector(
-        'button[title="Reset Zoom"]'
-    ) as HTMLButtonElement;
-    if (btn) btn.title = "Custom Reset";
-    const btn2 = parent.current?.querySelector(
-        'button[title*="Set camera zoom to fit"]'
-    ) as HTMLButtonElement;
-    if (btn) {
-        btn2.title = "Custom Reset Tooltip";
-        btn2.textContent = "Custom Reset";
-    }
+// async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
+//     const btn = parent.current?.querySelector(
+//         'button[title="Reset Zoom"]'
+//     ) as HTMLButtonElement;
+//     if (btn) btn.title = "Custom Reset";
+//     const btn2 = parent.current?.querySelector(
+//         'button[title*="Set camera zoom to fit"]'
+//     ) as HTMLButtonElement;
+//     if (btn) {
+//         btn2.title = "Custom Reset Tooltip";
+//         btn2.textContent = "Custom Reset";
+//     }
 
-    const screenshotBtn = parent.current?.querySelector(
-        'button[title="Screenshot / State Snapshot"]'
-    ) as HTMLButtonElement;
-    if (screenshotBtn) screenshotBtn.style.display = "none";
+//     const screenshotBtn = parent.current?.querySelector(
+//         'button[title="Screenshot / State Snapshot"]'
+//     ) as HTMLButtonElement;
+//     if (screenshotBtn) screenshotBtn.style.display = "none";
 
-    const toggleControlsBtn = parent.current?.querySelector(
-        'button[title="Toggle Controls Panel"]'
-    ) as HTMLButtonElement;
-    if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
-}
+//     const toggleControlsBtn = parent.current?.querySelector(
+//         'button[title="Toggle Controls Panel"]'
+//     ) as HTMLButtonElement;
+//     if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
+// }
 
 function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
     // TODO: use this icon: https://fontawesome.com/icons/broom?f=classic&s=solid.
