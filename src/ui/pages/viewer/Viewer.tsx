@@ -1,4 +1,4 @@
-import { useEffect, createRef, type RefObject, useState } from "react";
+import { useEffect, createRef, /*type RefObject,*/ useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../components/common/button/Button";
@@ -33,7 +33,7 @@ import { useFileData } from "../../services/FileDataProvider";
 
 export function Viewer() {
     const { t } = useTranslation();
-    const { snapshot, setSnapshot } = useMolstar();
+    const { /*snapshot,*/ setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
@@ -63,12 +63,13 @@ export function Viewer() {
                 isExpanded: false,
                 darkMode: colorScheme === "dark",
             },
-            snapshot
+            null
         ).then(() => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
-            if (regime === "toView" && fileData && !snapshot) {
-                molstarLoadStructureFromFile(fileData);
+
+            if (regime === "toView" && fileData /*&& !snapshot*/) {
+                loadDataFromFile(fileData);
             }
         });
 
