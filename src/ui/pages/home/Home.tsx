@@ -57,7 +57,7 @@ function onDropHandler(
         : "";
     const path = (file as any).path ?? "";
 
-    const binaryExtensions = ["cvsx"];
+    const binaryExtensions = ["cvsx", "mvsx"];
     const processableExtensions: string[] = [];
 
     const isBinary = binaryExtensions.includes(extension);
