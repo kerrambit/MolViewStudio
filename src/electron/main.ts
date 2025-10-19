@@ -112,6 +112,10 @@ app.on("ready", () => {
                     extensions: ["*"],
                 },
                 {
+                    name: "MVS Extension Files",
+                    extensions: ["mvsj", "mvsx"],
+                },
+                {
                     name: "Structural Files",
                     extensions: ["pdb", "cif", "mcif", "sdf"],
                 },
@@ -135,10 +139,12 @@ app.on("ready", () => {
             const fileName = path.basename(filePath);
             const fileExtension = path.extname(filePath).toLowerCase().slice(1);
 
-            let fileContent;
-            if (fileExtension === "cvsx") {
-                fileContent = readFileSync(filePath);
-                fileContent = new Uint8Array(fileContent);
+            let fileContent: string | Uint8Array<ArrayBuffer>;
+            if (fileExtension === "mvsx" || fileExtension === "cvsx") {
+                const buffer = readFileSync(filePath);
+                fileContent = new Uint8Array(buffer);
+            } else if (fileExtension === "mvsj") {
+                fileContent = readFileSync(filePath, "utf8");
             } else {
                 fileContent = readFileSync(filePath, "utf8");
             }
@@ -147,7 +153,7 @@ app.on("ready", () => {
                 path: filePath,
                 extension: fileExtension,
                 name: fileName,
-                binary: fileExtension === "cvsx",
+                binary: fileExtension === "cvsx" || fileExtension === "mvsx",
                 content: fileContent,
             };
         } catch (err) {

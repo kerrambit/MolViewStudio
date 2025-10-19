@@ -65,9 +65,9 @@ export type Menu = RootMenuItem[];
 type MenuContextType = {
     menu: Menu;
     setMenu: React.Dispatch<React.SetStateAction<Menu>>;
-    retrieveIdByTitle: (name: string) => string | undefined;
-    deleteRootMenuItem: (id: string) => RootMenuItem | undefined;
     addRootMenuItem: (item: RootMenuItem) => void;
+    deleteRootMenuItem: (id: string) => RootMenuItem | undefined;
+    retrieveIdByTitle: (name: string) => string | undefined;
 };
 
 export const MenuContext = createContext<MenuContextType | null>(null);
@@ -87,6 +87,12 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         createInitialMenu(false, navigate)
     );
 
+    const addRootMenuItem = (item: RootMenuItem) => {
+        setMenu((prev) => {
+            return [...prev, item];
+        });
+    };
+
     const deleteRootMenuItem = (id: string) => {
         let toDelete: RootMenuItem | undefined;
 
@@ -102,12 +108,6 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         return menu.find((item) => item.title === name)?.id;
     };
 
-    const addRootMenuItem = (item: RootMenuItem) => {
-        setMenu((prev) => {
-            return [...prev, item];
-        });
-    };
-
     useEffect(() => {
         window.electron.requestEnvironment().then((env) => {
             setIsDev(env.isDev);
@@ -115,8 +115,15 @@ export function MenuProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-        setMenu(createInitialMenu(isDev, navigate));
-    }, [isDev]);
+        setMenu((prev) => {
+            const previousDynamic = prev.filter(
+                (item) => !getInitialMenuItemTitles().includes(item.title)
+            );
+
+            const initial = createInitialMenu(isDev, navigate);
+            return [...initial, ...previousDynamic];
+        });
+    }, [isDev, navigate]);
 
     return (
         <MenuContext.Provider
@@ -131,6 +138,11 @@ export function MenuProvider({ children }: { children: ReactNode }) {
             {children}
         </MenuContext.Provider>
     );
+}
+8;
+
+function getInitialMenuItemTitles() {
+    return ["File", "Settings", "Help"];
 }
 
 function createInitialMenu(isDev: boolean, navigate: NavigateFunction): Menu {
