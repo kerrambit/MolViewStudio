@@ -1,3 +1,4 @@
+import React from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
 import { useTheme } from "../../../services/ThemeProvider";
 import { useEffect, useState } from "react";
@@ -12,7 +13,6 @@ import {
 } from "../../../services/MenuProvider";
 
 import "./Menu.css";
-import React from "react";
 
 interface MenuProps {
     className?: string;

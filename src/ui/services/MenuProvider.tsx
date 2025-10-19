@@ -1,23 +1,17 @@
 import React, {
     createContext,
     useState,
-    type ReactNode,
     useContext,
     type ForwardRefExoticComponent,
     type RefAttributes,
-    useEffect,
 } from "react";
 import "../i18n";
 import {
-    IconChartBubbleFilled,
     IconCircleDashedX,
-    IconFileTime,
-    IconFolderOpen,
     IconUserCog,
     type Icon,
     type IconProps,
 } from "@tabler/icons-react";
-import { useNavigate, type NavigateFunction } from "react-router-dom";
 
 /**
  * The action can be either:
@@ -29,7 +23,9 @@ import { useNavigate, type NavigateFunction } from "react-router-dom";
 export type ActionType = "direct" | "secondary";
 
 export type MenuIcon = {
-    icon: ForwardRefExoticComponent<IconProps & RefAttributes<Icon>>;
+    icon:
+        | ForwardRefExoticComponent<IconProps & RefAttributes<Icon>>
+        | React.ComponentType<React.SVGProps<SVGSVGElement>>;
     position: "left" | "right";
 };
 
@@ -68,6 +64,11 @@ type MenuContextType = {
     addRootMenuItem: (item: RootMenuItem) => void;
     deleteRootMenuItem: (id: string) => RootMenuItem | undefined;
     retrieveIdByTitle: (name: string) => string | undefined;
+    addMenuItemIntoSection: (
+        rootMenuItemId: string,
+        sectionId: string,
+        newItem: MenuItem
+    ) => void;
 };
 
 export const MenuContext = createContext<MenuContextType | null>(null);
@@ -80,17 +81,71 @@ export function useMenu() {
     return context;
 }
 
-export function MenuProvider({ children }: { children: ReactNode }) {
-    const [isDev, setIsDev] = useState(false);
-    const navigate = useNavigate();
+type MenuProviderProps = {
+    children: React.ReactNode;
+    isDev: boolean;
+    navigate: (path: string) => void;
+};
+
+export function MenuProvider({ children, isDev, navigate }: MenuProviderProps) {
     const [menu, setMenu] = useState<Menu>(() =>
-        createInitialMenu(false, navigate)
+        createInitialMenu(isDev, navigate)
     );
 
     const addRootMenuItem = (item: RootMenuItem) => {
         setMenu((prev) => {
             return [...prev, item];
         });
+    };
+
+    const addMenuItemIntoSection = (
+        rootMenuItemId: string,
+        sectionId: string,
+        newItem: MenuItem
+    ) => {
+        const addItemToSection = (sections: Dropdown): Dropdown => {
+            return sections.map((section) => {
+                if (section.id === sectionId) {
+                    const alreadyExists = section.items.some(
+                        (item) => item.id === newItem.id
+                    );
+                    if (alreadyExists) {
+                        return section;
+                    }
+                    return {
+                        ...section,
+                        items: [...section.items, newItem],
+                    };
+                }
+
+                const updatedItems = section.items.map((item) => {
+                    if (Array.isArray(item.task)) {
+                        return {
+                            ...item,
+                            task: addItemToSection(item.task),
+                        };
+                    }
+                    return item;
+                });
+
+                return {
+                    ...section,
+                    items: updatedItems,
+                };
+            });
+        };
+
+        setMenu((prev) =>
+            prev.map((root) => {
+                if (root.id !== rootMenuItemId) return root;
+                if (!Array.isArray(root.task)) return root;
+
+                return {
+                    ...root,
+                    task: addItemToSection(root.task),
+                };
+            })
+        );
     };
 
     const deleteRootMenuItem = (id: string) => {
@@ -108,23 +163,6 @@ export function MenuProvider({ children }: { children: ReactNode }) {
         return menu.find((item) => item.title === name)?.id;
     };
 
-    useEffect(() => {
-        window.electron.requestEnvironment().then((env) => {
-            setIsDev(env.isDev);
-        });
-    }, []);
-
-    useEffect(() => {
-        setMenu((prev) => {
-            const previousDynamic = prev.filter(
-                (item) => !getInitialMenuItemTitles().includes(item.title)
-            );
-
-            const initial = createInitialMenu(isDev, navigate);
-            return [...initial, ...previousDynamic];
-        });
-    }, [isDev, navigate]);
-
     return (
         <MenuContext.Provider
             value={{
@@ -133,59 +171,20 @@ export function MenuProvider({ children }: { children: ReactNode }) {
                 retrieveIdByTitle,
                 deleteRootMenuItem,
                 addRootMenuItem,
+                addMenuItemIntoSection,
             }}
         >
             {children}
         </MenuContext.Provider>
     );
 }
-8;
 
-function getInitialMenuItemTitles() {
-    return ["File", "Settings", "Help"];
-}
-
-function createInitialMenu(isDev: boolean, navigate: NavigateFunction): Menu {
+function createInitialMenu(
+    isDev: boolean,
+    navigate: (path: string) => void
+): Menu {
     // TODO: translate titles
-    const openFileInViewer: MenuItem = {
-        id: crypto.randomUUID(),
-        title: "Open file in viewer",
-        icon: { icon: IconFolderOpen, position: "left" },
-        task: {
-            action: () => {
-                console.log("Open file in viewer...");
-            },
-            type: "secondary",
-        },
-    };
-    const processFile: MenuItem = {
-        id: crypto.randomUUID(),
-        title: "Process file",
-        icon: { icon: IconFolderOpen, position: "left" },
-        task: {
-            action: () => {
-                console.log("Process file...");
-            },
-            type: "secondary",
-        },
-    };
-    const exampleFile: MenuItem = {
-        id: crypto.randomUUID(),
-        title: "/home/user/data/emd-1832.cvsx",
-        icon: { icon: IconChartBubbleFilled, position: "left" },
-        task: {
-            action: () => {
-                console.log("Loading recent file...");
-            },
-            type: "direct",
-        },
-    };
-    const openRecentFile: MenuItem = {
-        id: crypto.randomUUID(),
-        title: "Open recent file",
-        icon: { icon: IconFileTime, position: "left" },
-        task: [{ id: crypto.randomUUID(), items: [exampleFile] }],
-    };
+
     const openDevTools: MenuItem = {
         id: crypto.randomUUID(),
         title: "Open DevTools",
@@ -209,8 +208,8 @@ function createInitialMenu(isDev: boolean, navigate: NavigateFunction): Menu {
         },
     };
     const generalFileSection: Section = {
-        id: crypto.randomUUID(),
-        items: [openFileInViewer, processFile, openRecentFile],
+        id: "general-file",
+        items: [],
     };
     const devFileSection: Section = {
         id: crypto.randomUUID(),
@@ -225,7 +224,7 @@ function createInitialMenu(isDev: boolean, navigate: NavigateFunction): Menu {
         items: [exit],
     };
     const file: RootMenuItem = {
-        id: crypto.randomUUID(),
+        id: "file",
         title: "File",
         task: [generalFileSection, devFileSection, exitSection],
         priority: 1,

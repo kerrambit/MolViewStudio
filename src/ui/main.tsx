@@ -6,6 +6,7 @@ import { ThemeProvider } from "./services/ThemeProvider.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MolstarProvider } from "./services/MolstarProvider.tsx";
 import { FileDataProvider } from "./services/FileDataProvider.tsx";
+import { MenuProvider } from "./services/MenuProvider.tsx";
 
 import "@mantine/core/styles.css";
 import "./index.css";
@@ -13,13 +14,20 @@ import "./index.css";
 const router = createMemoryRouter(routes);
 const queryClient = new QueryClient();
 
+const env = await window.electron.requestEnvironment();
+
 createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
         <ThemeProvider>
             <UserSettingsProvider>
                 <FileDataProvider>
                     <MolstarProvider>
-                        <RouterProvider router={router}></RouterProvider>
+                        <MenuProvider
+                            isDev={env.isDev}
+                            navigate={(path) => router.navigate(path)}
+                        >
+                            <RouterProvider router={router} />
+                        </MenuProvider>
                     </MolstarProvider>
                 </FileDataProvider>
             </UserSettingsProvider>

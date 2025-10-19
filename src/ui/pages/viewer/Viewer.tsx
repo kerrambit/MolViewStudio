@@ -30,6 +30,7 @@ import {
 } from "../../services/MenuProvider";
 import type { TFunction } from "i18next";
 import { useFileData } from "../../services/FileDataProvider";
+import { BroomIcon } from "../../components/icons/BroomIcon";
 
 export function Viewer() {
     const { t } = useTranslation();
@@ -39,6 +40,7 @@ export function Viewer() {
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
     const { fileData, regime } = useFileData();
 
+    // Add Edit root item button into the menu.
     const edit = createEditRootMenuItem(t);
     useEffect(() => {
         addRootMenuItem(edit);
@@ -53,8 +55,8 @@ export function Viewer() {
     };
     const [views, setViews] = useState<CameraView[]>([]);
 
+    // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
-
     useEffect(() => {
         initMolstar(
             parentRef.current as HTMLDivElement,
@@ -67,7 +69,6 @@ export function Viewer() {
         ).then(() => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
-
             if (regime === "toView" && fileData /*&& !snapshot*/) {
                 loadDataFromFile(fileData);
             }
@@ -255,10 +256,10 @@ async function loadStructureFromFile() {
 // }
 
 function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
-    // TODO: use this icon: https://fontawesome.com/icons/broom?f=classic&s=solid.
     const clearViewerItem: MenuItem = {
-        id: crypto.randomUUID(),
+        id: "clear-viewer",
         title: t("menu.pageSpecific.viewer.Clear viewer"),
+        icon: { icon: BroomIcon, position: "left" },
         task: {
             action: () => {
                 clearViewer();
@@ -267,11 +268,11 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
         },
     };
     const section: Section = {
-        id: crypto.randomUUID(),
+        id: "general-edit",
         items: [clearViewerItem],
     };
     const edit: RootMenuItem = {
-        id: crypto.randomUUID(),
+        id: "edit",
         title: "Edit",
         task: [section],
         priority: 3,
