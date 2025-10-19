@@ -4,6 +4,13 @@ import { Button } from "../../components/common/button/Button";
 import type { FileRejection, FileWithPath } from "@mantine/dropzone";
 import { useFileData, type FileRegime } from "../../services/FileDataProvider";
 import { loggerUi } from "../../utils/loggerUi";
+import { useMenu } from "../../services/MenuProvider";
+import {
+    IconChartBubbleFilled,
+    IconFileTime,
+    IconFolderOpen,
+} from "@tabler/icons-react";
+import { useEffect } from "react";
 
 import "./Home.css";
 import "@mantine/core/styles.css";
@@ -12,8 +19,63 @@ import "@mantine/dropzone/styles.css";
 export default function Home() {
     const navigate = useNavigate();
     const { setFileData, setRegime } = useFileData();
-
     const actions = { setFileData, setRegime, navigate };
+    const { addMenuItemIntoSection } = useMenu();
+
+    // TODO: extract it into seperate function
+    useEffect(() => {
+        addMenuItemIntoSection("file", "general-file", {
+            id: "open-file-in-viewer",
+            title: "Open file in viewer",
+            icon: { icon: IconFolderOpen, position: "left" },
+            task: {
+                action: () => {
+                    loadAndHandleFile({ regime: "toView" }, actions);
+                },
+                type: "secondary",
+            },
+        });
+
+        addMenuItemIntoSection("file", "general-file", {
+            id: "process-file",
+            title: "Process file",
+            icon: { icon: IconFolderOpen, position: "left" },
+            task: {
+                action: () => {
+                    loadAndHandleFile({ regime: "toProcess" }, actions);
+                },
+                type: "secondary",
+            },
+        });
+
+        // TODO: implement recent files history
+        addMenuItemIntoSection("file", "general-file", {
+            id: "recent-file",
+            title: "Open recent file",
+            icon: { icon: IconFileTime, position: "left" },
+            task: [
+                {
+                    id: crypto.randomUUID(),
+                    items: [
+                        {
+                            id: "recent-file-</home/user/data/emd-1832.cvsx>",
+                            title: "/home/user/data/emd-1832.cvsx",
+                            icon: {
+                                icon: IconChartBubbleFilled,
+                                position: "left",
+                            },
+                            task: {
+                                action: () => {
+                                    console.log("Loading recent file...");
+                                },
+                                type: "direct",
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+    }, []);
 
     return (
         <div className="home">
@@ -163,7 +225,17 @@ function dropzoneButtonHandler(
     }
 ) {
     loggerUi.info(config.label);
+    loadAndHandleFile({ regime: config.regime }, actions);
+}
 
+function loadAndHandleFile(
+    config: { regime: FileRegime },
+    actions: {
+        setFileData: (fileData: FileData) => void;
+        setRegime: (regime: FileRegime) => void;
+        navigate: NavigateFunction;
+    }
+) {
     window.electron
         .openFileExplorer()
         .then((fileData) => {
