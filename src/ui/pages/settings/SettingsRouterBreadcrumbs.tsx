@@ -1,4 +1,4 @@
-import { RouterBreadcrumbs } from "../../components/common/router-readcrumbs/RouterBreadcrumbs";
+import { RouterBreadcrumbs } from "../../components/common/router-breadcrumbs/RouterBreadcrumbs";
 
 interface SettingsRouterBreadcrumbsProps {
     autoSavedPage: boolean;
