@@ -13,7 +13,6 @@ import { MolViewSpec } from "molstar/lib/extensions/mvs/behavior";
 import { RuntimeContext, Task } from "molstar/lib/mol-task";
 import { murmurHash3_128_fromBytes } from "molstar/lib/mol-data/util";
 import { unzip } from "molstar/lib/mol-util/zip/zip";
-import { Camera } from "molstar/lib/mol-canvas3d/camera";
 import { useEffect, useState } from "react";
 
 interface MolstarProps {
