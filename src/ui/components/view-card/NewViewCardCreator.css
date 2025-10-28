@@ -1,0 +1,17 @@
+.newViewCardCreator {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-grey-dark);
+    border-radius: 6px;
+    background-color: var(--color-grey);
+    gap: 1em;
+    width: 100%;
+}
+
+.newViewCardCreator__nameInput input:hover {
+  background-color:  var(--color-grey-lighter-dark) !important;
+}
+
+.newViewCardCreator__nameInput input:focus {
+  background-color:  var(--color-grey-lighter-dark) !important;
+}
