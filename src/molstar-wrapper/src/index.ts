@@ -13,6 +13,8 @@ import { MolViewSpec } from "molstar/lib/extensions/mvs/behavior";
 import { RuntimeContext, Task } from "molstar/lib/mol-task";
 import { murmurHash3_128_fromBytes } from "molstar/lib/mol-data/util";
 import { unzip } from "molstar/lib/mol-util/zip/zip";
+import { Camera } from "molstar/lib/mol-canvas3d/camera";
+import { useEffect, useState } from "react";
 
 interface MolstarProps {
     showControls: boolean;
@@ -110,6 +112,26 @@ export function getCameraState(): CameraState {
         up: Vec3.clone(molstar.canvas3d?.camera.up),
         target: Vec3.clone(molstar.canvas3d?.camera.target),
     };
+}
+
+export function useLiveCameraState(): CameraState | undefined {
+    const [liveCameraState, setLiveCameraState] = useState<
+        CameraState | undefined
+    >(undefined);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            try {
+                setLiveCameraState(getCameraState());
+            } catch {
+                setLiveCameraState(undefined);
+            }
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return liveCameraState;
 }
 
 export type Base64Png = string;
