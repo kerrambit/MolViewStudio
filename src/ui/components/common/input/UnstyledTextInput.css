@@ -28,6 +28,11 @@
   width: 90%;
 }
 
+.unstyledTextInput__input-field:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+}
+
 .unstyledTextInput__input-error {
   border-bottom: 2px solid red;
 }
