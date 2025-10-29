@@ -141,7 +141,7 @@ export function Viewer() {
                     >
                         {views.map((view, index) => (
                             <ViewCard
-                                id={view.id}
+                                key={view.id}
                                 title={view.title}
                                 index={index}
                                 thumbnail={view.thumbnail}
@@ -178,7 +178,7 @@ export function Viewer() {
                                     {
                                         id: id,
                                         title: title,
-                                        thumbnail,
+                                        thumbnail: thumbnail,
                                         target: target,
                                         position: position,
                                         up: up,

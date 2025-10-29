@@ -5,7 +5,6 @@ import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import "./ViewCard.css";
 
 export interface ViewCardProps {
-    id: string;
     title: string;
     index: number;
     onClick?: () => void;
@@ -17,7 +16,7 @@ export function ViewCard(props: ViewCardProps) {
     const [_, setCurrentName] = useState<string | undefined>(props.title);
 
     return (
-        <div key={`$view:${props.id}`} className="viewCard">
+        <div className="viewCard">
             <div
                 style={{
                     width: "100%",
@@ -26,8 +25,8 @@ export function ViewCard(props: ViewCardProps) {
                 <UnstyledTextInput
                     prefix={`${props.index + 1}. `}
                     defaultValue={props.title}
-                    placeholder="Enter name for new view..."
-                    tooltip="Enter name for new view..."
+                    placeholder="Change name for this view..."
+                    tooltip="Change name for this view..."
                     onValueChange={(val) => {
                         setCurrentName(val);
                         if (val) {
@@ -52,7 +51,6 @@ export function ViewCard(props: ViewCardProps) {
                     borderRadius: "6px",
                 }}
                 title="Click to set the current camera position to this view."
-                key={`$img:${props.id}`}
                 src={props.thumbnail}
                 alt={`${props.title} - thumbnail`}
             />
