@@ -4,6 +4,7 @@ import "./UnstyledTextInput.css";
 
 interface UnstyledTextInputProps {
     prefix?: string;
+    value?: string;
     defaultValue?: string;
     maxLength?: number;
     placeholder?: string;
@@ -14,24 +15,25 @@ interface UnstyledTextInputProps {
 
 export function UnstyledTextInput({
     prefix = "",
+    value: controlledValue,
     defaultValue = "",
     maxLength = 80,
     placeholder = "Enter value...",
     tooltip = "",
     onValueChange,
-    style = undefined,
+    style,
 }: UnstyledTextInputProps) {
-    const [value, setValue] = useState(defaultValue);
+    const [internalValue, setInternalValue] = useState(defaultValue);
+    const isControlled = controlledValue !== undefined;
+    const value = isControlled ? controlledValue : internalValue;
     const [error, setError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.currentTarget.value.trimStart();
-
         if (val.length > maxLength) val = val.slice(0, maxLength);
 
-        setValue(val);
+        if (!isControlled) setInternalValue(val);
         if (val.length > 0) setError(null);
-
         onValueChange?.(val);
     };
 

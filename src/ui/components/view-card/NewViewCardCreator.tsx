@@ -25,7 +25,7 @@ export interface NewViewCardCreatorProps {
 
 export function NewViewCardCreator(props: NewViewCardCreatorProps) {
     const [currentName, setCurrentName] = useState<string | undefined>(
-        "Enter name for new view..."
+        "New view..."
     );
 
     const cameraState = useLiveCameraState();
@@ -34,7 +34,7 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
         <div className="newViewCardCreator">
             <UnstyledTextInput
                 prefix={`${props.index}. `}
-                defaultValue="Enter name for new view..."
+                value={currentName ?? "New view..."}
                 placeholder="Enter name for new view..."
                 tooltip="Enter name for new view..."
                 onValueChange={(val) => setCurrentName(val)}
@@ -108,14 +108,13 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                     label="Save view"
                     variant="secondary"
                     onClick={async () => {
-                        let img: Base64Png | undefined;
-                        try {
-                            img = await getCanvasImageAsUri();
-                        } catch {
-                            img = undefined;
-                        }
-
                         if (props.onSave && currentName && cameraState) {
+                            let img: Base64Png | undefined;
+                            try {
+                                img = await getCanvasImageAsUri();
+                            } catch {
+                                img = undefined;
+                            }
                             props.onSave(
                                 cameraState.position,
                                 cameraState.up,
@@ -124,6 +123,8 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                                 crypto.randomUUID(),
                                 img
                             );
+                            console.log("I am ghre");
+                            setCurrentName("New view...");
                         }
                     }}
                 ></Button>
