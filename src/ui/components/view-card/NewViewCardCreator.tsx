@@ -123,7 +123,6 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                                 crypto.randomUUID(),
                                 img
                             );
-                            console.log("I am ghre");
                             setCurrentName("New view...");
                         }
                     }}

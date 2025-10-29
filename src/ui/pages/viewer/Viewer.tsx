@@ -54,7 +54,9 @@ export function Viewer() {
     }, []);
 
     // Current sidebar tab.
-    const [viewerSidebarValue, setviewerSidebarValue] = useState("views");
+    type SidebarType = "views" | "seg" | "anno";
+    const [viewerSidebarValue, setviewerSidebarValue] =
+        useState<SidebarType>("views");
 
     type CameraView = CameraState & {
         id: string;
@@ -106,13 +108,15 @@ export function Viewer() {
                 >
                     <SegmentedControl
                         value={viewerSidebarValue}
-                        onChange={setviewerSidebarValue}
+                        onChange={(value) =>
+                            setviewerSidebarValue(value as SidebarType)
+                        }
                         data={[
                             { label: "Views", value: "views" },
                             { label: "Segmentations", value: "seg" },
                             { label: "Annotations", value: "anno" },
                         ]}
-                        orientation="horizontal" // TODO: if the width of sidebar is tto small, change orientation to vertical
+                        orientation="horizontal" // TODO: if the width of sidebar is to small, change orientation to vertical
                         radius="md"
                         fw={500}
                         withItemsBorders={false}
@@ -123,70 +127,78 @@ export function Viewer() {
                             minHeight: "2.5em",
                         }}
                     />
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            setViews(() => []);
-                        }}
-                    >
-                        {"Clear view"}
-                    </Button>
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "1em",
-                        }}
-                    >
-                        {views.map((view, index) => (
-                            <ViewCard
-                                key={view.id}
-                                title={view.title}
-                                index={index}
-                                thumbnail={view.thumbnail}
+                    {viewerSidebarValue === "views" && (
+                        <>
+                            {" "}
+                            <Button
+                                size="small"
                                 onClick={() => {
-                                    setCamera({
-                                        position: view.position,
-                                        up: view.up,
-                                        target: view.target,
-                                    });
+                                    setViews(() => []);
                                 }}
-                                onSave={(newTitle: string) => {
-                                    setViews((prevViews) =>
-                                        prevViews.map((v) =>
-                                            v.id === view.id
-                                                ? { ...v, title: newTitle }
-                                                : v
-                                        )
-                                    );
+                            >
+                                {"Clear view"}
+                            </Button>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "1em",
                                 }}
-                            />
-                        ))}
-                        <NewViewCardCreator
-                            index={views.length + 1}
-                            onSave={(
-                                position,
-                                up,
-                                target,
-                                title,
-                                id,
-                                thumbnail
-                            ) => {
-                                setViews((prev) => [
-                                    ...prev,
-                                    {
-                                        id: id,
-                                        title: title,
-                                        thumbnail: thumbnail,
-                                        target: target,
-                                        position: position,
-                                        up: up,
-                                    },
-                                ]);
-                            }}
-                        />
-                    </div>
+                            >
+                                {views.map((view, index) => (
+                                    <ViewCard
+                                        key={view.id}
+                                        title={view.title}
+                                        index={index}
+                                        thumbnail={view.thumbnail}
+                                        onClick={() => {
+                                            setCamera({
+                                                position: view.position,
+                                                up: view.up,
+                                                target: view.target,
+                                            });
+                                        }}
+                                        onSave={(newTitle: string) => {
+                                            setViews((prevViews) =>
+                                                prevViews.map((v) =>
+                                                    v.id === view.id
+                                                        ? {
+                                                              ...v,
+                                                              title: newTitle,
+                                                          }
+                                                        : v
+                                                )
+                                            );
+                                        }}
+                                    />
+                                ))}
+                                <NewViewCardCreator
+                                    index={views.length + 1}
+                                    onSave={(
+                                        position,
+                                        up,
+                                        target,
+                                        title,
+                                        id,
+                                        thumbnail
+                                    ) => {
+                                        setViews((prev) => [
+                                            ...prev,
+                                            {
+                                                id: id,
+                                                title: title,
+                                                thumbnail: thumbnail,
+                                                target: target,
+                                                position: position,
+                                                up: up,
+                                            },
+                                        ]);
+                                    }}
+                                />
+                            </div>
+                        </>
+                    )}
                 </Sidebar>
                 <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
                     <div
