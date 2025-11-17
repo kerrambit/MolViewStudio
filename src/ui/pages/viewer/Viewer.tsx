@@ -13,6 +13,7 @@ import {
     type Base64Png,
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
+    downloadViewerState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -35,6 +36,7 @@ import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { ViewCard } from "../../components/view-card/ViewCard";
 import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreator";
+import { IconPackageExport } from "@tabler/icons-react";
 
 export function Viewer() {
     const { t } = useTranslation();
@@ -129,7 +131,6 @@ export function Viewer() {
                     />
                     {viewerSidebarValue === "views" && (
                         <>
-                            {" "}
                             <Button
                                 size="small"
                                 onClick={() => {
@@ -256,6 +257,18 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
         },
     };
 
+    const exportViewerItem: MenuItem = {
+        id: "export",
+        title: "Export",
+        icon: { icon: IconPackageExport, position: "left" },
+        task: {
+            action: () => {
+                downloadViewerState();
+            },
+            type: "direct",
+        },
+    };
+
     const loadStructureFromFileItem: MenuItem = {
         id: "load-structure-from-file",
         title: "Load structure from file",
@@ -304,6 +317,7 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
         id: "general-edit",
         items: [
             clearViewerItem,
+            exportViewerItem,
             loadStructureFromFileItem,
             loadDefaultPBDItem,
             loadDefaultMVSJItem,
