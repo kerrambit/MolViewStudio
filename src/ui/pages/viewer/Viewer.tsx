@@ -19,11 +19,7 @@ import {
 import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { useMolstar } from "../../services/MolstarProvider";
-import {
-    LoadingOverlay,
-    SegmentedControl,
-    useComputedColorScheme,
-} from "@mantine/core";
+import { LoadingOverlay, useComputedColorScheme } from "@mantine/core";
 import {
     useMenu,
     type MenuItem,
@@ -37,6 +33,7 @@ import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { ViewCard } from "../../components/view-card/ViewCard";
 import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreator";
 import { IconPackageExport } from "@tabler/icons-react";
+import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
 
 export function Viewer() {
     const { t } = useTranslation();
@@ -108,28 +105,18 @@ export function Viewer() {
                         padding: ".5em",
                     }}
                 >
-                    <SegmentedControl
-                        value={viewerSidebarValue}
-                        onChange={(value) =>
-                            setviewerSidebarValue(value as SidebarType)
-                        }
+                    <SegmentedController<SidebarType>
+                        value={sidebar}
+                        onChange={setSidebar}
                         data={[
                             { label: "Views", value: "views" },
                             { label: "Segmentations", value: "seg" },
                             { label: "Annotations", value: "anno" },
                         ]}
-                        orientation="horizontal" // TODO: if the width of sidebar is to small, change orientation to vertical
-                        radius="md"
-                        fw={500}
-                        withItemsBorders={false}
-                        color="var(--mantine-primary-color-6)"
-                        style={{
-                            // TODO: fix colors in dark mode
-                            backgroundColor: "var(--mantine-primary-color-1)",
-                            minHeight: "2.5em",
-                        }}
+                        widthWrapOrientationLimit={292}
                     />
-                    {viewerSidebarValue === "views" && (
+
+                    {sidebar === "views" && (
                         <>
                             <Button
                                 size="small"
