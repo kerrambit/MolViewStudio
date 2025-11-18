@@ -133,15 +133,6 @@ export function useLiveCameraState(): CameraState | undefined {
     return liveCameraState;
 }
 
-export type Base64Png = string;
-
-export async function getCanvasImageAsUri(): Promise<Base64Png | undefined> {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    const helper = molstar.helpers.viewportScreenshot;
-    return await helper?.getImageDataUri();
-}
-
 export function setCamera(cameraState: CameraState) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -154,9 +145,21 @@ export function setCamera(cameraState: CameraState) {
     });
 }
 
-export function disposeMolstar() {
+export type Base64Png = string;
+
+export async function getCanvasImageAsUri(): Promise<Base64Png | undefined> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const helper = molstar.helpers.viewportScreenshot;
+    return await helper?.getImageDataUri();
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function disposeMolstar() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearMVSXFileAssets();
+    await molstar.clear();
     molstar?.dispose();
     molstar = undefined;
 }
