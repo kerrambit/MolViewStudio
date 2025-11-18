@@ -117,7 +117,7 @@ app.on("ready", () => {
                 },
                 {
                     name: "Structural Files",
-                    extensions: ["pdb", "cif", "mcif", "sdf"],
+                    extensions: ["pdb", "cif", "bcif", "mcif", "sdf"],
                 },
                 {
                     name: "CVSX Files",
@@ -140,7 +140,11 @@ app.on("ready", () => {
             const fileExtension = path.extname(filePath).toLowerCase().slice(1);
 
             let fileContent: string | Uint8Array<ArrayBuffer>;
-            if (fileExtension === "mvsx" || fileExtension === "cvsx") {
+            if (
+                fileExtension === "mvsx" ||
+                fileExtension === "cvsx" ||
+                fileExtension === "bcif"
+            ) {
                 const buffer = readFileSync(filePath);
                 fileContent = new Uint8Array(buffer);
             } else if (fileExtension === "mvsj") {
@@ -153,7 +157,10 @@ app.on("ready", () => {
                 path: filePath,
                 extension: fileExtension,
                 name: fileName,
-                binary: fileExtension === "cvsx" || fileExtension === "mvsx",
+                binary:
+                    fileExtension === "cvsx" ||
+                    fileExtension === "mvsx" ||
+                    fileExtension === "bcif",
                 content: fileContent,
             };
         } catch (err) {
