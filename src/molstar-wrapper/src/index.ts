@@ -6,14 +6,16 @@ import { Asset, AssetManager } from "molstar/lib/mol-util/assets";
 import { PluginState } from "molstar/lib/mol-plugin/state";
 import { Color } from "molstar/lib/mol-util/color";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
-import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
+import { MVSData, Snapshot } from "molstar/lib/extensions/mvs/mvs-data";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { PluginSpec } from "molstar/lib/mol-plugin/spec";
 import { MolViewSpec } from "molstar/lib/extensions/mvs/behavior";
 import { RuntimeContext, Task } from "molstar/lib/mol-task";
 import { murmurHash3_128_fromBytes } from "molstar/lib/mol-data/util";
-import { unzip } from "molstar/lib/mol-util/zip/zip";
+import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
+import { download } from "molstar/lib/mol-util/download";
+import { Camera } from "molstar/lib/mol-canvas3d/camera";
 
 interface MolstarProps {
     showControls: boolean;
@@ -94,6 +96,182 @@ export function getSnapshot() {
     clearMVSXFileAssets();
     return molstar.state.getSnapshot();
 }
+
+export type Story = {
+    scenes: SceneData[];
+    assets: SceneAsset[];
+};
+
+export type SceneAsset = {
+    name: string;
+    content: Uint8Array;
+};
+
+export type CameraData = {
+    mode: Camera.Mode;
+    target: [number, number, number] | Vec3;
+    position: [number, number, number] | Vec3;
+    up: [number, number, number] | Vec3;
+    fov: number;
+};
+
+export type SceneData = {
+    id: string;
+    header: string;
+    key: string;
+    description: string;
+    camera?: CameraData | null;
+    linger_duration_ms?: number;
+    transition_duration_ms?: number;
+};
+
+function adjustedCameraPosition(camera: CameraData): [number, number, number] {
+    // MVS uses FOV-adjusted camera position, need to apply inverse here so it doesn't offset the view when loaded
+    const f =
+        camera.mode === "orthographic"
+            ? 1 / (2 * Math.tan(camera.fov / 2))
+            : 1 / (2 * Math.sin(camera.fov / 2));
+    const delta = Vec3.sub(
+        Vec3(),
+        camera.position as Vec3,
+        camera.target as Vec3
+    );
+    return Vec3.scaleAndAdd(
+        Vec3(),
+        camera.target as Vec3,
+        delta,
+        1 / f
+    ) as unknown as [number, number, number];
+}
+
+async function getMVSSnapshot(scene: SceneData, camera: boolean) {
+    const builder = MVSData.createBuilder();
+
+    builder
+        .download({
+            url: "./volume_0_0.bcif",
+        })
+        .parse({ format: "bcif" })
+        .modelStructure();
+
+    if (camera && scene.camera) {
+        builder.camera({
+            position: adjustedCameraPosition(scene.camera),
+            target: scene.camera.target as unknown as [number, number, number],
+            up: scene.camera.up as unknown as [number, number, number],
+        });
+    }
+
+    const snapshot = builder.getSnapshot({
+        key: scene.key.trim() || undefined,
+        title: scene.header,
+        description: scene.description,
+        linger_duration_ms: scene.linger_duration_ms || 5000,
+        transition_duration_ms: scene.transition_duration_ms || 500,
+    });
+
+    return snapshot;
+}
+
+async function getMVSData(
+    story: Story,
+    scenes: SceneData[]
+): Promise<MVSData | Uint8Array> {
+    //
+    const snapshots: Snapshot[] = [];
+    for (let index = 0; index < scenes.length; index++) {
+        const scene = scenes[index];
+        const snapshot = await getMVSSnapshot(scene, false);
+        snapshots.push(snapshot);
+        snapshots.push(snapshot);
+        snapshots.push(await getMVSSnapshot(scene, true));
+    }
+
+    const index: MVSData = {
+        kind: "multiple",
+        metadata: {
+            title: "story.metadata.title",
+            timestamp: new Date().toISOString(),
+            version: `${MVSData.SupportedVersion}`,
+        },
+        snapshots,
+    };
+
+    if (!story.assets.length) {
+        return index;
+    }
+
+    const encoder = new TextEncoder();
+    const files: Record<string, Uint8Array<ArrayBuffer>> = {
+        "index.mvsj": encoder.encode(
+            JSON.stringify(index)
+        ) as Uint8Array<ArrayBuffer>,
+    };
+    for (const asset of story.assets) {
+        const pathInZip = asset.name.startsWith("./")
+            ? asset.name.slice(2)
+            : asset.name;
+        files[pathInZip] = asset.content as Uint8Array<ArrayBuffer>;
+    }
+
+    const zip = await Zip(files).run();
+    return new Uint8Array(zip) as Uint8Array<ArrayBuffer>;
+}
+
+export async function downloadViewerState(fileData: FileData | null) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const sceneData: SceneData = {
+        id: "id", // tmp
+        header: "View <number>", // tmp
+        key: "key", // tmp
+        description: "description...", // tmp
+        camera: {
+            mode: molstar.canvas3d?.camera.getSnapshot().mode!,
+            target: getCameraState().target!,
+            position: getCameraState().position!,
+            up: getCameraState().up!,
+            fov: molstar.canvas3d?.camera.getSnapshot().fov!,
+        },
+    };
+
+    const story: Story = {
+        assets: [
+            {
+                name: "./volume_0_0.bcif",
+                content: fileData?.content as Uint8Array<ArrayBuffer>,
+            },
+        ],
+        scenes: [sceneData],
+    };
+
+    // console.log("ASSETS: ", molstar.managers.asset.assets.length);
+    // molstar.managers.asset.assets.map(
+    //     (a: {
+    //         asset: Asset;
+    //         file: File;
+    //         refCount: number;
+    //         isStatic?: boolean;
+    //         tag?: string;
+    //     }) => console.log(a)
+    // );
+
+    const data = await getMVSData(story, [sceneData]);
+    const blob =
+        data instanceof Uint8Array
+            ? new Blob([data as Uint8Array<ArrayBuffer>], {
+                  type: "application/octet-stream",
+              })
+            : new Blob([JSON.stringify(data, null, 2)], {
+                  type: "application/json",
+              });
+
+    const filename = `${"tmp"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+
+    download(blob, filename);
+}
+
+// ----------------------------------------------------------------------------------- //
 
 export type CameraState = {
     position?: Vec3;
