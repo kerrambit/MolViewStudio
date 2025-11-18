@@ -13,6 +13,7 @@ import {
     type Base64Png,
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
+    downloadViewerState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -36,7 +37,7 @@ import { SegmentedController } from "../../components/common/segmented-controlle
 
 export function Viewer() {
     const { t } = useTranslation();
-    const { /*snapshot,*/ setSnapshot } = useMolstar();
+    const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
     const { fileData, regime } = useFileData();
@@ -72,11 +73,11 @@ export function Viewer() {
                 isExpanded: false,
                 darkMode: colorScheme === "dark",
             },
-            null
+            snapshot
         ).then(() => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
-            if (regime === "toView" && fileData /*&& !snapshot*/) {
+            if (regime === "toView" && fileData && !snapshot) {
                 loadDataFromFile(fileData);
             }
         });
@@ -247,8 +248,9 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
         title: "Export",
         icon: { icon: IconPackageExport, position: "left" },
         task: {
-            action: () => {
-                downloadViewerState();
+            action: async () => {
+                const fileData = await window.electron.openFileExplorer();
+                downloadViewerState(fileData);
             },
             type: "direct",
         },
