@@ -13,7 +13,6 @@ import {
     type Base64Png,
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
-    downloadViewerState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -54,8 +53,7 @@ export function Viewer() {
 
     // Current sidebar tab.
     type SidebarType = "views" | "seg" | "anno";
-    const [viewerSidebarValue, setviewerSidebarValue] =
-        useState<SidebarType>("views");
+    const [sidebar, setSidebar] = useState<SidebarType>("views");
 
     type CameraView = CameraState & {
         id: string;
