@@ -332,7 +332,6 @@ export async function getCanvasImageAsUri(): Promise<Base64Png | undefined> {
     return await helper?.getImageDataUri();
 }
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function disposeMolstar() {
     if (!molstar) throw new Error("Molstar is not initialized!");
