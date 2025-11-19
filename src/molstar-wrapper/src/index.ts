@@ -507,6 +507,10 @@ export async function loadDataFromFile(fileData: FileData | null) {
         return true;
     }
 
+    if (fileData.extension === "bcif") {
+        fileData.extension = "mmcif";
+    }
+
     const file = new File([fileData.content], fileData.name);
     const assetFile = Asset.File(file);
 
