@@ -52,10 +52,11 @@ export function Viewer() {
         };
     }, []);
 
-    // Current sidebar tab.
+    // Sidebar state.
     type SidebarType = "views" | "seg" | "anno";
     const [sidebar, setSidebar] = useState<SidebarType>("views");
 
+    // Views.
     type CameraView = CameraState & {
         id: string;
         title: string;
@@ -202,7 +203,12 @@ export function Viewer() {
 }
 
 async function loadStructureFromFile() {
-    const fileData = await window.electron.openFileExplorer();
+    const result = await window.electron.openFileExplorer();
+
+    // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
+    const fileData: FileData | null =
+        result && result.length > 0 ? result[0] : null;
+
     loadDataFromFile(fileData);
 }
 
