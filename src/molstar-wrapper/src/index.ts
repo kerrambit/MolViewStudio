@@ -332,11 +332,9 @@ export async function getCanvasImageAsUri(): Promise<Base64Png | undefined> {
     return await helper?.getImageDataUri();
 }
 
-
-export async function disposeMolstar() {
+export function disposeMolstar() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearMVSXFileAssets();
-    await molstar.clear();
     molstar?.dispose();
     molstar = undefined;
 }
