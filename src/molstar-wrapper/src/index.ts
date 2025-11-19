@@ -6,7 +6,7 @@ import { Asset, AssetManager } from "molstar/lib/mol-util/assets";
 import { PluginState } from "molstar/lib/mol-plugin/state";
 import { Color } from "molstar/lib/mol-util/color";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
-import { MVSData, Snapshot } from "molstar/lib/extensions/mvs/mvs-data";
+import { MVSData, type Snapshot } from "molstar/lib/extensions/mvs/mvs-data";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { PluginSpec } from "molstar/lib/mol-plugin/spec";
 import { MolViewSpec } from "molstar/lib/extensions/mvs/behavior";
