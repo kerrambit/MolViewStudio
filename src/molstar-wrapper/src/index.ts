@@ -149,10 +149,29 @@ async function getMVSSnapshot(scene: SceneData, camera: boolean) {
 
     builder
         .download({
-            url: "./volume_0_0.bcif",
+            url: "./volume_0_0.bcif", // TODO: there are hardcoded still
         })
         .parse({ format: "bcif" })
-        .modelStructure();
+        .volume({ channel_id: "0" })
+        .representation({
+            type: "isosurface",
+            relative_isovalue: 1.0,
+            show_wireframe: false,
+            show_faces: true,
+        });
+
+    builder
+        .download({
+            url: "./volume_0_1.bcif", // TODO: there are hardcoded still
+        })
+        .parse({ format: "bcif" })
+        .volume({ channel_id: "1" })
+        .representation({
+            type: "isosurface",
+            relative_isovalue: 1.0,
+            show_wireframe: false,
+            show_faces: true,
+        });
 
     if (camera && scene.camera) {
         builder.camera({
@@ -181,10 +200,9 @@ async function getMVSData(
     const snapshots: Snapshot[] = [];
     for (let index = 0; index < scenes.length; index++) {
         const scene = scenes[index];
-        const snapshot = await getMVSSnapshot(scene, false);
+        const snapshot = await getMVSSnapshot(scene, true);
+        snapshot.root.children?.push();
         snapshots.push(snapshot);
-        snapshots.push(snapshot);
-        snapshots.push(await getMVSSnapshot(scene, true));
     }
 
     const index: MVSData = {
@@ -218,7 +236,7 @@ async function getMVSData(
     return new Uint8Array(zip) as Uint8Array<ArrayBuffer>;
 }
 
-export async function downloadViewerState(fileData: FileData | null) {
+export async function downloadViewerState(fileData: FileData[] | null) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const sceneData: SceneData = {
@@ -236,12 +254,12 @@ export async function downloadViewerState(fileData: FileData | null) {
     };
 
     const story: Story = {
-        assets: [
-            {
-                name: "./volume_0_0.bcif",
-                content: fileData?.content as Uint8Array<ArrayBuffer>,
-            },
-        ],
+        assets: fileData
+            ? fileData.map((f, index) => ({
+                  name: f.name ?? `asset_${index}`,
+                  content: f.content as Uint8Array<ArrayBuffer>,
+              }))
+            : [],
         scenes: [sceneData],
     };
 
@@ -345,6 +363,8 @@ export async function clearViewer() {
     await molstar.clear();
 }
 
+// ------------------------------------------------------------------------------------
+
 export async function loadDefaultPbdStructure() {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -383,6 +403,7 @@ function ensureUrlAsset(
     options?: { isFile?: boolean }
 ) {
     const asset = Asset.getUrlAsset(manager, url);
+
     if (!manager.has(asset)) {
         const filename = url.split("/").pop() ?? "file";
         manager.set(
@@ -393,11 +414,11 @@ function ensureUrlAsset(
     }
 }
 
+let _decoder: TextDecoder | undefined;
 function decodeUtf8(bytes: Uint8Array): string {
     _decoder ??= new TextDecoder();
     return _decoder.decode(bytes);
 }
-let _decoder: TextDecoder | undefined;
 
 async function _loadMVSXFile(
     runtimeCtx: RuntimeContext,
@@ -411,6 +432,7 @@ async function _loadMVSXFile(
         data,
         42
     )}${Date.now()}`;
+
     let files: { [path: string]: Uint8Array<ArrayBuffer> };
     try {
         files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
@@ -418,6 +440,7 @@ async function _loadMVSXFile(
         console.log("Invalid MVSX file!");
         throw err;
     }
+
     for (const path in files) {
         const url = arcpUri(archiveId, path);
         ensureUrlAsset(molstar.managers.asset, url, files[path], {
@@ -431,6 +454,7 @@ async function _loadMVSXFile(
 
     const mvsData = MVSData.fromMVSJ(decodeUtf8(mainFile));
     const sourceUrl = arcpUri(archiveId, mainFilePath);
+
     return { mvsData, sourceUrl };
 }
 
@@ -474,6 +498,7 @@ export async function loadDefaultMVSJFile() {
 
 async function loadMVSJFile(rawData: string) {
     if (!molstar) throw new Error("Molstar is not initialized!");
+
     const mvsData: MVSData = MVSData.fromMVSJ(rawData);
     if (!MVSData.isValid(mvsData)) {
         console.log(MVSData.validationIssues(mvsData));
