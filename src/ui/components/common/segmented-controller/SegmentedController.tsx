@@ -13,7 +13,7 @@ interface SegmentedControllerProps<T extends string = string> {
     onChange?: (value: T) => void;
     defaultValue?: T;
     /**
-     * Pixel limit when the controller orientaion changes from 'horizontal' to 'vertical'.
+     * Pixel limit when the controller orientation changes from 'horizontal' to 'vertical'.
      */
     widthWrapOrientationLimit?: number;
 }
