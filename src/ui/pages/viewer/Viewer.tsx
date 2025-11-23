@@ -1,4 +1,10 @@
-import { useEffect, createRef, /*type RefObject,*/ useState } from "react";
+import {
+    useEffect,
+    createRef,
+    useState,
+    type Dispatch,
+    type SetStateAction,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../components/common/button/Button";
 import {
@@ -35,34 +41,35 @@ import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreato
 import { IconPackageExport } from "@tabler/icons-react";
 import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
 
+export type CameraView = CameraState & {
+    id: string;
+    title: string;
+    thumbnail?: Base64Png;
+};
+
 export function Viewer() {
     const { t } = useTranslation();
     const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
     const { fileData, regime } = useFileData();
+    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
+
+    // Views.
+    const [views, setViews] = useState<CameraView[]>([]);
 
     // Add Edit root item button into the menu.
-    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
-    const edit = createEditRootMenuItem(t);
     useEffect(() => {
+        const edit = createEditRootMenuItem(t, views, setViews);
         addRootMenuItem(edit);
         return () => {
             deleteRootMenuItem(edit.id);
         };
-    }, []);
+    }, [t, views, setViews]);
 
     // Sidebar state.
     type SidebarType = "views" | "seg" | "anno";
     const [sidebar, setSidebar] = useState<SidebarType>("views");
-
-    // Views.
-    type CameraView = CameraState & {
-        id: string;
-        title: string;
-        thumbnail?: Base64Png;
-    };
-    const [views, setViews] = useState<CameraView[]>([]);
 
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
@@ -236,7 +243,11 @@ async function loadStructureFromFile() {
 //     if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
 // }
 
-function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
+function createEditRootMenuItem(
+    t: TFunction<"translation", undefined>,
+    views: CameraView[],
+    setViews: Dispatch<SetStateAction<CameraView[]>>
+) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
         title: t("menu.pageSpecific.viewer.Clear viewer"),
@@ -256,7 +267,7 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
         task: {
             action: async () => {
                 const fileData = await window.electron.openFileExplorer();
-                downloadViewerState(fileData);
+                downloadViewerState(fileData, views);
             },
             type: "direct",
         },
@@ -268,6 +279,7 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
         task: {
             action: () => {
                 loadStructureFromFile();
+                setViews(() => []);
             },
             type: "direct",
         },

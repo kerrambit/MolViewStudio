@@ -16,6 +16,7 @@ import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
 import { Camera } from "molstar/lib/mol-canvas3d/camera";
+import { CameraView } from "../../ui/pages/viewer/Viewer";
 
 interface MolstarProps {
     showControls: boolean;
@@ -125,17 +126,24 @@ export type SceneData = {
     transition_duration_ms?: number;
 };
 
+/**
+ * MVS uses FOV-adjusted camera position. It is needed to apply inverse so it doesn't offset the view when loaded.
+ * @param camera camera data
+ * @returns adjusted camera position
+ */
 function adjustedCameraPosition(camera: CameraData): [number, number, number] {
-    // MVS uses FOV-adjusted camera position, need to apply inverse here so it doesn't offset the view when loaded
+    //
     const f =
         camera.mode === "orthographic"
             ? 1 / (2 * Math.tan(camera.fov / 2))
             : 1 / (2 * Math.sin(camera.fov / 2));
+
     const delta = Vec3.sub(
         Vec3(),
         camera.position as Vec3,
         camera.target as Vec3
     );
+
     return Vec3.scaleAndAdd(
         Vec3(),
         camera.target as Vec3,
@@ -144,7 +152,7 @@ function adjustedCameraPosition(camera: CameraData): [number, number, number] {
     ) as unknown as [number, number, number];
 }
 
-async function getMVSSnapshot(scene: SceneData, camera: boolean) {
+async function getMVSSnapshot(scene: SceneData) {
     const builder = MVSData.createBuilder();
 
     builder
@@ -173,7 +181,7 @@ async function getMVSSnapshot(scene: SceneData, camera: boolean) {
             show_faces: true,
         });
 
-    if (camera && scene.camera) {
+    if (scene.camera) {
         builder.camera({
             position: adjustedCameraPosition(scene.camera),
             target: scene.camera.target as unknown as [number, number, number],
@@ -181,26 +189,21 @@ async function getMVSSnapshot(scene: SceneData, camera: boolean) {
         });
     }
 
-    const snapshot = builder.getSnapshot({
-        key: scene.key.trim() || undefined,
-        title: scene.header,
+    return builder.getSnapshot({
+        key: scene.key.trim(),
+        title: scene.header.trim(),
         description: scene.description,
         linger_duration_ms: scene.linger_duration_ms || 5000,
         transition_duration_ms: scene.transition_duration_ms || 500,
     });
-
-    return snapshot;
 }
 
-async function getMVSData(
-    story: Story,
-    scenes: SceneData[]
-): Promise<MVSData | Uint8Array> {
+async function getMVSData(story: Story): Promise<MVSData | Uint8Array> {
     //
     const snapshots: Snapshot[] = [];
-    for (let index = 0; index < scenes.length; index++) {
-        const scene = scenes[index];
-        const snapshot = await getMVSSnapshot(scene, true);
+    for (let index = 0; index < story.scenes.length; index++) {
+        const scene = story.scenes[index];
+        const snapshot = await getMVSSnapshot(scene);
         snapshot.root.children?.push();
         snapshots.push(snapshot);
     }
@@ -208,7 +211,7 @@ async function getMVSData(
     const index: MVSData = {
         kind: "multiple",
         metadata: {
-            title: "story.metadata.title",
+            title: undefined,
             timestamp: new Date().toISOString(),
             version: `${MVSData.SupportedVersion}`,
         },
@@ -219,13 +222,19 @@ async function getMVSData(
         return index;
     }
 
+    return createArchive(index, story.assets);
+}
+
+async function createArchive(index: MVSData, assets: SceneAsset[]) {
+    //
     const encoder = new TextEncoder();
     const files: Record<string, Uint8Array<ArrayBuffer>> = {
         "index.mvsj": encoder.encode(
             JSON.stringify(index)
         ) as Uint8Array<ArrayBuffer>,
     };
-    for (const asset of story.assets) {
+
+    for (const asset of assets) {
         const pathInZip = asset.name.startsWith("./")
             ? asset.name.slice(2)
             : asset.name;
@@ -236,22 +245,11 @@ async function getMVSData(
     return new Uint8Array(zip) as Uint8Array<ArrayBuffer>;
 }
 
-export async function downloadViewerState(fileData: FileData[] | null) {
+export async function downloadViewerState(
+    fileData: FileData[] | null,
+    views: CameraView[]
+) {
     if (!molstar) throw new Error("Molstar is not initialized!");
-
-    const sceneData: SceneData = {
-        id: "id", // tmp
-        header: "View <number>", // tmp
-        key: "key", // tmp
-        description: "description...", // tmp
-        camera: {
-            mode: molstar.canvas3d?.camera.getSnapshot().mode!,
-            target: getCameraState().target!,
-            position: getCameraState().position!,
-            up: getCameraState().up!,
-            fov: molstar.canvas3d?.camera.getSnapshot().fov!,
-        },
-    };
 
     const story: Story = {
         assets: fileData
@@ -260,8 +258,24 @@ export async function downloadViewerState(fileData: FileData[] | null) {
                   content: f.content as Uint8Array<ArrayBuffer>,
               }))
             : [],
-        scenes: [sceneData],
+        scenes: [],
     };
+
+    views.forEach((view) => {
+        story.scenes.push({
+            id: view.id,
+            header: view.title,
+            key: view.id,
+            description: "Description...", // tmp
+            camera: {
+                mode: molstar?.canvas3d?.camera.getSnapshot().mode!,
+                target: view.target!,
+                position: view.position!,
+                up: view.up!,
+                fov: molstar?.canvas3d?.camera.getSnapshot().fov!,
+            },
+        });
+    });
 
     // console.log("ASSETS: ", molstar.managers.asset.assets.length);
     // molstar.managers.asset.assets.map(
@@ -274,7 +288,7 @@ export async function downloadViewerState(fileData: FileData[] | null) {
     //     }) => console.log(a)
     // );
 
-    const data = await getMVSData(story, [sceneData]);
+    const data = await getMVSData(story);
     const blob =
         data instanceof Uint8Array
             ? new Blob([data as Uint8Array<ArrayBuffer>], {
