@@ -123,6 +123,7 @@ export type SceneData = {
     key: string;
     description: string;
     camera?: CameraData | null;
+    thumbnail?: Base64Png;
     linger_duration_ms?: number;
     transition_duration_ms?: number;
 };
@@ -153,7 +154,10 @@ function adjustedCameraPosition(camera: CameraData): [number, number, number] {
     ) as unknown as [number, number, number];
 }
 
-async function getMVSSnapshot(scene: SceneData) {
+async function getMVSSnapshot(
+    scene: SceneData,
+    thumbnail: Base64Png | undefined
+) {
     const builder = MVSData.createBuilder();
 
     builder
@@ -187,6 +191,9 @@ async function getMVSSnapshot(scene: SceneData) {
             position: adjustedCameraPosition(scene.camera),
             target: scene.camera.target as unknown as [number, number, number],
             up: scene.camera.up as unknown as [number, number, number],
+            custom: {
+                thumbnail: thumbnail,
+            },
         });
     }
 
@@ -204,7 +211,7 @@ async function getMVSData(story: Story): Promise<MVSData | Uint8Array> {
     const snapshots: Snapshot[] = [];
     for (let index = 0; index < story.scenes.length; index++) {
         const scene = story.scenes[index];
-        const snapshot = await getMVSSnapshot(scene);
+        const snapshot = await getMVSSnapshot(scene, scene.thumbnail);
         snapshot.root.children?.push();
         snapshots.push(snapshot);
     }
@@ -268,6 +275,7 @@ export async function downloadViewerState(
             header: view.title,
             key: view.id,
             description: "Description...", // tmp
+            thumbnail: view.thumbnail!,
             camera: {
                 mode: molstar?.canvas3d?.camera.getSnapshot().mode!,
                 target: view.target!,
@@ -519,8 +527,6 @@ export async function loadDefaultMVSJFile() {
 
 // TODO: sort out the errors and warnings better here
 function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
-    //
-
     if (mvsData.kind !== "multiple") {
         return [];
     }
@@ -533,15 +539,20 @@ function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
             (node) => node.kind === "camera"
         );
 
-        const cameraParams = cameraNode?.params as
-            | (CameraState & { mode?: string; fov?: number })
-            | undefined;
+        type CameraParams = CameraState & {
+            mode?: string;
+            fov?: number;
+        };
+
+        const cameraParams = cameraNode?.params as CameraParams | undefined;
+
         if (cameraParams && metadata.key) {
             const view: CameraView = {
                 id: metadata.key,
                 title: metadata.title || "Untitled View",
                 position: cameraParams.position!,
                 target: cameraParams.target!,
+                thumbnail: cameraNode?.custom?.thumbnail,
                 up: cameraParams.up!,
             };
 
