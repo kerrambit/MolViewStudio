@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import React, { useState, type CSSProperties } from "react";
 
 import "./UnstyledTextInput.css";
 
@@ -39,6 +39,14 @@ export function UnstyledTextInput({
         onValueChange?.(val);
     };
 
+    const handleKeyPressed = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handleBlur();
+            e.currentTarget.blur();
+        }
+    };
+
     const handleBlur = () => {
         const trimmedValue = value.trim();
         if (!trimmedValue) {
@@ -62,6 +70,7 @@ export function UnstyledTextInput({
                     placeholder={placeholder}
                     onChange={handleChange}
                     onBlur={handleBlur}
+                    onKeyDown={handleKeyPressed}
                     className={`unstyledTextInput__input-field ${
                         error ? "unstyledTextInput__input-error" : ""
                     }`}
