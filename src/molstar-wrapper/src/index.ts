@@ -17,7 +17,6 @@ import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
 import { Camera } from "molstar/lib/mol-canvas3d/camera";
 import { type CameraView } from "../../ui/pages/viewer/Viewer";
-import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 
 interface MolstarProps {
     showControls: boolean;
