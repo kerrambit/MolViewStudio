@@ -27,7 +27,7 @@ export function ViewCard(props: ViewCardProps) {
                     defaultValue={props.title}
                     placeholder="Change name for this view..."
                     tooltip="Change name for this view..."
-                    onValueChange={(val) => {
+                    onBlur={(val) => {
                         setCurrentName(val);
                         if (val) {
                             props.onSave?.(val);

@@ -10,6 +10,7 @@ interface UnstyledTextInputProps {
     placeholder?: string;
     tooltip?: string;
     onValueChange?: (value: string | undefined) => void;
+    onBlur?: (value: string | undefined) => void;
     style?: CSSProperties;
 }
 
@@ -21,6 +22,7 @@ export function UnstyledTextInput({
     placeholder = "Enter value...",
     tooltip = "",
     onValueChange,
+    onBlur,
     style,
 }: UnstyledTextInputProps) {
     const [internalValue, setInternalValue] = useState(defaultValue);
@@ -29,7 +31,7 @@ export function UnstyledTextInput({
     const [error, setError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let val = e.currentTarget.value.trimStart();
+        let val = e.currentTarget.value.trim();
         if (val.length > maxLength) val = val.slice(0, maxLength);
 
         if (!isControlled) setInternalValue(val);
@@ -38,9 +40,14 @@ export function UnstyledTextInput({
     };
 
     const handleBlur = () => {
-        if (!value.trim()) {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) {
             setError("Value cannot be empty!");
+        } else {
+            setError(null);
         }
+
+        onBlur?.(trimmedValue);
     };
 
     return (
