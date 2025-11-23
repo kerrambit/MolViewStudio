@@ -16,7 +16,8 @@ import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
 import { Camera } from "molstar/lib/mol-canvas3d/camera";
-import { CameraView } from "../../ui/pages/viewer/Viewer";
+import { type CameraView } from "../../ui/pages/viewer/Viewer";
+import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 
 interface MolstarProps {
     showControls: boolean;
@@ -438,7 +439,7 @@ async function _loadMVSXFile(
     runtimeCtx: RuntimeContext,
     data: Uint8Array<ArrayBuffer>,
     mainFilePath: string = "index.mvsj"
-): Promise<{ mvsData: MVSData; sourceUrl: string }> {
+): Promise<{ mvsData: MVSData; sourceUrl: string; views: CameraView[] }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearMVSXFileAssets();
 
@@ -468,8 +469,9 @@ async function _loadMVSXFile(
 
     const mvsData = MVSData.fromMVSJ(decodeUtf8(mainFile));
     const sourceUrl = arcpUri(archiveId, mainFilePath);
+    const views = extractViewsFromMVS(mvsData);
 
-    return { mvsData, sourceUrl };
+    return { mvsData, sourceUrl, views };
 }
 
 export async function loadDefaultMVSXFile() {
@@ -487,9 +489,12 @@ export async function loadDefaultMVSXFile() {
 async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
+    let viewsToReturn: CameraView[] = [];
+
     await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
             const parsed = await _loadMVSXFile(ctx, rawData);
+            viewsToReturn = parsed.views;
 
             if (!molstar) throw new Error("Molstar is not initialized!");
             await loadMVS(molstar, parsed.mvsData, {
@@ -498,6 +503,8 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
             });
         })
     );
+
+    return viewsToReturn;
 }
 
 export async function loadDefaultMVSJFile() {
@@ -510,12 +517,54 @@ export async function loadDefaultMVSJFile() {
     loadMVSJFile(rawData);
 }
 
+// TODO: sort out the errors and warnings better here
+function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
+    //
+
+    if (mvsData.kind !== "multiple") {
+        return [];
+    }
+
+    const views: CameraView[] = [];
+
+    mvsData.snapshots.forEach((snapshot) => {
+        const { root, metadata } = snapshot;
+        const cameraNode = root.children?.find(
+            (node) => node.kind === "camera"
+        );
+
+        const cameraParams = cameraNode?.params as
+            | (CameraState & { mode?: string; fov?: number })
+            | undefined;
+        if (cameraParams && metadata.key) {
+            const view: CameraView = {
+                id: metadata.key,
+                title: metadata.title || "Untitled View",
+                position: cameraParams.position!,
+                target: cameraParams.target!,
+                up: cameraParams.up!,
+            };
+
+            views.push(view);
+        } else if (!metadata.key) {
+            console.log(
+                `Snapshot missing required 'key' metadata. Skipping snapshot with title: ${metadata.title}`
+            );
+        } else {
+            console.log(
+                `Snapshot with ID ${metadata.key} is missing a 'camera' node. Skipping.`
+            );
+        }
+    });
+
+    return views;
+}
+
 async function loadMVSJFile(rawData: string) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const mvsData: MVSData = MVSData.fromMVSJ(rawData);
     if (!MVSData.isValid(mvsData)) {
-        console.log(MVSData.validationIssues(mvsData));
         throw new Error(`Oh no: ${MVSData.validationIssues(mvsData)}`);
     }
 
@@ -524,23 +573,24 @@ async function loadMVSJFile(rawData: string) {
         keepCamera: false,
         extensions: [],
     });
+
+    return extractViewsFromMVS(mvsData);
 }
 
+// TODO: all functions in this file have to handle errors based on some result pattern so we can progate error message above
 export async function loadDataFromFile(fileData: FileData | null) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    if (!fileData) return false;
+    if (!fileData) return null;
 
     await clearViewer();
 
     if (fileData.extension === "mvsj") {
-        loadMVSJFile(fileData.content as string);
-        return true;
+        return await loadMVSJFile(fileData.content as string);
     }
 
     if (fileData.extension === "mvsx") {
-        loadMVSXFile(fileData.content as Uint8Array<ArrayBuffer>);
-        return true;
+        return await loadMVSXFile(fileData.content as Uint8Array<ArrayBuffer>);
     }
 
     if (fileData.extension === "bcif") {
@@ -566,14 +616,13 @@ export async function loadDataFromFile(fileData: FileData | null) {
             "default"
         );
     } catch (error) {
-        // TODO: all functions in this file have to handle errors based on some result pattern so we can progate error message above
         console.log(
             "Error occured when loading data from file: <",
             error,
             ">."
         );
-        return false;
+        return null;
     }
 
-    return true;
+    return null;
 }

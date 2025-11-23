@@ -82,11 +82,14 @@ export function Viewer() {
                 darkMode: colorScheme === "dark",
             },
             snapshot
-        ).then(() => {
+        ).then(async () => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
             if (regime === "toView" && fileData && !snapshot) {
-                loadDataFromFile(fileData);
+                const result = await loadDataFromFile(fileData);
+                if (result) {
+                    setViews(result);
+                }
             }
         });
 
@@ -216,7 +219,12 @@ async function loadStructureFromFile() {
     const fileData: FileData | null =
         result && result.length > 0 ? result[0] : null;
 
-    loadDataFromFile(fileData);
+    // TODO: will handle this function better, now it returns just null or CameraView array
+    const loadResult = await loadDataFromFile(fileData);
+    if (loadResult) {
+        return loadResult;
+    }
+    return [];
 }
 
 // async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
@@ -278,8 +286,13 @@ function createEditRootMenuItem(
         title: "Load structure from file",
         task: {
             action: () => {
-                loadStructureFromFile();
                 setViews(() => []);
+                (async () => {
+                    try {
+                        const newViews = await loadStructureFromFile();
+                        setViews(newViews);
+                    } catch (error) {}
+                })();
             },
             type: "direct",
         },
