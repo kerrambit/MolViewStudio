@@ -20,7 +20,7 @@
 }
 
 .settings__tree__link {
-  cursor: grab;
+  cursor: pointer;
   display: inline-block;
   transition: all 0.15s ease;
   border-radius: 6px;

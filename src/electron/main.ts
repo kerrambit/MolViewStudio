@@ -102,10 +102,11 @@ app.on("ready", () => {
         return { isDev: isDev() };
     });
 
-    // TODO: we should probably return File here and not custom FileData and unify the file processing in UI's dropzone component
+    // TODO: unify the file processing in UI's dropzone component
+    // TODO: openFileExplorer should take props which decied if multi-selection is enabled, right now, we have to enable it by default
     Ipc.Electron.handle("openFileExplorer", async () => {
         const openDialogResult = await dialog.showOpenDialog({
-            properties: ["openFile"],
+            properties: ["openFile", "multiSelections"],
             filters: [
                 {
                     name: "All Files",
@@ -117,7 +118,7 @@ app.on("ready", () => {
                 },
                 {
                     name: "Structural Files",
-                    extensions: ["pdb", "cif", "mcif", "sdf"],
+                    extensions: ["pdb", "cif", "bcif", "mcif", "sdf"],
                 },
                 {
                     name: "CVSX Files",
@@ -133,35 +134,48 @@ app.on("ready", () => {
             return null;
         }
 
-        const filePath = openDialogResult.filePaths[0];
+        const collectedFileData: FileData[] = [];
+        openDialogResult.filePaths.map((filePath: string) => {
+            try {
+                const fileName = path.basename(filePath);
+                const fileExtension = path
+                    .extname(filePath)
+                    .toLowerCase()
+                    .slice(1);
 
-        try {
-            const fileName = path.basename(filePath);
-            const fileExtension = path.extname(filePath).toLowerCase().slice(1);
+                let fileContent: string | Uint8Array<ArrayBuffer>;
+                if (
+                    fileExtension === "mvsx" ||
+                    fileExtension === "cvsx" ||
+                    fileExtension === "bcif"
+                ) {
+                    const buffer = readFileSync(filePath);
+                    fileContent = new Uint8Array(buffer);
+                } else if (fileExtension === "mvsj") {
+                    fileContent = readFileSync(filePath, "utf8");
+                } else {
+                    fileContent = readFileSync(filePath, "utf8");
+                }
 
-            let fileContent: string | Uint8Array<ArrayBuffer>;
-            if (fileExtension === "mvsx" || fileExtension === "cvsx") {
-                const buffer = readFileSync(filePath);
-                fileContent = new Uint8Array(buffer);
-            } else if (fileExtension === "mvsj") {
-                fileContent = readFileSync(filePath, "utf8");
-            } else {
-                fileContent = readFileSync(filePath, "utf8");
+                collectedFileData.push({
+                    path: filePath,
+                    extension: fileExtension,
+                    name: fileName,
+                    binary:
+                        fileExtension === "cvsx" ||
+                        fileExtension === "mvsx" ||
+                        fileExtension === "bcif",
+                    content: fileContent,
+                });
+            } catch (err) {
+                logger.error(
+                    `While reading file <${filePath}>, an error occured: <${err}>!`
+                );
+                throw new Error(`Failed to read file: ${err}`);
             }
+        });
 
-            return {
-                path: filePath,
-                extension: fileExtension,
-                name: fileName,
-                binary: fileExtension === "cvsx" || fileExtension === "mvsx",
-                content: fileContent,
-            };
-        } catch (err) {
-            logger.error(
-                `While reading file <${filePath}>, an error occured: <${err}>!`
-            );
-            throw new Error(`Failed to read file: ${err}`);
-        }
+        return collectedFileData;
     });
 
     // Create tray.

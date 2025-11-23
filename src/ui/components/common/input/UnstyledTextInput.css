@@ -1,0 +1,48 @@
+.unstyledTextInput {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unstyledTextInput__wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.unstyledTextInput__prefix {
+  font-weight: bold;
+  font-size: 0.83em;
+  margin-right: .25em;
+  user-select: none;
+  color: black;
+}
+
+.unstyledTextInput__input-field {
+  border: none;
+  background: transparent;
+  font-size: 0.83em;
+  font-weight: bold;
+  padding: 2px 4px;
+  outline: none;
+  flex: 1;
+  width: 90%;
+}
+
+.unstyledTextInput__input-field:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+}
+
+.unstyledTextInput__input-field:focus {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+}
+
+.unstyledTextInput__input-error {
+  border-bottom: 2px solid red;
+}
+
+.unstyledTextInput__error-text {
+  color: red;
+  font-size: 0.7em;
+}

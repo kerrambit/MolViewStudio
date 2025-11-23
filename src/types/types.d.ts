@@ -7,7 +7,8 @@ type EventPayloadMapping = {
     requestUserSettings: UserSettings;
     requestApplicationExit: void;
     requestToOpenDevTools: void;
-    openFileExplorer: FileData | null;
+    // TODO: temporary return FileData[] instead of FileData
+    openFileExplorer: FileData[] | null;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
 };
@@ -28,7 +29,8 @@ interface Window {
 
         requestEnvironment: () => Promise<Environment>;
 
-        openFileExplorer: () => Promise<FileData | null>;
+        // TODO: temporary return FileData[] instead of FileData
+        openFileExplorer: () => Promise<FileData[] | null>;
 
         changeUserSettings: (settings: UserSettings) => void;
     };

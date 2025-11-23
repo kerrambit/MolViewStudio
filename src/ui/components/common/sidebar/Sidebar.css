@@ -2,12 +2,16 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    max-width: 15%;
+    max-width: 22.5%;
     flex: 1;
-    padding-left: 1em;
-    padding-right: 1em;
-    margin-left: .5em;
-    background-color: var(--mantine-primary-color-1);
+    margin: 0.5em;
+    background-color: var(--color-light);
+    border: 2px solid var(--color-grey);
     /* box-sizing: border-box;
     border: 2px dotted red; */
+}
+
+[data-mantine-color-scheme="dark"] .sidebar {
+    background-color: var(--color-grey-dark);
+     border: 2px solid var(--color-light);
 }

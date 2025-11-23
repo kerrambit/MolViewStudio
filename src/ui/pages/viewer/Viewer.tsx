@@ -1,5 +1,10 @@
-import { useEffect, createRef, /*type RefObject,*/ useState } from "react";
-import { Link } from "react-router-dom";
+import {
+    useEffect,
+    createRef,
+    useState,
+    type Dispatch,
+    type SetStateAction,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../components/common/button/Button";
 import {
@@ -10,12 +15,11 @@ import {
     loadDataFromFile,
     getSnapshot,
     type CameraState,
-    getCameraState,
     setCamera,
-    getCanvasImageAsUri,
     type Base64Png,
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
+    downloadViewerState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -31,29 +35,41 @@ import {
 import type { TFunction } from "i18next";
 import { useFileData } from "../../services/FileDataProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
+import { Sidebar } from "../../components/common/sidebar/Sidebar";
+import { ViewCard } from "../../components/view-card/ViewCard";
+import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreator";
+import { IconPackageExport } from "@tabler/icons-react";
+import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
+
+export type CameraView = CameraState & {
+    id: string;
+    title: string;
+    thumbnail?: Base64Png;
+};
 
 export function Viewer() {
     const { t } = useTranslation();
-    const { /*snapshot,*/ setSnapshot } = useMolstar();
+    const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
-    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
     const { fileData, regime } = useFileData();
+    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
+
+    // Views.
+    const [views, setViews] = useState<CameraView[]>([]);
 
     // Add Edit root item button into the menu.
-    const edit = createEditRootMenuItem(t);
     useEffect(() => {
+        const edit = createEditRootMenuItem(t, views, setViews);
         addRootMenuItem(edit);
         return () => {
             deleteRootMenuItem(edit.id);
         };
-    }, []);
+    }, [t, views, setViews]);
 
-    type CameraView = CameraState & {
-        id: string;
-        thumbnail?: Base64Png;
-    };
-    const [views, setViews] = useState<CameraView[]>([]);
+    // Sidebar state.
+    type SidebarType = "views" | "seg" | "anno";
+    const [sidebar, setSidebar] = useState<SidebarType>("views");
 
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
@@ -65,12 +81,15 @@ export function Viewer() {
                 isExpanded: false,
                 darkMode: colorScheme === "dark",
             },
-            null
-        ).then(() => {
+            snapshot
+        ).then(async () => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
-            if (regime === "toView" && fileData /*&& !snapshot*/) {
-                loadDataFromFile(fileData);
+            if (regime === "toView" && fileData && !snapshot) {
+                const result = await loadDataFromFile(fileData);
+                if (result) {
+                    setViews(result);
+                }
             }
         });
 
@@ -83,136 +102,103 @@ export function Viewer() {
 
     return (
         <div className="viewer">
-            <nav>
-                <Link to="/">{t("Home")}</Link> |{" "}
-                <Link to="/settings">{t("Settings")}</Link> |{" "}
-                <Link to="/viewer">{t("Viewer")}</Link> |{" "}
-                <Link to="/sidebar">{t("Sidebar page")}</Link> |{" "}
-            </nav>
-            <div
-                style={{ display: "flex", height: "95%", position: "relative" }}
-            >
+            <div className="viewer-content">
                 <LoadingOverlay
                     visible={molstarLoading}
                     zIndex={1000}
                     overlayProps={{ radius: "sm", blur: 2 }}
                     loaderProps={{ type: "oval" }}
                 />
-                <div
+                <Sidebar
                     style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                        paddingTop: "1em",
-                        paddingLeft: "0.5em",
+                        gap: ".5em",
+                        padding: ".5em",
                     }}
                 >
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            loadStructureFromFile();
-                        }}
-                    >
-                        {t("viewer.Load structure from file...")}
-                    </Button>
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            loadDefaultPbdStructure();
-                        }}
-                    >
-                        {t("viewer.Load default PBD structure")}
-                    </Button>
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            loadDefaultMVSJFile();
-                        }}
-                    >
-                        {"Load default MVSJ structure"}
-                    </Button>
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            loadDefaultMVSXFile();
-                        }}
-                    >
-                        {"Load default MVSX structure"}
-                    </Button>
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            setViews(() => []);
-                        }}
-                    >
-                        {t("viewer.Clear views")}
-                    </Button>
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            // TODO: check that any data were uploaded, empty view should not be saved
-                            const cameraData = getCameraState();
-                            getCanvasImageAsUri()
-                                .then((img) => {
-                                    setViews((prev) => [
-                                        ...prev,
-                                        {
-                                            ...cameraData,
-                                            id: crypto.randomUUID(),
-                                            thumbnail: img,
-                                        },
-                                    ]);
-                                })
-                                .catch(() => {
-                                    setViews((prev) => [
-                                        ...prev,
-                                        {
-                                            ...cameraData,
-                                            id: crypto.randomUUID(),
-                                        },
-                                    ]);
-                                });
-                        }}
-                    >
-                        {t("viewer.Save view")}
-                    </Button>
-                    <div
-                        style={{
-                            maxWidth: "15em",
-                        }}
-                    >
-                        <b>Views:</b>
-                        {views.map((view, index) => (
-                            <div
-                                key={`$view:${view.id}`}
-                                style={{
-                                    cursor: "grab",
-                                    border: "1px solid var(--mantine-primary-color-7)",
-                                }}
+                    <SegmentedController<SidebarType>
+                        value={sidebar}
+                        onChange={setSidebar}
+                        data={[
+                            { label: "Views", value: "views" },
+                            { label: "Segmentations", value: "seg" },
+                            { label: "Annotations", value: "anno" },
+                        ]}
+                        widthWrapOrientationLimit={292}
+                    />
+
+                    {sidebar === "views" && (
+                        <>
+                            <Button
+                                size="small"
                                 onClick={() => {
-                                    setCamera({
-                                        position: view.position,
-                                        up: view.up,
-                                        target: view.target,
-                                    });
+                                    setViews(() => []);
                                 }}
                             >
-                                <h6 key={`id:${view.id}`}>{index + 1}. View</h6>
-                                <img
-                                    key={`$img:${view.id}`}
-                                    src={view.thumbnail}
-                                    style={{
-                                        border: "2px solid var(--mantine-primary-color-4)",
+                                {"Clear view"}
+                            </Button>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "1em",
+                                }}
+                            >
+                                {views.map((view, index) => (
+                                    <ViewCard
+                                        key={view.id}
+                                        title={view.title}
+                                        index={index}
+                                        thumbnail={view.thumbnail}
+                                        onClick={() => {
+                                            setCamera({
+                                                position: view.position,
+                                                up: view.up,
+                                                target: view.target,
+                                            });
+                                        }}
+                                        onSave={(newTitle: string) => {
+                                            setViews((prevViews) =>
+                                                prevViews.map((v) =>
+                                                    v.id === view.id
+                                                        ? {
+                                                              ...v,
+                                                              title: newTitle,
+                                                          }
+                                                        : v
+                                                )
+                                            );
+                                        }}
+                                    />
+                                ))}
+                                <NewViewCardCreator
+                                    index={views.length + 1}
+                                    onSave={(
+                                        position,
+                                        up,
+                                        target,
+                                        title,
+                                        id,
+                                        thumbnail
+                                    ) => {
+                                        setViews((prev) => [
+                                            ...prev,
+                                            {
+                                                id: id,
+                                                title: title,
+                                                thumbnail: thumbnail,
+                                                target: target,
+                                                position: position,
+                                                up: up,
+                                            },
+                                        ]);
                                     }}
-                                    width={"100%"}
-                                    height={"100%"}
-                                    alt={`${index + 1}. view thumbnail`}
                                 />
                             </div>
-                        ))}
-                    </div>
-                </div>
-                <main style={{ flex: 1, padding: "1em", minHeight: 0 }}>
+                        </>
+                    )}
+                </Sidebar>
+                <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
                     <div
                         ref={parentRef}
                         style={{
@@ -227,8 +213,18 @@ export function Viewer() {
 }
 
 async function loadStructureFromFile() {
-    const fileData = await window.electron.openFileExplorer();
-    loadDataFromFile(fileData);
+    const result = await window.electron.openFileExplorer();
+
+    // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
+    const fileData: FileData | null =
+        result && result.length > 0 ? result[0] : null;
+
+    // TODO: will handle this function better, now it returns just null or CameraView array
+    const loadResult = await loadDataFromFile(fileData);
+    if (loadResult) {
+        return loadResult;
+    }
+    return [];
 }
 
 // async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
@@ -255,7 +251,11 @@ async function loadStructureFromFile() {
 //     if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
 // }
 
-function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
+function createEditRootMenuItem(
+    t: TFunction<"translation", undefined>,
+    views: CameraView[],
+    setViews: Dispatch<SetStateAction<CameraView[]>>
+) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
         title: t("menu.pageSpecific.viewer.Clear viewer"),
@@ -267,9 +267,80 @@ function createEditRootMenuItem(t: TFunction<"translation", undefined>) {
             type: "direct",
         },
     };
+
+    const exportViewerItem: MenuItem = {
+        id: "export",
+        title: "Export",
+        icon: { icon: IconPackageExport, position: "left" },
+        task: {
+            action: async () => {
+                const fileData = await window.electron.openFileExplorer();
+                downloadViewerState(fileData, views);
+            },
+            type: "direct",
+        },
+    };
+
+    const loadStructureFromFileItem: MenuItem = {
+        id: "load-structure-from-file",
+        title: "Load structure from file",
+        task: {
+            action: () => {
+                setViews(() => []);
+                (async () => {
+                    try {
+                        const newViews = await loadStructureFromFile();
+                        setViews(newViews);
+                    } catch (error) {}
+                })();
+            },
+            type: "direct",
+        },
+    };
+
+    const loadDefaultPBDItem: MenuItem = {
+        id: "load-default-pbd",
+        title: "Load default PBD",
+        task: {
+            action: () => {
+                loadDefaultPbdStructure();
+            },
+            type: "direct",
+        },
+    };
+
+    const loadDefaultMVSJItem: MenuItem = {
+        id: "load-default-mvsj",
+        title: "Load default MVSJ",
+        task: {
+            action: () => {
+                loadDefaultMVSJFile();
+            },
+            type: "direct",
+        },
+    };
+
+    const loadDefaultMVSXItem: MenuItem = {
+        id: "load-default-mvsx",
+        title: "Load default MVSX",
+        task: {
+            action: () => {
+                loadDefaultMVSXFile();
+            },
+            type: "direct",
+        },
+    };
+
     const section: Section = {
         id: "general-edit",
-        items: [clearViewerItem],
+        items: [
+            clearViewerItem,
+            exportViewerItem,
+            loadStructureFromFileItem,
+            loadDefaultPBDItem,
+            loadDefaultMVSJItem,
+            loadDefaultMVSXItem,
+        ],
     };
     const edit: RootMenuItem = {
         id: "edit",

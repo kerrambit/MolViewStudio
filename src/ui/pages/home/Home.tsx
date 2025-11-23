@@ -240,8 +240,9 @@ function loadAndHandleFile(
         .openFileExplorer()
         .then((fileData) => {
             if (fileData) {
-                loggerUi.info(`File <${fileData.path}> was selected.`);
-                actions.setFileData(fileData);
+                // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
+                loggerUi.info(`File <${fileData[0].path}> was selected.`);
+                actions.setFileData(fileData[0]);
                 actions.setRegime(config.regime);
                 actions.navigate("/viewer");
             } else {

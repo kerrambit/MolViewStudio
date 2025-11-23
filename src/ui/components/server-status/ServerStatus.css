@@ -12,6 +12,10 @@
   color: black;
 }
 
+[data-mantine-color-scheme="dark"] .serverStatus__label {
+    color: white;
+}
+
 .dot {
   height: 1em;
   width: 1em;

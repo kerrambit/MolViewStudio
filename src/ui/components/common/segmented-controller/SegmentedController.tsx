@@ -1,0 +1,99 @@
+import { SegmentedControl, useComputedColorScheme } from "@mantine/core";
+import { useEffect, useRef, useState } from "react";
+
+export interface SegmentedControllerItem<T extends string = string> {
+    value: T;
+    label: React.ReactNode;
+    disabled?: boolean;
+}
+
+interface SegmentedControllerProps<T extends string = string> {
+    data: SegmentedControllerItem<T>[];
+    value?: T;
+    onChange?: (value: T) => void;
+    defaultValue?: T;
+    /**
+     * Pixel limit when the controller orientation changes from 'horizontal' to 'vertical'.
+     */
+    widthWrapOrientationLimit?: number;
+}
+
+export function SegmentedController<T extends string = string>(
+    props: SegmentedControllerProps<T>
+) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
+        "horizontal"
+    );
+
+    useEffect(() => {
+        if (!ref.current) return;
+
+        const threshold = props.widthWrapOrientationLimit ?? 100;
+
+        const resizeObserver = new ResizeObserver(([entry]) => {
+            const width = entry.contentRect.width;
+            setOrientation(width < threshold ? "vertical" : "horizontal");
+        });
+
+        resizeObserver.observe(ref.current);
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    const colorScheme = useComputedColorScheme();
+
+    const [internal, setInternal] = useState<T | undefined>(props.defaultValue);
+    const currentValue = props.value ?? internal;
+
+    const handleChange = (value: string) => {
+        const typed = value as T;
+
+        props.onChange?.(typed);
+        if (props.value === undefined) {
+            setInternal(typed);
+        }
+    };
+
+    return (
+        <div
+            ref={ref}
+            style={{ width: "100%", display: "flex", justifyContent: "center" }}
+        >
+            <SegmentedControl
+                value={currentValue}
+                onChange={handleChange}
+                data={props.data}
+                orientation={orientation}
+                radius="md"
+                fw={500}
+                withItemsBorders={false}
+                styles={{
+                    root: {
+                        display: "flex",
+                        width: "100%",
+                        background:
+                            colorScheme === "dark"
+                                ? "var(--color-dark)"
+                                : "var(--mantine-primary-color-1)",
+                    },
+                    control: {
+                        justifyContent: "center",
+                        alignItems: "center",
+                    },
+                    indicator: {
+                        background:
+                            colorScheme === "dark"
+                                ? "var(--mantine-primary-color-6)"
+                                : "var(--mantine-primary-color-4)",
+                    },
+                    label: {
+                        color:
+                            colorScheme === "dark"
+                                ? "var(--color-light)"
+                                : "var(--color-dark)",
+                    },
+                }}
+            />
+        </div>
+    );
+}
