@@ -20,6 +20,7 @@ import {
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
     downloadViewerState,
+    prepareDefaultMVSState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -325,6 +326,18 @@ function createEditRootMenuItem(
         },
     };
 
+    const getDefaultMVSViewerItem: MenuItem = {
+        id: "get-default-mvs",
+        title: "Get default MVS",
+        task: {
+            action: async () => {
+                const fileData = await window.electron.openFileExplorer();
+                prepareDefaultMVSState(fileData);
+            },
+            type: "direct",
+        },
+    };
+
     const loadStructureFromFileItem: MenuItem = {
         id: "load-structure-from-file",
         title: "Load structure from file",
@@ -380,6 +393,7 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
+            getDefaultMVSViewerItem,
             loadStructureFromFileItem,
             loadDefaultPBDItem,
             loadDefaultMVSJItem,
