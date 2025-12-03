@@ -154,39 +154,52 @@ function adjustedCameraPosition(camera: CameraData): [number, number, number] {
     ) as unknown as [number, number, number];
 }
 
+type DownloadAsset = {
+    url: string;
+    format: string;
+};
+
 async function getMVSSnapshot(
     scene: SceneData,
-    thumbnail: Base64Png | undefined
+    urls: DownloadAsset[],
+    thumbnail: Base64Png | undefined,
+    includeCamera: boolean
 ) {
     const builder = MVSData.createBuilder();
 
-    builder
-        .download({
-            url: "./volume_0_0.bcif", // TODO: there are hardcoded still
-        })
-        .parse({ format: "bcif" })
-        .volume({ channel_id: "0" })
-        .representation({
-            type: "isosurface",
-            relative_isovalue: 1.0,
-            show_wireframe: false,
-            show_faces: true,
-        });
+    for (let i = 0; i < urls.length; ++i) {
+        const downloadAsset = urls[i];
+        // TODO: switching based on format is probably temporary here
+        if (downloadAsset.format === "mmcif") {
+            builder
+                .download({
+                    url: downloadAsset.url,
+                })
+                .parse({ format: "mmcif" })
+                .volume()
+                .representation({
+                    type: "isosurface",
+                    relative_isovalue: 1.0,
+                    show_wireframe: false,
+                    show_faces: true,
+                });
+        } else if (downloadAsset.format === "bcif") {
+            builder
+                .download({
+                    url: downloadAsset.url,
+                })
+                .parse({ format: "bcif" })
+                .volume({ channel_id: "1" })
+                .representation({
+                    type: "isosurface",
+                    relative_isovalue: 1.0,
+                    show_wireframe: false,
+                    show_faces: true,
+                });
+        }
+    }
 
-    builder
-        .download({
-            url: "./volume_0_1.bcif", // TODO: there are hardcoded still
-        })
-        .parse({ format: "bcif" })
-        .volume({ channel_id: "1" })
-        .representation({
-            type: "isosurface",
-            relative_isovalue: 1.0,
-            show_wireframe: false,
-            show_faces: true,
-        });
-
-    if (scene.camera) {
+    if (includeCamera && scene.camera) {
         builder.camera({
             position: adjustedCameraPosition(scene.camera),
             target: scene.camera.target as unknown as [number, number, number],
@@ -206,12 +219,36 @@ async function getMVSSnapshot(
     });
 }
 
-async function getMVSData(story: Story): Promise<MVSData | Uint8Array> {
-    //
+async function getMVSData(
+    story: Story,
+    includeCamera: boolean
+): Promise<MVSData | Uint8Array> {
     const snapshots: Snapshot[] = [];
     for (let index = 0; index < story.scenes.length; index++) {
         const scene = story.scenes[index];
-        const snapshot = await getMVSSnapshot(scene, scene.thumbnail);
+        const snapshot = await getMVSSnapshot(
+            scene,
+            story.assets.map((asset) => {
+                // here we parse the filename and extension
+                const fullPath = asset.name;
+                const filenameWithExtension = fullPath.substring(
+                    fullPath.lastIndexOf("/") + 1
+                );
+                const relativeUrl = `./${filenameWithExtension}`;
+                const lastDotIndex = filenameWithExtension.lastIndexOf(".");
+
+                let extension = "";
+                if (lastDotIndex > 0) {
+                    extension = filenameWithExtension.substring(lastDotIndex);
+                }
+                return {
+                    format: extension === ".cif" ? "mmcif" : "bcif",
+                    url: relativeUrl,
+                };
+            }),
+            scene.thumbnail,
+            includeCamera
+        );
         snapshot.root.children?.push();
         snapshots.push(snapshot);
     }
@@ -297,7 +334,42 @@ export async function downloadViewerState(
     //     }) => console.log(a)
     // );
 
-    const data = await getMVSData(story);
+    const data = await getMVSData(story, true);
+    const blob =
+        data instanceof Uint8Array
+            ? new Blob([data as Uint8Array<ArrayBuffer>], {
+                  type: "application/octet-stream",
+              })
+            : new Blob([JSON.stringify(data, null, 2)], {
+                  type: "application/json",
+              });
+
+    const filename = `${"tmp"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+
+    download(blob, filename);
+}
+
+export async function prepareDefaultMVSState(fileData: FileData[] | null) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const story: Story = {
+        assets: fileData
+            ? fileData.map((f, index) => ({
+                  name: f.name ?? `asset_${index}`,
+                  content: f.content as Uint8Array<ArrayBuffer>,
+              }))
+            : [],
+        scenes: [],
+    };
+
+    story.scenes.push({
+        id: "",
+        header: "New view...",
+        key: "",
+        description: "",
+    });
+
+    const data = await getMVSData(story, false);
     const blob =
         data instanceof Uint8Array
             ? new Blob([data as Uint8Array<ArrayBuffer>], {
