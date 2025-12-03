@@ -37,6 +37,7 @@ export async function initMolstar(
         target: container,
         render: renderReact18,
         spec: {
+            ...DefaultPluginUISpec(),
             layout: {
                 initial: {
                     regionState: {
