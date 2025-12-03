@@ -40,6 +40,7 @@ import { ViewCard } from "../../components/view-card/ViewCard";
 import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreator";
 import { IconPackageExport } from "@tabler/icons-react";
 import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
+import { useProcessVolume } from "../../hooks/useProcessVolume";
 
 export type CameraView = CameraState & {
     id: string;
@@ -54,6 +55,9 @@ export function Viewer() {
     const [molstarLoading, setMolstarLoading] = useState(true);
     const { fileData, regime } = useFileData();
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
+
+    const processVolume = useProcessVolume();
+    const [volumes, setVolumes] = useState<string[]>([]);
 
     // Views.
     const [views, setViews] = useState<CameraView[]>([]);
@@ -100,6 +104,36 @@ export function Viewer() {
         };
     }, [setSnapshot]);
 
+    useEffect(() => {
+        if (!fileData || regime !== "toProcess") {
+            return;
+        }
+
+        processVolume.mutate(fileData.path, {
+            onSuccess: async (response) => {
+                try {
+                    const responseBody = await response.json();
+
+                    const filePathsJsonString = responseBody.output_files;
+
+                    if (typeof filePathsJsonString !== "string") {
+                        throw new Error(
+                            "Expected 'output_files' to be a JSON string."
+                        );
+                    }
+
+                    const absolutePathsArray = JSON.parse(filePathsJsonString);
+                    setVolumes(absolutePathsArray);
+                } catch (e) {
+                    console.log("Failed to parse or process response data:", e);
+                }
+            },
+            onError: (err) => {
+                console.log(`Processing failed: ${err.message}`);
+            },
+        });
+    }, [fileData, setVolumes]);
+
     return (
         <div className="viewer">
             <div className="viewer-content">
@@ -109,6 +143,16 @@ export function Viewer() {
                     overlayProps={{ radius: "sm", blur: 2 }}
                     loaderProps={{ type: "oval" }}
                 />
+                <Sidebar
+                    style={{
+                        gap: ".5em",
+                        padding: ".5em",
+                    }}
+                >
+                    {processVolume.isPending && "Processing..."}
+                    {processVolume.isSuccess &&
+                        `Processing finished succefully: ${volumes}`}
+                </Sidebar>
                 <Sidebar
                     style={{
                         gap: ".5em",
