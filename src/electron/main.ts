@@ -124,6 +124,10 @@ app.on("ready", () => {
                     name: "CVSX Files",
                     extensions: ["cvsx"],
                 },
+                {
+                    name: "Volume Files",
+                    extensions: ["map"],
+                },
             ],
         });
 
@@ -147,7 +151,8 @@ app.on("ready", () => {
                 if (
                     fileExtension === "mvsx" ||
                     fileExtension === "cvsx" ||
-                    fileExtension === "bcif"
+                    fileExtension === "bcif" ||
+                    fileExtension === "map"
                 ) {
                     const buffer = readFileSync(filePath);
                     fileContent = new Uint8Array(buffer);
@@ -164,7 +169,8 @@ app.on("ready", () => {
                     binary:
                         fileExtension === "cvsx" ||
                         fileExtension === "mvsx" ||
-                        fileExtension === "bcif",
+                        fileExtension === "bcif" ||
+                        fileExtension === "map",
                     content: fileContent,
                 });
             } catch (err) {
