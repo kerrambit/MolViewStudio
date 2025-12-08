@@ -16,7 +16,8 @@ import {
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
 import { ChildProcess, spawn } from "child_process";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import { writeFile } from "fs/promises";
 import { logger } from "./utils/logger.js";
 
 app.on("ready", () => {
@@ -50,8 +51,8 @@ app.on("ready", () => {
         alwaysOnTop: true,
     });
 
-    // Show splash screen.
-    splash.loadFile(path.join(getAssetsPath(), "splash.jpg"));
+    // Show splash screen. Source: https://www.freepik.com/free-vector/superimposed-water-drop-shape-abstract-graphics-background_14803692.htm#fromView=search&page=1&position=5&uuid=851272e9-7991-4653-9e3f-c5086e86f2da&query=Splash+molecules.
+    splash.loadFile(path.join(getAssetsPath(), "splash.png"));
     splash.center();
 
     // Initialize logging.
@@ -88,6 +89,79 @@ app.on("ready", () => {
     Ipc.Electron.handle("requestToOpenDevTools", () => {
         if (isDev()) {
             mainWindow.webContents.openDevTools();
+        }
+    });
+
+    Ipc.Electron.handleTwoWay("getFileData", (paths: string[]) => {
+        const collectedFileData: FileData[] = [];
+        paths.map((filePath: string) => {
+            try {
+                const fileName = path.basename(filePath);
+                const fileExtension = path
+                    .extname(filePath)
+                    .toLowerCase()
+                    .slice(1);
+
+                let fileContent: string | Uint8Array<ArrayBuffer>;
+                if (
+                    fileExtension === "mvsx" ||
+                    fileExtension === "cvsx" ||
+                    fileExtension === "bcif" ||
+                    fileExtension === "map"
+                ) {
+                    const buffer = readFileSync(filePath);
+                    fileContent = new Uint8Array(buffer);
+                } else if (fileExtension === "mvsj") {
+                    fileContent = readFileSync(filePath, "utf8");
+                } else {
+                    fileContent = readFileSync(filePath, "utf8");
+                }
+
+                collectedFileData.push({
+                    path: filePath,
+                    extension: fileExtension,
+                    name: fileName,
+                    binary:
+                        fileExtension === "cvsx" ||
+                        fileExtension === "mvsx" ||
+                        fileExtension === "bcif" ||
+                        fileExtension === "map",
+                    content: fileContent,
+                });
+            } catch (err) {
+                logger.error(
+                    `While reading file <${filePath}>, an error occured: <${err}>!`
+                );
+                throw new Error(`Failed to read file: ${err}`);
+            }
+        });
+
+        return collectedFileData;
+    });
+
+    // A request from UI to save data into filesystem.
+    Ipc.Electron.handleTwoWay("saveData", async (pck: SaveDataPackage) => {
+        logger.info(`Received data for saving to path <${pck.path}>.`);
+
+        try {
+            const arrayBuffer = pck.data;
+            const buffer = Buffer.from(arrayBuffer);
+
+            await writeFile(pck.path, buffer);
+
+            // TODO: send a success message back to the Renderer
+            logger.info(`Successfully saved file to <${pck.path}>.`);
+
+            return true;
+        } catch (error) {
+            // TODO: send a failure message back to the Renderer
+            logger.error(
+                `Failed to save file <${pck.path}>! Details: <${
+                    (error as Error).message
+                }>.`,
+                error
+            );
+            return false;
         }
     });
 

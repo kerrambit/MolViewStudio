@@ -64,6 +64,18 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     openFileExplorer: () => Ipc.Ui.invoke("openFileExplorer"),
 
+    // TODO: this IPC methods should be changed, now paths are not checked againts types.d.ts
+    getFileData: (paths: string[]) => {
+        return Ipc.Ui.invokeTwoWay("getFileData", paths as any);
+    },
+
+    saveData: (data: ArrayBuffer, path: string) => {
+        return Ipc.Ui.invokeTwoWay("saveData", {
+            data: data,
+            path: path,
+        } as any);
+    },
+
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);
     },

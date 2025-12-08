@@ -9,6 +9,8 @@ type EventPayloadMapping = {
     requestToOpenDevTools: void;
     // TODO: temporary return FileData[] instead of FileData
     openFileExplorer: FileData[] | null;
+    saveData: boolean;
+    getFileData: FileData[] | null;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
 };
@@ -32,6 +34,10 @@ interface Window {
         // TODO: temporary return FileData[] instead of FileData
         openFileExplorer: () => Promise<FileData[] | null>;
 
+        getFileData: (paths: string[]) => Promise<FileData[] | null>;
+
+        saveData: (data: ArrayBuffer, path: string) => Promise<boolean>;
+
         changeUserSettings: (settings: UserSettings) => void;
     };
 }
@@ -46,6 +52,11 @@ interface FileData {
     name: string;
     binary: boolean;
     content: string | Uint8Array<ArrayBuffer>;
+}
+
+interface SaveDataPackage {
+    data: ArrayBuffer;
+    path: string;
 }
 
 type Language = "en" | "de";
