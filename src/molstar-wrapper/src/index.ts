@@ -365,7 +365,7 @@ export async function prepareDefaultMVSState(fileData: FileData[] | null) {
     story.scenes.push({
         id: "",
         header: "New view...",
-        key: "",
+        key: crypto.randomUUID(),
         description: "",
     });
 
