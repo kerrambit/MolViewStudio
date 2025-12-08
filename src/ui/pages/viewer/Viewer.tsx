@@ -179,7 +179,7 @@ export function Viewer() {
                                     setViews(() => []);
                                 }}
                             >
-                                {"Clear view"}
+                                {"Clear views"}
                             </Button>
                             <div
                                 style={{
