@@ -308,6 +308,7 @@ function createEditRootMenuItem(
         task: {
             action: () => {
                 clearViewer();
+                setViews(() => []);
             },
             type: "direct",
         },
