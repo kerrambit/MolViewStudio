@@ -113,8 +113,8 @@ export function Viewer() {
         processVolume.mutate(fileData.path, {
             onSuccess: async (response) => {
                 try {
+                    // TODO: parsing should be unified generally
                     const responseBody = await response.json();
-
                     const filePathsJsonString = responseBody.output_files;
 
                     if (typeof filePathsJsonString !== "string") {
@@ -125,6 +125,38 @@ export function Viewer() {
 
                     const absolutePathsArray = JSON.parse(filePathsJsonString);
                     setVolumes(absolutePathsArray);
+
+                    // TODO: all this code below is WIP
+                    const fileData = await window.electron.getFileData(
+                        absolutePathsArray
+                    );
+                    if (fileData) {
+                        const data = await prepareDefaultMVSState(fileData);
+                        const response = await window.electron.saveData(
+                            data.data,
+                            `${"/home/marek/MolStarAppData/tmp"}.${
+                                data.extenstion
+                            }`
+                        );
+
+                        if (!response) {
+                            console.log("Default MVS could not be saved!");
+                            return;
+                        }
+
+                        const mvs = await window.electron.getFileData([
+                            `${"/home/marek/MolStarAppData/tmp"}.${
+                                data.extenstion
+                            }`,
+                        ]);
+                        const mvsZip: FileData | null =
+                            mvs && mvs.length > 0 ? mvs[0] : null;
+
+                        const loadResult = await loadDataFromFile(mvsZip);
+                        if (loadResult) {
+                            return loadResult;
+                        }
+                    }
                 } catch (e) {
                     console.log("Failed to parse or process response data:", e);
                 }
@@ -327,17 +359,21 @@ function createEditRootMenuItem(
         },
     };
 
-    const getDefaultMVSViewerItem: MenuItem = {
-        id: "get-default-mvs",
-        title: "Get default MVS",
-        task: {
-            action: async () => {
-                const fileData = await window.electron.openFileExplorer();
-                prepareDefaultMVSState(fileData);
-            },
-            type: "direct",
-        },
-    };
+    // const wrapIntoMVSViewerItem: MenuItem = {
+    //     id: "wrap-into-mvs",
+    //     title: "Wrap into MVS",
+    //     task: {
+    //         action: async () => {
+    //             const fileData = await window.electron.openFileExplorer();
+    //             const data = await prepareDefaultMVSState(fileData);
+    //             window.electron.saveData(
+    //                 data.data,
+    //                 `${"/home/marek/MolStarAppData/tmp"}.${data.extenstion}`
+    //             );
+    //         },
+    //         type: "direct",
+    //     },
+    // };
 
     const loadStructureFromFileItem: MenuItem = {
         id: "load-structure-from-file",
@@ -394,7 +430,7 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
-            getDefaultMVSViewerItem,
+            // wrapIntoMVSViewerItem,
             loadStructureFromFileItem,
             loadDefaultPBDItem,
             loadDefaultMVSJItem,

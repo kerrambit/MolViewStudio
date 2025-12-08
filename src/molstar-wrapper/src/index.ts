@@ -379,9 +379,10 @@ export async function prepareDefaultMVSState(fileData: FileData[] | null) {
                   type: "application/json",
               });
 
-    const filename = `${"tmp"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
-
-    download(blob, filename);
+    return {
+        data: await blob.arrayBuffer(),
+        extenstion: `${data instanceof Uint8Array ? "mvsx" : "mvsj"}`,
+    };
 }
 
 // ----------------------------------------------------------------------------------- //
