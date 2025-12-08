@@ -15,6 +15,15 @@ export class Ipc {
         ): Promise<EventPayloadMapping[Key]> {
             return electron.ipcRenderer.invoke(key);
         }
+
+        // TODO: will be reworked
+        static invokeTwoWay<Key extends keyof EventPayloadMapping>(
+            key: Key,
+            payload: any
+        ): Promise<EventPayloadMapping[Key]> {
+            return electron.ipcRenderer.invoke(key, payload);
+        }
+
         static on<Key extends keyof EventPayloadMapping>(
             key: Key,
             callback: (payload: EventPayloadMapping[Key]) => void
@@ -24,6 +33,7 @@ export class Ipc {
             electron.ipcRenderer.on(key, _callback);
             return () => electron.ipcRenderer.off(key, _callback);
         }
+
         static send<Key extends keyof EventPayloadMapping>(
             key: Key,
             payload: EventPayloadMapping[Key]

@@ -21,6 +21,19 @@ export class Ipc {
             });
         }
 
+        // TODO: will be reworked
+        static handleTwoWay<Key extends keyof EventPayloadMapping>(
+            key: Key,
+            handler: (
+                payload: any
+            ) => Promise<EventPayloadMapping[Key]> | EventPayloadMapping[Key]
+        ) {
+            ipcMain.handle(key, (event, payload) => {
+                validateEventFrame(event.senderFrame);
+                return handler(payload);
+            });
+        }
+
         static send<Key extends keyof EventPayloadMapping>(
             key: Key,
             payload: EventPayloadMapping[Key],
