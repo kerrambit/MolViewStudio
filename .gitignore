@@ -20,6 +20,7 @@ playwright-report
 tmp
 __pycache__
 src/molstar-wrapper/build
+volsegtools_tmp
 
 # Editor directories and files
 .vscode/*
