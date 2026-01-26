@@ -110,7 +110,7 @@ export function Viewer() {
 
     // Start processing of volumetric data.
     useEffect(() => {
-        if (!fileData || regime === "toView") {
+        if (regime === "toView" || !fileData) {
             return;
         }
 
@@ -370,22 +370,6 @@ function createEditRootMenuItem(
         },
     };
 
-    // const wrapIntoMVSViewerItem: MenuItem = {
-    //     id: "wrap-into-mvs",
-    //     title: "Wrap into MVS",
-    //     task: {
-    //         action: async () => {
-    //             const fileData = await window.electron.openFileExplorer();
-    //             const data = await prepareDefaultMVSState(fileData);
-    //             window.electron.saveData(
-    //                 data.data,
-    //                 `${"/home/marek/MolStarAppData/tmp"}.${data.extenstion}`
-    //             );
-    //         },
-    //         type: "direct",
-    //     },
-    // };
-
     const loadStructureFromFileItem: MenuItem = {
         id: "load-structure-from-file",
         title: "Load structure from file",
@@ -441,7 +425,6 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
-            // wrapIntoMVSViewerItem,
             loadStructureFromFileItem,
             loadDefaultPBDItem,
             loadDefaultMVSJItem,
