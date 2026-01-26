@@ -352,21 +352,6 @@ export function Viewer() {
     );
 }
 
-async function loadStructureFromFile() {
-    const result = await window.electron.openFileExplorer();
-
-    // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
-    const fileData: FileData | null =
-        result && result.length > 0 ? result[0] : null;
-
-    // TODO: will handle this function better, now it returns just null or CameraView array
-    const loadResult = await loadFromFile(fileData);
-    if (loadResult) {
-        return loadResult.views;
-    }
-    return [];
-}
-
 // async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
 //     const btn = parent.current?.querySelector(
 //         'button[title="Reset Zoom"]'
@@ -422,23 +407,6 @@ function createEditRootMenuItem(
         },
     };
 
-    const loadFromFileItem: MenuItem = {
-        id: "load-from-file",
-        title: "Load from file",
-        task: {
-            action: () => {
-                setViews(() => []);
-                (async () => {
-                    try {
-                        const newViews = await loadStructureFromFile();
-                        setViews(newViews);
-                    } catch (error) {}
-                })();
-            },
-            type: "direct",
-        },
-    };
-
     const loadDefaultPBDItem: MenuItem = {
         id: "load-default-pbd",
         title: "Load default PBD",
@@ -477,7 +445,6 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
-            loadFromFileItem,
             loadDefaultPBDItem,
             loadDefaultMVSJItem,
             loadDefaultMVSXItem,
