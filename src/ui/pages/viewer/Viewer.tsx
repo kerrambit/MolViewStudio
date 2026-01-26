@@ -20,7 +20,8 @@ import {
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
     downloadViewerState,
-    prepareDefaultMVSState,
+    createDefaultMVSBundle,
+    createMVSBlob,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -107,6 +108,7 @@ export function Viewer() {
         };
     }, [setSnapshot]);
 
+    // Start processing of volumetric data.
     useEffect(() => {
         if (!fileData || regime === "toView") {
             return;
@@ -130,35 +132,44 @@ export function Viewer() {
                 setVolumes(absolutePaths);
 
                 // Read assets from processed volume file.
-                const fileData =
-                    await window.electron.getFileData(absolutePaths);
+                const assets = await window.electron.getFileData(absolutePaths);
 
-                const defaultMVSState = await prepareDefaultMVSState(fileData);
+                // Create MVS bundle from assets, containing just default view.
+                const defaultMVSData = await createDefaultMVSBundle(assets);
 
                 // TODO: this path is temporary for now, this is where we keep internal MVS state
                 const path = `${"/home/marek/MolStarAppData/tmp"}.${
-                    defaultMVSState.extenstion
+                    defaultMVSData.extension
                 }`;
 
+                // Create raw array buffer of MVS.
+                const arrayBuffer = await createMVSBlob(
+                    defaultMVSData.data,
+                ).arrayBuffer();
+
+                // Save MVS into file.
                 const saveDataResult = await window.electron.saveData(
-                    defaultMVSState.data,
+                    arrayBuffer,
                     path,
                 );
 
+                // TODO: log in file this internal error, show in UI
                 if (!saveDataResult) {
-                    // TODO: log in file this internal error, show in UI
                     console.log("Default MVS could not be saved!");
                     return;
                 }
 
                 // Show processed volume data as MVS in viewer.
-                const mvs = await window.electron.getFileData([path]);
-                const mvsZip: FileData | null =
-                    mvs && mvs.length > 0 ? mvs[0] : null;
-                await loadDataFromFile(mvsZip);
+                await loadDataFromFile({
+                    path: "",
+                    extension: defaultMVSData.extension,
+                    name: "",
+                    binary: defaultMVSData.isBinary,
+                    content: defaultMVSData.data,
+                });
 
-                setFileData(mvsZip ? mvsZip : undefined);
-                setRegime("toView");
+                // setFileData(mvsZip ? mvsZip : null);
+                // setRegime("toView");
             },
             onError: (err) => {
                 console.log(`Processing failed: ${err.message}`);

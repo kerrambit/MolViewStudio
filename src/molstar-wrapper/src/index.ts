@@ -363,16 +363,27 @@ export async function downloadViewerState(
     download(blob, filename);
 }
 
+export function createMVSBlob(data: string | Uint8Array<ArrayBuffer>) {
+    return data instanceof Uint8Array
+        ? new Blob([data as Uint8Array<ArrayBuffer>], {
+              type: "application/octet-stream",
+          })
+        : new Blob([JSON.stringify(data, null, 2)], {
+              type: "application/json",
+          });
+}
+
 /**
- * Create default MVS (.mvsj/.mvsx-like) bundle from assets given as `fileData` parameter.
+ * Creates default MVS (.mvsj/.mvsx-like) bundle from assets given as `fileData` parameter.
  * @param assets assets
  * @returns MVS bundle containing array buffer as the content and string extension user should use when saving this MVS bundle
  */
-export async function prepareDefaultMVSState(
+export async function createDefaultMVSBundle(
     assets: FileData[] | null,
 ): Promise<{
-    data: ArrayBuffer;
-    extenstion: string;
+    data: string | Uint8Array<ArrayBuffer>;
+    extension: string;
+    isBinary: boolean;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -394,18 +405,14 @@ export async function prepareDefaultMVSState(
     });
 
     const data = await getMVSData(story, false);
-    const blob =
-        data instanceof Uint8Array
-            ? new Blob([data as Uint8Array<ArrayBuffer>], {
-                  type: "application/octet-stream",
-              })
-            : new Blob([JSON.stringify(data, null, 2)], {
-                  type: "application/json",
-              });
+    const isBinary = data instanceof Uint8Array;
 
     return {
-        data: await blob.arrayBuffer(),
-        extenstion: `${data instanceof Uint8Array ? "mvsx" : "mvsj"}`,
+        data: isBinary
+            ? (data as any as Uint8Array<ArrayBuffer>)
+            : JSON.stringify(data, null, 2),
+        extension: isBinary ? "mvsx" : "mvsj",
+        isBinary: isBinary,
     };
 }
 
