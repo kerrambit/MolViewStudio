@@ -110,6 +110,45 @@ export function Viewer() {
         };
     }, [setSnapshot]);
 
+    // Start deconstruction of file to view.
+    useEffect(() => {
+        const deconstruct = async () => {
+            // To prevent loop on this useEffect, guard clause was added to check if the deconstruction has already happened before you trigger the update.
+            if (
+                molstarLoading ||
+                regime.kind !== "viewing" ||
+                !regime.fileToView ||
+                regime.deconstructedFile
+            ) {
+                return;
+            }
+
+            const result = await loadFromFile(regime.fileToView);
+            if (!result) {
+                return;
+            }
+
+            setViews(result.views);
+
+            const assetsArray: FileData[] = Object.entries(result.assets).map(
+                ([path, data]) => ({
+                    path: path,
+                    name: path,
+                    content: data,
+                    extension: "." + path.split(".").pop() || "",
+                    binary: true,
+                }),
+            );
+
+            setRegime({
+                ...regime,
+                deconstructedFile: { assets: assetsArray },
+            });
+        };
+
+        deconstruct();
+    }, [regime, molstarLoading]);
+
     // Start processing of volumetric data.
     useEffect(() => {
         if (regime.kind !== "processing" || !regime.fileToProcess) {
@@ -321,9 +360,9 @@ async function loadStructureFromFile() {
         result && result.length > 0 ? result[0] : null;
 
     // TODO: will handle this function better, now it returns just null or CameraView array
-    const loadResult = await loadDataFromFile(fileData);
+    const loadResult = await loadFromFile(fileData);
     if (loadResult) {
-        return loadResult;
+        return loadResult.views;
     }
     return [];
 }
@@ -383,9 +422,9 @@ function createEditRootMenuItem(
         },
     };
 
-    const loadStructureFromFileItem: MenuItem = {
-        id: "load-structure-from-file",
-        title: "Load structure from file",
+    const loadFromFileItem: MenuItem = {
+        id: "load-from-file",
+        title: "Load from file",
         task: {
             action: () => {
                 setViews(() => []);
@@ -438,7 +477,7 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
-            loadStructureFromFileItem,
+            loadFromFileItem,
             loadDefaultPBDItem,
             loadDefaultMVSJItem,
             loadDefaultMVSXItem,

@@ -551,7 +551,12 @@ async function _loadMVSXFile(
     runtimeCtx: RuntimeContext,
     data: Uint8Array<ArrayBuffer>,
     mainFilePath: string = "index.mvsj",
-): Promise<{ mvsData: MVSData; sourceUrl: string; views: CameraView[] }> {
+): Promise<{
+    mvsData: MVSData;
+    sourceUrl: string;
+    views: CameraView[];
+    assets: Record<string, Uint8Array<ArrayBuffer>>;
+}> {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearMVSXFileAssets();
 
@@ -575,6 +580,8 @@ async function _loadMVSXFile(
         });
     }
 
+    const { [mainFilePath]: _, ...assets } = files;
+
     const mainFile = files[mainFilePath];
     if (!mainFile)
         throw new Error(`File ${mainFilePath} not found in the MVSX archive`);
@@ -583,7 +590,7 @@ async function _loadMVSXFile(
     const sourceUrl = arcpUri(archiveId, mainFilePath);
     const views = extractViewsFromMVS(mvsData);
 
-    return { mvsData, sourceUrl, views };
+    return { mvsData, sourceUrl, views, assets };
 }
 
 export async function loadDefaultMVSXFile() {
@@ -598,15 +605,20 @@ export async function loadDefaultMVSXFile() {
     loadMVSXFile(rawData);
 }
 
-async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
+async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
+    views: CameraView[];
+    assets: Record<string, Uint8Array<ArrayBuffer>>;
+}> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     let viewsToReturn: CameraView[] = [];
+    let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
 
     await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
             const parsed = await _loadMVSXFile(ctx, rawData);
             viewsToReturn = parsed.views;
+            assetsToReturn = parsed.assets;
 
             if (!molstar) throw new Error("Molstar is not initialized!");
             await loadMVS(molstar, parsed.mvsData, {
@@ -616,7 +628,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
         }),
     );
 
-    return viewsToReturn;
+    return { views: viewsToReturn, assets: assetsToReturn };
 }
 
 export async function loadDefaultMVSJFile() {
@@ -692,8 +704,15 @@ async function loadMVSJFile(rawData: string) {
     return extractViewsFromMVS(mvsData);
 }
 
+interface loadFromFileResult {
+    views: CameraView[];
+    assets: Record<string, Uint8Array<ArrayBuffer>>;
+}
+
 // TODO: all functions in this file have to handle errors based on some result pattern so we can progate error message above
-export async function loadDataFromFile(fileData: FileData | null) {
+export async function loadFromFile(
+    fileData: FileData | null,
+): Promise<loadFromFileResult | null> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     if (!fileData) return null;
@@ -701,7 +720,10 @@ export async function loadDataFromFile(fileData: FileData | null) {
     await clearViewer();
 
     if (fileData.extension === "mvsj") {
-        return await loadMVSJFile(fileData.content as string);
+        return {
+            views: await loadMVSJFile(fileData.content as string),
+            assets: {},
+        };
     }
 
     if (fileData.extension === "mvsx") {
