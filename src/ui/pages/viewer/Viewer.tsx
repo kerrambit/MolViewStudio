@@ -112,54 +112,51 @@ export function Viewer() {
 
         processVolume.mutate(fileData.path, {
             onSuccess: async (response) => {
+                // Parse string array containing absolute paths.
+                let absolutePaths: string[] = [];
                 try {
-                    // TODO: parsing should be unified generally
-                    const responseBody = await response.json();
-                    const filePathsJsonString = responseBody.output_files;
-
-                    if (typeof filePathsJsonString !== "string") {
-                        throw new Error(
-                            "Expected 'output_files' to be a JSON string."
-                        );
-                    }
-
-                    const absolutePathsArray = JSON.parse(filePathsJsonString);
-                    setVolumes(absolutePathsArray);
-
-                    // TODO: all this code below is WIP
-                    const fileData = await window.electron.getFileData(
-                        absolutePathsArray
+                    absolutePaths = await getFieldFromResponse<string[]>(
+                        response,
+                        "output_files",
+                        "string",
                     );
-                    if (fileData) {
-                        const data = await prepareDefaultMVSState(fileData);
-                        const response = await window.electron.saveData(
-                            data.data,
-                            `${"/home/marek/MolStarAppData/tmp"}.${
-                                data.extenstion
-                            }`
-                        );
-
-                        if (!response) {
-                            console.log("Default MVS could not be saved!");
-                            return;
-                        }
-
-                        const mvs = await window.electron.getFileData([
-                            `${"/home/marek/MolStarAppData/tmp"}.${
-                                data.extenstion
-                            }`,
-                        ]);
-                        const mvsZip: FileData | null =
-                            mvs && mvs.length > 0 ? mvs[0] : null;
-
-                        const loadResult = await loadDataFromFile(mvsZip);
-                        if (loadResult) {
-                            return loadResult;
-                        }
-                    }
-                } catch (e) {
-                    console.log("Failed to parse or process response data:", e);
+                } catch (error) {
+                    // TODO: log in file this internal error, show in UI
+                    console.log(error);
                 }
+
+                setVolumes(absolutePaths);
+
+                // Read assets from processed volume file.
+                const fileData =
+                    await window.electron.getFileData(absolutePaths);
+
+                const defaultMVSState = await prepareDefaultMVSState(fileData);
+
+                // TODO: this path is temporary for now, this is where we keep internal MVS state
+                const path = `${"/home/marek/MolStarAppData/tmp"}.${
+                    defaultMVSState.extenstion
+                }`;
+
+                const saveDataResult = await window.electron.saveData(
+                    defaultMVSState.data,
+                    path,
+                );
+
+                if (!saveDataResult) {
+                    // TODO: log in file this internal error, show in UI
+                    console.log("Default MVS could not be saved!");
+                    return;
+                }
+
+                // Show processed volume data as MVS in viewer.
+                const mvs = await window.electron.getFileData([path]);
+                const mvsZip: FileData | null =
+                    mvs && mvs.length > 0 ? mvs[0] : null;
+                await loadDataFromFile(mvsZip);
+
+                setFileData(mvsZip ? mvsZip : undefined);
+                setRegime("toView");
             },
             onError: (err) => {
                 console.log(`Processing failed: ${err.message}`);
