@@ -42,6 +42,7 @@ import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreato
 import { IconPackageExport } from "@tabler/icons-react";
 import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
 import { useProcessVolume } from "../../hooks/useProcessVolume";
+import { getFieldFromResponse } from "../../utils/responseUtils";
 
 export type CameraView = CameraState & {
     id: string;
@@ -54,7 +55,7 @@ export function Viewer() {
     const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
-    const { fileData, regime } = useFileData();
+    const { fileData, setFileData, regime, setRegime } = useFileData();
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
 
     const processVolume = useProcessVolume();
@@ -65,12 +66,12 @@ export function Viewer() {
 
     // Add Edit root item button into the menu.
     useEffect(() => {
-        const edit = createEditRootMenuItem(t, views, setViews);
+        const edit = createEditRootMenuItem(t, views, setViews, volumes);
         addRootMenuItem(edit);
         return () => {
             deleteRootMenuItem(edit.id);
         };
-    }, [t, views, setViews]);
+    }, [t, views, setViews, volumes, fileData]);
 
     // Sidebar state.
     type SidebarType = "views" | "seg" | "anno";
@@ -86,7 +87,7 @@ export function Viewer() {
                 isExpanded: false,
                 darkMode: colorScheme === "dark",
             },
-            snapshot
+            snapshot,
         ).then(async () => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
@@ -101,12 +102,13 @@ export function Viewer() {
         return () => {
             const freshSnapshot = getSnapshot();
             setSnapshot(freshSnapshot);
+            clearViewer();
             disposeMolstar();
         };
     }, [setSnapshot]);
 
     useEffect(() => {
-        if (!fileData || regime !== "toProcess") {
+        if (!fileData || regime === "toView") {
             return;
         }
 
@@ -162,7 +164,7 @@ export function Viewer() {
                 console.log(`Processing failed: ${err.message}`);
             },
         });
-    }, [fileData, setVolumes]);
+    }, [fileData, setVolumes, setFileData, setRegime]);
 
     return (
         <div className="viewer">
@@ -239,8 +241,8 @@ export function Viewer() {
                                                               ...v,
                                                               title: newTitle,
                                                           }
-                                                        : v
-                                                )
+                                                        : v,
+                                                ),
                                             );
                                         }}
                                     />
@@ -253,7 +255,7 @@ export function Viewer() {
                                         target,
                                         title,
                                         id,
-                                        thumbnail
+                                        thumbnail,
                                     ) => {
                                         setViews((prev) => [
                                             ...prev,
@@ -328,7 +330,8 @@ async function loadStructureFromFile() {
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
     views: CameraView[],
-    setViews: Dispatch<SetStateAction<CameraView[]>>
+    setViews: Dispatch<SetStateAction<CameraView[]>>,
+    volumes: string[],
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
@@ -349,7 +352,7 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                const fileData = await window.electron.openFileExplorer();
+                const fileData = await window.electron.getFileData(volumes);
                 downloadViewerState(fileData, views);
             },
             type: "direct",
