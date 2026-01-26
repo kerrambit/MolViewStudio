@@ -2,7 +2,6 @@ import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { Dropzone } from "../../components/common/dropzone/Dropzone";
 import { Button } from "../../components/common/button/Button";
 import type { FileRejection, FileWithPath } from "@mantine/dropzone";
-import { useFileData, type FileRegime } from "../../services/FileDataProvider";
 import { loggerUi } from "../../utils/loggerUi";
 import { useMenu } from "../../services/MenuProvider";
 import {
@@ -11,6 +10,7 @@ import {
     IconFolderOpen,
 } from "@tabler/icons-react";
 import { useEffect } from "react";
+import { useFileData, type Regime } from "../../services/FileDataProvider";
 
 import "./Home.css";
 import "@mantine/core/styles.css";
@@ -18,9 +18,10 @@ import "@mantine/dropzone/styles.css";
 
 export default function Home() {
     const navigate = useNavigate();
-    const { setFileData, setRegime } = useFileData();
-    const actions = { setFileData, setRegime, navigate };
+    const { setRegime } = useFileData();
     const { addMenuItemIntoSection } = useMenu();
+
+    const actions = { setRegime, navigate };
 
     // TODO: extract it into seperate function
     useEffect(() => {
@@ -30,7 +31,7 @@ export default function Home() {
             icon: { icon: IconFolderOpen, position: "left" },
             task: {
                 action: () => {
-                    loadAndHandleFile({ regime: "toView" }, actions);
+                    loadAndHandleFile("viewing", actions);
                 },
                 type: "secondary",
             },
@@ -42,7 +43,7 @@ export default function Home() {
             icon: { icon: IconFolderOpen, position: "left" },
             task: {
                 action: () => {
-                    loadAndHandleFile({ regime: "toProcess" }, actions);
+                    loadAndHandleFile("processing", actions);
                 },
                 type: "secondary",
             },
@@ -99,17 +100,16 @@ export default function Home() {
 function onDropHandler(
     files: File[],
     actions: {
-        setFileData: (fileData: FileData) => void;
-        setRegime: (regime: FileRegime) => void;
+        setRegime: (regime: Regime) => void;
         navigate: NavigateFunction;
-    }
+    },
 ) {
     if (files.length === 0) return;
 
     loggerUi.info(
         `Dropzone accepted these files: ${files.map(
-            (file) => `<${file.name}>`
-        )}. Only the first file will be handled!`
+            (file) => `<${file.name}>`,
+        )}. Only the first file will be handled!`,
     );
     const file = files[0];
 
@@ -145,18 +145,28 @@ function onDropHandler(
                 extension: fileData.extension,
                 path: fileData.path,
                 binary: fileData.binary,
-            })}>.`
+            })}>.`,
         );
         loggerUi.info(
             `Based on file extenstions: <${
                 fileData.extension
             }>, the file data regime was set to <${
                 isToProcess ? "toProcess" : "toView"
-            }>.`
+            }>.`,
         );
 
-        actions.setFileData(fileData);
-        actions.setRegime(isToProcess ? "toProcess" : "toView");
+        let regime: Regime;
+        if (isToProcess) {
+            regime = { kind: "processing", fileToProcess: fileData };
+        } else {
+            regime = {
+                kind: "viewing",
+                fileToView: fileData,
+                deconstructedFile: null,
+            };
+        }
+
+        actions.setRegime(regime);
         actions.navigate("/viewer");
     };
 
@@ -169,13 +179,12 @@ function onDropHandler(
 
 function onRejectHandler(rejections: FileRejection[]) {
     loggerUi.warn(
-        `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`
+        `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
     );
 }
 
 function renderDropzoneButtonsArea(actions: {
-    setFileData: (fileData: FileData) => void;
-    setRegime: (regime: FileRegime) => void;
+    setRegime: (regime: Regime) => void;
     navigate: NavigateFunction;
 }) {
     return (
@@ -187,9 +196,9 @@ function renderDropzoneButtonsArea(actions: {
                         dropzoneButtonHandler(
                             {
                                 label: "Open file in viewer...",
-                                regime: "toView",
+                                regimeKind: "viewing",
                             },
-                            actions
+                            actions,
                         );
                     }}
                 >
@@ -203,9 +212,9 @@ function renderDropzoneButtonsArea(actions: {
                         dropzoneButtonHandler(
                             {
                                 label: "Process file...",
-                                regime: "toProcess",
+                                regimeKind: "processing",
                             },
-                            actions
+                            actions,
                         );
                     }}
                 >
@@ -217,24 +226,22 @@ function renderDropzoneButtonsArea(actions: {
 }
 
 function dropzoneButtonHandler(
-    config: { label: string; regime: FileRegime },
+    config: { label: string; regimeKind: "processing" | "viewing" },
     actions: {
-        setFileData: (fileData: FileData) => void;
-        setRegime: (regime: FileRegime) => void;
+        setRegime: (regime: Regime) => void;
         navigate: NavigateFunction;
-    }
+    },
 ) {
     loggerUi.info(config.label);
-    loadAndHandleFile({ regime: config.regime }, actions);
+    loadAndHandleFile(config.regimeKind, actions);
 }
 
 function loadAndHandleFile(
-    config: { regime: FileRegime },
+    regimeKind: "processing" | "viewing",
     actions: {
-        setFileData: (fileData: FileData) => void;
-        setRegime: (regime: FileRegime) => void;
+        setRegime: (regime: Regime) => void;
         navigate: NavigateFunction;
-    }
+    },
 ) {
     window.electron
         .openFileExplorer()
@@ -242,8 +249,19 @@ function loadAndHandleFile(
             if (fileData) {
                 // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
                 loggerUi.info(`File <${fileData[0].path}> was selected.`);
-                actions.setFileData(fileData[0]);
-                actions.setRegime(config.regime);
+
+                let regime: Regime;
+                if (regimeKind === "processing") {
+                    regime = { kind: "processing", fileToProcess: fileData[0] };
+                } else {
+                    regime = {
+                        kind: "viewing",
+                        fileToView: fileData[0],
+                        deconstructedFile: null,
+                    };
+                }
+
+                actions.setRegime(regime);
                 actions.navigate("/viewer");
             } else {
                 loggerUi.error(`File was null!`);

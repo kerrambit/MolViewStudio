@@ -12,7 +12,7 @@ import {
     initMolstar,
     loadDefaultPbdStructure,
     disposeMolstar,
-    loadDataFromFile,
+    loadFromFile,
     getSnapshot,
     type CameraState,
     setCamera,
@@ -56,23 +56,31 @@ export function Viewer() {
     const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
     const [molstarLoading, setMolstarLoading] = useState(true);
-    const { fileData, setFileData, regime, setRegime } = useFileData();
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
-
     const processVolume = useProcessVolume();
     const [volumes, setVolumes] = useState<string[]>([]);
+
+    // Regime.
+    const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
     // Views.
     const [views, setViews] = useState<CameraView[]>([]);
 
     // Add Edit root item button into the menu.
     useEffect(() => {
-        const edit = createEditRootMenuItem(t, views, setViews, volumes);
+        const edit = createEditRootMenuItem(
+            t,
+            views,
+            setViews,
+            regime.kind === "viewing" && regime.deconstructedFile
+                ? regime.deconstructedFile.assets
+                : [],
+        );
         addRootMenuItem(edit);
         return () => {
             deleteRootMenuItem(edit.id);
         };
-    }, [t, views, setViews, volumes, fileData]);
+    }, [t, views, setViews, regime]);
 
     // Sidebar state.
     type SidebarType = "views" | "seg" | "anno";
@@ -92,12 +100,6 @@ export function Viewer() {
         ).then(async () => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
-            if (regime === "toView" && fileData && !snapshot) {
-                const result = await loadDataFromFile(fileData);
-                if (result) {
-                    setViews(result);
-                }
-            }
         });
 
         return () => {
@@ -110,11 +112,11 @@ export function Viewer() {
 
     // Start processing of volumetric data.
     useEffect(() => {
-        if (regime === "toView" || !fileData) {
+        if (regime.kind !== "processing" || !regime.fileToProcess) {
             return;
         }
 
-        processVolume.mutate(fileData.path, {
+        processVolume.mutate(regime.fileToProcess.path, {
             onSuccess: async (response) => {
                 // Parse string array containing absolute paths.
                 let absolutePaths: string[] = [];
@@ -160,7 +162,7 @@ export function Viewer() {
                 }
 
                 // Show processed volume data as MVS in viewer.
-                await loadDataFromFile({
+                await loadFromFile({
                     path: "",
                     extension: defaultMVSData.extension,
                     name: "",
@@ -168,14 +170,26 @@ export function Viewer() {
                     content: defaultMVSData.data,
                 });
 
-                // setFileData(mvsZip ? mvsZip : null);
-                // setRegime("toView");
+                // Sets regime.
+                setRegime({
+                    kind: "viewing",
+                    fileToView: {
+                        path: "/home/marek/MolStarAppData/tmp",
+                        extension: defaultMVSData.extension,
+                        name: "tmp",
+                        binary: defaultMVSData.isBinary,
+                        content: defaultMVSData.data,
+                    },
+                    deconstructedFile: {
+                        assets: assets ?? [],
+                    },
+                });
             },
             onError: (err) => {
                 console.log(`Processing failed: ${err.message}`);
             },
         });
-    }, [fileData, setVolumes, setFileData, setRegime]);
+    }, [regime, setVolumes, setRegime]);
 
     return (
         <div className="viewer">
@@ -342,7 +356,7 @@ function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
     views: CameraView[],
     setViews: Dispatch<SetStateAction<CameraView[]>>,
-    volumes: string[],
+    assets: FileData[],
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
@@ -363,8 +377,7 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                const fileData = await window.electron.getFileData(volumes);
-                downloadViewerState(fileData, views);
+                downloadViewerState(assets, views);
             },
             type: "direct",
         },
