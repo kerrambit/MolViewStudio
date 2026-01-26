@@ -1,13 +1,36 @@
 import { createContext, useState, type ReactNode, useContext } from "react";
 
-export type FileRegime = "toProcess" | "toView";
+export type ProcessingRegime = {
+    kind: "processing";
+    fileToProcess: FileData;
+};
+
+export type DeconstructedFileToView = {
+    assets: FileData[];
+};
+
+export type ViewingRegime = {
+    kind: "viewing";
+    fileToView: FileData | null;
+    deconstructedFile: DeconstructedFileToView | null;
+};
+
+export type IdlingRegime = {
+    kind: "idling";
+};
+
+export type Regime = ProcessingRegime | ViewingRegime | IdlingRegime;
 
 export type FileDataContextType = {
-    fileData: FileData | undefined;
-    setFileData: (fileData: FileData) => void;
-    regime: FileRegime;
-    setRegime: (regime: FileRegime) => void;
+    regime: Regime;
+    setRegime: (regime: Regime) => void;
 };
+
+const initialRegime: IdlingRegime = { kind: "idling" };
+
+export const FileDataContext = createContext<FileDataContextType | undefined>(
+    undefined,
+);
 
 export function useFileData() {
     const context = useContext(FileDataContext);
@@ -17,16 +40,11 @@ export function useFileData() {
     return context;
 }
 
-export const FileDataContext = createContext<FileDataContextType | null>(null);
-
 export function FileDataProvider({ children }: { children: ReactNode }) {
-    const [fileData, setFileData] = useState<FileData | undefined>(undefined);
-    const [regime, setRegime] = useState<FileRegime>("toProcess");
+    const [regime, setRegime] = useState<Regime>(initialRegime);
 
     return (
-        <FileDataContext.Provider
-            value={{ fileData, setFileData, regime, setRegime }}
-        >
+        <FileDataContext.Provider value={{ regime, setRegime }}>
             {children}
         </FileDataContext.Provider>
     );
