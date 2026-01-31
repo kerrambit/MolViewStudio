@@ -22,6 +22,7 @@ import {
     downloadViewerState,
     createDefaultMVSBundle,
     createMVSBlob,
+    getFullScreenSubscription,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -44,6 +45,7 @@ import { IconPackageExport } from "@tabler/icons-react";
 import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
 import { useProcessVolume } from "../../hooks/useProcessVolume";
 import { getFieldFromResponse } from "../../utils/responseUtils";
+import type { Subscription } from "rxjs";
 
 export type CameraView = CameraState & {
     id: string;
@@ -53,20 +55,31 @@ export type CameraView = CameraState & {
 
 export function Viewer() {
     const { t } = useTranslation();
-    const { snapshot, setSnapshot } = useMolstar();
     const colorScheme = useComputedColorScheme();
-    const [molstarLoading, setMolstarLoading] = useState(true);
-    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
-    const processVolume = useProcessVolume();
+
+    // Controlls Molstar snapshots.
+    const { snapshot, setSnapshot } = useMolstar();
+
+    // TODO: temporary state
     const [volumes, setVolumes] = useState<string[]>([]);
 
-    // Regime.
+    // Imports hook vol-seg server communication.
+    const processVolume = useProcessVolume();
+
+    // Controls if Molstar is still in the initialization process.
+    const [molstarLoading, setMolstarLoading] = useState(true);
+
+    // Controls current regime of the application, stores current data.
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
     // Views.
     const [views, setViews] = useState<CameraView[]>([]);
 
+    // Controls if the Molstar viewer is expanded or not.
+    const [molstarExpanded, setMolstarExpanded] = useState(false);
+
     // Add Edit root item button into the menu.
+    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
     useEffect(() => {
         const edit = createEditRootMenuItem(
             t,
@@ -89,6 +102,9 @@ export function Viewer() {
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
     useEffect(() => {
+        // Subscriptions.
+        let fullScreenSubscription: Subscription;
+
         initMolstar(
             parentRef.current as HTMLDivElement,
             {
@@ -100,12 +116,16 @@ export function Viewer() {
         ).then(async () => {
             // translateMolstarUi(parentRef);
             setMolstarLoading(false);
+            fullScreenSubscription = getFullScreenSubscription((val) => {
+                setMolstarExpanded(val);
+            });
         });
 
         return () => {
             const freshSnapshot = getSnapshot();
             setSnapshot(freshSnapshot);
             clearViewer();
+            if (fullScreenSubscription) fullScreenSubscription.unsubscribe();
             disposeMolstar();
         };
     }, [setSnapshot]);

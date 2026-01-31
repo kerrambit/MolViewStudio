@@ -94,6 +94,26 @@ export async function initMolstar(
     return molstar;
 }
 
+/**
+ * Creates a subscription to the event: Molstar layout is expanded.
+ * Make sure to unsubscribe.
+ * @param onChanged event to run
+ * @returns `Subscription` object
+ */
+export function getFullScreenSubscription(
+    onChanged: (isExpanded: boolean) => void,
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const sub = molstar.layout.events.updated.subscribe(() => {
+        if (!molstar) return;
+
+        const isFullscreen = molstar.layout.state.isExpanded;
+        onChanged(isFullscreen);
+    });
+
+    return sub;
+}
 export function getSnapshot() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearMVSXFileAssets();
