@@ -275,16 +275,19 @@ export function Viewer() {
                         padding: ".5em",
                     }}
                 >
-                    <SegmentedController<SidebarType>
-                        value={sidebar}
-                        onChange={setSidebar}
-                        data={[
-                            { label: "Views", value: "views" },
-                            { label: "Segmentations", value: "seg" },
-                            { label: "Annotations", value: "anno" },
-                        ]}
-                        widthWrapOrientationLimit={292}
-                    />
+                    {/* Fix: segmented controller was visible in Molstar Full-Screen. */}
+                    {!molstarExpanded && (
+                        <SegmentedController<SidebarType>
+                            value={sidebar}
+                            onChange={setSidebar}
+                            data={[
+                                { label: "Views", value: "views" },
+                                { label: "Segmentations", value: "seg" },
+                                { label: "Annotations", value: "anno" },
+                            ]}
+                            widthWrapOrientationLimit={292}
+                        />
+                    )}
 
                     {sidebar === "views" && (
                         <>
