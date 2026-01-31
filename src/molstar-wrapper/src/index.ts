@@ -114,6 +114,23 @@ export function getFullScreenSubscription(
 
     return sub;
 }
+
+/**
+ * Updates given region state.
+ * @param region region to update
+ * @param state region can be `hidden` or `full`
+ */
+export function updateRegionState(
+    region: "bottom" | "left" | "right" | "top",
+    state: "hidden" | "full",
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    molstar.layout.setProps({
+        regionState: { ...molstar.layout.state.regionState, [region]: state },
+    });
+}
+
 export function getSnapshot() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearMVSXFileAssets();
