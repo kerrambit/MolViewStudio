@@ -15,7 +15,6 @@ import { murmurHash3_128_fromBytes } from "molstar/lib/mol-data/util";
 import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
-import { type CameraView } from "../../ui/pages/viewer/Viewer";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 
 /**
@@ -212,6 +211,20 @@ export function getCameraState(): CameraState | undefined {
 }
 
 /**
+ * Retrieves default camera state.
+ * @returns
+ */
+export function getDefaultCameraState(): CameraState {
+    return {
+        mode: "perspective",
+        position: Vec3.create(0, 0, 100),
+        up: Vec3.create(0, 1, 0),
+        target: Vec3.create(0, 0, 0),
+        fov: 0.7853981633974483,
+    };
+}
+
+/**
  * Hook for current camera state.
  * @returns current camera state or undefined if camera is not available
  */
@@ -274,13 +287,15 @@ export async function getCanvasScreenshot(): Promise<Base64Png | undefined> {
 
 /**
  * Represents a single view. Includes all necessary data to it.
+ * Camera is represented by so called `reference camera`, see https://molstar.org/mol-view-spec-docs/camera-settings/.
  */
 export type ViewData = {
     id: string;
-    header: string;
     key: string;
-    description: string;
-    camera?: CameraState | null;
+    header: string;
+    description: string | undefined;
+    descriptionFormat: "markdown" | "plaintext" | undefined;
+    referenceCamera: CameraState;
     thumbnail?: Base64Png;
     linger_duration_ms?: number;
     transition_duration_ms?: number;
@@ -304,28 +319,61 @@ export type Story = {
 };
 
 /**
- * MVS uses FOV-adjusted camera position. It is needed to apply inverse so it doesn't offset the view when loaded.
- * @param camera camera data
+ * Convert a real Molstar camera position to an MVS reference-camera position.
+ *
+ * MVS camera positions are defined assuming a fixed reference FOV:
+ *  - Perspective: 60°
+ *  - Orthographic: ~53°
+ *
+ * This function removes the effect of the real camera FOV so that
+ * the stored position is FOV-independent.
+ *
+ * @param position position
+ * @param target target
+ * @param fov field of view in radians
+ * @param mode camera mode
  * @returns adjusted camera position
  */
-function adjustedCameraPosition(camera: CameraState): [number, number, number] {
-    const f =
+export function toMVSPosition(camera: {
+    position: Vec3;
+    target: Vec3;
+    fov: number;
+    mode: "perspective" | "orthographic";
+}): Vec3 {
+    const delta = Vec3.sub(Vec3(), camera.position, camera.target);
+
+    const scaleRealToRef =
         camera.mode === "orthographic"
-            ? 1 / (2 * Math.tan(camera.fov / 2))
-            : 1 / (2 * Math.sin(camera.fov / 2));
+            ? Math.tan(camera.fov / 2) / 0.5
+            : Math.sin(camera.fov / 2) / 0.5;
 
-    const delta = Vec3.sub(
-        Vec3(),
-        camera.position as Vec3,
-        camera.target as Vec3,
-    );
+    return Vec3.scaleAndAdd(Vec3(), camera.target, delta, scaleRealToRef);
+}
 
-    return Vec3.scaleAndAdd(
-        Vec3(),
-        camera.target as Vec3,
-        delta,
-        1 / f,
-    ) as unknown as [number, number, number];
+/**
+ * Convert an MVS reference-camera position to a real Mol* camera position
+ * for the currently active camera FOV.
+ *
+ * @param mvsPosition position from MVS
+ * @param mvsTarget target from MVS
+ * @param fovRad current field of view in radians
+ * @param mode current camera mode
+ * @returns real Molstar camera position
+ */
+export function fromMVSPosition(
+    mvsPosition: Vec3,
+    mvsTarget: Vec3,
+    fovRad: number,
+    mode: "perspective" | "orthographic",
+): Vec3 {
+    const delta = Vec3.sub(Vec3(), mvsPosition, mvsTarget);
+
+    const scaleRefToReal =
+        mode === "orthographic"
+            ? 0.5 / Math.tan(fovRad / 2)
+            : 0.5 / Math.sin(fovRad / 2);
+
+    return Vec3.scaleAndAdd(Vec3(), mvsTarget, delta, scaleRefToReal);
 }
 
 /**
@@ -406,11 +454,19 @@ async function buildMVSSnapshot(
     }
 
     // Include camera.
-    if (includeCamera && view.camera) {
+    if (includeCamera && view.referenceCamera) {
         builder.camera({
-            position: adjustedCameraPosition(view.camera),
-            target: view.camera.target as unknown as [number, number, number],
-            up: view.camera.up as unknown as [number, number, number],
+            position: view.referenceCamera.position as unknown as [
+                number,
+                number,
+                number,
+            ],
+            target: view.referenceCamera.target as unknown as [
+                number,
+                number,
+                number,
+            ],
+            up: view.referenceCamera.up as unknown as [number, number, number],
             custom: {
                 thumbnail: thumbnail,
             },
@@ -531,7 +587,7 @@ async function createArchive(
  * @param assets assets
  */
 export async function exportViewsAsMVSStory(
-    views: CameraView[],
+    views: ViewData[],
     assets: FileData[],
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
@@ -544,27 +600,9 @@ export async function exportViewsAsMVSStory(
             path: fd.name,
             content: fd.content as Uint8Array<ArrayBuffer>,
         })),
-        views: [],
+        views: views,
         title: storyTitle,
     };
-
-    // Adds all views into story.
-    views.forEach((view) => {
-        story.views.push({
-            id: view.id,
-            header: view.title,
-            key: view.id,
-            description: "Description...", // TODO: this will be done using annotations
-            thumbnail: view.thumbnail!,
-            camera: {
-                mode: molstar?.canvas3d?.camera.getSnapshot().mode!,
-                target: view.target!,
-                position: view.position!,
-                up: view.up!,
-                fov: molstar?.canvas3d?.camera.getSnapshot().fov!,
-            },
-        });
-    });
 
     // Builds MVSStory.
     const data = await buildMVSStory(story, true);
@@ -622,9 +660,11 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
     const id = crypto.randomUUID();
     story.views.push({
         id: id,
-        header: "New view...",
         key: id,
-        description: "",
+        header: "New view...",
+        description: undefined,
+        descriptionFormat: undefined,
+        referenceCamera: getDefaultCameraState(),
     });
 
     const data = await buildMVSStory(story, false);
@@ -641,12 +681,12 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
 
 // TODO: handle errors using result pattern
 // TODO: WIP
-function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
+function extractViewsFromMVS(mvsData: MVSData): ViewData[] {
     if (mvsData.kind !== "multiple") {
         return [];
     }
 
-    const views: CameraView[] = [];
+    const views: ViewData[] = [];
 
     mvsData.snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
@@ -655,21 +695,29 @@ function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
         );
 
         type CameraParams = CameraState & {
-            mode?: string;
-            fov?: number;
+            mode: string | undefined;
+            fov: number | undefined;
         };
 
         const cameraParams = cameraNode?.params as CameraParams | undefined;
+        const currentState = getCameraState() || getDefaultCameraState();
 
         if (cameraParams && metadata.key) {
-            const view: CameraView = {
+            const view: ViewData = {
                 id: metadata.key,
-                title: metadata.title || "Untitled View",
-                position: cameraParams.position!,
-                target: cameraParams.target!,
-                up: cameraParams.up!,
-                fov: getCameraState()?.fov ?? 45,
-                mode: getCameraState()?.mode ?? "perspective",
+                key: metadata.key,
+                description: metadata.description,
+                descriptionFormat: metadata.description_format,
+                header: metadata.title || "Untitled View",
+                referenceCamera: {
+                    position: cameraParams.position,
+                    target: cameraParams.target,
+                    up: cameraParams.up,
+                    fov: cameraParams.fov ? cameraParams.fov : currentState.fov, // If, by any chance, the MVS contains fov or mode, use it, otherwise set it to the current settings.
+                    mode: cameraParams.mode
+                        ? cameraParams.mode
+                        : currentState.mode,
+                },
                 thumbnail: cameraNode?.custom?.thumbnail,
             };
 
@@ -754,7 +802,7 @@ async function _loadMVSXFile(
 ): Promise<{
     mvsData: MVSData;
     sourceUrl: string;
-    views: CameraView[];
+    views: ViewData[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
@@ -802,12 +850,12 @@ async function _loadMVSXFile(
  * @returns views and assets of the given MVSX file
  */
 async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
-    views: CameraView[];
+    views: ViewData[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    let viewsToReturn: CameraView[] = [];
+    let viewsToReturn: ViewData[] = [];
     let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
 
     await molstar.runTask(
@@ -837,7 +885,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
  * @param rawData data of `.mvsj` file.
  * @returns views
  */
-async function loadMVSJFile(rawData: string): Promise<CameraView[]> {
+async function loadMVSJFile(rawData: string): Promise<ViewData[]> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const mvsData: MVSData = MVSData.fromMVSJ(rawData);
@@ -862,7 +910,7 @@ async function loadMVSJFile(rawData: string): Promise<CameraView[]> {
  * Result of `loadFromFile` function.
  */
 interface LoadFromFileResult {
-    views: CameraView[];
+    views: ViewData[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }
 

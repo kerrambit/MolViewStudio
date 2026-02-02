@@ -13,13 +13,15 @@ import {
     disposeMolstar,
     loadFromFile,
     getSnapshot,
-    type CameraState,
     setCamera,
-    type Base64Png,
     exportViewsAsMVSStory,
     prepareDataForDefaultMVS,
     createMVSBlob,
     getFullScreenSubscription,
+    type ViewData,
+    fromMVSPosition,
+    getCameraState,
+    getDefaultCameraState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -44,12 +46,6 @@ import { useProcessVolume } from "../../hooks/useProcessVolume";
 import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
 
-export type CameraView = CameraState & {
-    id: string;
-    title: string;
-    thumbnail?: Base64Png;
-};
-
 export function Viewer() {
     const { t } = useTranslation();
     const colorScheme = useComputedColorScheme();
@@ -70,7 +66,7 @@ export function Viewer() {
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
     // Views.
-    const [views, setViews] = useState<CameraView[]>([]);
+    const [views, setViews] = useState<ViewData[]>([]);
 
     // Controls if the Molstar viewer is expanded or not.
     const [molstarExpanded, setMolstarExpanded] = useState(false);
@@ -310,16 +306,26 @@ export function Viewer() {
                                 {views.map((view, index) => (
                                     <ViewCard
                                         key={view.id}
-                                        title={view.title}
+                                        title={view.header}
                                         index={index}
                                         thumbnail={view.thumbnail}
                                         onClick={() => {
+                                            // Get the current camera state (for field of view and mode which are not included in MVS).
+                                            const currentState =
+                                                getCameraState() ||
+                                                getDefaultCameraState();
+
+                                            // Set the camera to the view using conversion from MVS "reference camera" position to Molstar real camera position.
                                             setCamera({
-                                                position: view.position,
-                                                up: view.up,
-                                                target: view.target,
-                                                mode: view.mode,
-                                                fov: view.fov,
+                                                ...view.referenceCamera,
+                                                position: fromMVSPosition(
+                                                    view.referenceCamera
+                                                        .position as any,
+                                                    view.referenceCamera
+                                                        .target as any,
+                                                    currentState.fov,
+                                                    currentState.mode,
+                                                ),
                                             });
                                         }}
                                         onSave={(newTitle: string) => {
@@ -339,28 +345,25 @@ export function Viewer() {
                                 <NewViewCardCreator
                                     index={views.length + 1}
                                     onSave={(
-                                        {
-                                            mode: mode,
-                                            position: position,
-                                            target: target,
-                                            up: up,
-                                            fov: fov,
-                                        },
-                                        title,
                                         id,
+                                        title,
+                                        description,
+                                        descriptionFormat,
+                                        referenceCamera,
                                         thumbnail,
                                     ) => {
                                         setViews((prev) => [
                                             ...prev,
                                             {
                                                 id: id,
-                                                title: title,
+                                                key: id,
+                                                header: title,
+                                                description: description,
+                                                descriptionFormat:
+                                                    descriptionFormat,
+                                                referenceCamera:
+                                                    referenceCamera,
                                                 thumbnail: thumbnail,
-                                                target: target,
-                                                position: position,
-                                                up: up,
-                                                mode: mode,
-                                                fov: fov,
                                             },
                                         ]);
                                     }}
@@ -409,8 +412,8 @@ export function Viewer() {
 
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
-    views: CameraView[],
-    setViews: Dispatch<SetStateAction<CameraView[]>>,
+    views: ViewData[],
+    setViews: Dispatch<SetStateAction<ViewData[]>>,
     assets: FileData[],
 ) {
     const clearViewerItem: MenuItem = {
