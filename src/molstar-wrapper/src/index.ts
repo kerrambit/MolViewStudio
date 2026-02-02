@@ -15,18 +15,30 @@ import { murmurHash3_128_fromBytes } from "molstar/lib/mol-data/util";
 import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
-import { Camera } from "molstar/lib/mol-canvas3d/camera";
 import { type CameraView } from "../../ui/pages/viewer/Viewer";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 
+/**
+ * Instance of `PluginUIContext`.
+ */
+let molstar: PluginUIContext | undefined;
+
+/**
+ * Properties for `initMolstar` function.
+ */
 interface MolstarProps {
     showControls: boolean;
     isExpanded: boolean;
     darkMode: boolean;
 }
 
-let molstar: PluginUIContext | undefined;
-
+/**
+ * Initializes `PluginUIContext` targeted into `container`, based on singleton principle.
+ * @param container HTML element into which the plugin is mounted
+ * @param props configuration properties
+ * @param snapshot optional state snapshot to restore a previous session
+ * @returns initialized `PluginUIContext` instance
+ */
 export async function initMolstar(
     container: HTMLDivElement,
     props: MolstarProps,
@@ -96,8 +108,8 @@ export async function initMolstar(
 
 /**
  * Creates a subscription to the event: Molstar layout is expanded.
- * Make sure to unsubscribe.
  * @param onChanged event to run
+ * @warning Take care of the unsubscription.
  * @returns `Subscription` object
  */
 export function getFullScreenSubscription(
@@ -131,39 +143,164 @@ export function updateRegionState(
     });
 }
 
-export function getSnapshot() {
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * Retrieves Molstar snapshot.
+ * @returns Molstar snaphot
+ */
+export function getSnapshot(): PluginState.Snapshot {
     if (!molstar) throw new Error("Molstar is not initialized!");
-    clearMVSXFileAssets();
     return molstar.state.getSnapshot();
 }
 
-export type Story = {
-    scenes: SceneData[];
-    assets: SceneAsset[];
-};
+/**
+ * Disposes current `PluginUIContext` instance.
+ */
+export function disposeMolstar() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    clearMVSXFileAssets();
+    molstar.dispose();
+    molstar = undefined;
+}
 
-export type SceneAsset = {
-    name: string;
-    content: Uint8Array;
-};
+/**
+ * Clears the viewer.
+ */
+export async function clearViewer() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    clearMVSXFileAssets();
+    await molstar.clear();
+}
 
-export type CameraData = {
-    mode: Camera.Mode;
+/**
+ * Clears the MVSX file assests in Molstar's manager.
+ */
+function clearMVSXFileAssets() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    molstar.managers.asset.clearTag("mvsx-file");
+}
+
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * Contains immediate camera state.
+ */
+export type CameraState = {
+    mode: "perspective" | "orthographic";
     target: [number, number, number] | Vec3;
     position: [number, number, number] | Vec3;
     up: [number, number, number] | Vec3;
     fov: number;
 };
 
-export type SceneData = {
+/**
+ * Retrieves current camera state.
+ * @returns current camera state or undefined if camera is not available
+ */
+export function getCameraState(): CameraState | undefined {
+    if (!molstar || !molstar.canvas3d?.camera) return undefined;
+
+    const cameraSnapshot = molstar.canvas3d.camera.getSnapshot();
+    return {
+        mode: cameraSnapshot.mode,
+        target: Vec3.clone(molstar.canvas3d.camera.target),
+        position: Vec3.clone(molstar.canvas3d.camera.position),
+        up: Vec3.clone(molstar.canvas3d.camera.up),
+        fov: cameraSnapshot.fov,
+    };
+}
+
+/**
+ * Hook for current camera state.
+ * @returns current camera state or undefined if camera is not available
+ */
+export function useLiveCameraState(): CameraState | undefined {
+    const [liveCameraState, setLiveCameraState] = useState<
+        CameraState | undefined
+    >(undefined);
+
+    useEffect(() => {
+        let handle: number;
+
+        const update = () => {
+            const current = getCameraState();
+            setLiveCameraState(current);
+            handle = requestAnimationFrame(update);
+        };
+
+        handle = requestAnimationFrame(update);
+        return () => cancelAnimationFrame(handle);
+    }, []);
+
+    return liveCameraState;
+}
+
+/**
+ * Sets the camera.
+ * @param cameraState camera state to set the camera
+ */
+export function setCamera(cameraState: CameraState) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const { mode, position, up, target, fov } = cameraState;
+
+    molstar.canvas3d?.camera.setState({
+        mode: mode,
+        target: Vec3.create(target[0], target[1], target[2]),
+        position: Vec3.create(position[0], position[1], position[2]),
+        up: Vec3.create(up[0], up[1], up[2]),
+        fov: fov,
+    });
+}
+
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * Base64 PNG type.
+ */
+export type Base64Png = string;
+
+/**
+ * Retrieves canvas image in the form of Base64 PNG.
+ * @returns screenshot as Base64 PNG, or undefined if it is not possible to retrieve a screenshot
+ */
+export async function getCanvasScreenshot(): Promise<Base64Png | undefined> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    return await molstar.helpers.viewportScreenshot?.getImageDataUri();
+}
+
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * Represents a single view. Includes all necessary data to it.
+ */
+export type ViewData = {
     id: string;
     header: string;
     key: string;
     description: string;
-    camera?: CameraData | null;
+    camera?: CameraState | null;
     thumbnail?: Base64Png;
     linger_duration_ms?: number;
     transition_duration_ms?: number;
+};
+
+/**
+ * Represents a single local asset.
+ */
+export type LocalStoryAsset = {
+    path: string;
+    content: Uint8Array;
+};
+
+/**
+ * Represents a story with views and local assets.
+ */
+export type Story = {
+    title: string | undefined;
+    views: ViewData[];
+    assets: LocalStoryAsset[];
 };
 
 /**
@@ -171,8 +308,7 @@ export type SceneData = {
  * @param camera camera data
  * @returns adjusted camera position
  */
-function adjustedCameraPosition(camera: CameraData): [number, number, number] {
-    //
+function adjustedCameraPosition(camera: CameraState): [number, number, number] {
     const f =
         camera.mode === "orthographic"
             ? 1 / (2 * Math.tan(camera.fov / 2))
@@ -192,36 +328,54 @@ function adjustedCameraPosition(camera: CameraData): [number, number, number] {
     ) as unknown as [number, number, number];
 }
 
+/**
+ * Download asset used in MVS.
+ */
 type DownloadAsset = {
     url: string;
-    format: string;
+    format: "mmcif" | "bcif";
 };
 
+/**
+ * Converts color of type `Color` to hexadecimal format.
+ * @param color color
+ * @returns hexadecimal representation of `color` as string, default value is `#ffffff`,
+ */
 function convertColorToHexString(color: Color | undefined): string {
     if (color === undefined) return "#ffffff";
     return `#${color.toString(16).padStart(6, "0")}`;
 }
 
-async function getMVSSnapshot(
-    scene: SceneData,
+/**
+ * Builds MVS snapshot from a single view.
+ * @param view view data
+ * @param urls assets urls
+ * @param thumbnail optional view thumbnail
+ * @param includeCamera boolean flag if the camera state from `view` should be included into view
+ * @returns built snapshot with `view` data
+ */
+async function buildMVSSnapshot(
+    view: ViewData,
     urls: DownloadAsset[],
     thumbnail: Base64Png | undefined,
     includeCamera: boolean,
-) {
-    // Create MVS builder and get current snapshot.
+): Promise<Snapshot> {
+    // Create MVS builder and get current Molstar snapshot.
     const builder = MVSData.createBuilder();
-    const state = getSnapshot();
+    const molstarSnapshot = getSnapshot();
 
     // Add current background color into MVS.
+    // TODO: background color has to be saved together with view
     builder.canvas({
         background_color: convertColorToHexString(
-            state.canvas3d?.props?.renderer.backgroundColor,
+            molstarSnapshot.canvas3d?.props?.renderer.backgroundColor,
         ) as ColorT | undefined,
     });
 
+    // Add download nodes with assets.
     for (let i = 0; i < urls.length; ++i) {
+        // TODO: switching based on format should be reworked
         const downloadAsset = urls[i];
-        // TODO: switching based on format is probably temporary here
         if (downloadAsset.format === "mmcif") {
             builder
                 .download({
@@ -251,64 +405,84 @@ async function getMVSSnapshot(
         }
     }
 
-    if (includeCamera && scene.camera) {
+    // Include camera.
+    if (includeCamera && view.camera) {
         builder.camera({
-            position: adjustedCameraPosition(scene.camera),
-            target: scene.camera.target as unknown as [number, number, number],
-            up: scene.camera.up as unknown as [number, number, number],
+            position: adjustedCameraPosition(view.camera),
+            target: view.camera.target as unknown as [number, number, number],
+            up: view.camera.up as unknown as [number, number, number],
             custom: {
                 thumbnail: thumbnail,
             },
         });
     }
 
+    // Build the snapshot.
     return builder.getSnapshot({
-        key: scene.key.trim(),
-        title: scene.header.trim(),
-        description: scene.description,
-        linger_duration_ms: scene.linger_duration_ms || 5000,
-        transition_duration_ms: scene.transition_duration_ms || 500,
+        key: view.key.trim(),
+        title: view.header.trim(),
+        description: view.description,
+        linger_duration_ms: view.linger_duration_ms || 5000,
+        transition_duration_ms: view.transition_duration_ms || 500,
     });
 }
 
-async function getMVSData(
-    story: Story,
-    includeCamera: boolean,
-): Promise<MVSData | Uint8Array> {
-    const snapshots: Snapshot[] = [];
-    for (let index = 0; index < story.scenes.length; index++) {
-        const scene = story.scenes[index];
-        const snapshot = await getMVSSnapshot(
-            scene,
-            story.assets.map((asset) => {
-                // We parse the filename and extension.
-                const fullPath = asset.name;
-                const filenameWithExtension = fullPath.substring(
-                    fullPath.lastIndexOf("/") + 1,
-                );
-                const relativeUrl = `./${filenameWithExtension}`;
-                const lastDotIndex = filenameWithExtension.lastIndexOf(".");
+/**
+ * Transform `assets` to array of relative urls (it strips the absolute path and extract only the filename) linked with the format (currently supporting only `.cif` and `.bcif`).
+ * @param assets assets array
+ * @returns array of assets urls and their formats
+ */
+function transformLocalStoryAssetsIntoUrls(
+    assets: LocalStoryAsset[],
+): { format: "mmcif" | "bcif"; url: string }[] {
+    return assets.map((asset) => {
+        const fullPath = asset.path;
+        const filenameWithExtension = fullPath.substring(
+            fullPath.lastIndexOf("/") + 1,
+        );
+        const relativeUrl = `./${filenameWithExtension}`;
+        const lastDotIndex = filenameWithExtension.lastIndexOf(".");
 
-                let extension = "";
-                if (lastDotIndex > 0) {
-                    extension = filenameWithExtension.substring(lastDotIndex);
-                }
-                return {
-                    format: extension === ".cif" ? "mmcif" : "bcif",
-                    url: relativeUrl,
-                };
-            }),
-            scene.thumbnail,
-            includeCamera,
+        let extension = "";
+        if (lastDotIndex > 0) {
+            extension = filenameWithExtension.substring(lastDotIndex);
+        }
+        return {
+            format: extension === ".cif" ? "mmcif" : "bcif",
+            url: relativeUrl,
+        };
+    });
+}
+
+/**
+ * Creates a MVS from `story`.
+ * @param story story
+ * @param includeCameraInViews boolean flag if views inside `story` should include camera state
+ * @returns `MVSData` instance if there are no direct assets linked, otherwise it creates an archive (.mvsx)
+ */
+async function buildMVSStory(
+    story: Story,
+    includeCameraInViews: boolean,
+): Promise<MVSData | Uint8Array> {
+    // Iterate through all views and build them into Snapshots.
+    const snapshots: Snapshot[] = [];
+    for (let index = 0; index < story.views.length; index++) {
+        const view = story.views[index];
+        const snapshot = await buildMVSSnapshot(
+            view,
+            transformLocalStoryAssetsIntoUrls(story.assets),
+            view.thumbnail,
+            includeCameraInViews,
         );
         snapshot.root.children?.push();
         snapshots.push(snapshot);
     }
 
+    // Create an index (future index.mvsj).
     const index: MVSData = {
         kind: "multiple",
         metadata: {
-            title: undefined,
+            title: story.title,
             timestamp: new Date().toISOString(),
             version: `${MVSData.SupportedVersion}`,
         },
@@ -322,8 +496,16 @@ async function getMVSData(
     return createArchive(index, story.assets);
 }
 
-async function createArchive(index: MVSData, assets: SceneAsset[]) {
-    //
+/**
+ * Creates an archive from index and assets.
+ * @param index index
+ * @param assets assets array
+ * @returns binary archive
+ */
+async function createArchive(
+    index: MVSData,
+    assets: LocalStoryAsset[],
+): Promise<Uint8Array<ArrayBuffer>> {
     const encoder = new TextEncoder();
     const files: Record<string, Uint8Array<ArrayBuffer>> = {
         "index.mvsj": encoder.encode(
@@ -332,9 +514,9 @@ async function createArchive(index: MVSData, assets: SceneAsset[]) {
     };
 
     for (const asset of assets) {
-        const pathInZip = asset.name.startsWith("./")
-            ? asset.name.slice(2)
-            : asset.name;
+        const pathInZip = asset.path.startsWith("./")
+            ? asset.path.slice(2)
+            : asset.path;
         files[pathInZip] = asset.content as Uint8Array<ArrayBuffer>;
     }
 
@@ -342,31 +524,40 @@ async function createArchive(index: MVSData, assets: SceneAsset[]) {
     return new Uint8Array(zip) as Uint8Array<ArrayBuffer>;
 }
 
-export async function downloadViewerState(
-    assets: FileData[] | null,
+/**
+ * Exports views together with local assets in the form of MVS.
+ * Opens a file explorer for user to choose file location.
+ * @param views views
+ * @param assets assets
+ */
+export async function exportViewsAsMVSStory(
     views: CameraView[],
+    assets: FileData[],
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
+    const storyTitle: string | undefined = undefined; // TODO: enable user to enter a story title
+
+    // Create a story.
     const story: Story = {
-        assets: assets
-            ? assets.map((fd, index) => ({
-                  name: fd.name ?? `asset_${index}`,
-                  content: fd.content as Uint8Array<ArrayBuffer>,
-              }))
-            : [],
-        scenes: [],
+        assets: assets.map((fd) => ({
+            path: fd.name,
+            content: fd.content as Uint8Array<ArrayBuffer>,
+        })),
+        views: [],
+        title: storyTitle,
     };
 
+    // Adds all views into story.
     views.forEach((view) => {
-        story.scenes.push({
+        story.views.push({
             id: view.id,
             header: view.title,
             key: view.id,
-            description: "Description...", // TODO: this will work using annotations
+            description: "Description...", // TODO: this will be done using annotations
             thumbnail: view.thumbnail!,
             camera: {
-                mode: molstar?.canvas3d?.camera.getSnapshot().mode!, // TODO: this might be better be part of view
+                mode: molstar?.canvas3d?.camera.getSnapshot().mode!,
                 target: view.target!,
                 position: view.position!,
                 up: view.up!,
@@ -375,32 +566,29 @@ export async function downloadViewerState(
         });
     });
 
-    // console.log("ASSETS: ", molstar.managers.asset.assets.length);
-    // molstar.managers.asset.assets.map(
-    //     (a: {
-    //         asset: Asset;
-    //         file: File;
-    //         refCount: number;
-    //         isStatic?: boolean;
-    //         tag?: string;
-    //     }) => console.log(a)
-    // );
+    // Builds MVSStory.
+    const data = await buildMVSStory(story, true);
 
-    const data = await getMVSData(story, true);
-    const blob =
-        data instanceof Uint8Array
-            ? new Blob([data as Uint8Array<ArrayBuffer>], {
-                  type: "application/octet-stream",
-              })
-            : new Blob([JSON.stringify(data, null, 2)], {
-                  type: "application/json",
-              });
+    // Create data blob out of MVSStory.
+    const blob = createMVSBlob(data);
 
-    const filename = `${"tmp"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+    // Let user download the story.
+    const filename = `${storyTitle ? storyTitle : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     download(blob, filename);
 }
 
-export function createMVSBlob(data: string | Uint8Array<ArrayBuffer>) {
+/**
+ * Creates MVS blob out of `data`. Function explorer is `data` if just string-like (aka .mvsj) object or binary archive (aka .mvsx).
+ * @param data data
+ * @returns blob
+ */
+export function createMVSBlob(
+    data:
+        | string
+        | MVSData
+        | Uint8Array<ArrayBuffer>
+        | Uint8Array<ArrayBufferLike>,
+): Blob {
     return data instanceof Uint8Array
         ? new Blob([data as Uint8Array<ArrayBuffer>], {
               type: "application/octet-stream",
@@ -411,37 +599,35 @@ export function createMVSBlob(data: string | Uint8Array<ArrayBuffer>) {
 }
 
 /**
- * Creates default MVS (.mvsj/.mvsx-like) bundle from assets given as `fileData` parameter.
+ * Prepares data for default MVS from assets given as `fileData` parameter.
  * @param assets assets
- * @returns MVS bundle containing array buffer as the content and string extension user should use when saving this MVS bundle
+ * @returns bundle containing array buffer as the content and string extension user should use when saving this bundle
  */
-export async function createDefaultMVSBundle(
-    assets: FileData[] | null,
-): Promise<{
+export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
     data: string | Uint8Array<ArrayBuffer>;
-    extension: string;
+    extension: "mvsx" | "mvsj";
     isBinary: boolean;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const story: Story = {
-        assets: assets
-            ? assets.map((fd, index) => ({
-                  name: fd.name ?? `asset_${index}`,
-                  content: fd.content as Uint8Array<ArrayBuffer>,
-              }))
-            : [],
-        scenes: [],
+        assets: assets.map((fd) => ({
+            path: fd.name,
+            content: fd.content as Uint8Array<ArrayBuffer>,
+        })),
+        views: [],
+        title: undefined,
     };
 
-    story.scenes.push({
-        id: "",
+    const id = crypto.randomUUID();
+    story.views.push({
+        id: id,
         header: "New view...",
-        key: crypto.randomUUID(),
+        key: id,
         description: "",
     });
 
-    const data = await getMVSData(story, false);
+    const data = await buildMVSStory(story, false);
     const isBinary = data instanceof Uint8Array;
 
     return {
@@ -453,232 +639,8 @@ export async function createDefaultMVSBundle(
     };
 }
 
-// ----------------------------------------------------------------------------------- //
-
-export type CameraState = {
-    position?: Vec3;
-    up?: Vec3;
-    target?: Vec3;
-};
-
-export function getCameraState(): CameraState {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-    if (!molstar.canvas3d?.camera)
-        throw new Error("Molstar camera is not accessible!");
-
-    return {
-        position: Vec3.clone(molstar.canvas3d?.camera.position),
-        up: Vec3.clone(molstar.canvas3d?.camera.up),
-        target: Vec3.clone(molstar.canvas3d?.camera.target),
-    };
-}
-
-export function useLiveCameraState(): CameraState | undefined {
-    const [liveCameraState, setLiveCameraState] = useState<
-        CameraState | undefined
-    >(undefined);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            try {
-                setLiveCameraState(getCameraState());
-            } catch {
-                setLiveCameraState(undefined);
-            }
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    return liveCameraState;
-}
-
-export function setCamera(cameraState: CameraState) {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    const { position, up, target } = cameraState;
-
-    molstar.canvas3d?.camera.setState({
-        position: position ?? molstar.canvas3d?.camera.position,
-        up: up ?? molstar.canvas3d?.camera.up,
-        target: target ?? molstar.canvas3d?.camera.target,
-    });
-}
-
-export type Base64Png = string;
-
-export async function getCanvasImageAsUri(): Promise<Base64Png | undefined> {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    const helper = molstar.helpers.viewportScreenshot;
-    return await helper?.getImageDataUri();
-}
-
-export function disposeMolstar() {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-    clearMVSXFileAssets();
-    molstar?.dispose();
-    molstar = undefined;
-}
-
-export async function clearViewer() {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-    clearMVSXFileAssets();
-    await molstar.clear();
-}
-
-// ------------------------------------------------------------------------------------
-
-export async function loadDefaultPbdStructure() {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    await clearViewer();
-
-    const data = await molstar.builders.data.download(
-        { url: "https://files.rcsb.org/download/3PTB.pdb" },
-        { state: { isGhost: true } },
-    );
-
-    const trajectory = await molstar.builders.structure.parseTrajectory(
-        data,
-        "pdb",
-    );
-    const preset = await molstar.builders.structure.hierarchy.applyPreset(
-        trajectory,
-        "default",
-    );
-
-    return preset;
-}
-
-function clearMVSXFileAssets() {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-    molstar.managers.asset.clearTag("mvsx-file");
-}
-
-function arcpUri(archiveId: string, path: string): string {
-    return new URL(path, `arcp://${archiveId}/`).href;
-}
-
-function ensureUrlAsset(
-    manager: AssetManager,
-    url: string,
-    data: Uint8Array<ArrayBuffer>,
-    options?: { isFile?: boolean },
-) {
-    const asset = Asset.getUrlAsset(manager, url);
-
-    if (!manager.has(asset)) {
-        const filename = url.split("/").pop() ?? "file";
-        manager.set(
-            asset,
-            new File([data], filename),
-            options?.isFile ? { isStatic: true, tag: "mvsx-file" } : undefined,
-        );
-    }
-}
-
-let _decoder: TextDecoder | undefined;
-function decodeUtf8(bytes: Uint8Array): string {
-    _decoder ??= new TextDecoder();
-    return _decoder.decode(bytes);
-}
-
-async function _loadMVSXFile(
-    runtimeCtx: RuntimeContext,
-    data: Uint8Array<ArrayBuffer>,
-    mainFilePath: string = "index.mvsj",
-): Promise<{
-    mvsData: MVSData;
-    sourceUrl: string;
-    views: CameraView[];
-    assets: Record<string, Uint8Array<ArrayBuffer>>;
-}> {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-    clearMVSXFileAssets();
-
-    const archiveId = `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(
-        data,
-        42,
-    )}${Date.now()}`;
-
-    let files: { [path: string]: Uint8Array<ArrayBuffer> };
-    try {
-        files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
-    } catch (err) {
-        console.log("Invalid MVSX file!");
-        throw err;
-    }
-
-    for (const path in files) {
-        const url = arcpUri(archiveId, path);
-        ensureUrlAsset(molstar.managers.asset, url, files[path], {
-            isFile: true,
-        });
-    }
-
-    const { [mainFilePath]: _, ...assets } = files;
-
-    const mainFile = files[mainFilePath];
-    if (!mainFile)
-        throw new Error(`File ${mainFilePath} not found in the MVSX archive`);
-
-    const mvsData = MVSData.fromMVSJ(decodeUtf8(mainFile));
-    const sourceUrl = arcpUri(archiveId, mainFilePath);
-    const views = extractViewsFromMVS(mvsData);
-
-    return { mvsData, sourceUrl, views, assets };
-}
-
-export async function loadDefaultMVSXFile() {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    const response = await fetch(
-        "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
-    );
-    const arrayBuffer = await response.arrayBuffer();
-    const rawData = new Uint8Array(arrayBuffer);
-
-    loadMVSXFile(rawData);
-}
-
-async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
-    views: CameraView[];
-    assets: Record<string, Uint8Array<ArrayBuffer>>;
-}> {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    let viewsToReturn: CameraView[] = [];
-    let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
-
-    await molstar.runTask(
-        Task.create("Load MVSX file", async (ctx) => {
-            const parsed = await _loadMVSXFile(ctx, rawData);
-            viewsToReturn = parsed.views;
-            assetsToReturn = parsed.assets;
-
-            if (!molstar) throw new Error("Molstar is not initialized!");
-            await loadMVS(molstar, parsed.mvsData, {
-                sanityChecks: true,
-                sourceUrl: parsed.sourceUrl,
-            });
-        }),
-    );
-
-    return { views: viewsToReturn, assets: assetsToReturn };
-}
-
-export async function loadDefaultMVSJFile() {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-    const response = await fetch(
-        "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
-    );
-    const rawData = await response.text();
-
-    loadMVSJFile(rawData);
-}
-
-// TODO: sort out the errors and warnings better here
+// TODO: handle errors using result pattern
+// TODO: WIP
 function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
     if (mvsData.kind !== "multiple") {
         return [];
@@ -705,8 +667,10 @@ function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
                 title: metadata.title || "Untitled View",
                 position: cameraParams.position!,
                 target: cameraParams.target!,
-                thumbnail: cameraNode?.custom?.thumbnail,
                 up: cameraParams.up!,
+                fov: getCameraState()?.fov ?? 45,
+                mode: getCameraState()?.mode ?? "perspective",
+                thumbnail: cameraNode?.custom?.thumbnail,
             };
 
             views.push(view);
@@ -724,32 +688,193 @@ function extractViewsFromMVS(mvsData: MVSData): CameraView[] {
     return views;
 }
 
-async function loadMVSJFile(rawData: string) {
+/**
+ * Creates arcp URI.
+ * @param archiveId id of the given archive
+ * @param path path
+ * @returns arcp URI
+ */
+function arcpUri(archiveId: string, path: string): string {
+    return new URL(path, `arcp://${archiveId}/`).href;
+}
+
+/**
+ * Ensures that a specific URL (typically an `arcp://` URI) is registered in the
+ * Molstar AssetManager by pre-loading it with provided data.
+ * @param manager Molstar AssetManager instance responsible for data lifecycle
+ * @param url unique identifier for the asset
+ * @param data raw file data as a Uint8Array
+ * @param options configuration for how the asset is stored
+ */
+function ensureUrlAsset(
+    manager: AssetManager,
+    url: string,
+    data: Uint8Array<ArrayBuffer>,
+    options?: { isFile?: boolean },
+) {
+    const asset = Asset.getUrlAsset(manager, url);
+
+    if (!manager.has(asset)) {
+        const filename = url.split("/").pop() ?? "file";
+        manager.set(
+            asset,
+            new File([data], filename),
+            options?.isFile ? { isStatic: true, tag: "mvsx-file" } : undefined,
+        );
+    }
+}
+
+/**
+ * Instance of `TextDecoder`.
+ */
+let _decoder: TextDecoder | undefined;
+
+/**
+ * Decode `Uint8Array` into UTF8 string;
+ * @param bytes bytes to decode
+ * @returns UTF8 string
+ */
+function decodeUtf8(bytes: Uint8Array): string {
+    _decoder ??= new TextDecoder();
+    return _decoder.decode(bytes);
+}
+
+// TODO: handle errors using result pattern
+/**
+ * Internally loads given `.mvsx` archive file using given instance of `RuntimeContext`.
+ * @param runtimeCtx `RuntimeContext` instance
+ * @param data data of `.mvsx` in the form of bytes
+ * @param indexFilePath name of the index file
+ * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets
+ */
+async function _loadMVSXFile(
+    runtimeCtx: RuntimeContext,
+    data: Uint8Array<ArrayBuffer>,
+    indexFilePath: string = "index.mvsj",
+): Promise<{
+    mvsData: MVSData;
+    sourceUrl: string;
+    views: CameraView[];
+    assets: Record<string, Uint8Array<ArrayBuffer>>;
+}> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    // Create an archive ID.
+    const archiveId = `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(
+        data,
+        42,
+    )}${Date.now()}`;
+
+    // Unzipping MVSX archive into dictionary.
+    let files: { [path: string]: Uint8Array<ArrayBuffer> };
+    try {
+        files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
+    } catch (err) {
+        console.log("Invalid MVSX file!");
+        throw err;
+    }
+
+    // Register files into Molstar AsssetManager.
+    for (const path in files) {
+        const url = arcpUri(archiveId, path);
+        ensureUrlAsset(molstar.managers.asset, url, files[path], {
+            isFile: true,
+        });
+    }
+
+    // Deconstruct files into assets files and the index file (.mvsj).
+    const { [indexFilePath]: _, ...assets } = files;
+    const indexFile = files[indexFilePath];
+    if (!indexFile)
+        throw new Error(`File ${indexFile} not found in the MVSX archive`);
+
+    const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
+    const sourceUrl = arcpUri(archiveId, indexFilePath);
+    const views = extractViewsFromMVS(mvsData);
+
+    return { mvsData, sourceUrl, views, assets };
+}
+
+// TODO: handle errors using result pattern
+/**
+ * Loads given `MVSX` archive.
+ * @param rawData data of `.mvsx` archive as bytes
+ * @returns views and assets of the given MVSX file
+ */
+async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
+    views: CameraView[];
+    assets: Record<string, Uint8Array<ArrayBuffer>>;
+}> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    let viewsToReturn: CameraView[] = [];
+    let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
+
+    await molstar.runTask(
+        Task.create("Load MVSX file", async (ctx) => {
+            const parsed = await _loadMVSXFile(ctx, rawData);
+            viewsToReturn = parsed.views;
+            assetsToReturn = parsed.assets;
+
+            if (!molstar) throw new Error("Molstar is not initialized!");
+            await loadMVS(molstar, parsed.mvsData, {
+                sanityChecks: true,
+                sourceUrl: parsed.sourceUrl,
+                extensions: [],
+                appendSnapshots: false,
+                keepCamera: false,
+                keepCameraOrientation: false,
+            });
+        }),
+    );
+
+    return { views: viewsToReturn, assets: assetsToReturn };
+}
+
+// TODO: handle errors using result pattern
+/**
+ * Loads MVSJ file.
+ * @param rawData data of `.mvsj` file.
+ * @returns views
+ */
+async function loadMVSJFile(rawData: string): Promise<CameraView[]> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const mvsData: MVSData = MVSData.fromMVSJ(rawData);
     if (!MVSData.isValid(mvsData)) {
-        throw new Error(`Oh no: ${MVSData.validationIssues(mvsData)}`);
+        throw new Error(
+            `Error when parsing MVSJ: ${MVSData.validationIssues(mvsData)}`,
+        );
     }
 
     await loadMVS(molstar, mvsData, {
         appendSnapshots: false,
         keepCamera: false,
+        keepCameraOrientation: false,
         extensions: [],
+        sanityChecks: true,
     });
 
     return extractViewsFromMVS(mvsData);
 }
 
-interface loadFromFileResult {
+/**
+ * Result of `loadFromFile` function.
+ */
+interface LoadFromFileResult {
     views: CameraView[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }
 
-// TODO: all functions in this file have to handle errors based on some result pattern so we can progate error message above
+/**
+ * Loads data into viewer from the file.
+ * @param fileData data to load
+ * @returns views and possible assets from the loaded file, or null, if any problem occurs
+ */
 export async function loadFromFile(
     fileData: FileData | null,
-): Promise<loadFromFileResult | null> {
+): Promise<LoadFromFileResult | null> {
+    // TODO: handle errors based on some result pattern so we can progate error message above
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     if (!fileData) return null;

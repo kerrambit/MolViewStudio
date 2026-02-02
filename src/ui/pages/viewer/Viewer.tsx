@@ -10,17 +10,14 @@ import { Button } from "../../components/common/button/Button";
 import {
     clearViewer,
     initMolstar,
-    loadDefaultPbdStructure,
     disposeMolstar,
     loadFromFile,
     getSnapshot,
     type CameraState,
     setCamera,
     type Base64Png,
-    loadDefaultMVSJFile,
-    loadDefaultMVSXFile,
-    downloadViewerState,
-    createDefaultMVSBundle,
+    exportViewsAsMVSStory,
+    prepareDataForDefaultMVS,
     createMVSBlob,
     getFullScreenSubscription,
 } from "../../../molstar-wrapper/src";
@@ -193,10 +190,13 @@ export function Viewer() {
                 setVolumes(absolutePaths);
 
                 // Read assets from processed volume file.
+                // TODO: if assets is null, report warning or an error
                 const assets = await window.electron.getFileData(absolutePaths);
 
                 // Create MVS bundle from assets, containing just default view.
-                const defaultMVSData = await createDefaultMVSBundle(assets);
+                const defaultMVSData = await prepareDataForDefaultMVS(
+                    assets ? assets : [],
+                );
 
                 // TODO: this path is temporary for now, this is where we keep internal MVS state
                 const path = `${"/home/marek/MolStarAppData/tmp"}.${
@@ -318,6 +318,8 @@ export function Viewer() {
                                                 position: view.position,
                                                 up: view.up,
                                                 target: view.target,
+                                                mode: view.mode,
+                                                fov: view.fov,
                                             });
                                         }}
                                         onSave={(newTitle: string) => {
@@ -337,9 +339,13 @@ export function Viewer() {
                                 <NewViewCardCreator
                                     index={views.length + 1}
                                     onSave={(
-                                        position,
-                                        up,
-                                        target,
+                                        {
+                                            mode: mode,
+                                            position: position,
+                                            target: target,
+                                            up: up,
+                                            fov: fov,
+                                        },
                                         title,
                                         id,
                                         thumbnail,
@@ -353,6 +359,8 @@ export function Viewer() {
                                                 target: target,
                                                 position: position,
                                                 up: up,
+                                                mode: mode,
+                                                fov: fov,
                                             },
                                         ]);
                                     }}
@@ -424,18 +432,18 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                downloadViewerState(assets, views);
+                exportViewsAsMVSStory(views, assets);
             },
             type: "direct",
         },
     };
 
-    const loadDefaultPBDItem: MenuItem = {
-        id: "load-default-pbd",
-        title: "Load default PBD",
+    const loadDefaultPDBItem: MenuItem = {
+        id: "load-default-pdb",
+        title: "Load default PDB",
         task: {
             action: () => {
-                loadDefaultPbdStructure();
+                loadDefaultPDBFile();
             },
             type: "direct",
         },
@@ -468,7 +476,7 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
-            loadDefaultPBDItem,
+            loadDefaultPDBItem,
             loadDefaultMVSJItem,
             loadDefaultMVSXItem,
         ],
@@ -481,4 +489,46 @@ function createEditRootMenuItem(
     };
 
     return edit;
+}
+async function loadDefaultMVSJFile() {
+    const response = await fetch(
+        "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
+    );
+    const rawData = await response.text();
+
+    loadFromFile({
+        path: "",
+        extension: "mvsj",
+        name: "1cbs",
+        binary: false,
+        content: rawData,
+    });
+}
+
+async function loadDefaultMVSXFile() {
+    const response = await fetch(
+        "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
+    );
+    const arrayBuffer = await response.arrayBuffer();
+    const rawData = new Uint8Array(arrayBuffer);
+
+    loadFromFile({
+        path: "",
+        extension: "mvsx",
+        name: "1h9t",
+        binary: true,
+        content: rawData,
+    });
+}
+async function loadDefaultPDBFile() {
+    const response = await fetch("https://files.rcsb.org/download/3PTB.pdb");
+    const rawData = await response.text();
+
+    loadFromFile({
+        path: "",
+        extension: "pdb",
+        name: "3PTB",
+        binary: false,
+        content: rawData,
+    });
 }

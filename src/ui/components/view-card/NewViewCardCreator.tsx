@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-    getCanvasImageAsUri,
+    getCanvasScreenshot,
     useLiveCameraState,
     type Base64Png,
+    type CameraState,
 } from "../../../molstar-wrapper/src";
 import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { Button } from "../common/button/Button";
-import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import { TextInput } from "@mantine/core";
 
 import "./NewViewCardCreator.css";
@@ -14,18 +14,16 @@ import "./NewViewCardCreator.css";
 export interface NewViewCardCreatorProps {
     index: number;
     onSave?: (
-        position: Vec3 | undefined,
-        up: Vec3 | undefined,
-        target: Vec3 | undefined,
+        camera: CameraState,
         title: string,
         id: string,
-        thumbnail: Base64Png | undefined
+        thumbnail: Base64Png | undefined,
     ) => void;
 }
 
 export function NewViewCardCreator(props: NewViewCardCreatorProps) {
     const [currentName, setCurrentName] = useState<string | undefined>(
-        "New view..."
+        "New view...",
     );
 
     const cameraState = useLiveCameraState();
@@ -57,9 +55,9 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                     value={
                         cameraState?.position
                             ? `[${cameraState.position[0].toFixed(
-                                  1
+                                  1,
                               )}, ${cameraState.position[1].toFixed(
-                                  1
+                                  1,
                               )}, ${cameraState.position[2].toFixed(1)}]`
                             : "Not defined"
                     }
@@ -71,9 +69,9 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                     value={
                         cameraState?.up
                             ? `[${cameraState.up[0].toFixed(
-                                  1
+                                  1,
                               )}, ${cameraState.up[1].toFixed(
-                                  1
+                                  1,
                               )}, ${cameraState.up[2].toFixed(1)}]`
                             : "Not defined"
                     }
@@ -85,9 +83,9 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                     value={
                         cameraState?.target
                             ? `[${cameraState.target[0].toFixed(
-                                  1
+                                  1,
                               )}, ${cameraState.target[1].toFixed(
-                                  1
+                                  1,
                               )}, ${cameraState.target[2].toFixed(1)}]`
                             : "Not defined"
                     }
@@ -111,17 +109,15 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                         if (props.onSave && currentName && cameraState) {
                             let img: Base64Png | undefined;
                             try {
-                                img = await getCanvasImageAsUri();
+                                img = await getCanvasScreenshot();
                             } catch {
                                 img = undefined;
                             }
                             props.onSave(
-                                cameraState.position,
-                                cameraState.up,
-                                cameraState.target,
+                                cameraState,
                                 currentName,
                                 crypto.randomUUID(),
-                                img
+                                img,
                             );
                             setCurrentName("New view...");
                         }

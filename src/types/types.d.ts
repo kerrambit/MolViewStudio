@@ -20,7 +20,7 @@ type UnsubscribeFunction = () => void;
 interface Window {
     electron: {
         subscribeData: (
-            callback: (data: string) => void
+            callback: (data: string) => void,
         ) => UnsubscribeFunction;
 
         requestUserSettings: () => Promise<UserSettings>;
@@ -49,7 +49,7 @@ type Environment = {
 interface FileData {
     path: string;
     extension: string;
-    name: string;
+    name: string; // TODO: is the name without path, is the name with extension?
     binary: boolean;
     content: string | Uint8Array<ArrayBuffer>;
 }
