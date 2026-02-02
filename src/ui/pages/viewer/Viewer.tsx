@@ -18,7 +18,7 @@ import {
     prepareDataForDefaultMVS,
     createMVSBlob,
     getFullScreenSubscription,
-    type ViewData,
+    type View,
     fromMVSPosition,
     getCameraState,
     getDefaultCameraState,
@@ -66,7 +66,7 @@ export function Viewer() {
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
     // Views.
-    const [views, setViews] = useState<ViewData[]>([]);
+    const [views, setViews] = useState<View[]>([]);
 
     // Controls if the Molstar viewer is expanded or not.
     const [molstarExpanded, setMolstarExpanded] = useState(false);
@@ -306,7 +306,7 @@ export function Viewer() {
                                 {views.map((view, index) => (
                                     <ViewCard
                                         key={view.id}
-                                        title={view.header}
+                                        title={view.title}
                                         index={index}
                                         thumbnail={view.thumbnail}
                                         onClick={() => {
@@ -357,7 +357,7 @@ export function Viewer() {
                                             {
                                                 id: id,
                                                 key: id,
-                                                header: title,
+                                                title: title,
                                                 description: description,
                                                 descriptionFormat:
                                                     descriptionFormat,
@@ -412,8 +412,8 @@ export function Viewer() {
 
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
-    views: ViewData[],
-    setViews: Dispatch<SetStateAction<ViewData[]>>,
+    views: View[],
+    setViews: Dispatch<SetStateAction<View[]>>,
     assets: FileData[],
 ) {
     const clearViewerItem: MenuItem = {

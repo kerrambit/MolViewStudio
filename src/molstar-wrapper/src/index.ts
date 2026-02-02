@@ -289,10 +289,10 @@ export async function getCanvasScreenshot(): Promise<Base64Png | undefined> {
  * Represents a single view. Includes all necessary data to it.
  * Camera is represented by so called `reference camera`, see https://molstar.org/mol-view-spec-docs/camera-settings/.
  */
-export type ViewData = {
+export type View = {
     id: string;
     key: string;
-    header: string;
+    title: string;
     description: string | undefined;
     descriptionFormat: "markdown" | "plaintext" | undefined;
     referenceCamera: CameraState;
@@ -314,7 +314,7 @@ export type LocalStoryAsset = {
  */
 export type Story = {
     title: string | undefined;
-    views: ViewData[];
+    views: View[];
     assets: LocalStoryAsset[];
 };
 
@@ -403,7 +403,7 @@ function convertColorToHexString(color: Color | undefined): string {
  * @returns built snapshot with `view` data
  */
 async function buildMVSSnapshot(
-    view: ViewData,
+    view: View,
     urls: DownloadAsset[],
     thumbnail: Base64Png | undefined,
     includeCamera: boolean,
@@ -476,7 +476,7 @@ async function buildMVSSnapshot(
     // Build the snapshot.
     return builder.getSnapshot({
         key: view.key.trim(),
-        title: view.header.trim(),
+        title: view.title.trim(),
         description: view.description,
         linger_duration_ms: view.linger_duration_ms || 5000,
         transition_duration_ms: view.transition_duration_ms || 500,
@@ -586,10 +586,7 @@ async function createArchive(
  * @param views views
  * @param assets assets
  */
-export async function exportViewsAsMVSStory(
-    views: ViewData[],
-    assets: FileData[],
-) {
+export async function exportViewsAsMVSStory(views: View[], assets: FileData[]) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const storyTitle: string | undefined = undefined; // TODO: enable user to enter a story title
@@ -661,7 +658,7 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
     story.views.push({
         id: id,
         key: id,
-        header: "New view...",
+        title: "New view...",
         description: undefined,
         descriptionFormat: undefined,
         referenceCamera: getDefaultCameraState(),
@@ -681,12 +678,12 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
 
 // TODO: handle errors using result pattern
 // TODO: WIP
-function extractViewsFromMVS(mvsData: MVSData): ViewData[] {
+function extractViewsFromMVS(mvsData: MVSData): View[] {
     if (mvsData.kind !== "multiple") {
         return [];
     }
 
-    const views: ViewData[] = [];
+    const views: View[] = [];
 
     mvsData.snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
@@ -703,12 +700,12 @@ function extractViewsFromMVS(mvsData: MVSData): ViewData[] {
         const currentState = getCameraState() || getDefaultCameraState();
 
         if (cameraParams && metadata.key) {
-            const view: ViewData = {
+            const view: View = {
                 id: metadata.key,
                 key: metadata.key,
                 description: metadata.description,
                 descriptionFormat: metadata.description_format,
-                header: metadata.title || "Untitled View",
+                title: metadata.title || "Untitled View",
                 referenceCamera: {
                     position: cameraParams.position,
                     target: cameraParams.target,
@@ -802,7 +799,7 @@ async function _loadMVSXFile(
 ): Promise<{
     mvsData: MVSData;
     sourceUrl: string;
-    views: ViewData[];
+    views: View[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
@@ -850,12 +847,12 @@ async function _loadMVSXFile(
  * @returns views and assets of the given MVSX file
  */
 async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
-    views: ViewData[];
+    views: View[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    let viewsToReturn: ViewData[] = [];
+    let viewsToReturn: View[] = [];
     let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
 
     await molstar.runTask(
@@ -885,7 +882,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
  * @param rawData data of `.mvsj` file.
  * @returns views
  */
-async function loadMVSJFile(rawData: string): Promise<ViewData[]> {
+async function loadMVSJFile(rawData: string): Promise<View[]> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const mvsData: MVSData = MVSData.fromMVSJ(rawData);
@@ -910,7 +907,7 @@ async function loadMVSJFile(rawData: string): Promise<ViewData[]> {
  * Result of `loadFromFile` function.
  */
 interface LoadFromFileResult {
-    views: ViewData[];
+    views: View[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }
 
