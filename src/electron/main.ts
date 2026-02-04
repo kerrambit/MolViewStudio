@@ -17,7 +17,7 @@ import {
 } from "./utils/localUserSettingsUtils.js";
 import { ChildProcess, spawn } from "child_process";
 import { existsSync, readFileSync, writeFileSync } from "fs";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { logger } from "./utils/logger.js";
 
 app.on("ready", () => {
@@ -71,7 +71,7 @@ app.on("ready", () => {
     // Load the settings.
     const userSettings: UserSettings = loadUserSettings(
         userDataPath,
-        userSettingsFile
+        userSettingsFile,
     );
     logger.info(`User settings has been loaded from <${userSettingsFile}>.`);
 
@@ -130,7 +130,7 @@ app.on("ready", () => {
                 });
             } catch (err) {
                 logger.error(
-                    `While reading file <${filePath}>, an error occured: <${err}>!`
+                    `While reading file <${filePath}>, an error occured: <${err}>!`,
                 );
                 throw new Error(`Failed to read file: ${err}`);
             }
@@ -141,29 +141,17 @@ app.on("ready", () => {
 
     // A request from UI to save data into filesystem.
     Ipc.Electron.handleTwoWay("saveData", async (pck: SaveDataPackage) => {
-        logger.info(`Received data for saving to path <${pck.path}>.`);
-
-        try {
-            const arrayBuffer = pck.data;
-            const buffer = Buffer.from(arrayBuffer);
-
-            await writeFile(pck.path, buffer);
-
-            // TODO: send a success message back to the Renderer
-            logger.info(`Successfully saved file to <${pck.path}>.`);
-
-            return true;
-        } catch (error) {
-            // TODO: send a failure message back to the Renderer
-            logger.error(
-                `Failed to save file <${pck.path}>! Details: <${
-                    (error as Error).message
-                }>.`,
-                error
-            );
-            return false;
-        }
+        return await saveFile(pck.path, pck.data);
     });
+
+    // A request from UI to save temporary data into filesystem.
+    Ipc.Electron.handleTwoWay(
+        "saveTemporaryData",
+        async (pck: SaveDataPackage) => {
+            const fullFilePath = path.join(app.getPath("userData"), pck.path);
+            return await saveFile(fullFilePath, pck.data);
+        },
+    );
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
@@ -249,7 +237,7 @@ app.on("ready", () => {
                 });
             } catch (err) {
                 logger.error(
-                    `While reading file <${filePath}>, an error occured: <${err}>!`
+                    `While reading file <${filePath}>, an error occured: <${err}>!`,
                 );
                 throw new Error(`Failed to read file: ${err}`);
             }
@@ -272,7 +260,7 @@ app.on("ready", () => {
         .then((results) => {
             const serverProcess = results[0];
             logger.info(
-                `Server with PID: <${serverProcess.pid}> is running on <localhost:${userSettings.serverPort}>.`
+                `Server with PID: <${serverProcess.pid}> is running on <localhost:${userSettings.serverPort}>.`,
             );
             splash.close();
             mainWindow.show();
@@ -307,7 +295,7 @@ function runServer(serverPort: number): Promise<ChildProcess> {
         // For Vite Hot-Reloading.
         if (isDev()) {
             ["http://localhost:5123", "http://127.0.0.1:5123"].forEach(
-                (origin) => args.push(origin)
+                (origin) => args.push(origin),
             );
         }
 
@@ -317,15 +305,15 @@ function runServer(serverPort: number): Promise<ChildProcess> {
         });
         logger.info(
             `Server process has been spawned with arguments: <${args.join(
-                " "
-            )}>`
+                " ",
+            )}>`,
         );
 
         serverProcess.on("error", (err) => {
             reject(
                 new Error(
-                    `Failed to start server process! Details: <${err.message}>.`
-                )
+                    `Failed to start server process! Details: <${err.message}>.`,
+                ),
             );
         });
 
@@ -341,7 +329,7 @@ function runServer(serverPort: number): Promise<ChildProcess> {
                     http.get(url, () => res()).on("error", () => {
                         if (retries <= 0)
                             return rej(
-                                new Error("Failed to start server process!")
+                                new Error("Failed to start server process!"),
                             );
                         retries--;
                         setTimeout(attempt, delay);
@@ -365,7 +353,7 @@ function runServer(serverPort: number): Promise<ChildProcess> {
  */
 function handleCloseEvents(
     mainWindow: BrowserWindow,
-    serverProcess: ChildProcess | null
+    serverProcess: ChildProcess | null,
 ): void {
     let willClose = false;
 
@@ -401,10 +389,39 @@ function quitServerProcess(serverProcess: ChildProcess | null) {
                 ["/pid", serverProcess.pid.toString(), "/t", "/f"],
                 {
                     stdio: "ignore",
-                }
+                },
             );
         } else {
             serverProcess.kill();
         }
+    }
+}
+
+async function saveFile(fullFilePath: string, data: ArrayBuffer) {
+    const directoryPath = path.dirname(fullFilePath);
+
+    logger.info(`Received data for saving to path <${fullFilePath}>.`);
+
+    try {
+        await mkdir(directoryPath, { recursive: true });
+
+        const arrayBuffer = data;
+        const buffer = Buffer.from(arrayBuffer);
+
+        await writeFile(fullFilePath, buffer);
+
+        // TODO: send a success message back to the Renderer
+        logger.info(`Successfully saved file to <${fullFilePath}>.`);
+
+        return true;
+    } catch (error) {
+        // TODO: send a failure message back to the Renderer
+        logger.error(
+            `Failed to save file <${fullFilePath}>! Details: <${
+                (error as Error).message
+            }>.`,
+            error,
+        );
+        return false;
     }
 }

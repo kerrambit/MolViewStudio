@@ -10,6 +10,7 @@ type EventPayloadMapping = {
     // TODO: temporary return FileData[] instead of FileData
     openFileExplorer: FileData[] | null;
     saveData: boolean;
+    saveTemporaryData: boolean;
     getFileData: FileData[] | null;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
@@ -37,6 +38,11 @@ interface Window {
         getFileData: (paths: string[]) => Promise<FileData[] | null>;
 
         saveData: (data: ArrayBuffer, path: string) => Promise<boolean>;
+
+        saveTemporaryData: (
+            data: ArrayBuffer,
+            path: string,
+        ) => Promise<boolean>;
 
         changeUserSettings: (settings: UserSettings) => void;
     };

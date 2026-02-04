@@ -11,7 +11,7 @@ const electron = require("electron");
 export class Ipc {
     static Ui = class {
         static invoke<Key extends keyof EventPayloadMapping>(
-            key: Key
+            key: Key,
         ): Promise<EventPayloadMapping[Key]> {
             return electron.ipcRenderer.invoke(key);
         }
@@ -19,14 +19,14 @@ export class Ipc {
         // TODO: will be reworked
         static invokeTwoWay<Key extends keyof EventPayloadMapping>(
             key: Key,
-            payload: any
+            payload: any,
         ): Promise<EventPayloadMapping[Key]> {
             return electron.ipcRenderer.invoke(key, payload);
         }
 
         static on<Key extends keyof EventPayloadMapping>(
             key: Key,
-            callback: (payload: EventPayloadMapping[Key]) => void
+            callback: (payload: EventPayloadMapping[Key]) => void,
         ) {
             const _callback = (_: Electron.IpcRendererEvent, payload: any) =>
                 callback(payload);
@@ -36,7 +36,7 @@ export class Ipc {
 
         static send<Key extends keyof EventPayloadMapping>(
             key: Key,
-            payload: EventPayloadMapping[Key]
+            payload: EventPayloadMapping[Key],
         ) {
             electron.ipcRenderer.send(key, payload);
         }
@@ -71,6 +71,13 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     saveData: (data: ArrayBuffer, path: string) => {
         return Ipc.Ui.invokeTwoWay("saveData", {
+            data: data,
+            path: path,
+        } as any);
+    },
+
+    saveTemporaryData: (data: ArrayBuffer, path: string) => {
+        return Ipc.Ui.invokeTwoWay("saveTemporaryData", {
             data: data,
             path: path,
         } as any);
