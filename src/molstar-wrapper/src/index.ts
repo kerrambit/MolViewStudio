@@ -289,7 +289,7 @@ export async function getCanvasScreenshot(): Promise<Base64Png | undefined> {
  * Represents a single view. Includes all necessary data to it.
  * Camera is represented by so called `reference camera`, see https://molstar.org/mol-view-spec-docs/camera-settings/.
  */
-export type View = {
+export type ViewMetaData = {
     id: string;
     key: string;
     title: string;
@@ -314,7 +314,7 @@ export type LocalStoryAsset = {
  */
 export type Story = {
     title: string | undefined;
-    views: View[];
+    views: ViewMetaData[];
     assets: LocalStoryAsset[];
 };
 
@@ -403,7 +403,7 @@ function convertColorToHexString(color: Color | undefined): string {
  * @returns built snapshot with `view` data
  */
 async function buildMVSSnapshot(
-    view: View,
+    view: ViewMetaData,
     urls: DownloadAsset[],
     thumbnail: Base64Png | undefined,
     includeCamera: boolean,
@@ -742,7 +742,10 @@ export async function exportStateTree(stateTree: MVSData, assets: FileData[]) {
  * @param views views
  * @param assets assets
  */
-export async function exportViewsAsMVSStory(views: View[], assets: FileData[]) {
+export async function exportViewsAsMVSStory(
+    views: ViewMetaData[],
+    assets: FileData[],
+) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const storyTitle: string | undefined = undefined; // TODO: enable user to enter a story title
@@ -834,12 +837,12 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
 
 // TODO: handle errors using result pattern
 // TODO: WIP
-function extractViewsFromMVS(mvsData: MVSData): View[] {
+function extractViewsFromMVS(mvsData: MVSData): ViewMetaData[] {
     if (mvsData.kind !== "multiple") {
         return [];
     }
 
-    const views: View[] = [];
+    const views: ViewMetaData[] = [];
 
     mvsData.snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
@@ -856,7 +859,7 @@ function extractViewsFromMVS(mvsData: MVSData): View[] {
         const currentState = getCameraState() || getDefaultCameraState();
 
         if (cameraParams && metadata.key) {
-            const view: View = {
+            const view: ViewMetaData = {
                 id: metadata.key,
                 key: metadata.key,
                 description: metadata.description,
@@ -955,7 +958,7 @@ async function _loadMVSXFile(
 ): Promise<{
     mvsData: MVSData;
     sourceUrl: string;
-    views: View[];
+    views: ViewMetaData[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
@@ -1017,13 +1020,13 @@ function createDefaultMVSData() {
  * @returns views and assets of the given MVSX file
  */
 async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
-    views: View[];
+    views: ViewMetaData[];
     localAssets: Record<string, Uint8Array<ArrayBuffer>>;
     stateTree: MVSData;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    let viewsToReturn: View[] = [];
+    let viewsToReturn: ViewMetaData[] = [];
     let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
     let stateTree: MVSData = createDefaultMVSData();
 
@@ -1085,7 +1088,7 @@ async function loadMVSJFile(rawData: string) {
  */
 interface LoadFromFileResult {
     stateTree: MVSData;
-    views: View[];
+    views: ViewMetaData[];
     localAssets: Record<string, Uint8Array<ArrayBuffer>>;
 }
 
