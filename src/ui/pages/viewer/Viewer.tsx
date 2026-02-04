@@ -208,16 +208,18 @@ export function Viewer() {
                 setVolumes(absolutePaths);
 
                 // Read assets from processed volume file.
-                // TODO: report an error
                 const assets = await window.electron.getFileData(absolutePaths);
 
-                // Create MVS bundle from assets, containing just default view.
-                const defaultMVSData = await prepareDataForDefaultMVS(
-                    assets ? assets : [],
-                );
+                if (!assets) {
+                    // TODO: report an error
+                    return;
+                }
 
-                // TODO: this path is temporary for now, this is where we keep internal MVS state
-                const path = `${"/home/marek/MolStarAppData/tmp"}.${
+                // Create MVS bundle from assets, containing just default view.
+                const defaultMVSData = await prepareDataForDefaultMVS(assets);
+
+                // Path for temporary MVS processed file.
+                const path = `${`Processing/${new Date().toISOString().replace(/:/g, "-")}/MVS/tmp`}.${
                     defaultMVSData.extension
                 }`;
 
@@ -227,7 +229,7 @@ export function Viewer() {
                 ).arrayBuffer();
 
                 // Save MVS into file.
-                const saveDataResult = await window.electron.saveData(
+                const saveDataResult = await window.electron.saveTemporaryData(
                     arrayBuffer,
                     path,
                 );
@@ -252,11 +254,11 @@ export function Viewer() {
                     return;
                 }
 
-                // Sets regime.
+                // Sets regime to "viewing".
                 setRegime({
                     kind: "viewing",
                     fileToView: {
-                        path: "/home/marek/MolStarAppData/tmp",
+                        path: path, // TODO: does this matter? I am not sure if path is whole path or without filename
                         extension: defaultMVSData.extension,
                         name: "tmp",
                         binary: defaultMVSData.isBinary,

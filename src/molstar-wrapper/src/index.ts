@@ -823,7 +823,7 @@ export async function exportViewsAsMVSStory(
 }
 
 /**
- * Creates MVS blob out of `data`. Function explorer is `data` if just string-like (aka .mvsj) object or binary archive (aka .mvsx).
+ * Creates MVS blob out of `data`. Function explores if `data` is just string-like (aka .mvsj) object or binary archive (aka .mvsx).
  * @param data data
  * @returns blob
  */
