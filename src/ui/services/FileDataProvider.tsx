@@ -1,4 +1,5 @@
 import { createContext, useState, type ReactNode, useContext } from "react";
+import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 
 export type ProcessingRegime = {
     kind: "processing";
@@ -13,6 +14,7 @@ export type ViewingRegime = {
     kind: "viewing";
     fileToView: FileData | null;
     deconstructedFile: DeconstructedFileToView | null;
+    stateTree: MVSData;
 };
 
 export type IdlingRegime = {

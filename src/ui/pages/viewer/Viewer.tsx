@@ -14,7 +14,6 @@ import {
     loadFromFile,
     getSnapshot,
     setCamera,
-    exportViewsAsMVSStory,
     prepareDataForDefaultMVS,
     createMVSBlob,
     getFullScreenSubscription,
@@ -22,6 +21,9 @@ import {
     fromMVSPosition,
     getCameraState,
     getDefaultCameraState,
+    type View,
+    getPrimalViewCopy,
+    exportStateTree,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -45,6 +47,7 @@ import { SegmentedController } from "../../components/common/segmented-controlle
 import { useProcessVolume } from "../../hooks/useProcessVolume";
 import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
+import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 
 export function Viewer() {
     const { t } = useTranslation();
@@ -65,8 +68,9 @@ export function Viewer() {
     // Controls current regime of the application, stores current data.
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
-    // Views.
+    // Current view and views.
     const [views, setViews] = useState<ViewMetaData[]>([]);
+    const [view, setView] = useState<View | undefined>(undefined);
 
     // Controls if the Molstar viewer is expanded or not.
     const [molstarExpanded, setMolstarExpanded] = useState(false);
@@ -76,6 +80,7 @@ export function Viewer() {
     useEffect(() => {
         const edit = createEditRootMenuItem(
             t,
+            regime.kind === "viewing" ? regime.stateTree : undefined,
             views,
             setViews,
             regime.kind === "viewing" && regime.deconstructedFile
@@ -157,10 +162,22 @@ export function Viewer() {
                 binary: true,
             }));
 
+            const primalView = getPrimalViewCopy(result.stateTree);
+
+            // This can happen if the stateTree is of "multiple" kind, but has no snapshots. In our case, we report an error.
+            if (!primalView) {
+                // TODO: report an error
+                console.log("No snapshots found in state tree!");
+                return;
+            }
+
+            setView(primalView);
+
             // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
                 deconstructedFile: { assets: assetsArray },
+                stateTree: result.stateTree,
             });
         };
 
@@ -248,6 +265,7 @@ export function Viewer() {
                     deconstructedFile: {
                         assets: assets ?? [],
                     },
+                    stateTree: loadResult.stateTree,
                 });
             },
             onError: (err) => {
@@ -422,6 +440,7 @@ export function Viewer() {
 
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
+    stateTree: MVSData | undefined,
     views: ViewMetaData[],
     setViews: Dispatch<SetStateAction<ViewMetaData[]>>,
     assets: FileData[],
@@ -445,7 +464,8 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                exportViewsAsMVSStory(views, assets);
+                // exportViewsAsMVSStory(views, assets);
+                if (stateTree) exportStateTree(stateTree, assets);
             },
             type: "direct",
         },

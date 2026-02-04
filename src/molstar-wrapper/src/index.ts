@@ -6,7 +6,12 @@ import { Asset, AssetManager } from "molstar/lib/mol-util/assets";
 import { PluginState } from "molstar/lib/mol-plugin/state";
 import { Color } from "molstar/lib/mol-util/color";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
-import { MVSData, type Snapshot } from "molstar/lib/extensions/mvs/mvs-data";
+import {
+    MVSData,
+    MVSData_States,
+    SnapshotMetadata,
+    type Snapshot,
+} from "molstar/lib/extensions/mvs/mvs-data";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { PluginSpec } from "molstar/lib/mol-plugin/spec";
 import { MolViewSpec } from "molstar/lib/extensions/mvs/behavior";
@@ -16,6 +21,7 @@ import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
+import { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 
 /**
  * Instance of `PluginUIContext`.
@@ -299,6 +305,11 @@ export type ViewMetaData = {
     thumbnail?: Base64Png;
     lingerDuration_ms?: number;
     transitionDuration_ms?: number;
+};
+
+export type View = {
+    metadata?: ViewMetaData;
+    node: MVSTree;
 };
 
 /**
@@ -617,6 +628,46 @@ export async function exportStateTree(stateTree: MVSData, assets: FileData[]) {
     // Let user download the story.
     const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     download(blob, filename);
+}
+
+function convertSnapshotMetadataToViewMetadata(
+    metadata: SnapshotMetadata,
+): ViewMetaData {
+    return {
+        id: crypto.randomUUID(),
+        key: metadata.key || crypto.randomUUID(),
+        title: metadata.title || "New view...",
+        description: metadata.description,
+        descriptionFormat: metadata.description_format,
+        referenceCamera: getDefaultCameraState(),
+    };
+}
+
+function copyView(view: View) {
+    return structuredClone(view);
+}
+
+export function getPrimalViewCopy(stateTree: MVSData): View | null {
+    if (stateTree.kind === "single" || !stateTree.kind) {
+        const result = {
+            node: stateTree.root,
+        };
+        return copyView(result);
+    }
+
+    const multipleState = stateTree as MVSData_States;
+    if (multipleState.snapshots.length === 0) {
+        return null;
+    }
+
+    const firstSnapshot = multipleState.snapshots[0];
+
+    const result = {
+        node: firstSnapshot.root,
+        metadata: convertSnapshotMetadataToViewMetadata(firstSnapshot.metadata),
+    };
+
+    return copyView(result);
 }
 
 // /**
