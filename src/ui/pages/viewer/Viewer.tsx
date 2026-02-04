@@ -136,23 +136,28 @@ export function Viewer() {
                 return;
             }
 
+            // Load the file.
             const result = await loadFromFile(regime.fileToView);
             if (!result) {
+                // TODO: report an error
                 return;
             }
 
+            // Set the views in the editor.
             setViews(result.views);
 
-            const assetsArray: FileData[] = Object.entries(result.assets).map(
-                ([path, data]) => ({
-                    path: path,
-                    name: path,
-                    content: data,
-                    extension: "." + path.split(".").pop() || "",
-                    binary: true,
-                }),
-            );
+            // Create an array with local assets (if there are some).
+            const assetsArray: FileData[] = Object.entries(
+                result.localAssets,
+            ).map(([path, data]) => ({
+                path: path,
+                name: path,
+                content: data,
+                extension: "." + path.split(".").pop() || "",
+                binary: true,
+            }));
 
+            // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
                 deconstructedFile: { assets: assetsArray },
@@ -179,14 +184,14 @@ export function Viewer() {
                         "string",
                     );
                 } catch (error) {
-                    // TODO: log in file this internal error, show in UI
+                    // TODO: report an error
                     console.log(error);
                 }
 
                 setVolumes(absolutePaths);
 
                 // Read assets from processed volume file.
-                // TODO: if assets is null, report warning or an error
+                // TODO: report an error
                 const assets = await window.electron.getFileData(absolutePaths);
 
                 // Create MVS bundle from assets, containing just default view.
@@ -210,20 +215,25 @@ export function Viewer() {
                     path,
                 );
 
-                // TODO: log in file this internal error, show in UI
+                // TODO: report an error
                 if (!saveDataResult) {
                     console.log("Default MVS could not be saved!");
                     return;
                 }
 
                 // Show processed volume data as MVS in viewer.
-                await loadFromFile({
+                const loadResult = await loadFromFile({
                     path: "",
                     extension: defaultMVSData.extension,
                     name: "",
                     binary: defaultMVSData.isBinary,
                     content: defaultMVSData.data,
                 });
+
+                if (!loadResult) {
+                    console.log("Default MVS could not be loaded!");
+                    return;
+                }
 
                 // Sets regime.
                 setRegime({
@@ -499,7 +509,7 @@ async function loadDefaultMVSJFile() {
     );
     const rawData = await response.text();
 
-    loadFromFile({
+    await loadFromFile({
         path: "",
         extension: "mvsj",
         name: "1cbs",
@@ -515,7 +525,7 @@ async function loadDefaultMVSXFile() {
     const arrayBuffer = await response.arrayBuffer();
     const rawData = new Uint8Array(arrayBuffer);
 
-    loadFromFile({
+    await loadFromFile({
         path: "",
         extension: "mvsx",
         name: "1h9t",
@@ -527,7 +537,7 @@ async function loadDefaultPDBFile() {
     const response = await fetch("https://files.rcsb.org/download/3PTB.pdb");
     const rawData = await response.text();
 
-    loadFromFile({
+    await loadFromFile({
         path: "",
         extension: "pdb",
         name: "3PTB",
