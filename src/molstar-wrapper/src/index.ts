@@ -297,8 +297,8 @@ export type View = {
     descriptionFormat: "markdown" | "plaintext" | undefined;
     referenceCamera: CameraState;
     thumbnail?: Base64Png;
-    linger_duration_ms?: number;
-    transition_duration_ms?: number;
+    lingerDuration_ms?: number;
+    transitionDuration_ms?: number;
 };
 
 /**
@@ -478,8 +478,8 @@ async function buildMVSSnapshot(
         key: view.key.trim(),
         title: view.title.trim(),
         description: view.description,
-        linger_duration_ms: view.linger_duration_ms || 5000,
-        transition_duration_ms: view.transition_duration_ms || 500,
+        linger_duration_ms: view.lingerDuration_ms || 5000,
+        transition_duration_ms: view.transitionDuration_ms || 500,
     });
 }
 
@@ -579,6 +579,162 @@ async function createArchive(
     const zip = await Zip(files).run();
     return new Uint8Array(zip) as Uint8Array<ArrayBuffer>;
 }
+
+/**
+ * Transform `stateTree` into format ready to be converted into `Blob` and exported.
+ * The final format depends on the fact, if there are any `assets`, in that case, an archive must be created.
+ * @param stateTree
+ * @param assets
+ * @returns
+ */
+async function transfromStateTree(stateTree: MVSData, assets: FileData[]) {
+    if (assets.length === 0) {
+        return stateTree;
+    }
+
+    return await createArchive(
+        stateTree,
+        assets.map((fd) => ({
+            path: fd.name,
+            content: fd.content as Uint8Array<ArrayBuffer>,
+        })),
+    );
+}
+
+/**
+ * Exports `stateTree` with possible lcoal assets` in the form of MVS.
+ * Opens a file explorer for user to choose file location.
+ * @param stateTree state tree to export
+ * @param assets assets
+ */
+export async function exportStateTree(stateTree: MVSData, assets: FileData[]) {
+    // Prepare state tree (either MVSData if .mvsj, otherwise Uint8Array<ArrayBuffer>> for .mvsx).
+    const data = await transfromStateTree(stateTree, assets);
+
+    // Create data blob out of MVSStory.
+    const blob = createMVSBlob(data);
+
+    // Let user download the story.
+    const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+    download(blob, filename);
+}
+
+// /**
+//  * Converts signle state state tree into multiple state tree.
+//  * It is also possible to use `MVSData.stateToStates()`, however out functions is tailored directly for our needs.
+//  * @param stateTree state tree
+//  * @param defaultViewMetadata metadata for the root default view
+//  * @returns same state tree if it is already `multiple`, otherwise converted state tree
+//  */
+// export function convertStateTreeFromSingleToMultipleKind(
+//     stateTree: MVSData,
+//     defaultView: View,
+// ): MVSData {
+//     if (stateTree.kind === "multiple") {
+//         return stateTree;
+//     }
+
+//     const metadata: SnapshotMetadata = {
+//         key: defaultView?.key || crypto.randomUUID(),
+//         title: defaultView?.title || "New view...",
+//         description: defaultView?.description,
+//         description_format: defaultView?.descriptionFormat,
+//         linger_duration_ms: defaultView?.lingerDuration_ms || 5000,
+//         transition_duration_ms: defaultView?.transitionDuration_ms || 500,
+//     };
+
+//     const view: Snapshot = {
+//         root: stateTree.root,
+//         metadata: metadata,
+//     };
+
+//     const multipleMVS: MVSData = {
+//         kind: "multiple",
+//         metadata: {
+//             title: stateTree.metadata.title,
+//             version:
+//                 stateTree.metadata.version || `${MVSData.SupportedVersion}`,
+//             timestamp: stateTree.metadata.timestamp,
+//             description: stateTree.metadata.description,
+//             description_format: stateTree.metadata.description_format,
+//         },
+//         snapshots: [view],
+//     };
+
+//     return multipleMVS;
+// }
+
+// TODO: handle errors better
+// export function addViewIntoStateTree(
+//     stateTree: MVSData_States,
+//     view: View,
+// ): MVSData | null {
+
+//     const snapshotRoot = JSON.parse(JSON.stringify(stateTree.root));
+
+//     // Add camera node.
+//     try {
+//         const cameraNode = {
+//             kind: "camera",
+//             params: {
+//                 target: Array.from(view.referenceCamera.target) as [
+//                     number,
+//                     number,
+//                     number,
+//                 ],
+//                 position: Array.from(view.referenceCamera.position) as [
+//                     number,
+//                     number,
+//                     number,
+//                 ],
+//                 up: Array.from(view.referenceCamera.up) as [
+//                     number,
+//                     number,
+//                     number,
+//                 ],
+//             },
+//             custom: view?.thumbnail
+//                 ? {
+//                       thumbnail: view.thumbnail,
+//                   }
+//                 : undefined,
+//         };
+
+//         snapshotRoot.children = snapshotRoot.children || [];
+//         snapshotRoot.children.unshift(cameraNode);
+//     } catch (error) {
+//         return null;
+//     }
+
+//     const metadata: SnapshotMetadata = {
+//         key: view.key,
+//         title: view.title,
+//         description: view?.description,
+//         description_format: view?.descriptionFormat,
+//         linger_duration_ms: view?.lingerDuration_ms || 5000,
+//         transition_duration_ms: view?.transitionDuration_ms || 500,
+//     };
+
+//     const snapshot: Snapshot = {
+//         root: snapshotRoot,
+//         metadata: metadata,
+//     };
+
+//     const multipleMVS: MVSData = {
+//         kind: "multiple",
+//         metadata: {
+//             title: stateTree.metadata.title,
+//             version:
+//                 stateTree.metadata.version || `${MVSData.SupportedVersion}`,
+//             timestamp: stateTree.metadata.timestamp,
+//             description: stateTree.metadata.description,
+//             description_format: stateTree.metadata.description_format,
+//         },
+//         snapshots: [snapshot],
+//     };
+
+//     return multipleMVS;
+// }
 
 /**
  * Exports views together with local assets in the form of MVS.
@@ -840,6 +996,20 @@ async function _loadMVSXFile(
     return { mvsData, sourceUrl, views, assets };
 }
 
+function createDefaultMVSData() {
+    const snapshots: Snapshot[] = [];
+    const initialStateTree: MVSData = {
+        kind: "multiple",
+        metadata: {
+            title: undefined,
+            timestamp: new Date(0).toISOString(),
+            version: `${MVSData.SupportedVersion}`,
+        },
+        snapshots,
+    };
+    return initialStateTree;
+}
+
 // TODO: handle errors using result pattern
 /**
  * Loads given `MVSX` archive.
@@ -848,18 +1018,21 @@ async function _loadMVSXFile(
  */
 async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
     views: View[];
-    assets: Record<string, Uint8Array<ArrayBuffer>>;
+    localAssets: Record<string, Uint8Array<ArrayBuffer>>;
+    stateTree: MVSData;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     let viewsToReturn: View[] = [];
     let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
+    let stateTree: MVSData = createDefaultMVSData();
 
     await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
             const parsed = await _loadMVSXFile(ctx, rawData);
             viewsToReturn = parsed.views;
             assetsToReturn = parsed.assets;
+            stateTree = parsed.mvsData;
 
             if (!molstar) throw new Error("Molstar is not initialized!");
             await loadMVS(molstar, parsed.mvsData, {
@@ -873,7 +1046,11 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
         }),
     );
 
-    return { views: viewsToReturn, assets: assetsToReturn };
+    return {
+        views: viewsToReturn,
+        localAssets: assetsToReturn,
+        stateTree: stateTree,
+    };
 }
 
 // TODO: handle errors using result pattern
@@ -882,7 +1059,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
  * @param rawData data of `.mvsj` file.
  * @returns views
  */
-async function loadMVSJFile(rawData: string): Promise<View[]> {
+async function loadMVSJFile(rawData: string) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const mvsData: MVSData = MVSData.fromMVSJ(rawData);
@@ -900,15 +1077,16 @@ async function loadMVSJFile(rawData: string): Promise<View[]> {
         sanityChecks: true,
     });
 
-    return extractViewsFromMVS(mvsData);
+    return { views: extractViewsFromMVS(mvsData), stateTree: mvsData };
 }
 
 /**
  * Result of `loadFromFile` function.
  */
 interface LoadFromFileResult {
+    stateTree: MVSData;
     views: View[];
-    assets: Record<string, Uint8Array<ArrayBuffer>>;
+    localAssets: Record<string, Uint8Array<ArrayBuffer>>;
 }
 
 /**
@@ -928,8 +1106,8 @@ export async function loadFromFile(
 
     if (fileData.extension === "mvsj") {
         return {
-            views: await loadMVSJFile(fileData.content as string),
-            assets: {},
+            ...(await loadMVSJFile(fileData.content as string)),
+            localAssets: {},
         };
     }
 
