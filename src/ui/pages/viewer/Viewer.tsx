@@ -6,21 +6,16 @@ import {
     type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../../components/common/button/Button";
 import {
     clearViewer,
     initMolstar,
     disposeMolstar,
     loadFromFile,
     getSnapshot,
-    setCamera,
     prepareDataForDefaultMVS,
     createMVSBlob,
     getFullScreenSubscription,
     type ViewMetaData,
-    fromMVSPosition,
-    getCameraState,
-    getDefaultCameraState,
     type View,
     getPrimalViewCopy,
     exportStateTree,
@@ -29,7 +24,7 @@ import {
 import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { useMolstar } from "../../services/MolstarProvider";
-import { LoadingOverlay, useComputedColorScheme } from "@mantine/core";
+import { LoadingOverlay } from "@mantine/core";
 import {
     useMenu,
     type MenuItem,
@@ -40,14 +35,12 @@ import type { TFunction } from "i18next";
 import { useFileData } from "../../services/FileDataProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
-import { ViewCard } from "../../components/view-card/ViewCard";
-import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreator";
 import { IconPackageExport } from "@tabler/icons-react";
-import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
 import { useProcessVolume } from "../../hooks/useProcessVolume";
 import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
 import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
+import { SceneManager } from "../../components/scene-manager/SceneManager";
 
 export function Viewer() {
     const { t } = useTranslation();
@@ -91,10 +84,6 @@ export function Viewer() {
             deleteRootMenuItem(edit.id);
         };
     }, [t, views, setViews, regime]);
-
-    // Sidebar state.
-    type SidebarType = "views" | "seg" | "anno";
-    const [sidebar, setSidebar] = useState<SidebarType>("views");
 
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
@@ -293,113 +282,11 @@ export function Viewer() {
                     {processVolume.isSuccess &&
                         `Processing finished succefully: ${volumes}`}
                 </Sidebar>
-                <Sidebar
-                    style={{
-                        gap: ".5em",
-                        padding: ".5em",
-                    }}
-                >
-                    {/* Fix: segmented controller was visible in Molstar Full-Screen. */}
-                    {!molstarExpanded && (
-                        <SegmentedController<SidebarType>
-                            value={sidebar}
-                            onChange={setSidebar}
-                            data={[
-                                { label: "Views", value: "views" },
-                                { label: "Segmentations", value: "seg" },
-                                { label: "Annotations", value: "anno" },
-                            ]}
-                            widthWrapOrientationLimit={292}
-                        />
-                    )}
-
-                    {sidebar === "views" && (
-                        <>
-                            <Button
-                                size="small"
-                                onClick={() => {
-                                    setViews(() => []);
-                                }}
-                            >
-                                {"Clear views"}
-                            </Button>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    gap: "1em",
-                                }}
-                            >
-                                {views.map((view, index) => (
-                                    <ViewCard
-                                        key={view.id}
-                                        title={view.title}
-                                        index={index}
-                                        thumbnail={view.thumbnail}
-                                        onClick={() => {
-                                            // Get the current camera state (for field of view and mode which are not included in MVS).
-                                            const currentState =
-                                                getCameraState() ||
-                                                getDefaultCameraState();
-
-                                            // Set the camera to the view using conversion from MVS "reference camera" position to Molstar real camera position.
-                                            setCamera({
-                                                ...view.referenceCamera,
-                                                position: fromMVSPosition(
-                                                    view.referenceCamera
-                                                        .position as any,
-                                                    view.referenceCamera
-                                                        .target as any,
-                                                    currentState.fov,
-                                                    currentState.mode,
-                                                ),
-                                            });
-                                        }}
-                                        onSave={(newTitle: string) => {
-                                            setViews((prevViews) =>
-                                                prevViews.map((v) =>
-                                                    v.id === view.id
-                                                        ? {
-                                                              ...v,
-                                                              title: newTitle,
-                                                          }
-                                                        : v,
-                                                ),
-                                            );
-                                        }}
-                                    />
-                                ))}
-                                <NewViewCardCreator
-                                    index={views.length + 1}
-                                    onSave={(
-                                        id,
-                                        title,
-                                        description,
-                                        descriptionFormat,
-                                        referenceCamera,
-                                        thumbnail,
-                                    ) => {
-                                        setViews((prev) => [
-                                            ...prev,
-                                            {
-                                                id: id,
-                                                key: id,
-                                                title: title,
-                                                description: description,
-                                                descriptionFormat:
-                                                    descriptionFormat,
-                                                referenceCamera:
-                                                    referenceCamera,
-                                                thumbnail: thumbnail,
-                                            },
-                                        ]);
-                                    }}
-                                />
-                            </div>
-                        </>
-                    )}
-                </Sidebar>
+                <SceneManager
+                    isMolstarExpanded={molstarExpanded}
+                    views={views}
+                    setViews={setViews}
+                ></SceneManager>
                 <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
                     <div
                         ref={parentRef}
