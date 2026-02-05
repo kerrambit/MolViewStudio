@@ -43,6 +43,7 @@ import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 
 export function Viewer() {
+    // Use localization.
     const { t } = useTranslation();
 
     // Controlls Molstar snapshots.
@@ -57,15 +58,15 @@ export function Viewer() {
     // Controls if Molstar is still in the initialization process.
     const [molstarLoading, setMolstarLoading] = useState(true);
 
+    // Controls if the Molstar viewer is expanded or not.
+    const [molstarExpanded, setMolstarExpanded] = useState(false);
+
     // Controls current regime of the application, stores current data.
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
     // Current view and views.
     const [views, setViews] = useState<ViewMetaData[]>([]);
     const [view, setView] = useState<View | undefined>(undefined);
-
-    // Controls if the Molstar viewer is expanded or not.
-    const [molstarExpanded, setMolstarExpanded] = useState(false);
 
     // Add Edit root item button into the menu.
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
@@ -99,7 +100,6 @@ export function Viewer() {
             },
             snapshot,
         ).then(async () => {
-            // translateMolstarUi(parentRef);
             setMolstarLoading(false);
             fullScreenSubscription = getFullScreenSubscription((val) => {
                 setMolstarExpanded(val);
@@ -300,30 +300,6 @@ export function Viewer() {
         </div>
     );
 }
-
-// async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
-//     const btn = parent.current?.querySelector(
-//         'button[title="Reset Zoom"]'
-//     ) as HTMLButtonElement;
-//     if (btn) btn.title = "Custom Reset";
-//     const btn2 = parent.current?.querySelector(
-//         'button[title*="Set camera zoom to fit"]'
-//     ) as HTMLButtonElement;
-//     if (btn) {
-//         btn2.title = "Custom Reset Tooltip";
-//         btn2.textContent = "Custom Reset";
-//     }
-
-//     const screenshotBtn = parent.current?.querySelector(
-//         'button[title="Screenshot / State Snapshot"]'
-//     ) as HTMLButtonElement;
-//     if (screenshotBtn) screenshotBtn.style.display = "none";
-
-//     const toggleControlsBtn = parent.current?.querySelector(
-//         'button[title="Toggle Controls Panel"]'
-//     ) as HTMLButtonElement;
-//     if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
-// }
 
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,

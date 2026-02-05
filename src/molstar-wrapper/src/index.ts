@@ -1105,10 +1105,10 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
  * @param rawData data of `.mvsj` file.
  * @returns views
  */
-async function loadMVSJFile(rawData: string) {
+async function loadMVSJFile(index: string) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    const mvsData: MVSData = MVSData.fromMVSJ(rawData);
+    const mvsData: MVSData = MVSData.fromMVSJ(index);
     if (!MVSData.isValid(mvsData)) {
         throw new Error(
             `Error when parsing MVSJ: ${MVSData.validationIssues(mvsData)}`,
