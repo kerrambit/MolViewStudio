@@ -1063,16 +1063,13 @@ function createDefaultMVSData() {
  * @param rawData data of `.mvsx` archive as bytes
  * @returns views and assets of the given MVSX file
  */
-async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
-    views: ViewMetadata[];
-    localAssets: Record<string, Uint8Array<ArrayBuffer>>;
-    stateTree: MVSData;
-}> {
+async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     let viewsToReturn: ViewMetadata[] = [];
     let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
     let stateTree: MVSData = createDefaultMVSData();
+    let sourceUrl: string = "";
 
     await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
@@ -1080,6 +1077,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
             viewsToReturn = parsed.views;
             assetsToReturn = parsed.assets;
             stateTree = parsed.mvsData;
+            sourceUrl = parsed.sourceUrl;
 
             if (!molstar) throw new Error("Molstar is not initialized!");
             await loadMVS(molstar, parsed.mvsData, {
@@ -1097,6 +1095,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
         views: viewsToReturn,
         localAssets: assetsToReturn,
         stateTree: stateTree,
+        sourceUrl: sourceUrl,
     };
 }
 
@@ -1134,6 +1133,7 @@ interface LoadFromFileResult {
     stateTree: MVSData;
     views: ViewMetadata[];
     localAssets: Record<string, Uint8Array<ArrayBuffer>>;
+    sourceUrl: string;
 }
 
 /**
@@ -1155,6 +1155,7 @@ export async function loadFromFile(
         return {
             ...(await loadMVSJFile(fileData.content as string)),
             localAssets: {},
+            sourceUrl: "",
         };
     }
 
