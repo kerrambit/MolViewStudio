@@ -888,49 +888,41 @@ function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
 
     mvsData.snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
+
         const cameraNode = root.children?.find(
             (node) => node.kind === "camera",
         );
 
-        type CameraParams = CameraState & {
-            mode: string | undefined;
-            fov: number | undefined;
+        type CameraParams = {
+            target: [number, number, number] | Vec3;
+            position: [number, number, number] | Vec3;
+            up: [number, number, number] | Vec3;
         };
 
         const cameraParams = cameraNode?.params as CameraParams | undefined;
         const currentState = getCameraState() || getDefaultCameraState();
 
-        if (cameraParams && metadata.key) {
-            const view: ViewMetadata = {
-                id: metadata.key,
-                key: metadata.key,
-                description: metadata.description,
-                description_format: metadata.description_format,
-                title: metadata.title,
-                referenceCamera: {
-                    position: cameraParams.position,
-                    target: cameraParams.target,
-                    up: cameraParams.up,
-                    fov: cameraParams.fov ? cameraParams.fov : currentState.fov, // If, by any chance, the MVS contains fov or mode, use it, otherwise set it to the current settings.
-                    mode: cameraParams.mode
-                        ? cameraParams.mode
-                        : currentState.mode,
-                },
-                thumbnail: cameraNode?.custom?.thumbnail,
-                linger_duration_ms: 5000,
-                transition_duration_ms: metadata.transition_duration_ms,
-            };
+        const view: ViewMetadata = {
+            id: crypto.randomUUID(),
+            key: metadata.key,
+            description: metadata.description,
+            description_format: metadata.description_format,
+            title: metadata.title,
+            referenceCamera: cameraParams
+                ? {
+                      position: cameraParams.position || currentState.position,
+                      target: cameraParams.target || currentState.target,
+                      up: cameraParams.up || currentState.up,
+                      fov: currentState.fov,
+                      mode: currentState.mode,
+                  }
+                : undefined,
+            thumbnail: cameraNode?.custom?.thumbnail,
+            linger_duration_ms: 5000,
+            transition_duration_ms: metadata.transition_duration_ms,
+        };
 
-            views.push(view);
-        } else if (!metadata.key) {
-            console.log(
-                `Snapshot missing required 'key' metadata. Skipping snapshot with title: ${metadata.title}`,
-            );
-        } else {
-            console.log(
-                `Snapshot with ID ${metadata.key} is missing a 'camera' node. Skipping.`,
-            );
-        }
+        views.push(view);
     });
 
     return views;
