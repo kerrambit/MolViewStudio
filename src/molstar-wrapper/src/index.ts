@@ -12,6 +12,7 @@ import {
     SnapshotMetadata,
     type Snapshot,
 } from "molstar/lib/extensions/mvs/mvs-data";
+import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { PluginSpec } from "molstar/lib/mol-plugin/spec";
 import { MolViewSpec } from "molstar/lib/extensions/mvs/behavior";
@@ -22,6 +23,7 @@ import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
+import { Result } from "../../types/Result";
 
 /**
  * Instance of `PluginUIContext`.
@@ -658,6 +660,69 @@ export function getPrimalViewCopy(stateTree: MVSData): View | null {
     };
 
     return copyView(result);
+}
+
+export function retrieveMVSSnapshotFromStateTreeByIndex(
+    stateTree: MVSData,
+    index: number,
+): Result<Snapshot> {
+    if (stateTree.kind !== "multiple") {
+        return {
+            success: false,
+            error: new Error("Expected state tree of type <multiple>!"),
+        };
+    } else {
+        if (index >= stateTree.snapshots.length)
+            return {
+                success: false,
+                error: new Error(
+                    `Index <${index}> is out of bounds in the current state tree!`,
+                ),
+            };
+
+        return { success: true, value: stateTree.snapshots[index] };
+    }
+}
+
+export async function addNewSnapshotToManager(
+    key: string,
+    title: string,
+    description: string = "",
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    // Capture current plugin state.
+    const currentState = molstar.state.getSnapshot();
+
+    // Add to the snapshot manager.
+    const entry = await molstar.managers.snapshot.add({
+        name: title,
+        description: description,
+        key: key,
+        snapshot: currentState,
+        timestamp: 4564,
+    });
+}
+
+export async function applySnapshotByIndex(index: number): Promise<void> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        throw new Error(`Invalid snapshot index: ${index}`);
+    }
+
+    const entry = entries.get(index) as any;
+    if (!entry || !entry.snapshot) {
+        throw new Error(`Could not get entry at index ${index}`);
+    }
+
+    const snapshotId = entry.snapshot.id;
+    await PluginCommands.State.Snapshots.Apply(molstar, {
+        id: snapshotId,
+    });
 }
 
 // /**

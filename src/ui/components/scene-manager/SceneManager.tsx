@@ -4,16 +4,18 @@ import { Sidebar } from "../common/sidebar/Sidebar";
 import { Button } from "../common/button/Button";
 import { ViewCard } from "../view-card/ViewCard";
 import {
-    fromMVSPosition,
-    getCameraState,
-    getDefaultCameraState,
-    setCamera,
+    addNewSnapshotToManager,
+    applySnapshotByIndex,
+    type View,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
 import { NewViewCardCreator } from "../view-card/NewViewCardCreator";
+import { useFileData } from "../../services/FileDataProvider";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
+    currentView: View;
+    setCurrentView: React.Dispatch<React.SetStateAction<View>>;
     views: ViewMetadata[];
     setViews: React.Dispatch<React.SetStateAction<ViewMetadata[]>>;
 }
@@ -22,6 +24,8 @@ export function SceneManager(props: SceneManagerProps) {
     // Sidebar state.
     type SidebarType = "views" | "seg" | "anno";
     const [sidebar, setSidebar] = useState<SidebarType>("views");
+
+    const { regime } = useFileData();
 
     return (
         <Sidebar
@@ -68,26 +72,8 @@ export function SceneManager(props: SceneManagerProps) {
                                 title={view.title || "New view..."}
                                 index={index}
                                 thumbnail={view.thumbnail}
-                                onClick={() => {
-                                    // Get the current camera state (for field of view and mode which are not included in MVS).
-                                    const currentState =
-                                        getCameraState() ||
-                                        getDefaultCameraState();
-
-                                    // Set the camera to the view using conversion from MVS "reference camera" position to Molstar real camera position.
-                                    if (view.referenceCamera) {
-                                        setCamera({
-                                            ...view.referenceCamera,
-                                            position: fromMVSPosition(
-                                                view.referenceCamera
-                                                    .position as any,
-                                                view.referenceCamera
-                                                    .target as any,
-                                                currentState.fov,
-                                                currentState.mode,
-                                            ),
-                                        });
-                                    }
+                                onClick={async () => {
+                                    await applySnapshotByIndex(index);
                                 }}
                                 onSave={(newTitle: string) => {
                                     props.setViews((prevViews) =>
@@ -126,6 +112,14 @@ export function SceneManager(props: SceneManagerProps) {
                                         linger_duration_ms: 5000,
                                     },
                                 ]);
+
+                                // TODO: tmp
+                                addNewSnapshotToManager(
+                                    "gregergergher",
+                                    "HELLO",
+                                    "fretgreyheryher",
+                                );
+                                // TODO: update state tree
                             }}
                         />
                     </div>
