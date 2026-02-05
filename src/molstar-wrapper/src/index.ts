@@ -34,7 +34,6 @@ let molstar: PluginUIContext | undefined;
 interface MolstarProps {
     showControls: boolean;
     isExpanded: boolean;
-    darkMode: boolean;
 }
 
 /**
@@ -66,13 +65,6 @@ export async function initMolstar(
                     },
                     showControls: props.showControls,
                     isExpanded: props.isExpanded,
-                },
-            },
-            canvas3d: {
-                renderer: {
-                    backgroundColor: props.darkMode
-                        ? Color.fromRgb(76, 72, 72)
-                        : Color.fromRgb(255, 255, 255),
                 },
             },
             behaviors: [

@@ -51,7 +51,6 @@ import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 
 export function Viewer() {
     const { t } = useTranslation();
-    const colorScheme = useComputedColorScheme();
 
     // Controlls Molstar snapshots.
     const { snapshot, setSnapshot } = useMolstar();
@@ -108,7 +107,6 @@ export function Viewer() {
             {
                 showControls: true,
                 isExpanded: false,
-                darkMode: colorScheme === "dark",
             },
             snapshot,
         ).then(async () => {
