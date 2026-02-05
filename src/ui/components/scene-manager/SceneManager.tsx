@@ -8,14 +8,14 @@ import {
     getCameraState,
     getDefaultCameraState,
     setCamera,
-    type ViewMetaData,
+    type ViewMetadata,
 } from "../../../molstar-wrapper/src";
 import { NewViewCardCreator } from "../view-card/NewViewCardCreator";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
-    views: ViewMetaData[];
-    setViews: React.Dispatch<React.SetStateAction<ViewMetaData[]>>;
+    views: ViewMetadata[];
+    setViews: React.Dispatch<React.SetStateAction<ViewMetadata[]>>;
 }
 
 export function SceneManager(props: SceneManagerProps) {
@@ -65,7 +65,7 @@ export function SceneManager(props: SceneManagerProps) {
                         {props.views.map((view, index) => (
                             <ViewCard
                                 key={view.id}
-                                title={view.title}
+                                title={view.title || "New view..."}
                                 index={index}
                                 thumbnail={view.thumbnail}
                                 onClick={() => {
@@ -75,16 +75,19 @@ export function SceneManager(props: SceneManagerProps) {
                                         getDefaultCameraState();
 
                                     // Set the camera to the view using conversion from MVS "reference camera" position to Molstar real camera position.
-                                    setCamera({
-                                        ...view.referenceCamera,
-                                        position: fromMVSPosition(
-                                            view.referenceCamera
-                                                .position as any,
-                                            view.referenceCamera.target as any,
-                                            currentState.fov,
-                                            currentState.mode,
-                                        ),
-                                    });
+                                    if (view.referenceCamera) {
+                                        setCamera({
+                                            ...view.referenceCamera,
+                                            position: fromMVSPosition(
+                                                view.referenceCamera
+                                                    .position as any,
+                                                view.referenceCamera
+                                                    .target as any,
+                                                currentState.fov,
+                                                currentState.mode,
+                                            ),
+                                        });
+                                    }
                                 }}
                                 onSave={(newTitle: string) => {
                                     props.setViews((prevViews) =>
@@ -117,9 +120,10 @@ export function SceneManager(props: SceneManagerProps) {
                                         key: id,
                                         title: title,
                                         description: description,
-                                        descriptionFormat: descriptionFormat,
+                                        description_format: descriptionFormat,
                                         referenceCamera: referenceCamera,
                                         thumbnail: thumbnail,
+                                        linger_duration_ms: 5000,
                                     },
                                 ]);
                             }}

@@ -287,21 +287,15 @@ export async function getCanvasScreenshot(): Promise<Base64Png | undefined> {
  * Represents a single view. Includes all necessary data to it.
  * Camera is represented by so called `reference camera`, see https://molstar.org/mol-view-spec-docs/camera-settings/.
  */
-export type ViewMetaData = {
+export type ViewMetadata = {
     id: string;
-    key: string;
-    title: string;
-    description: string | undefined;
-    descriptionFormat: "markdown" | "plaintext" | undefined;
-    referenceCamera: CameraState;
+    referenceCamera?: CameraState;
     thumbnail?: Base64Png;
-    lingerDuration_ms?: number;
-    transitionDuration_ms?: number;
-};
+} & SnapshotMetadata;
 
 export type View = {
-    metadata?: ViewMetaData;
     node: MVSTree;
+    metadata?: ViewMetadata;
 };
 
 /**
@@ -315,9 +309,10 @@ export type LocalStoryAsset = {
 /**
  * Represents a story with views and local assets.
  */
+// TODO: add GlobalMetadata to this
 export type Story = {
     title: string | undefined;
-    views: ViewMetaData[];
+    views: ViewMetadata[];
     assets: LocalStoryAsset[];
 };
 
@@ -406,7 +401,7 @@ function convertColorToHexString(color: Color | undefined): string {
  * @returns built snapshot with `view` data
  */
 async function buildMVSSnapshot(
-    view: ViewMetaData,
+    view: ViewMetadata,
     urls: DownloadAsset[],
     thumbnail: Base64Png | undefined,
     includeCamera: boolean,
@@ -478,11 +473,12 @@ async function buildMVSSnapshot(
 
     // Build the snapshot.
     return builder.getSnapshot({
-        key: view.key.trim(),
-        title: view.title.trim(),
+        title: view.title?.trim(),
         description: view.description,
-        linger_duration_ms: view.lingerDuration_ms || 5000,
-        transition_duration_ms: view.transitionDuration_ms || 500,
+        description_format: view.description_format,
+        key: view.key?.trim(),
+        linger_duration_ms: view.linger_duration_ms || 5000,
+        transition_duration_ms: view.transition_duration_ms,
     });
 }
 
@@ -624,14 +620,16 @@ export async function exportStateTree(stateTree: MVSData, assets: FileData[]) {
 
 function convertSnapshotMetadataToViewMetadata(
     metadata: SnapshotMetadata,
-): ViewMetaData {
+): ViewMetadata {
     return {
         id: crypto.randomUUID(),
         key: metadata.key || crypto.randomUUID(),
         title: metadata.title || "New view...",
         description: metadata.description,
-        descriptionFormat: metadata.description_format,
+        description_format: metadata.description_format,
         referenceCamera: getDefaultCameraState(),
+        linger_duration_ms: 5000,
+        transition_duration_ms: metadata.transition_duration_ms,
     };
 }
 
@@ -786,7 +784,7 @@ export function getPrimalViewCopy(stateTree: MVSData): View | null {
  * @param assets assets
  */
 export async function exportViewsAsMVSStory(
-    views: ViewMetaData[],
+    views: ViewMetadata[],
     assets: FileData[],
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
@@ -862,8 +860,10 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
         key: id,
         title: "New view...",
         description: undefined,
-        descriptionFormat: undefined,
+        description_format: undefined,
         referenceCamera: getDefaultCameraState(),
+        linger_duration_ms: 5000,
+        transition_duration_ms: undefined,
     });
 
     const data = await buildMVSStory(story, false);
@@ -879,13 +879,12 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
 }
 
 // TODO: handle errors using result pattern
-// TODO: WIP
-function extractViewsFromMVS(mvsData: MVSData): ViewMetaData[] {
+function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     if (mvsData.kind !== "multiple") {
         return [];
     }
 
-    const views: ViewMetaData[] = [];
+    const views: ViewMetadata[] = [];
 
     mvsData.snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
@@ -902,12 +901,12 @@ function extractViewsFromMVS(mvsData: MVSData): ViewMetaData[] {
         const currentState = getCameraState() || getDefaultCameraState();
 
         if (cameraParams && metadata.key) {
-            const view: ViewMetaData = {
+            const view: ViewMetadata = {
                 id: metadata.key,
                 key: metadata.key,
                 description: metadata.description,
-                descriptionFormat: metadata.description_format,
-                title: metadata.title || "Untitled View",
+                description_format: metadata.description_format,
+                title: metadata.title,
                 referenceCamera: {
                     position: cameraParams.position,
                     target: cameraParams.target,
@@ -918,6 +917,8 @@ function extractViewsFromMVS(mvsData: MVSData): ViewMetaData[] {
                         : currentState.mode,
                 },
                 thumbnail: cameraNode?.custom?.thumbnail,
+                linger_duration_ms: 5000,
+                transition_duration_ms: metadata.transition_duration_ms,
             };
 
             views.push(view);
@@ -1001,7 +1002,7 @@ async function _loadMVSXFile(
 ): Promise<{
     mvsData: MVSData;
     sourceUrl: string;
-    views: ViewMetaData[];
+    views: ViewMetadata[];
     assets: Record<string, Uint8Array<ArrayBuffer>>;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
@@ -1063,13 +1064,13 @@ function createDefaultMVSData() {
  * @returns views and assets of the given MVSX file
  */
 async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>): Promise<{
-    views: ViewMetaData[];
+    views: ViewMetadata[];
     localAssets: Record<string, Uint8Array<ArrayBuffer>>;
     stateTree: MVSData;
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    let viewsToReturn: ViewMetaData[] = [];
+    let viewsToReturn: ViewMetadata[] = [];
     let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
     let stateTree: MVSData = createDefaultMVSData();
 
@@ -1131,7 +1132,7 @@ async function loadMVSJFile(index: string) {
  */
 interface LoadFromFileResult {
     stateTree: MVSData;
-    views: ViewMetaData[];
+    views: ViewMetadata[];
     localAssets: Record<string, Uint8Array<ArrayBuffer>>;
 }
 

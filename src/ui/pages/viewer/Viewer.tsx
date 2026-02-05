@@ -15,7 +15,7 @@ import {
     prepareDataForDefaultMVS,
     createMVSBlob,
     getFullScreenSubscription,
-    type ViewMetaData,
+    type ViewMetadata,
     type View,
     getPrimalViewCopy,
     exportStateTree,
@@ -65,7 +65,7 @@ export function Viewer() {
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
 
     // Current view and views.
-    const [views, setViews] = useState<ViewMetaData[]>([]);
+    const [views, setViews] = useState<ViewMetadata[]>([]);
     const [view, setView] = useState<View | undefined>(undefined);
 
     // Add Edit root item button into the menu.
@@ -304,8 +304,8 @@ export function Viewer() {
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
     stateTree: MVSData | undefined,
-    views: ViewMetaData[],
-    setViews: Dispatch<SetStateAction<ViewMetaData[]>>,
+    views: ViewMetadata[],
+    setViews: Dispatch<SetStateAction<ViewMetadata[]>>,
     assets: FileData[],
 ) {
     const clearViewerItem: MenuItem = {
