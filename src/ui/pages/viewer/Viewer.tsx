@@ -41,6 +41,10 @@ import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
 import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
+import type { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
+
+const initialRoot: MVSTree = { kind: "root" };
+const initialView: View = { node: initialRoot };
 
 export function Viewer() {
     // Use localization.
@@ -66,7 +70,7 @@ export function Viewer() {
 
     // Current view and views.
     const [views, setViews] = useState<ViewMetadata[]>([]);
-    const [view, setView] = useState<View | undefined>(undefined);
+    const [view, setView] = useState<View>(initialView);
 
     // Add Edit root item button into the menu.
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
@@ -165,6 +169,7 @@ export function Viewer() {
                 ...regime,
                 deconstructedFile: { assets: assetsArray },
                 stateTree: result.stateTree,
+                sourceUrl: result.sourceUrl,
             });
         };
 
@@ -255,6 +260,7 @@ export function Viewer() {
                         assets: assets ?? [],
                     },
                     stateTree: loadResult.stateTree,
+                    sourceUrl: loadResult.sourceUrl,
                 });
             },
             onError: (err) => {
@@ -284,6 +290,8 @@ export function Viewer() {
                 </Sidebar>
                 <SceneManager
                     isMolstarExpanded={molstarExpanded}
+                    currentView={view}
+                    setCurrentView={setView}
                     views={views}
                     setViews={setViews}
                 ></SceneManager>

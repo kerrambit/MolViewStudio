@@ -15,6 +15,7 @@ export type ViewingRegime = {
     fileToView: FileData | null;
     deconstructedFile: DeconstructedFileToView | null;
     stateTree: MVSData;
+    sourceUrl: string;
 };
 
 export type IdlingRegime = {
