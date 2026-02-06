@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "../common/button/Button";
 import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
+import { buildCSSClassString } from "../../utils/cssClassBuilder";
 
 import "./ViewCard.css";
 
@@ -14,6 +15,11 @@ export interface ViewCardProps {
 
 export function ViewCard(props: ViewCardProps) {
     const [_, setCurrentName] = useState<string | undefined>(props.title);
+
+    const viewCardClasses = buildCSSClassString([
+        "viewCard",
+        props.active && "viewCard--active",
+    ]);
 
     return (
         <div className="viewCard">
