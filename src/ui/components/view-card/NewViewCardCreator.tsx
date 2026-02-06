@@ -8,7 +8,7 @@ import {
 } from "../../../molstar-wrapper/src";
 import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { Button } from "../common/button/Button";
-import { TextInput } from "@mantine/core";
+import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
 
 import "./NewViewCardCreator.css";
 
@@ -53,57 +53,9 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                 }}
             />
 
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    width: "95%",
-                    paddingLeft: "1em",
-                    gap: ".5em",
-                }}
-            >
-                <TextInput
-                    label="Camera position"
-                    value={
-                        cameraState?.position
-                            ? `[${cameraState.position[0].toFixed(
-                                  1,
-                              )}, ${cameraState.position[1].toFixed(
-                                  1,
-                              )}, ${cameraState.position[2].toFixed(1)}]`
-                            : "Not defined"
-                    }
-                    readOnly
-                />
-
-                <TextInput
-                    label="Up"
-                    value={
-                        cameraState?.up
-                            ? `[${cameraState.up[0].toFixed(
-                                  1,
-                              )}, ${cameraState.up[1].toFixed(
-                                  1,
-                              )}, ${cameraState.up[2].toFixed(1)}]`
-                            : "Not defined"
-                    }
-                    readOnly
-                />
-
-                <TextInput
-                    label="Target"
-                    value={
-                        cameraState?.target
-                            ? `[${cameraState.target[0].toFixed(
-                                  1,
-                              )}, ${cameraState.target[1].toFixed(
-                                  1,
-                              )}, ${cameraState.target[2].toFixed(1)}]`
-                            : "Not defined"
-                    }
-                    readOnly
-                />
-            </div>
+            <CameraTextInputGroup
+                cameraState={cameraState}
+            ></CameraTextInputGroup>
 
             <div
                 style={{
@@ -128,8 +80,8 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                             props.onSave(
                                 crypto.randomUUID(),
                                 currentName,
-                                "Description...",
-                                "plaintext",
+                                undefined,
+                                undefined,
                                 {
                                     ...cameraState,
                                     position: toMVSPosition({

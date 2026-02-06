@@ -10,7 +10,6 @@ import {
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
 import { NewViewCardCreator } from "../view-card/NewViewCardCreator";
-import { useFileData } from "../../services/FileDataProvider";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -25,7 +24,9 @@ export function SceneManager(props: SceneManagerProps) {
     type SidebarType = "views" | "seg" | "anno";
     const [sidebar, setSidebar] = useState<SidebarType>("views");
 
-    const { regime } = useFileData();
+    const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
+
+    const isStateTreeSingle = props.views.length === 0;
 
     return (
         <Sidebar
@@ -54,6 +55,7 @@ export function SceneManager(props: SceneManagerProps) {
                         size="small"
                         onClick={() => {
                             props.setViews(() => []);
+                            // TODO: clear views in state tree
                         }}
                     >
                         {"Clear views"}
@@ -69,59 +71,74 @@ export function SceneManager(props: SceneManagerProps) {
                         {props.views.map((view, index) => (
                             <ViewCard
                                 key={view.id}
+                                active={index === activeViewCardIndex}
                                 title={view.title || "New view..."}
                                 index={index}
                                 thumbnail={view.thumbnail}
                                 onClick={async () => {
                                     await applySnapshotByIndex(index);
+                                    setActiveViewCardIndex(index);
                                 }}
                                 onSave={(newTitle: string) => {
-                                    props.setViews((prevViews) =>
-                                        prevViews.map((v) =>
-                                            v.id === view.id
-                                                ? {
-                                                      ...v,
-                                                      title: newTitle,
-                                                  }
-                                                : v,
-                                        ),
+                                    props.setViews(
+                                        (prevViews) =>
+                                            prevViews.map((v) =>
+                                                v.id === view.id
+                                                    ? {
+                                                          ...v,
+                                                          title: newTitle,
+                                                      }
+                                                    : v,
+                                            ),
+                                        // TODO: reload the Molstar to see the change
                                     );
+                                }}
+                                onFork={() => {
+                                    // TODO: update state tree
+                                    // TODO: reload state tree
                                 }}
                             />
                         ))}
-                        <NewViewCardCreator
-                            index={props.views.length + 1}
-                            onSave={(
-                                id,
-                                title,
-                                description,
-                                descriptionFormat,
-                                referenceCamera,
-                                thumbnail,
-                            ) => {
-                                props.setViews((prev) => [
-                                    ...prev,
-                                    {
-                                        id: id,
-                                        key: id,
-                                        title: title,
-                                        description: description,
-                                        description_format: descriptionFormat,
-                                        referenceCamera: referenceCamera,
-                                        thumbnail: thumbnail,
-                                        linger_duration_ms: 5000,
-                                    },
-                                ]);
 
-                                // TODO: tmp
-                                addNewSnapshotToManager(
-                                    "gregergergher",
-                                    "HELLO",
-                                    "fretgreyheryher",
-                                );
-                                // TODO: update state tree
-                            }}
-                        />
+                        {isStateTreeSingle && (
+                            <NewViewCardCreator
+                                index={props.views.length + 1}
+                                onSave={(
+                                    id,
+                                    title,
+                                    description,
+                                    descriptionFormat,
+                                    referenceCamera,
+                                    thumbnail,
+                                ) => {
+                                    props.setViews((prev) => [
+                                        ...prev,
+                                        {
+                                            id: id,
+                                            key: id,
+                                            title: title,
+                                            description: description,
+                                            description_format:
+                                                descriptionFormat,
+                                            referenceCamera: referenceCamera,
+                                            thumbnail: thumbnail,
+                                            linger_duration_ms: 5000,
+                                            transition_duration_ms: undefined,
+                                        },
+                                    ]);
+
+                                    // TODO: update state tree
+
+                                    // Add current snapshot to the Molstar snapshot manager.
+                                    addNewSnapshotToManager(
+                                        "gregergergher",
+                                        "HELLO",
+                                        "fretgreyheryher",
+                                    );
+                                    // TODO: reload state tree
+                                }}
+                            />
+                        )}
                     </div>
                 </>
             )}
