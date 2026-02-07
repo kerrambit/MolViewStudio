@@ -20,7 +20,6 @@ export interface ViewCardProps {
     thumbnail?: string;
     onClick?: () => void;
     onSave?: (
-        id: string,
         title: string,
         description: string | undefined,
         descriptionFormat: "markdown" | "plaintext" | undefined,
@@ -141,10 +140,11 @@ export function ViewCard(props: ViewCardProps) {
                                     try {
                                         img = await getCanvasScreenshot();
                                     } catch {
+                                        // TODO: send notification, log error
                                         img = undefined;
                                     }
+
                                     props.onSave(
-                                        crypto.randomUUID(),
                                         currentName,
                                         undefined,
                                         undefined,
@@ -179,6 +179,7 @@ export function ViewCard(props: ViewCardProps) {
                                     try {
                                         img = await getCanvasScreenshot();
                                     } catch {
+                                        // TODO: send notification, log error
                                         img = undefined;
                                     }
                                     props.onFork(

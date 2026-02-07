@@ -75,6 +75,7 @@ export function NewViewCardCreator(props: NewViewCardCreatorProps) {
                             try {
                                 img = await getCanvasScreenshot();
                             } catch {
+                                // TODO: send notification, log error
                                 img = undefined;
                             }
                             props.onSave(
