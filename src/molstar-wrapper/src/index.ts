@@ -8,6 +8,7 @@ import { Color } from "molstar/lib/mol-util/color";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {
     MVSData,
+    MVSData_State,
     MVSData_States,
     SnapshotMetadata,
     type Snapshot,
@@ -107,12 +108,12 @@ export async function initMolstar(
 
 /**
  * Creates a subscription to the event: Molstar layout is expanded.
- * @param onChanged event to run
+ * @param callback event to run
  * @warning Take care of the unsubscription.
  * @returns `Subscription` object
  */
 export function getFullScreenSubscription(
-    onChanged: (isExpanded: boolean) => void,
+    callback: (isExpanded: boolean) => void,
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -120,10 +121,45 @@ export function getFullScreenSubscription(
         if (!molstar) return;
 
         const isFullscreen = molstar.layout.state.isExpanded;
-        onChanged(isFullscreen);
+        callback(isFullscreen);
     });
 
     return sub;
+}
+
+/**
+ * Creates a subscription to the event: current snapshot is changed by the user in Molstar UI.
+ * @param callback event to run
+ * @warning Take care of the unsubscription.
+ * @returns `Subscription` object
+ */
+export function getSnapshotChangeSubscription(
+    callback: (currentSnapshotIndex: number, entry: any) => void,
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const subscription = molstar.managers.snapshot.events.changed.subscribe(
+        () => {
+            if (!molstar) return;
+            const current = molstar.managers.snapshot.state.current;
+
+            if (current) {
+                const entries = molstar.managers.snapshot.state.entries;
+                let currentIndex = -1;
+
+                for (let i = 0; i < entries.count(); i++) {
+                    const entry = entries.get(i);
+                    if (entry?.snapshot?.id === current) {
+                        currentIndex = i;
+                        callback(currentIndex, entry);
+                        break;
+                    }
+                }
+            }
+        },
+    );
+
+    return subscription;
 }
 
 /**
@@ -168,6 +204,7 @@ export function disposeMolstar() {
  */
 export async function clearViewer() {
     if (!molstar) throw new Error("Molstar is not initialized!");
+    clearAllSnapshotsFromManager();
     clearMVSXFileAssets();
     await molstar.clear();
 }
@@ -317,6 +354,16 @@ export type Story = {
     views: ViewMetadata[];
     assets: LocalStoryAsset[];
 };
+
+/**
+ * Creates and returns a default view.
+ * @returns default view
+ */
+export function getDefaultView() {
+    const initialRoot: MVSTree = { kind: "root" };
+    const initialView: View = { node: initialRoot };
+    return initialView;
+}
 
 /**
  * Convert a real Molstar camera position to an MVS reference-camera position.
@@ -635,8 +682,22 @@ function convertSnapshotMetadataToViewMetadata(
     };
 }
 
+/**
+ * Creates a deep copy of `view`.
+ * @param view view to copy
+ * @returns copy of view
+ */
 function copyView(view: View) {
     return structuredClone(view);
+}
+
+/**
+ * Creates a deep copy of `node`.
+ * @param node node to copy
+ * @returns copy of node
+ */
+function copyNode(node: MVSTree) {
+    return structuredClone(node);
 }
 
 export function getPrimalViewCopy(stateTree: MVSData): View | null {
@@ -662,6 +723,71 @@ export function getPrimalViewCopy(stateTree: MVSData): View | null {
     return copyView(result);
 }
 
+/**
+ * Creates a deep copy of `node` and applies `changes` to the copy, which is then returned.
+ * @param node node to copy and apply changes to
+ * @param changes changes
+ * @returns copy of original `node` with applied changes
+ */
+export function applyChangesToNode(
+    node: MVSTree,
+    changes: {
+        referenceCamera?: CameraState | undefined;
+        thumbnail?: Base64Png;
+    },
+): MVSTree {
+    // Copy of original node.
+    const nodeCopy = copyNode(node);
+
+    // Only apply changes if we have reference camera data.
+    if (changes.referenceCamera) {
+        const { position, target, up } = changes.referenceCamera;
+
+        // Find existing camera node.
+        let cameraNode = nodeCopy.children?.find(
+            (child) => child.kind === "camera",
+        );
+
+        // Update existing camera node.
+        if (cameraNode) {
+            cameraNode.params = {
+                position: Array.from(position) as [number, number, number],
+                target: Array.from(target) as [number, number, number],
+                up: Array.from(up) as [number, number, number],
+            };
+
+            // Update or add thumbnail in custom.
+            if (changes.thumbnail) {
+                cameraNode.custom = {
+                    ...(cameraNode.custom || {}),
+                    thumbnail: changes.thumbnail,
+                };
+            }
+        } else {
+            // Create new camera node.
+            const newCameraNode = {
+                kind: "camera" as const,
+                params: {
+                    position: Array.from(position) as [number, number, number],
+                    target: Array.from(target) as [number, number, number],
+                    up: Array.from(up) as [number, number, number],
+                },
+                custom: changes.thumbnail
+                    ? { thumbnail: changes.thumbnail }
+                    : undefined,
+            };
+
+            // Add camera node as first child.
+            if (!nodeCopy.children) {
+                nodeCopy.children = [];
+            }
+            nodeCopy.children.unshift(newCameraNode);
+        }
+    }
+
+    return nodeCopy;
+}
+
 export function retrieveMVSSnapshotFromStateTreeByIndex(
     stateTree: MVSData,
     index: number,
@@ -684,7 +810,15 @@ export function retrieveMVSSnapshotFromStateTreeByIndex(
     }
 }
 
-export async function addNewSnapshotToManager(
+/**
+ * Clears all snapshots from the manager.
+ */
+export function clearAllSnapshotsFromManager() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    molstar.managers.snapshot.clear();
+}
+
+export function addNewSnapshotToManager(
     key: string,
     title: string,
     description: string = "",
@@ -695,13 +829,52 @@ export async function addNewSnapshotToManager(
     const currentState = molstar.state.getSnapshot();
 
     // Add to the snapshot manager.
-    const entry = await molstar.managers.snapshot.add({
+    molstar.managers.snapshot.add({
         name: title,
         description: description,
         key: key,
         snapshot: currentState,
-        timestamp: 4564,
+        timestamp: Date.now(),
     });
+}
+
+export function updateSnapshotInManager(
+    index: number,
+    title: string,
+    description: string = "",
+): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index) as any;
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    const updates: any = {
+        name: title,
+        description: description,
+        timestamp: Date.now(),
+        snapshot: molstar.state.getSnapshot(),
+    };
+
+    molstar.managers.snapshot.update(entry, updates);
+
+    return { success: true, value: null };
 }
 
 export async function applySnapshotByIndex(index: number): Promise<void> {
@@ -725,122 +898,59 @@ export async function applySnapshotByIndex(index: number): Promise<void> {
     });
 }
 
-// /**
-//  * Converts signle state state tree into multiple state tree.
-//  * It is also possible to use `MVSData.stateToStates()`, however out functions is tailored directly for our needs.
-//  * @param stateTree state tree
-//  * @param defaultViewMetadata metadata for the root default view
-//  * @returns same state tree if it is already `multiple`, otherwise converted state tree
-//  */
-// export function convertStateTreeFromSingleToMultipleKind(
-//     stateTree: MVSData,
-//     defaultView: View,
-// ): MVSData {
-//     if (stateTree.kind === "multiple") {
-//         return stateTree;
-//     }
+export function convertStateTreeFromSingleToMultipleKind(
+    stateTree: MVSData_State,
+    view: View,
+): MVSData_States {
+    const snaphot: Snapshot = {
+        root: view.node,
+        metadata: {
+            title: view.metadata?.title,
+            description: view.metadata?.description,
+            description_format: view.metadata?.description_format,
+            key: view.metadata?.key,
+            linger_duration_ms: view.metadata?.linger_duration_ms || 5000,
+            transition_duration_ms: view.metadata?.transition_duration_ms,
+        },
+    };
 
-//     const metadata: SnapshotMetadata = {
-//         key: defaultView?.key || crypto.randomUUID(),
-//         title: defaultView?.title || "New view...",
-//         description: defaultView?.description,
-//         description_format: defaultView?.descriptionFormat,
-//         linger_duration_ms: defaultView?.lingerDuration_ms || 5000,
-//         transition_duration_ms: defaultView?.transitionDuration_ms || 500,
-//     };
+    const multipleMVS: MVSData = {
+        kind: "multiple",
+        metadata: {
+            title: stateTree.metadata.title,
+            version:
+                stateTree.metadata.version || `${MVSData.SupportedVersion}`,
+            timestamp: stateTree.metadata.timestamp,
+            description: stateTree.metadata.description,
+            description_format: stateTree.metadata.description_format,
+        },
+        snapshots: [snaphot],
+    };
 
-//     const view: Snapshot = {
-//         root: stateTree.root,
-//         metadata: metadata,
-//     };
+    return multipleMVS;
+}
 
-//     const multipleMVS: MVSData = {
-//         kind: "multiple",
-//         metadata: {
-//             title: stateTree.metadata.title,
-//             version:
-//                 stateTree.metadata.version || `${MVSData.SupportedVersion}`,
-//             timestamp: stateTree.metadata.timestamp,
-//             description: stateTree.metadata.description,
-//             description_format: stateTree.metadata.description_format,
-//         },
-//         snapshots: [view],
-//     };
+export function addViewIntoStateTree(
+    stateTree: MVSData_States,
+    view: View,
+): MVSData_States {
+    const snapshot: Snapshot = {
+        root: view.node,
+        metadata: {
+            title: view.metadata?.title,
+            description: view.metadata?.description,
+            description_format: view.metadata?.description_format,
+            key: view.metadata?.key,
+            linger_duration_ms: view.metadata?.linger_duration_ms || 5000,
+            transition_duration_ms: view.metadata?.transition_duration_ms,
+        },
+    };
 
-//     return multipleMVS;
-// }
-
-// TODO: handle errors better
-// export function addViewIntoStateTree(
-//     stateTree: MVSData_States,
-//     view: View,
-// ): MVSData | null {
-
-//     const snapshotRoot = JSON.parse(JSON.stringify(stateTree.root));
-
-//     // Add camera node.
-//     try {
-//         const cameraNode = {
-//             kind: "camera",
-//             params: {
-//                 target: Array.from(view.referenceCamera.target) as [
-//                     number,
-//                     number,
-//                     number,
-//                 ],
-//                 position: Array.from(view.referenceCamera.position) as [
-//                     number,
-//                     number,
-//                     number,
-//                 ],
-//                 up: Array.from(view.referenceCamera.up) as [
-//                     number,
-//                     number,
-//                     number,
-//                 ],
-//             },
-//             custom: view?.thumbnail
-//                 ? {
-//                       thumbnail: view.thumbnail,
-//                   }
-//                 : undefined,
-//         };
-
-//         snapshotRoot.children = snapshotRoot.children || [];
-//         snapshotRoot.children.unshift(cameraNode);
-//     } catch (error) {
-//         return null;
-//     }
-
-//     const metadata: SnapshotMetadata = {
-//         key: view.key,
-//         title: view.title,
-//         description: view?.description,
-//         description_format: view?.descriptionFormat,
-//         linger_duration_ms: view?.lingerDuration_ms || 5000,
-//         transition_duration_ms: view?.transitionDuration_ms || 500,
-//     };
-
-//     const snapshot: Snapshot = {
-//         root: snapshotRoot,
-//         metadata: metadata,
-//     };
-
-//     const multipleMVS: MVSData = {
-//         kind: "multiple",
-//         metadata: {
-//             title: stateTree.metadata.title,
-//             version:
-//                 stateTree.metadata.version || `${MVSData.SupportedVersion}`,
-//             timestamp: stateTree.metadata.timestamp,
-//             description: stateTree.metadata.description,
-//             description_format: stateTree.metadata.description_format,
-//         },
-//         snapshots: [snapshot],
-//     };
-
-//     return multipleMVS;
-// }
+    return {
+        ...stateTree,
+        snapshots: [...stateTree.snapshots, snapshot],
+    };
+}
 
 /**
  * Exports views together with local assets in the form of MVS.
