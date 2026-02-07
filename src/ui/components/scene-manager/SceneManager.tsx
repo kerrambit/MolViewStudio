@@ -50,7 +50,13 @@ export function SceneManager(props: SceneManagerProps) {
             )}
 
             {sidebar === "views" && (
-                <>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.75em",
+                    }}
+                >
                     <Button
                         size="small"
                         onClick={() => {
@@ -140,7 +146,7 @@ export function SceneManager(props: SceneManagerProps) {
                             />
                         )}
                     </div>
-                </>
+                </div>
             )}
         </Sidebar>
     );

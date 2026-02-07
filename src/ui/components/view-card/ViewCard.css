@@ -9,7 +9,7 @@
 }
 
 .viewCard--active {
-    border-width: 0.25em;
+    border-width: 0.2em;
     transform: scale(1.03);
     border-color: var(--mantine-primary-color-7);
 }

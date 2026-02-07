@@ -81,6 +81,7 @@ export function ViewCard(props: ViewCardProps) {
                         cursor: "pointer",
                         maxWidth: "90%",
                         borderRadius: "6px",
+                        paddingBottom: "1em",
                     }}
                     title="Click to set the current camera position to this view."
                     src={props.thumbnail}
@@ -93,6 +94,7 @@ export function ViewCard(props: ViewCardProps) {
                     cameraState={cameraState}
                 ></CameraTextInputGroup>
             )}
+
             <div
                 style={{
                     display: "flex",
@@ -115,13 +117,15 @@ export function ViewCard(props: ViewCardProps) {
                     ></Button>
                 )}
 
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "row",
-                    }}
-                >
-                    {props.active && (
+                {props.active && (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            justifyContent: "center",
+                            gap: "1em",
+                        }}
+                    >
                         <Button
                             size="small"
                             tooltip="Apply changes to this view."
@@ -159,8 +163,7 @@ export function ViewCard(props: ViewCardProps) {
                                 }
                             }}
                         ></Button>
-                    )}
-                    {props.active && (
+
                         <Button
                             size="small"
                             tooltip="Create a new state from current modifications."
@@ -198,8 +201,8 @@ export function ViewCard(props: ViewCardProps) {
                                 }
                             }}
                         ></Button>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
