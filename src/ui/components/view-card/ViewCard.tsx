@@ -99,6 +99,8 @@ export function ViewCard(props: ViewCardProps) {
                     display: "flex",
                     paddingTop: "1em",
                     paddingBottom: "1em",
+                    paddingRight: "1em",
+                    paddingLeft: "1em",
                     flexDirection: "column",
                 }}
             >
@@ -120,88 +122,105 @@ export function ViewCard(props: ViewCardProps) {
                     <div
                         style={{
                             display: "flex",
-                            flexDirection: "row",
+                            flexDirection: "column",
                             justifyContent: "center",
                             gap: "1em",
                         }}
                     >
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "center",
+                                gap: "1em",
+                            }}
+                        >
+                            <Button
+                                size="small"
+                                tooltip="Apply changes to this view."
+                                label="Apply changes"
+                                variant="secondary"
+                                onClick={async () => {
+                                    if (
+                                        props.onSave &&
+                                        currentName &&
+                                        cameraState
+                                    ) {
+                                        let img: Base64Png | undefined;
+                                        try {
+                                            img = await getCanvasScreenshot();
+                                        } catch {
+                                            // TODO: send notification, log error
+                                            img = undefined;
+                                        }
+
+                                        props.onSave(
+                                            currentName,
+                                            undefined,
+                                            undefined,
+                                            {
+                                                ...cameraState,
+                                                position: toMVSPosition({
+                                                    position:
+                                                        cameraState.position as any,
+                                                    target: cameraState.target as any,
+                                                    fov: cameraState.fov,
+                                                    mode: cameraState.mode,
+                                                }),
+                                            },
+                                            img,
+                                        );
+                                    }
+                                }}
+                            ></Button>
+
+                            <Button
+                                size="small"
+                                tooltip="Create a new state from current modifications."
+                                label="Save as new"
+                                variant="secondary"
+                                onClick={async () => {
+                                    if (
+                                        props.onFork &&
+                                        currentName &&
+                                        cameraState
+                                    ) {
+                                        let img: Base64Png | undefined;
+                                        try {
+                                            img = await getCanvasScreenshot();
+                                        } catch {
+                                            // TODO: send notification, log error
+                                            img = undefined;
+                                        }
+                                        props.onFork(
+                                            crypto.randomUUID(),
+                                            currentName,
+                                            undefined,
+                                            undefined,
+                                            {
+                                                ...cameraState,
+                                                position: toMVSPosition({
+                                                    position:
+                                                        cameraState.position as any,
+                                                    target: cameraState.target as any,
+                                                    fov: cameraState.fov,
+                                                    mode: cameraState.mode,
+                                                }),
+                                            },
+                                            img,
+                                        );
+                                    }
+                                }}
+                            ></Button>
+                        </div>
                         <Button
                             size="small"
-                            tooltip="Apply changes to this view."
-                            label="Apply changes"
-                            variant="secondary"
-                            onClick={async () => {
-                                if (
-                                    props.onSave &&
-                                    currentName &&
-                                    cameraState
-                                ) {
-                                    let img: Base64Png | undefined;
-                                    try {
-                                        img = await getCanvasScreenshot();
-                                    } catch {
-                                        // TODO: send notification, log error
-                                        img = undefined;
-                                    }
-
-                                    props.onSave(
-                                        currentName,
-                                        undefined,
-                                        undefined,
-                                        {
-                                            ...cameraState,
-                                            position: toMVSPosition({
-                                                position:
-                                                    cameraState.position as any,
-                                                target: cameraState.target as any,
-                                                fov: cameraState.fov,
-                                                mode: cameraState.mode,
-                                            }),
-                                        },
-                                        img,
-                                    );
-                                }
-                            }}
-                        ></Button>
-
-                        <Button
-                            size="small"
-                            tooltip="Create a new state from current modifications."
-                            label="Save as new"
-                            variant="secondary"
-                            onClick={async () => {
-                                if (
-                                    props.onFork &&
-                                    currentName &&
-                                    cameraState
-                                ) {
-                                    let img: Base64Png | undefined;
-                                    try {
-                                        img = await getCanvasScreenshot();
-                                    } catch {
-                                        // TODO: send notification, log error
-                                        img = undefined;
-                                    }
-                                    props.onFork(
-                                        crypto.randomUUID(),
-                                        currentName,
-                                        undefined,
-                                        undefined,
-                                        {
-                                            ...cameraState,
-                                            position: toMVSPosition({
-                                                position:
-                                                    cameraState.position as any,
-                                                target: cameraState.target as any,
-                                                fov: cameraState.fov,
-                                                mode: cameraState.mode,
-                                            }),
-                                        },
-                                        img,
-                                    );
-                                }
-                            }}
-                        ></Button>
+                            tooltip="Reverse changes for this view."
+                            variant="primary"
+                            onClick={() => {}}
+                        >
+                            Revert changes
+                        </Button>
                     </div>
                 )}
             </div>
