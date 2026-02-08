@@ -7,7 +7,6 @@ import {
     areCameraStatesEqual,
     fromMVSPosition,
     getCanvasScreenshot,
-    getDefaultCameraState,
     setCamera,
     toMVSPosition,
     useLiveCameraState,
