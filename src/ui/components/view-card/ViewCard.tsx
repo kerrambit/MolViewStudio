@@ -4,26 +4,30 @@ import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../utils/cssClassBuilder";
 import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
 import {
+    areCameraStatesEqual,
+    fromMVSPosition,
     getCanvasScreenshot,
+    getDefaultCameraState,
+    setCamera,
     toMVSPosition,
     useLiveCameraState,
     type Base64Png,
     type CameraState,
+    type ViewMetadata,
 } from "../../../molstar-wrapper/src";
 
 import "./ViewCard.css";
 
 export interface ViewCardProps {
-    title: string;
-    active: boolean;
+    metadata: ViewMetadata;
     index: number;
-    thumbnail?: string;
+    active: boolean;
     onClick?: () => void;
     onSave?: (
         title: string,
         description: string | undefined,
         descriptionFormat: "markdown" | "plaintext" | undefined,
-        camera: CameraState,
+        referenceCamera: CameraState,
         thumbnail: Base64Png | undefined,
     ) => void;
     onFork?: (
@@ -31,18 +35,44 @@ export interface ViewCardProps {
         title: string,
         description: string | undefined,
         descriptionFormat: "markdown" | "plaintext" | undefined,
-        camera: CameraState,
+        referenceCamera: CameraState,
         thumbnail: Base64Png | undefined,
     ) => void;
 }
 
 export function ViewCard(props: ViewCardProps) {
+    // State for the view title.
     const [currentName, setCurrentName] = useState<string | undefined>(
-        props.title,
+        props.metadata.title || "New view...",
     );
 
+    // Camera hook.
     const cameraState = useLiveCameraState();
 
+    // Dirty properties of the view card.
+    const isNameChanged = props.active && currentName !== props.metadata.title;
+    const isCameraChanged =
+        props.active &&
+        !areCameraStatesEqual(
+            cameraState
+                ? {
+                      position: toMVSPosition({
+                          position: cameraState.position as any,
+                          target: cameraState.target as any,
+                          fov: cameraState.fov,
+                          mode: cameraState.mode,
+                      }),
+                      target: cameraState.target,
+                      up: cameraState.up,
+                      fov: cameraState.fov,
+                      mode: cameraState.mode,
+                  }
+                : cameraState,
+            props.metadata.referenceCamera,
+        );
+    const isDirty = isNameChanged || isCameraChanged;
+
+    // CSS class builder depends on the active property of view card.
     const viewCardClasses = buildCSSClassString([
         "viewCard",
         props.active && "viewCard--active",
@@ -69,7 +99,7 @@ export function ViewCard(props: ViewCardProps) {
                 />
             </div>
 
-            {props.thumbnail && (
+            {props.metadata.thumbnail && (
                 <img
                     onClick={() => {
                         if (props.onClick) {
@@ -83,8 +113,8 @@ export function ViewCard(props: ViewCardProps) {
                         paddingBottom: "1em",
                     }}
                     title="Click to set the current camera position to this view."
-                    src={props.thumbnail}
-                    alt={`${props.title} - thumbnail`}
+                    src={props.metadata.thumbnail}
+                    alt={`${props.metadata.title || "New view..."} - thumbnail`}
                 />
             )}
 
@@ -118,7 +148,7 @@ export function ViewCard(props: ViewCardProps) {
                     ></Button>
                 )}
 
-                {props.active && (
+                {props.active && isDirty && (
                     <div
                         style={{
                             display: "flex",
@@ -217,7 +247,24 @@ export function ViewCard(props: ViewCardProps) {
                             size="small"
                             tooltip="Reverse changes for this view."
                             variant="primary"
-                            onClick={() => {}}
+                            onClick={() => {
+                                setCurrentName(
+                                    props.metadata.title || "New view...",
+                                );
+                                if (props.metadata.referenceCamera) {
+                                    setCamera({
+                                        ...props.metadata.referenceCamera,
+                                        position: fromMVSPosition(
+                                            props.metadata.referenceCamera
+                                                .position as any,
+                                            props.metadata.referenceCamera
+                                                .target as any,
+                                            props.metadata.referenceCamera.fov,
+                                            props.metadata.referenceCamera.mode,
+                                        ),
+                                    });
+                                }
+                            }}
                         >
                             Revert changes
                         </Button>

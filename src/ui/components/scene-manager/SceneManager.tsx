@@ -105,10 +105,9 @@ export function SceneManager(props: SceneManagerProps) {
                         {props.views.map((view, index) => (
                             <ViewCard
                                 key={view.id}
-                                active={index === activeViewCardIndex}
-                                title={view.title || "New view..."}
+                                metadata={view}
                                 index={index}
-                                thumbnail={view.thumbnail}
+                                active={index === activeViewCardIndex}
                                 onClick={async () => {
                                     await applySnapshotByIndex(index);
                                     setActiveViewCardIndex(index);
@@ -218,7 +217,12 @@ function handleOnSave(
 
     // Clear the default "global" snapshot from Molstar manager andd to it a new current snapshot.
     clearAllSnapshotsFromManager();
-    addNewSnapshotToManager(id, title, description);
+    addNewSnapshotToManager(
+        id,
+        title,
+        description,
+        descriptionFormat || "plaintext",
+    );
 
     // Update state tree.
     if (regime.kind === "viewing" && regime.stateTree.kind !== "multiple") {
