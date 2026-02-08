@@ -287,6 +287,39 @@ export function useLiveCameraState(): CameraState | undefined {
 }
 
 /**
+ * Compares two `CameraState` objects for their equality.
+ * @param a first object
+ * @param b second object
+ * @param epsilon tolerance threshold for floating numbers comparison
+ * @returns true if they are "close enough" equal, otherwise false
+ */
+export function areCameraStatesEqual(
+    a: CameraState | undefined,
+    b: CameraState | undefined,
+    epsilon: number = 0.1,
+): boolean {
+    if (!a || !b) return a === b;
+    if (!a.position || !b.position) return false;
+    if (!a.target || !b.target) return false;
+    if (!a.up || !b.up) return false;
+
+    return (
+        Vec3.distance(
+            Vec3.create(a.position[0], a.position[1], a.position[2]),
+            Vec3.create(b.position[0], b.position[1], b.position[2]),
+        ) < epsilon &&
+        Vec3.distance(
+            Vec3.create(a.target[0], a.target[1], a.target[2]),
+            Vec3.create(b.target[0], b.target[1], b.target[2]),
+        ) < epsilon &&
+        Vec3.distance(
+            Vec3.create(a.up[0], a.up[1], a.up[2]),
+            Vec3.create(b.up[0], b.up[1], b.up[2]),
+        ) < epsilon
+    );
+}
+
+/**
  * Sets the camera.
  * @param cameraState camera state to set the camera
  */
