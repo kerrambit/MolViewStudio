@@ -12,7 +12,8 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
                 display: "flex",
                 flexDirection: "column",
                 width: "95%",
-                paddingLeft: "1em",
+                paddingLeft: "0.5em",
+                paddingRight: "0.5em",
                 gap: ".5em",
             }}
         >
