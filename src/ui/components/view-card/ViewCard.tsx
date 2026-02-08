@@ -57,12 +57,12 @@ export function ViewCard(props: ViewCardProps) {
             >
                 <UnstyledTextInput
                     prefix={`${props.index + 1}. `}
-                    defaultValue={props.title}
+                    value={currentName}
                     placeholder="Change name for this view..."
                     tooltip="Change name for this view..."
-                    onBlur={(val) => {
-                        setCurrentName(val);
-                    }}
+                    enabled={props.active}
+                    onValueChange={setCurrentName}
+                    onBlur={setCurrentName}
                     style={{
                         margin: "1em",
                     }}
