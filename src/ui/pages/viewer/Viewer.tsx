@@ -16,10 +16,8 @@ import {
     createMVSBlob,
     getFullScreenSubscription,
     type ViewMetadata,
-    type View,
-    getPrimalViewCopy,
     exportStateTree,
-    getDefaultView,
+    convertStateTreeFromSingleToMultipleKind,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -67,7 +65,6 @@ export function Viewer() {
 
     // Current view and views.
     const [views, setViews] = useState<ViewMetadata[]>([]);
-    const [_, setView] = useState<View>(getDefaultView());
 
     // Add Edit root item button into the menu.
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
@@ -149,22 +146,20 @@ export function Viewer() {
                 binary: true,
             }));
 
-            const primalView = getPrimalViewCopy(result.stateTree);
-
-            // This can happen if the stateTree is of "multiple" kind, but has no snapshots. In our case, we report an error.
-            if (!primalView) {
-                // TODO: report an error
-                console.log("No snapshots found in state tree!");
-                return;
-            }
-
-            setView(primalView);
-
             // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
                 deconstructedFile: { assets: assetsArray },
-                stateTree: result.stateTree,
+                stateTree:
+                    result.stateTree.kind === "multiple"
+                        ? result.stateTree
+                        : convertStateTreeFromSingleToMultipleKind(
+                              result.stateTree,
+                              {
+                                  node: result.stateTree.root,
+                                  metadata: result.views[0],
+                              },
+                          ),
                 sourceUrl: result.sourceUrl,
             });
         };

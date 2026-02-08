@@ -8,15 +8,12 @@ import {
     addViewIntoStateTree,
     applyChangesToNode,
     applySnapshotByIndex,
-    clearAllSnapshotsFromManager,
-    convertStateTreeFromSingleToMultipleKind,
     getSnapshotChangeSubscription,
     updateSnapshotInManager,
     type Base64Png,
     type CameraState,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
-import { NewViewCardCreator } from "../view-card/NewViewCardCreator";
 import { useFileData, type Regime } from "../../services/FileDataProvider";
 import type { Subscription } from "rxjs";
 
@@ -35,8 +32,6 @@ export function SceneManager(props: SceneManagerProps) {
     const { regime, setRegime } = useFileData();
 
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
-
-    const isStateTreeSingle = props.views.length === 0;
 
     useEffect(() => {
         let snapshotChangeSubscription: Subscription;
@@ -155,105 +150,11 @@ export function SceneManager(props: SceneManagerProps) {
                                 }}
                             />
                         ))}
-
-                        {isStateTreeSingle && (
-                            <NewViewCardCreator
-                                index={props.views.length + 1}
-                                onSave={(
-                                    id,
-                                    title,
-                                    description,
-                                    descriptionFormat,
-                                    referenceCamera,
-                                    thumbnail,
-                                ) => {
-                                    handleOnSave(
-                                        regime,
-                                        setRegime,
-                                        props,
-                                        id,
-                                        title,
-                                        description,
-                                        descriptionFormat,
-                                        referenceCamera,
-                                        thumbnail,
-                                    );
-                                }}
-                            />
-                        )}
                     </div>
                 </div>
             )}
         </Sidebar>
     );
-}
-
-function handleOnSave(
-    regime: Regime,
-    setRegime: (regime: Regime) => void,
-    props: SceneManagerProps,
-    id: string,
-    title: string,
-    description: string | undefined,
-    descriptionFormat: "markdown" | "plaintext" | undefined,
-    referenceCamera: CameraState,
-    thumbnail: Base64Png | undefined,
-): void {
-    // Add view to the list.
-    props.setViews((prev) => [
-        ...prev,
-        {
-            id: id,
-            key: id,
-            title: title,
-            description: description,
-            description_format: descriptionFormat,
-            referenceCamera: referenceCamera,
-            thumbnail: thumbnail,
-            linger_duration_ms: 5000,
-            transition_duration_ms: undefined,
-        },
-    ]);
-
-    // Clear the default "global" snapshot from Molstar manager andd to it a new current snapshot.
-    clearAllSnapshotsFromManager();
-    addNewSnapshotToManager(
-        id,
-        title,
-        description,
-        descriptionFormat || "plaintext",
-    );
-
-    // Update state tree.
-    if (regime.kind === "viewing" && regime.stateTree.kind !== "multiple") {
-        // Create copy of current root and apply changes to it.
-        const newNode = applyChangesToNode(regime.stateTree.root, {
-            referenceCamera: referenceCamera,
-            thumbnail: thumbnail,
-        });
-
-        // State tree is converted to multiple kind.
-        setRegime({
-            ...regime,
-            stateTree: convertStateTreeFromSingleToMultipleKind(
-                regime.stateTree,
-                {
-                    node: newNode,
-                    metadata: {
-                        id: id,
-                        key: id,
-                        title: title,
-                        description: description,
-                        description_format: descriptionFormat,
-                        referenceCamera: referenceCamera,
-                        thumbnail: thumbnail,
-                        linger_duration_ms: 5000,
-                        transition_duration_ms: undefined,
-                    },
-                },
-            ),
-        });
-    }
 }
 
 function handleOnFork(
