@@ -1087,15 +1087,29 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
     };
 }
 
-// TODO: handle errors using result pattern
 function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
+    let snapshots: Snapshot[] = [];
     if (mvsData.kind !== "multiple") {
-        return [];
+        const snapshot = {
+            root: mvsData.root,
+            metadata: {
+                title: mvsData.metadata.title,
+                description: mvsData.metadata.description,
+                description_format: mvsData.metadata.description_format,
+                key: undefined,
+                linger_duration_ms: 5000,
+                transition_duration_ms: undefined,
+            },
+        };
+
+        snapshots.push(snapshot);
+    } else {
+        snapshots = mvsData.snapshots;
     }
 
     const views: ViewMetadata[] = [];
 
-    mvsData.snapshots.forEach((snapshot) => {
+    snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
 
         const cameraNode = root.children?.find(
