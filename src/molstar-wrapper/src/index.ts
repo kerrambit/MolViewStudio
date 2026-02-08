@@ -822,6 +822,7 @@ export function addNewSnapshotToManager(
     key: string,
     title: string,
     description: string = "",
+    descriptionFormat: "markdown" | "plaintext",
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -830,11 +831,12 @@ export function addNewSnapshotToManager(
 
     // Add to the snapshot manager.
     molstar.managers.snapshot.add({
+        timestamp: Date.now(),
+        snapshot: currentState,
         name: title,
         description: description,
+        descriptionFormat: descriptionFormat,
         key: key,
-        snapshot: currentState,
-        timestamp: Date.now(),
     });
 }
 
@@ -842,6 +844,7 @@ export function updateSnapshotInManager(
     index: number,
     title: string,
     description: string = "",
+    descriptionFormat: "markdown" | "plaintext",
 ): Result<null> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -857,22 +860,20 @@ export function updateSnapshotInManager(
         };
     }
 
-    const entry = entries.get(index) as any;
+    const entry = entries.get(index);
     if (!entry) {
         return {
             success: false,
             error: new Error(`Given entry on index <${index}> was not found!`),
         };
     }
-
-    const updates: any = {
+    const snapshot = molstar.state.getSnapshot();
+    molstar.managers.snapshot.replace(entry.snapshot.id, snapshot, {
+        key: entry.key,
         name: title,
         description: description,
-        timestamp: Date.now(),
-        snapshot: molstar.state.getSnapshot(),
-    };
-
-    molstar.managers.snapshot.update(entry, updates);
+        descriptionFormat: descriptionFormat,
+    });
 
     return { success: true, value: null };
 }

@@ -281,7 +281,12 @@ function handleOnFork(
     ]);
 
     // Add new snapshot to the Molstar manager.
-    addNewSnapshotToManager(id, title, description);
+    addNewSnapshotToManager(
+        id,
+        title,
+        description,
+        descriptionFormat || "plaintext",
+    );
 
     // Update state tree.
     if (regime.kind === "viewing" && regime.stateTree.kind === "multiple") {
@@ -348,11 +353,12 @@ function handleOnUpdate(
         activeViewCardIndex,
         title,
         description,
+        descriptionFormat || "plaintext",
     );
 
     if (!result.success) {
         // TODO: report an error
-        console.log(result.error);
+        console.log(`Error: <${result.error}>!`);
         return;
     }
 
