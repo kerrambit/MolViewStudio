@@ -249,7 +249,7 @@ export function getCameraState(): CameraState | undefined {
 
 /**
  * Retrieves default camera state.
- * @returns
+ * @returns default camera
  */
 export function getDefaultCameraState(): CameraState {
     return {
@@ -365,6 +365,9 @@ export type ViewMetadata = {
     thumbnail?: Base64Png;
 } & SnapshotMetadata;
 
+/**
+ * Represents a complete view. It contains current MVSTree node and also its metadata.
+ */
 export type View = {
     node: MVSTree;
     metadata?: ViewMetadata;
@@ -378,25 +381,15 @@ export type LocalStoryAsset = {
     content: Uint8Array;
 };
 
+// TODO: add GlobalMetadata to this
 /**
  * Represents a story with views and local assets.
  */
-// TODO: add GlobalMetadata to this
 export type Story = {
     title: string | undefined;
     views: ViewMetadata[];
     assets: LocalStoryAsset[];
 };
-
-/**
- * Creates and returns a default view.
- * @returns default view
- */
-export function getDefaultView() {
-    const initialRoot: MVSTree = { kind: "root" };
-    const initialView: View = { node: initialRoot };
-    return initialView;
-}
 
 /**
  * Convert a real Molstar camera position to an MVS reference-camera position.
@@ -668,7 +661,10 @@ async function createArchive(
  * @param assets
  * @returns
  */
-async function transfromStateTree(stateTree: MVSData, assets: FileData[]) {
+async function transfromStateTree(
+    stateTree: MVSData,
+    assets: FileData[],
+): Promise<MVSData | Uint8Array<ArrayBuffer>> {
     if (assets.length === 0) {
         return stateTree;
     }
@@ -688,7 +684,10 @@ async function transfromStateTree(stateTree: MVSData, assets: FileData[]) {
  * @param stateTree state tree to export
  * @param assets assets
  */
-export async function exportStateTree(stateTree: MVSData, assets: FileData[]) {
+export async function exportStateTree(
+    stateTree: MVSData,
+    assets: FileData[],
+): Promise<void> {
     // Prepare state tree (either MVSData if .mvsj, otherwise Uint8Array<ArrayBuffer>> for .mvsx).
     const data = await transfromStateTree(stateTree, assets);
 
@@ -700,30 +699,6 @@ export async function exportStateTree(stateTree: MVSData, assets: FileData[]) {
     download(blob, filename);
 }
 
-function convertSnapshotMetadataToViewMetadata(
-    metadata: SnapshotMetadata,
-): ViewMetadata {
-    return {
-        id: crypto.randomUUID(),
-        key: metadata.key || crypto.randomUUID(),
-        title: metadata.title || "New view...",
-        description: metadata.description,
-        description_format: metadata.description_format,
-        referenceCamera: getDefaultCameraState(),
-        linger_duration_ms: 5000,
-        transition_duration_ms: metadata.transition_duration_ms,
-    };
-}
-
-/**
- * Creates a deep copy of `view`.
- * @param view view to copy
- * @returns copy of view
- */
-function copyView(view: View) {
-    return structuredClone(view);
-}
-
 /**
  * Creates a deep copy of `node`.
  * @param node node to copy
@@ -731,29 +706,6 @@ function copyView(view: View) {
  */
 function copyNode(node: MVSTree) {
     return structuredClone(node);
-}
-
-export function getPrimalViewCopy(stateTree: MVSData): View | null {
-    if (stateTree.kind === "single" || !stateTree.kind) {
-        const result = {
-            node: stateTree.root,
-        };
-        return copyView(result);
-    }
-
-    const multipleState = stateTree as MVSData_States;
-    if (multipleState.snapshots.length === 0) {
-        return null;
-    }
-
-    const firstSnapshot = multipleState.snapshots[0];
-
-    const result = {
-        node: firstSnapshot.root,
-        metadata: convertSnapshotMetadataToViewMetadata(firstSnapshot.metadata),
-    };
-
-    return copyView(result);
 }
 
 /**
@@ -821,28 +773,6 @@ export function applyChangesToNode(
     return nodeCopy;
 }
 
-export function retrieveMVSSnapshotFromStateTreeByIndex(
-    stateTree: MVSData,
-    index: number,
-): Result<Snapshot> {
-    if (stateTree.kind !== "multiple") {
-        return {
-            success: false,
-            error: new Error("Expected state tree of type <multiple>!"),
-        };
-    } else {
-        if (index >= stateTree.snapshots.length)
-            return {
-                success: false,
-                error: new Error(
-                    `Index <${index}> is out of bounds in the current state tree!`,
-                ),
-            };
-
-        return { success: true, value: stateTree.snapshots[index] };
-    }
-}
-
 /**
  * Clears all snapshots from the manager.
  */
@@ -851,6 +781,13 @@ export function clearAllSnapshotsFromManager() {
     molstar.managers.snapshot.clear();
 }
 
+/**
+ * Adds new snapshot to the Molstar's snapshot manager.
+ * @param key key of snapshot
+ * @param title title of the snapshot
+ * @param description description of the snapshot
+ * @param descriptionFormat format of description of the snapshot
+ */
 export function addNewSnapshotToManager(
     key: string,
     title: string,
@@ -873,6 +810,14 @@ export function addNewSnapshotToManager(
     });
 }
 
+/**
+ * Update existing snapshot in the Molstar's snapshot manager.
+ * @param index index of the snapshot to update
+ * @param title nwe title
+ * @param description new description
+ * @param descriptionFormat new description format
+ * @returns if there is error, result with `Error` is returned, otherise null
+ */
 export function updateSnapshotInManager(
     index: number,
     title: string,
@@ -911,27 +856,50 @@ export function updateSnapshotInManager(
     return { success: true, value: null };
 }
 
-export async function applySnapshotByIndex(index: number): Promise<void> {
+/**
+ * Tells Molstar's snapshot manager which snapshot it should render by its index.
+ * @param index index of the snapshot
+ * @returns if there is error, result with `Error` is returned, otherise null
+ */
+export async function applySnapshotByIndex(
+    index: number,
+): Promise<Result<null>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const entries = molstar.managers.snapshot.state.entries;
     const count = entries.count();
 
     if (index < 0 || index >= count) {
-        throw new Error(`Invalid snapshot index: ${index}`);
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
     }
 
     const entry = entries.get(index) as any;
     if (!entry || !entry.snapshot) {
-        throw new Error(`Could not get entry at index ${index}`);
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
     }
 
     const snapshotId = entry.snapshot.id;
     await PluginCommands.State.Snapshots.Apply(molstar, {
         id: snapshotId,
     });
+
+    return { success: true, value: null };
 }
 
+/**
+ * Converts `multiple` kind to `single` kind by adding new `view`.
+ * @param stateTree `single` state tree to convert
+ * @param view view which will be added as the default one
+ * @returns `multiple` state tree with one view (snapshot)
+ */
 export function convertStateTreeFromSingleToMultipleKind(
     stateTree: MVSData_State,
     view: View,
@@ -964,6 +932,12 @@ export function convertStateTreeFromSingleToMultipleKind(
     return multipleMVS;
 }
 
+/**
+ * Adds view into state tree of `multiple` kind.
+ * @param stateTree state tree
+ * @param view new view (snapshot)
+ * @returns modified state tree
+ */
 export function addViewIntoStateTree(
     stateTree: MVSData_States,
     view: View,
@@ -984,41 +958,6 @@ export function addViewIntoStateTree(
         ...stateTree,
         snapshots: [...stateTree.snapshots, snapshot],
     };
-}
-
-/**
- * Exports views together with local assets in the form of MVS.
- * Opens a file explorer for user to choose file location.
- * @param views views
- * @param assets assets
- */
-export async function exportViewsAsMVSStory(
-    views: ViewMetadata[],
-    assets: FileData[],
-) {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
-    const storyTitle: string | undefined = undefined; // TODO: enable user to enter a story title
-
-    // Create a story.
-    const story: Story = {
-        assets: assets.map((fd) => ({
-            path: fd.name,
-            content: fd.content as Uint8Array<ArrayBuffer>,
-        })),
-        views: views,
-        title: storyTitle,
-    };
-
-    // Builds MVSStory.
-    const data = await buildMVSStory(story, true);
-
-    // Create data blob out of MVSStory.
-    const blob = createMVSBlob(data);
-
-    // Let user download the story.
-    const filename = `${storyTitle ? storyTitle : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
-    download(blob, filename);
 }
 
 /**
@@ -1087,6 +1026,15 @@ export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
     };
 }
 
+/**
+ * Extracts views metadata from the MVS (both `single` and `mutliple` kind).
+ * The extraction for `single` kind (which does not have any explicit snapshtos) is done by creating new view (snapshot) by applying:
+ *  - if there is a global story title, use it as well as new view title
+ *  - if there is a global story description (and description format), use it as well as new view description (and description format)
+ *  - otherwise, leave properties as undefined or default values.
+ * @param mvsData MVS
+ * @returns array of views metadata
+ */
 function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     let snapshots: Snapshot[] = [];
     if (mvsData.kind !== "multiple") {
@@ -1101,7 +1049,6 @@ function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
                 transition_duration_ms: undefined,
             },
         };
-
         snapshots.push(snapshot);
     } else {
         snapshots = mvsData.snapshots;
@@ -1258,6 +1205,10 @@ async function _loadMVSXFile(
     return { mvsData, sourceUrl, views, assets };
 }
 
+/**
+ * Creates default MVS of `multiple` kind.
+ * @returns MVS
+ */
 function createDefaultMVSData() {
     const snapshots: Snapshot[] = [];
     const initialStateTree: MVSData = {
