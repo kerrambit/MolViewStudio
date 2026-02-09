@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../common/button/Button";
 import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../utils/cssClassBuilder";
 import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
+import { Color } from "molstar/lib/mol-util/color";
 import {
     areCameraStatesEqual,
     fromMVSPosition,
+    getBackgroundColorChangeSubscription,
     getCanvasScreenshot,
+    setBackgroundColor,
     setCamera,
     toMVSPosition,
     useLiveCameraState,
     type Base64Png,
     type CameraState,
+    type HexColor,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
 
@@ -28,6 +32,7 @@ export interface ViewCardProps {
         descriptionFormat: "markdown" | "plaintext" | undefined,
         referenceCamera: CameraState,
         thumbnail: Base64Png | undefined,
+        backgroundColor: HexColor | undefined,
     ) => void;
     onFork?: (
         id: string,
@@ -36,6 +41,7 @@ export interface ViewCardProps {
         descriptionFormat: "markdown" | "plaintext" | undefined,
         referenceCamera: CameraState,
         thumbnail: Base64Png | undefined,
+        backgroundColor: HexColor | undefined,
     ) => void;
 }
 
@@ -44,6 +50,27 @@ export function ViewCard(props: ViewCardProps) {
     const [currentName, setCurrentName] = useState<string | undefined>(
         props.metadata.title || "New view...",
     );
+
+    // State for the view background color.
+    const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
+        HexColor | undefined
+    >(props.metadata.backgroundColor);
+
+    // Subscribe to the change of background color.
+    useEffect(() => {
+        const sub = getBackgroundColorChangeSubscription((color) => {
+            if (color) {
+                const hex = Color.toHexStyle(color);
+                setCurrentBackgroundColor((prev) =>
+                    prev === hex ? prev : hex,
+                );
+            }
+        });
+
+        return () => {
+            if (sub) sub.unsubscribe();
+        };
+    }, []);
 
     // Camera hook.
     const cameraState = useLiveCameraState();
@@ -69,7 +96,11 @@ export function ViewCard(props: ViewCardProps) {
                 : cameraState,
             props.metadata.referenceCamera,
         );
-    const isDirty = isNameChanged || isCameraChanged;
+    const isBackgroundColorChanged =
+        props.active &&
+        currentBackgroundColor !== props.metadata.backgroundColor;
+    const isDirty =
+        isNameChanged || isCameraChanged || isBackgroundColorChanged;
 
     // CSS class builder depends on the active property of view card.
     const viewCardClasses = buildCSSClassString([
@@ -77,6 +108,7 @@ export function ViewCard(props: ViewCardProps) {
         props.active && "viewCard--active",
     ]);
 
+    // Render compoment.
     return (
         <div className={viewCardClasses}>
             <div
@@ -198,6 +230,7 @@ export function ViewCard(props: ViewCardProps) {
                                                 }),
                                             },
                                             img,
+                                            currentBackgroundColor,
                                         );
                                     }
                                 }}
@@ -237,11 +270,13 @@ export function ViewCard(props: ViewCardProps) {
                                                 }),
                                             },
                                             img,
+                                            currentBackgroundColor,
                                         );
                                     }
                                 }}
                             ></Button>
                         </div>
+
                         <Button
                             size="small"
                             tooltip="Reverse changes for this view."
@@ -250,6 +285,14 @@ export function ViewCard(props: ViewCardProps) {
                                 setCurrentName(
                                     props.metadata.title || "New view...",
                                 );
+                                if (props.metadata.backgroundColor) {
+                                    setCurrentBackgroundColor(
+                                        props.metadata.backgroundColor,
+                                    );
+                                    setBackgroundColor(
+                                        props.metadata.backgroundColor,
+                                    );
+                                }
                                 if (props.metadata.referenceCamera) {
                                     setCamera({
                                         ...props.metadata.referenceCamera,

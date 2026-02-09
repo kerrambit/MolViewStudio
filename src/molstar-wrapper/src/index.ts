@@ -25,6 +25,7 @@ import { download } from "molstar/lib/mol-util/download";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { Result } from "../../types/Result";
+import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
 /**
  * Instance of `PluginUIContext`.
@@ -128,13 +129,36 @@ export function getFullScreenSubscription(
 }
 
 /**
+ * Creates a subscription to the event: background color changes.
+ * @param callback event to run
+ * @warning Take care of the unsubscription.
+ * @returns `Subscription` object
+ */
+export function getBackgroundColorChangeSubscription(
+    callback: (color: Color | undefined) => void,
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const sub = molstar.events.canvas3d.settingsUpdated.subscribe(() => {
+        if (!molstar) return;
+        const currentColor = molstar.canvas3d?.props.renderer.backgroundColor;
+        callback(currentColor);
+    });
+
+    return sub;
+}
+
+/**
  * Creates a subscription to the event: current snapshot is changed by the user in Molstar UI.
  * @param callback event to run
  * @warning Take care of the unsubscription.
  * @returns `Subscription` object
  */
 export function getSnapshotChangeSubscription(
-    callback: (currentSnapshotIndex: number, entry: any) => void,
+    callback: (
+        currentSnapshotIndex: number,
+        entry: PluginStateSnapshotManager.Entry,
+    ) => void,
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -365,6 +389,7 @@ export type ViewMetadata = {
     id: string;
     referenceCamera?: CameraState;
     thumbnail?: Base64Png;
+    backgroundColor?: string;
 } & SnapshotMetadata;
 
 /**
@@ -466,7 +491,34 @@ type DownloadAsset = {
  */
 function convertColorToHexString(color: Color | undefined): string {
     if (color === undefined) return "#ffffff";
-    return `#${color.toString(16).padStart(6, "0")}`;
+    return Color.toHexString(color);
+}
+
+/**
+ * Type definition for color in hexadecimal format.
+ */
+export type HexColor = string;
+
+export function getBackgroundColor(): HexColor {
+    return convertColorToHexString(
+        getSnapshot().canvas3d?.props?.renderer.backgroundColor,
+    );
+}
+
+/**
+ * Sets background color.
+ * @param color color to set
+ */
+export function setBackgroundColor(color: HexColor) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const snapshot = getSnapshot();
+    if (snapshot.canvas3d?.props) {
+        snapshot.canvas3d.props.renderer.backgroundColor = Color(
+            Number.parseInt(color.slice(1), 16),
+        );
+    }
+    molstar.state.setSnapshot({ ...snapshot });
 }
 
 /**
@@ -721,6 +773,7 @@ export function applyChangesToNode(
     changes: {
         referenceCamera?: CameraState | undefined;
         thumbnail?: Base64Png;
+        backgroundColor?: HexColor;
     },
 ): MVSTree {
     // Copy of original node.
@@ -769,6 +822,35 @@ export function applyChangesToNode(
                 nodeCopy.children = [];
             }
             nodeCopy.children.unshift(newCameraNode);
+        }
+    }
+
+    // Only apply changes if we have reference background color data.
+    if (changes.backgroundColor) {
+        // Find existing canvas node.
+        let canvasNode = nodeCopy.children?.find(
+            (child) => child.kind === "canvas",
+        );
+
+        // Update existing camera node.
+        if (canvasNode) {
+            canvasNode.params = {
+                background_color: changes.backgroundColor as ColorT,
+            };
+        } else {
+            // Create new canvas node.
+            const newCanvasNode = {
+                kind: "canvas" as const,
+                params: {
+                    background_color: changes.backgroundColor as ColorT,
+                },
+            };
+
+            // Add canvas node to the end.
+            if (!nodeCopy.children) {
+                nodeCopy.children = [];
+            }
+            nodeCopy.children.push(newCanvasNode);
         }
     }
 
@@ -1074,6 +1156,16 @@ function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
         const cameraParams = cameraNode?.params as CameraParams | undefined;
         const currentState = getCameraState() || getDefaultCameraState();
 
+        const canvasNode = root.children?.find(
+            (node) => node.kind === "canvas",
+        );
+
+        type CanvasParams = {
+            background_color: string;
+        };
+
+        const canvasParams = canvasNode?.params as CanvasParams | undefined;
+
         const view: ViewMetadata = {
             id: crypto.randomUUID(),
             key: metadata.key,
@@ -1090,6 +1182,7 @@ function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
                   }
                 : undefined,
             thumbnail: cameraNode?.custom?.thumbnail,
+            backgroundColor: canvasParams?.background_color,
             linger_duration_ms: 5000,
             transition_duration_ms: metadata.transition_duration_ms,
         };

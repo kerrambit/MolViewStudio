@@ -12,6 +12,7 @@ import {
     updateSnapshotInManager,
     type Base64Png,
     type CameraState,
+    type HexColor,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
 import { useFileData, type Regime } from "../../services/FileDataProvider";
@@ -29,26 +30,27 @@ export function SceneManager(props: SceneManagerProps) {
     type SidebarType = "views" | "seg" | "anno";
     const [sidebar, setSidebar] = useState<SidebarType>("views");
 
+    // Regime.
     const { regime, setRegime } = useFileData();
 
+    // State for the index of currently active view card (default is the first one).
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
 
+    // Callback for snapshot selected changed from Molstar UI.
     useEffect(() => {
-        let snapshotChangeSubscription: Subscription;
+        let sub: Subscription;
         if (!props.isMolstarLoading) {
-            snapshotChangeSubscription = getSnapshotChangeSubscription(
-                (index, _) => {
-                    setActiveViewCardIndex(index);
-                },
-            );
+            sub = getSnapshotChangeSubscription((index, _) => {
+                setActiveViewCardIndex(index);
+            });
         }
 
         return () => {
-            if (snapshotChangeSubscription)
-                snapshotChangeSubscription.unsubscribe();
+            if (sub) sub.unsubscribe();
         };
     }, [props.isMolstarLoading]);
 
+    // Render component.
     return (
         <Sidebar
             style={{
@@ -81,10 +83,10 @@ export function SceneManager(props: SceneManagerProps) {
                     <Button
                         size="small"
                         onClick={() => {
+                            // TODO: clear views from state tree, but how? Should we erase them completely? Then we lose information about downloads nodes etc.
                             console.log("Not implemented!");
                             // props.setViews(() => []);
                             // clearAllSnapshotsFromManager();
-                            // TODO: clear views from state tree, but how? Should we erase them completely? Then we lose information about downloads nodes etc.
                         }}
                     >
                         {"Clear views"}
@@ -113,6 +115,7 @@ export function SceneManager(props: SceneManagerProps) {
                                     descriptionFormat,
                                     referenceCamera,
                                     thumbnail,
+                                    backgroundColor,
                                 ) => {
                                     handleOnUpdate(
                                         regime,
@@ -125,6 +128,7 @@ export function SceneManager(props: SceneManagerProps) {
                                         descriptionFormat,
                                         referenceCamera,
                                         thumbnail,
+                                        backgroundColor,
                                     );
                                 }}
                                 onFork={(
@@ -134,6 +138,7 @@ export function SceneManager(props: SceneManagerProps) {
                                     descriptionFormat,
                                     referenceCamera,
                                     thumbnail,
+                                    backgroundColor,
                                 ) => {
                                     handleOnFork(
                                         regime,
@@ -146,6 +151,7 @@ export function SceneManager(props: SceneManagerProps) {
                                         descriptionFormat,
                                         referenceCamera,
                                         thumbnail,
+                                        backgroundColor,
                                     );
                                 }}
                             />
@@ -168,6 +174,7 @@ function handleOnFork(
     descriptionFormat: "markdown" | "plaintext" | undefined,
     referenceCamera: CameraState,
     thumbnail: Base64Png | undefined,
+    backgroundColor: HexColor | undefined,
 ): void {
     // Add view to the list.
     props.setViews((prev) => [
@@ -201,6 +208,7 @@ function handleOnFork(
             {
                 referenceCamera: referenceCamera,
                 thumbnail: thumbnail,
+                backgroundColor: backgroundColor,
             },
         );
 
@@ -213,6 +221,7 @@ function handleOnFork(
                 description: description,
                 description_format: descriptionFormat,
                 referenceCamera: referenceCamera,
+                backgroundColor: backgroundColor,
                 thumbnail: thumbnail,
                 linger_duration_ms: 5000,
                 transition_duration_ms: undefined,
@@ -234,6 +243,7 @@ function handleOnUpdate(
     descriptionFormat: "markdown" | "plaintext" | undefined,
     referenceCamera: CameraState,
     thumbnail: Base64Png | undefined,
+    backgroundColor: HexColor | undefined,
 ): void {
     // Update view in the list.
     props.setViews((prev) =>
@@ -246,6 +256,7 @@ function handleOnUpdate(
                       description_format: descriptionFormat,
                       referenceCamera: referenceCamera,
                       thumbnail: thumbnail,
+                      backgroundColor: backgroundColor,
                       linger_duration_ms: 5000,
                       transition_duration_ms: undefined,
                   }
@@ -275,6 +286,7 @@ function handleOnUpdate(
         snapshotToUpdate.root = applyChangesToNode(snapshotToUpdate.root, {
             referenceCamera: referenceCamera,
             thumbnail: thumbnail,
+            backgroundColor: backgroundColor,
         });
 
         snapshotToUpdate.metadata = {
