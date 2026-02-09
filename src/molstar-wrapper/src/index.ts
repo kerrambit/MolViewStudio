@@ -1098,17 +1098,19 @@ export async function createDefaultMVSFromLocalFiles(
 }> {
     const story: Story = {
         localAssets: transformFileDataIntoDownloadAssets(assets),
-        views: {
-            id: crypto.randomUUID(),
-            key: undefined,
-            title: undefined,
-            description: undefined,
-            description_format: undefined,
-            referenceCamera: undefined,
-            backgroundColor: undefined,
-            linger_duration_ms: 5000,
-            transition_duration_ms: undefined,
-        },
+        views: [
+            {
+                id: crypto.randomUUID(),
+                key: undefined,
+                title: undefined,
+                description: undefined,
+                description_format: undefined,
+                referenceCamera: undefined,
+                backgroundColor: undefined,
+                linger_duration_ms: 5000,
+                transition_duration_ms: undefined,
+            },
+        ],
         metadata: {
             title: processedFilename,
             description: undefined,
@@ -1448,6 +1450,7 @@ export async function loadFromFile(
         fileData.extension = "mmcif";
     }
 
+    // TODO: solve how to handle other files, not to return null
     const file = new File([fileData.content], fileData.name);
     const assetFile = Asset.File(file);
 
