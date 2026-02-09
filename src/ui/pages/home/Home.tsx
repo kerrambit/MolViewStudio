@@ -160,9 +160,8 @@ function onDropHandler(
             regime = { kind: "processing", fileToProcess: fileData };
         } else {
             regime = {
-                kind: "viewing",
+                kind: "staging",
                 fileToView: fileData,
-                deconstructedFile: null,
             };
         }
 
@@ -255,9 +254,8 @@ function loadAndHandleFile(
                     regime = { kind: "processing", fileToProcess: fileData[0] };
                 } else {
                     regime = {
-                        kind: "viewing",
+                        kind: "staging",
                         fileToView: fileData[0],
-                        deconstructedFile: null,
                     };
                 }
 

@@ -115,14 +115,7 @@ export function Viewer() {
     // Start deconstruction of file to view.
     useEffect(() => {
         const deconstruct = async () => {
-            console.log("Start deconstruction of file to view.");
-            // To prevent loop on this useEffect, guard clause was added to check if the deconstruction has already happened before you trigger the update.
-            if (
-                molstarLoading ||
-                regime.kind !== "viewing" ||
-                !regime.fileToView ||
-                regime.deconstructedFile
-            ) {
+            if (molstarLoading || regime.kind !== "staging") {
                 return;
             }
 
@@ -141,15 +134,16 @@ export function Viewer() {
                 result.localAssets,
             ).map(([path, data]) => ({
                 path: path,
-                name: path,
+                name: path.split("/").pop() || "",
                 content: data,
-                extension: "." + path.split(".").pop() || "",
+                extension: (path.split("/").pop() || "").split(".").pop() || "",
                 binary: true,
             }));
 
             // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
+                kind: "viewing",
                 deconstructedFile: { assets: assetsArray },
                 stateTree:
                     result.stateTree.kind === "multiple"
@@ -166,7 +160,7 @@ export function Viewer() {
         };
 
         deconstruct();
-    }, [regime, molstarLoading]);
+    }, [regime, setRegime, molstarLoading]);
 
     // Start processing of volumetric data.
     useEffect(() => {
@@ -227,23 +221,9 @@ export function Viewer() {
                     return;
                 }
 
-                // Show processed volume data as MVS in viewer.
-                const loadResult = await loadFromFile({
-                    path: "",
-                    extension: defaultMVSData.extension,
-                    name: "",
-                    binary: defaultMVSData.isBinary,
-                    content: defaultMVSData.data,
-                });
-
-                if (!loadResult) {
-                    console.log("Default MVS could not be loaded!");
-                    return;
-                }
-
-                // Sets regime to "viewing".
+                // Sets regime to "staging".
                 setRegime({
-                    kind: "viewing",
+                    kind: "staging",
                     fileToView: {
                         path: path,
                         extension: defaultMVSData.extension,
@@ -251,18 +231,14 @@ export function Viewer() {
                         binary: defaultMVSData.isBinary,
                         content: defaultMVSData.data,
                     },
-                    deconstructedFile: {
-                        assets: assets ?? [],
-                    },
-                    stateTree: loadResult.stateTree,
-                    sourceUrl: loadResult.sourceUrl,
                 });
             },
             onError: (err) => {
+                // TODO: report an error
                 console.log(`Processing failed: ${err.message}`);
             },
         });
-    }, [regime, setVolumes, setRegime]);
+    }, [regime, setRegime, setVolumes]);
 
     return (
         <div className="viewer">

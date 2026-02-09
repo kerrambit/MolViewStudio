@@ -6,14 +6,19 @@ export type ProcessingRegime = {
     fileToProcess: FileData;
 };
 
+export type StagingRegime = {
+    kind: "staging";
+    fileToView: FileData;
+};
+
 export type DeconstructedFileToView = {
     assets: FileData[];
 };
 
 export type ViewingRegime = {
     kind: "viewing";
-    fileToView: FileData | null;
-    deconstructedFile: DeconstructedFileToView | null;
+    fileToView: FileData;
+    deconstructedFile: DeconstructedFileToView;
     stateTree: MVSData;
     sourceUrl: string;
 };
@@ -22,7 +27,11 @@ export type IdlingRegime = {
     kind: "idling";
 };
 
-export type Regime = ProcessingRegime | ViewingRegime | IdlingRegime;
+export type Regime =
+    | ProcessingRegime
+    | StagingRegime
+    | ViewingRegime
+    | IdlingRegime;
 
 export type FileDataContextType = {
     regime: Regime;
