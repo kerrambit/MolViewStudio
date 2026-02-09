@@ -53,10 +53,26 @@ type Environment = {
 };
 
 interface FileData {
+    /**
+     * The whole complete file path, e.g. "/home/user/data/tmp/emd_53130_r2_tf0.cif".
+     */
     path: string;
+    /**
+     * Extension without dot, e.g. "cif".
+     */
     extension: string;
-    name: string; // TODO: is the name without path, is the name with extension?
+    /**
+     * Name of the file with extension "emd_53130_r2_tf0.cif".
+     */
+    // TODO: remove extension from here
+    name: string;
+    /**
+     * Flag if the file is binary or not.
+     */
     binary: boolean;
+    /**
+     * Content of the file.
+     */
     content: string | Uint8Array<ArrayBuffer>;
 }
 

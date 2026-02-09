@@ -12,7 +12,7 @@ import {
     disposeMolstar,
     loadFromFile,
     getSnapshot,
-    prepareDataForDefaultMVS,
+    createDefaultMVSFromLocalFiles,
     createMVSBlob,
     getFullScreenSubscription,
     type ViewMetadata,
@@ -115,6 +115,7 @@ export function Viewer() {
     // Start deconstruction of file to view.
     useEffect(() => {
         const deconstruct = async () => {
+            console.log("Start deconstruction of file to view.");
             // To prevent loop on this useEffect, guard clause was added to check if the deconstruction has already happened before you trigger the update.
             if (
                 molstarLoading ||
@@ -199,7 +200,10 @@ export function Viewer() {
                 }
 
                 // Create MVS bundle from assets, containing just default view.
-                const defaultMVSData = await prepareDataForDefaultMVS(assets);
+                const defaultMVSData = await createDefaultMVSFromLocalFiles(
+                    assets,
+                    `Processed file <${regime.fileToProcess.name}>`,
+                );
 
                 // Path for temporary MVS processed file.
                 const path = `${`Processing/${new Date().toISOString().replace(/:/g, "-")}/MVS/tmp`}.${
@@ -241,7 +245,7 @@ export function Viewer() {
                 setRegime({
                     kind: "viewing",
                     fileToView: {
-                        path: path, // TODO: does this matter? I am not sure if path is whole path or without filename
+                        path: path,
                         extension: defaultMVSData.extension,
                         name: "tmp",
                         binary: defaultMVSData.isBinary,

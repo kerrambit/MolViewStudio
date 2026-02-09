@@ -7,6 +7,7 @@ import { PluginState } from "molstar/lib/mol-plugin/state";
 import { Color } from "molstar/lib/mol-util/color";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {
+    GlobalMetadata,
     MVSData,
     MVSData_State,
     MVSData_States,
@@ -397,25 +398,17 @@ export type ViewMetadata = {
  */
 export type View = {
     node: MVSTree;
-    metadata?: ViewMetadata;
+    metadata: ViewMetadata;
 };
 
-/**
- * Represents a single local asset.
- */
-export type LocalStoryAsset = {
-    path: string;
-    content: Uint8Array;
-};
-
-// TODO: add GlobalMetadata to this
 /**
  * Represents a story with views and local assets.
+ * In case `views` contains an array, the object represents `multiple` kind of MVS, otherwise `single`.
  */
 export type Story = {
-    title: string | undefined;
-    views: ViewMetadata[];
-    assets: LocalStoryAsset[];
+    metadata: GlobalMetadata;
+    views: ViewMetadata | ViewMetadata[];
+    localAssets: DownloadAsset[];
 };
 
 /**
@@ -477,14 +470,6 @@ export function fromMVSPosition(
 }
 
 /**
- * Download asset used in MVS.
- */
-type DownloadAsset = {
-    url: string;
-    format: "mmcif" | "bcif";
-};
-
-/**
  * Converts color of type `Color` to hexadecimal format.
  * @param color color
  * @returns hexadecimal representation of `color` as string, default value is `#ffffff`,
@@ -499,6 +484,10 @@ function convertColorToHexString(color: Color | undefined): string {
  */
 export type HexColor = string;
 
+/**
+ * Get background color.
+ * @returns background color
+ */
 export function getBackgroundColor(): HexColor {
     return convertColorToHexString(
         getSnapshot().canvas3d?.props?.renderer.backgroundColor,
@@ -522,39 +511,42 @@ export function setBackgroundColor(color: HexColor) {
 }
 
 /**
+ * Download asset used in MVS.
+ */
+type DownloadAsset = {
+    relativeUrl: string;
+    format: "mmcif" | "bcif";
+    content: string | Uint8Array<ArrayBuffer>;
+};
+
+/**
  * Builds MVS snapshot from a single view.
- * @param view view data
+ * @param view view metada
  * @param urls assets urls
- * @param thumbnail optional view thumbnail
- * @param includeCamera boolean flag if the camera state from `view` should be included into view
- * @returns built snapshot with `view` data
+ * @returns snapshot
  */
 async function buildMVSSnapshot(
     view: ViewMetadata,
     urls: DownloadAsset[],
-    thumbnail: Base64Png | undefined,
-    includeCamera: boolean,
 ): Promise<Snapshot> {
     // Create MVS builder and get current Molstar snapshot.
     const builder = MVSData.createBuilder();
-    const molstarSnapshot = getSnapshot();
 
     // Add current background color into MVS.
-    // TODO: background color has to be saved together with view
-    builder.canvas({
-        background_color: convertColorToHexString(
-            molstarSnapshot.canvas3d?.props?.renderer.backgroundColor,
-        ) as ColorT | undefined,
-    });
+    if (view.backgroundColor) {
+        builder.canvas({
+            background_color: view.backgroundColor as ColorT | undefined,
+        });
+    }
 
     // Add download nodes with assets.
     for (let i = 0; i < urls.length; ++i) {
-        // TODO: switching based on format should be reworked
         const downloadAsset = urls[i];
+        // TODO: this logic below might be needed to seperate, and made more general
         if (downloadAsset.format === "mmcif") {
             builder
                 .download({
-                    url: downloadAsset.url,
+                    url: downloadAsset.relativeUrl,
                 })
                 .parse({ format: "mmcif" })
                 .volume()
@@ -567,7 +559,7 @@ async function buildMVSSnapshot(
         } else if (downloadAsset.format === "bcif") {
             builder
                 .download({
-                    url: downloadAsset.url,
+                    url: downloadAsset.relativeUrl,
                 })
                 .parse({ format: "bcif" })
                 .volume({ channel_id: "1" })
@@ -580,60 +572,85 @@ async function buildMVSSnapshot(
         }
     }
 
-    // Include camera.
-    if (includeCamera && view.referenceCamera) {
-        builder.camera({
-            position: view.referenceCamera.position as unknown as [
-                number,
-                number,
-                number,
-            ],
-            target: view.referenceCamera.target as unknown as [
-                number,
-                number,
-                number,
-            ],
-            up: view.referenceCamera.up as unknown as [number, number, number],
-            custom: {
-                thumbnail: thumbnail,
-            },
-        });
+    // Include camera and thumbnail.
+    if (view.referenceCamera) {
+        let cameraParams;
+        if (view.thumbnail) {
+            cameraParams = {
+                position: view.referenceCamera.position as unknown as [
+                    number,
+                    number,
+                    number,
+                ],
+                target: view.referenceCamera.target as unknown as [
+                    number,
+                    number,
+                    number,
+                ],
+                up: view.referenceCamera.up as unknown as [
+                    number,
+                    number,
+                    number,
+                ],
+                custom: {
+                    thumbnail: view.thumbnail,
+                },
+            };
+        } else {
+            cameraParams = {
+                position: view.referenceCamera.position as unknown as [
+                    number,
+                    number,
+                    number,
+                ],
+                target: view.referenceCamera.target as unknown as [
+                    number,
+                    number,
+                    number,
+                ],
+                up: view.referenceCamera.up as unknown as [
+                    number,
+                    number,
+                    number,
+                ],
+            };
+        }
+
+        builder.camera(cameraParams);
     }
 
     // Build the snapshot.
     return builder.getSnapshot({
-        title: view.title?.trim(),
+        title: view.title,
         description: view.description,
         description_format: view.description_format,
-        key: view.key?.trim(),
-        linger_duration_ms: view.linger_duration_ms || 5000,
+        key: view.key,
+        linger_duration_ms: view.linger_duration_ms,
         transition_duration_ms: view.transition_duration_ms,
     });
 }
 
 /**
- * Transform `assets` to array of relative urls (it strips the absolute path and extract only the filename) linked with the format (currently supporting only `.cif` and `.bcif`).
- * @param assets assets array
- * @returns array of assets urls and their formats
+ * Transform `assets` to array of relative urls (it strips the absolute path and extract only the filename) linked with the format (currently supporting only `.cif` and `.bcif`) and content.
+ * @param assets assets array (it can be already in relative url form, function is idempotent)
+ * @returns array of assets urls, formats and content
  */
-function transformLocalStoryAssetsIntoUrls(
-    assets: LocalStoryAsset[],
-): { format: "mmcif" | "bcif"; url: string }[] {
-    return assets.map((asset) => {
-        const fullPath = asset.path;
-        const filenameWithExtension = fullPath.substring(
-            fullPath.lastIndexOf("/") + 1,
-        );
-        const relativeUrl = `./${filenameWithExtension}`;
-        const lastDotIndex = filenameWithExtension.lastIndexOf(".");
+function transformFileDataIntoDownloadAssets(
+    assets: FileData[],
+    prefix?: string,
+): DownloadAsset[] {
+    // Ensure prefix ends with a slash if it exists and starts with dot and slash, but use forward slashes only.
+    const cleanPrefix = prefix
+        ? `./${prefix.replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/$/, "")}/`
+        : "./";
 
-        let extension = "";
-        if (lastDotIndex > 0) {
-            extension = filenameWithExtension.substring(lastDotIndex);
-        }
+    return assets.map((asset) => {
+        const filenameWithExtension = asset.name;
+        const relativeUrl = `${cleanPrefix}${filenameWithExtension}`;
         return {
-            format: extension === ".cif" ? "mmcif" : "bcif",
-            url: relativeUrl,
+            format: asset.extension === "cif" ? "mmcif" : "bcif",
+            relativeUrl: relativeUrl,
+            content: asset.content,
         };
     });
 }
@@ -641,54 +658,57 @@ function transformLocalStoryAssetsIntoUrls(
 /**
  * Creates a MVS from `story`.
  * @param story story
- * @param includeCameraInViews boolean flag if views inside `story` should include camera state
- * @returns `MVSData` instance if there are no direct assets linked, otherwise it creates an archive (.mvsx)
+ * @returns `.mvsj` instance if there are no direct assets linked, otherwise it creates an archive (.mvsx)
  */
-async function buildMVSStory(
-    story: Story,
-    includeCameraInViews: boolean,
-): Promise<MVSData | Uint8Array> {
-    // Iterate through all views and build them into Snapshots.
-    const snapshots: Snapshot[] = [];
-    for (let index = 0; index < story.views.length; index++) {
-        const view = story.views[index];
-        const snapshot = await buildMVSSnapshot(
-            view,
-            transformLocalStoryAssetsIntoUrls(story.assets),
-            view.thumbnail,
-            includeCameraInViews,
-        );
-        snapshot.root.children?.push();
-        snapshots.push(snapshot);
+async function buildMVS(story: Story): Promise<MVSData | Uint8Array> {
+    // Decide if the MVS should be "multiple" or "single".
+    let index: MVSData;
+    if (Array.isArray(story.views)) {
+        // Iterate through all views and build them into Snapshots.
+        const snapshots: Snapshot[] = [];
+        for (let index = 0; index < story.views.length; index++) {
+            const snapshot = await buildMVSSnapshot(
+                story.views[index],
+                story.localAssets,
+            );
+            snapshot.root.children?.push();
+            snapshots.push(snapshot);
+        }
+
+        // Create an index (future index.mvsj) of "multiple" kind.
+        index = {
+            kind: "multiple",
+            metadata: story.metadata,
+            snapshots,
+        };
+    } else {
+        // Create an index (future index.mvsj) of "single" kind.
+        const snapshot = await buildMVSSnapshot(story.views, story.localAssets);
+        index = {
+            kind: "single",
+            metadata: story.metadata,
+            root: snapshot.root,
+        };
     }
 
-    // Create an index (future index.mvsj).
-    const index: MVSData = {
-        kind: "multiple",
-        metadata: {
-            title: story.title,
-            timestamp: new Date().toISOString(),
-            version: `${MVSData.SupportedVersion}`,
-        },
-        snapshots,
-    };
-
-    if (!story.assets.length) {
+    // No local assets present.
+    if (story.localAssets.length === 0) {
         return index;
     }
 
-    return createArchive(index, story.assets);
+    // Create archive (.mvsx).
+    return createArchive(index, story.localAssets);
 }
 
 /**
  * Creates an archive from index and assets.
  * @param index index
- * @param assets assets array
+ * @param assets assets array (already in relative form)
  * @returns binary archive
  */
 async function createArchive(
     index: MVSData,
-    assets: LocalStoryAsset[],
+    assets: DownloadAsset[],
 ): Promise<Uint8Array<ArrayBuffer>> {
     const encoder = new TextEncoder();
     const files: Record<string, Uint8Array<ArrayBuffer>> = {
@@ -698,9 +718,9 @@ async function createArchive(
     };
 
     for (const asset of assets) {
-        const pathInZip = asset.path.startsWith("./")
-            ? asset.path.slice(2)
-            : asset.path;
+        const pathInZip = asset.relativeUrl.startsWith("./")
+            ? asset.relativeUrl.slice(2)
+            : asset.relativeUrl;
         files[pathInZip] = asset.content as Uint8Array<ArrayBuffer>;
     }
 
@@ -711,8 +731,8 @@ async function createArchive(
 /**
  * Transform `stateTree` into format ready to be converted into `Blob` and exported.
  * The final format depends on the fact, if there are any `assets`, in that case, an archive must be created.
- * @param stateTree
- * @param assets
+ * @param stateTree state tree
+ * @param assets local assets (they can be in relative/absolute form, it does not matter)
  * @returns
  */
 async function transfromStateTree(
@@ -725,15 +745,12 @@ async function transfromStateTree(
 
     return await createArchive(
         stateTree,
-        assets.map((fd) => ({
-            path: fd.name,
-            content: fd.content as Uint8Array<ArrayBuffer>,
-        })),
+        transformFileDataIntoDownloadAssets(assets),
     );
 }
 
 /**
- * Exports `stateTree` with possible lcoal assets` in the form of MVS.
+ * Exports `stateTree` with possible local `assets` in the form of MVS.
  * Opens a file explorer for user to choose file location.
  * @param stateTree state tree to export
  * @param assets assets
@@ -1066,39 +1083,42 @@ export function createMVSBlob(
 }
 
 /**
- * Prepares data for default MVS from assets given as `fileData` parameter.
- * @param assets assets
+ * Prepares data for default single MVS from assets given as `fileData` parameter.
+ * @param assets assets with global paths
+ * @param processedFilename optional parameter which sets the title property of final MVS to the name of processed file
  * @returns bundle containing array buffer as the content and string extension user should use when saving this bundle
  */
-export async function prepareDataForDefaultMVS(assets: FileData[]): Promise<{
+export async function createDefaultMVSFromLocalFiles(
+    assets: FileData[],
+    processedFilename?: string,
+): Promise<{
     data: string | Uint8Array<ArrayBuffer>;
     extension: "mvsx" | "mvsj";
     isBinary: boolean;
 }> {
-    if (!molstar) throw new Error("Molstar is not initialized!");
-
     const story: Story = {
-        assets: assets.map((fd) => ({
-            path: fd.name,
-            content: fd.content as Uint8Array<ArrayBuffer>,
-        })),
-        views: [],
-        title: undefined,
+        localAssets: transformFileDataIntoDownloadAssets(assets),
+        views: {
+            id: crypto.randomUUID(),
+            key: undefined,
+            title: undefined,
+            description: undefined,
+            description_format: undefined,
+            referenceCamera: undefined,
+            backgroundColor: undefined,
+            linger_duration_ms: 5000,
+            transition_duration_ms: undefined,
+        },
+        metadata: {
+            title: processedFilename,
+            description: undefined,
+            description_format: undefined,
+            timestamp: Date(),
+            version: `${MVSData.SupportedVersion}`,
+        },
     };
 
-    const id = crypto.randomUUID();
-    story.views.push({
-        id: id,
-        key: id,
-        title: "New view...",
-        description: undefined,
-        description_format: undefined,
-        referenceCamera: getDefaultCameraState(),
-        linger_duration_ms: 5000,
-        transition_duration_ms: undefined,
-    });
-
-    const data = await buildMVSStory(story, false);
+    const data = await buildMVS(story);
     const isBinary = data instanceof Uint8Array;
 
     return {
