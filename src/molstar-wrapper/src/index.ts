@@ -9,9 +9,9 @@ import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {
     GlobalMetadata,
     MVSData,
-    MVSData_State,
-    MVSData_States,
-    SnapshotMetadata,
+    type MVSData_State,
+    type MVSData_States,
+    type SnapshotMetadata,
     type Snapshot,
 } from "molstar/lib/extensions/mvs/mvs-data";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
@@ -24,8 +24,8 @@ import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { useEffect, useState } from "react";
 import { download } from "molstar/lib/mol-util/download";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
-import { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
-import { Result } from "../../types/Result";
+import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
+import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
 /**
