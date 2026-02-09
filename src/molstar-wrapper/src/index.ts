@@ -275,7 +275,9 @@ export function useLiveCameraState(): CameraState | undefined {
 
         const update = () => {
             const current = getCameraState();
-            setLiveCameraState(current);
+            setLiveCameraState((prev) =>
+                areCameraStatesEqual(prev, current) ? prev : current,
+            );
             handle = requestAnimationFrame(update);
         };
 
