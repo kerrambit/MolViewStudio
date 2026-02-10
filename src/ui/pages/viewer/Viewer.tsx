@@ -41,6 +41,7 @@ import type { Subscription } from "rxjs";
 import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 import { useEnvironment } from "../../hooks/useEnvironment";
+import { Button } from "../../components/common/button/Button";
 
 export function Viewer() {
     // Use localization.
@@ -53,6 +54,7 @@ export function Viewer() {
     const { snapshot, setSnapshot } = useMolstar();
 
     // TODO: temporary state
+    const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
     const [volumes, setVolumes] = useState<string[]>([]);
 
     // Imports hook vol-seg server communication.
@@ -172,6 +174,8 @@ export function Viewer() {
             return;
         }
 
+        setVolumeSidebarVisible(true);
+
         // Define temporary directory for processing of volumetric data.
         const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
         const temporaryDirectory = `${env.userDataPath}/Processing/${processingID}/RawData`;
@@ -266,16 +270,28 @@ export function Viewer() {
                     overlayProps={{ radius: "sm", blur: 2 }}
                     loaderProps={{ type: "oval" }}
                 />
-                <Sidebar
-                    style={{
-                        gap: ".5em",
-                        padding: ".5em",
-                    }}
-                >
-                    {processVolume.isPending && "Processing..."}
-                    {processVolume.isSuccess &&
-                        `Processing finished succefully: ${volumes}`}
-                </Sidebar>
+                {volumeSidebarVisible && (
+                    <Sidebar
+                        style={{
+                            gap: ".5em",
+                            padding: ".5em",
+                        }}
+                    >
+                        {processVolume.isPending && "Processing..."}
+                        {processVolume.isSuccess &&
+                            `Processing finished succefully: ${volumes}`}
+                        {
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setVolumeSidebarVisible(false);
+                                }}
+                            >
+                                Close
+                            </Button>
+                        }
+                    </Sidebar>
+                )}
                 <SceneManager
                     isMolstarExpanded={molstarExpanded}
                     isMolstarLoading={molstarLoading}
