@@ -40,10 +40,14 @@ import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
 import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
+import { useEnvironment } from "../../hooks/useEnvironment";
 
 export function Viewer() {
     // Use localization.
     const { t } = useTranslation();
+
+    // Use environment.
+    const env = useEnvironment();
 
     // Controlls Molstar snapshots.
     const { snapshot, setSnapshot } = useMolstar();
@@ -168,76 +172,89 @@ export function Viewer() {
             return;
         }
 
-        processVolume.mutate(regime.fileToProcess.path, {
-            onSuccess: async (response) => {
-                // Parse string array containing absolute paths.
-                let absolutePaths: string[] = [];
-                try {
-                    absolutePaths = await getFieldFromResponse<string[]>(
-                        response,
-                        "output_files",
-                        "string",
+        // Define temporary directory for processing of volumetric data.
+        const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
+        const temporaryDirectory = `${env.userDataPath}/Processing/${processingID}/RawData`;
+
+        // Call API endpoint.
+        processVolume.mutate(
+            {
+                filepath: regime.fileToProcess.path,
+                temporaryDirectory: temporaryDirectory,
+            },
+            {
+                onSuccess: async (response) => {
+                    // Parse string array containing absolute paths.
+                    let absolutePaths: string[] = [];
+                    try {
+                        absolutePaths = await getFieldFromResponse<string[]>(
+                            response,
+                            "output_files",
+                            "string",
+                        );
+                    } catch (error) {
+                        // TODO: report an error
+                        console.log(error);
+                    }
+
+                    setVolumes(absolutePaths);
+
+                    // Read assets from processed volume file.
+                    const assets =
+                        await window.electron.getFileData(absolutePaths);
+
+                    if (!assets) {
+                        // TODO: report an error
+                        return;
+                    }
+
+                    // Create MVS bundle from assets, containing just default view.
+                    const defaultMVSData = await createDefaultMVSFromLocalFiles(
+                        assets,
+                        `Processed file <${regime.fileToProcess.name}>`,
                     );
-                } catch (error) {
+
+                    // Path for temporary MVS processed file.
+                    const path = `${`Processing/${processingID}/MVS/export`}.${
+                        defaultMVSData.extension
+                    }`;
+
+                    // Create raw array buffer of MVS.
+                    const arrayBuffer = await createMVSBlob(
+                        defaultMVSData.data,
+                    ).arrayBuffer();
+
+                    // Save MVS into file.
+                    const saveDataResult =
+                        await window.electron.saveTemporaryData(
+                            arrayBuffer,
+                            path,
+                        );
+
                     // TODO: report an error
-                    console.log(error);
-                }
+                    if (!saveDataResult) {
+                        console.log("Default MVS could not be saved!");
+                        return;
+                    }
 
-                setVolumes(absolutePaths);
-
-                // Read assets from processed volume file.
-                const assets = await window.electron.getFileData(absolutePaths);
-
-                if (!assets) {
+                    // Sets regime to "staging".
+                    setRegime({
+                        kind: "staging",
+                        fileToView: {
+                            path: path,
+                            extension: defaultMVSData.extension,
+                            name: "tmp",
+                            binary: defaultMVSData.isBinary,
+                            content: defaultMVSData.data,
+                        },
+                    });
+                },
+                onError: (err) => {
                     // TODO: report an error
-                    return;
-                }
-
-                // Create MVS bundle from assets, containing just default view.
-                const defaultMVSData = await createDefaultMVSFromLocalFiles(
-                    assets,
-                    `Processed file <${regime.fileToProcess.name}>`,
-                );
-
-                // Path for temporary MVS processed file.
-                const path = `${`Processing/${new Date().toISOString().replace(/:/g, "-")}/MVS/tmp`}.${
-                    defaultMVSData.extension
-                }`;
-
-                // Create raw array buffer of MVS.
-                const arrayBuffer = await createMVSBlob(
-                    defaultMVSData.data,
-                ).arrayBuffer();
-
-                // Save MVS into file.
-                const saveDataResult = await window.electron.saveTemporaryData(
-                    arrayBuffer,
-                    path,
-                );
-
-                // TODO: report an error
-                if (!saveDataResult) {
-                    console.log("Default MVS could not be saved!");
-                    return;
-                }
-
-                // Sets regime to "staging".
-                setRegime({
-                    kind: "staging",
-                    fileToView: {
-                        path: path,
-                        extension: defaultMVSData.extension,
-                        name: "tmp",
-                        binary: defaultMVSData.isBinary,
-                        content: defaultMVSData.data,
-                    },
-                });
+                    console.log(`Processing failed: ${err.message}`);
+                },
             },
-            onError: (err) => {
-                // TODO: report an error
-                console.log(`Processing failed: ${err.message}`);
-            },
-        });
+        );
     }, [regime, setRegime, setVolumes]);
 
     return (
