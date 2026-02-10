@@ -160,8 +160,8 @@ app.on("ready", () => {
     });
 
     // UI can request environmanet information.
-    Ipc.Electron.handle("requestEnvironment", () => {
-        return { isDev: isDev() };
+    Ipc.Electron.handleSync("requestEnvironment", () => {
+        return { isDev: isDev(), userDataPath: app.getPath("userData") };
     });
 
     // TODO: unify the file processing in UI's dropzone component

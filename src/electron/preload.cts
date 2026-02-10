@@ -16,6 +16,12 @@ export class Ipc {
             return electron.ipcRenderer.invoke(key);
         }
 
+        static invokeSync<Key extends keyof EventPayloadMapping>(
+            key: Key,
+        ): EventPayloadMapping[Key] {
+            return electron.ipcRenderer.sendSync(key);
+        }
+
         // TODO: will be reworked
         static invokeTwoWay<Key extends keyof EventPayloadMapping>(
             key: Key,
@@ -60,7 +66,7 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     requestToOpenDevTools: () => Ipc.Ui.invoke("requestToOpenDevTools"),
 
-    requestEnvironment: () => Ipc.Ui.invoke("requestEnvironment"),
+    requestEnvironment: () => Ipc.Ui.invokeSync("requestEnvironment"),
 
     openFileExplorer: () => Ipc.Ui.invoke("openFileExplorer"),
 
