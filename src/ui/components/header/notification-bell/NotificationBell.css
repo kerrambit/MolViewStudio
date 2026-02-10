@@ -1,5 +1,6 @@
 .notificationBell {
      cursor: pointer !important;
+     z-index: 0 !important; /* Fix: diode was visible in Molstar Full-Screen. */
 }
 
 .notificationBell:active:not(:disabled) {

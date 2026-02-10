@@ -1,16 +1,62 @@
-import React, { useState, type CSSProperties } from "react";
+import React, { useEffect, useState, type CSSProperties } from "react";
 
 import "./UnstyledTextInput.css";
 
+/**
+ * Properties for UnstyledTextInput.
+ */
 interface UnstyledTextInputProps {
+    /**
+     * Optional text rendered before the input value.
+     */
     prefix?: string;
+
+    /**
+     * Controlled value of the input.
+     * When provided, the component operates in controlled mode and
+     * the value is fully driven by the parent component.
+     */
     value?: string;
+
+    /**
+     * Initial value of the input when used in uncontrolled mode.
+     * This value is only applied on the initial render.
+     */
     defaultValue?: string;
+
+    /**
+     * Maximum allowed length of the input value. Additional characters are truncated. Default is `80`.
+     */
     maxLength?: number;
+
+    /**
+     * Placeholder text shown when the input is empty.
+     */
     placeholder?: string;
+
+    /**
+     * Optional tooltip text displayed on hover.
+     */
     tooltip?: string;
+
+    /**
+     * Whether the input is enabled. When false, the input is disabled and cannot be edited. Default is `true`.
+     */
+    enabled?: boolean;
+
+    /**
+     * Callback fired whenever the input value changes due to user input. Called on each keystroke with the raw (untrimmed) value.
+     */
     onValueChange?: (value: string | undefined) => void;
+
+    /**
+     * Callback fired when the input loses focus or when the Enter key is pressed. The value passed to this callback is trimmed.
+     */
     onBlur?: (value: string | undefined) => void;
+
+    /**
+     * Optional inline styles applied to the root container.
+     */
     style?: CSSProperties;
 }
 
@@ -21,6 +67,7 @@ export function UnstyledTextInput({
     maxLength = 80,
     placeholder = "Enter value...",
     tooltip = "",
+    enabled = true,
     onValueChange,
     onBlur,
     style,
@@ -31,7 +78,7 @@ export function UnstyledTextInput({
     const [error, setError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let val = e.currentTarget.value.trim();
+        let val = e.currentTarget.value;
         if (val.length > maxLength) val = val.slice(0, maxLength);
 
         if (!isControlled) setInternalValue(val);
@@ -58,6 +105,12 @@ export function UnstyledTextInput({
         onBlur?.(trimmedValue);
     };
 
+    useEffect(() => {
+        if (value.trim().length > 0) {
+            setError(null);
+        }
+    }, [value]);
+
     return (
         <div className="unstyledTextInput" style={style} title={tooltip}>
             <div className="unstyledTextInput__input-wrapper">
@@ -66,6 +119,7 @@ export function UnstyledTextInput({
                 )}
                 <input
                     type="text"
+                    disabled={!enabled}
                     value={value}
                     placeholder={placeholder}
                     onChange={handleChange}

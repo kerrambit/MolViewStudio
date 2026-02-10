@@ -1,4 +1,5 @@
 import type { ReactNode, TablerIcon } from "@tabler/icons-react";
+import { buildCSSClassString } from "../../../utils/cssClassBuilder";
 
 import "./Button.css";
 
@@ -29,15 +30,13 @@ export function Button({
     ariaLabel,
     ...props
 }: ButtonProps) {
-    const buttonClasses = [
+    const buttonClasses = buildCSSClassString([
         "button",
         `button--${variant}`,
         `button--${size}`,
         disabled && "button--disabled",
         icon && !label && !children && "button--icon-only",
-    ]
-        .filter(Boolean)
-        .join(" ");
+    ]);
 
     const renderContent = () => {
         if (children) {

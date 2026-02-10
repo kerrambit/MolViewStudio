@@ -1,20 +1,25 @@
+import subprocess
 import os
-from fastapi import FastAPI, Response, WebSocket, WebSocketDisconnect, responses # type: ignore
-from result import Ok, Err, Result, is_ok, is_err # type: ignore
+from pathlib import Path
+from fastapi import FastAPI, Response, WebSocket, WebSocketDisconnect, responses  # type: ignore
+from result import Ok, Err, Result, is_ok, is_err  # type: ignore
 import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from pydantic import BaseModel # type: ignore
+from pydantic import BaseModel  # type: ignore
 from typing import Dict
 import uuid
-import numpy as np
 from settings import Settings, settings, Env
+import glob
+import json
 
 # -------------------------------------
 
+
 class Blob(BaseModel):
     data: str
-    
+
+
 # -------------------------------------
 
 disk: Dict[str, Blob] = {}
@@ -22,6 +27,7 @@ connections = {}
 progress_store = {}
 
 # -------------------------------------
+
 
 class DownsampledChannels(BaseModel):
     count: int
@@ -32,13 +38,12 @@ async def _downsample(id: str) -> Result[DownsampledChannels, str]:
     # Here I can call something like molstar.downsample(...). The crucial thing is it needs to return somehow progress.
     for i in range(0, 101):
         await asyncio.sleep(0.1)
-        a = np.arange(15).reshape(3, 5) # Having numpy imported as well.
+        a = np.arange(15).reshape(3, 5)  # Having numpy imported as well.
         progress_store[id] = {"progress": i, "status": f"Processing step {i}"}
         if id in connections:
-            await connections[id].send_json({
-                "progress": i,
-                "status": f"Processing step {i}"
-            })
+            await connections[id].send_json(
+                {"progress": i, "status": f"Processing step {i}"}
+            )
     answer = DownsampledChannels(count=42, method="GPU")
     return Ok(answer)
 
@@ -56,37 +61,91 @@ def get_blob_from_disk(id: str) -> Result[Blob, str]:
         return Err(f"Blob `{id}` was not found!")
     return Ok(result)
 
+
+import subprocess
+
+
+def run_preprocessor(filepath: str) -> str:
+
+    result1 = subprocess.run(
+        [
+            "uv",
+            "run",
+            "molstar-preprocessor",
+            "--volume-source",
+            filepath,
+            "--overwrite-tmp",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    if result1.returncode != 0:
+        raise RuntimeError(f"Command failed: {result1.stderr}")
+
+    input_dir = "volsegtools_tmp"
+    cif2bcif_script = "node_modules/molstar/lib/commonjs/cli/cif2bcif/index.js"
+
+    bcif_files = glob.glob(os.path.join(input_dir, "*.bcif"))
+
+    output_files = []
+    for input_cif_path in bcif_files:
+        base_name = os.path.splitext(input_cif_path)[0]
+        input_bcif_path = base_name + ".bcif"
+        output_cif_path = base_name + ".cif"
+
+        output_cif_path_absolute = os.path.abspath(output_cif_path)
+        output_files.append(output_cif_path_absolute)
+
+        result2 = subprocess.run(
+            [
+                "node",
+                cif2bcif_script,
+                input_bcif_path,
+                output_cif_path,
+            ]
+        )
+
+        if result2.returncode != 0:
+            raise RuntimeError(f"Command failed: {result2.stderr}")
+
+    return json.dumps(output_files)
+
+
 # -------------------------------------
 
 app = FastAPI()
 
+
 @app.get("/")
 def root():
-    return {"message": "Mol* App Server is running"}
+    return {"message": "Mol* App Server is running."}
+
 
 @app.get("/health")
 def health():
     return Response(status_code=200)
 
+
 @app.put("/downsample/{id}")
 async def start_downsample(id: str):
-    
+
     if id in progress_store and progress_store[id]["progress"] < 100:
         return responses.JSONResponse(
-        status_code=201,
-        content={
-            "message": f"Downsampling started. Track progress at /get_downsample_status/{id}."
-        }
-    )
-        
+            status_code=201,
+            content={
+                "message": f"Downsampling started. Track progress at /get_downsample_status/{id}."
+            },
+        )
+
     if id in progress_store:
         return responses.JSONResponse(
-        status_code=200,
-        content={
-            "message": f"Downsampling finished, to see results, use /get_downsample_status/{id}. To downsample this blob again, use /restart_downsample/{id} and then /downsample{id}.",
-        }
-    )
-        
+            status_code=200,
+            content={
+                "message": f"Downsampling finished, to see results, use /get_downsample_status/{id}. To downsample this blob again, use /restart_downsample/{id} and then /downsample{id}.",
+            },
+        )
+
     progress_store[id] = {"progress": 0, "status": "Started"}
 
     async def run():
@@ -96,12 +155,12 @@ async def start_downsample(id: str):
                 "progress": 100,
                 "status": "Completed",
                 "count": result.unwrap().count,
-                "method": result.unwrap().method
+                "method": result.unwrap().method,
             }
         else:
             progress_store[id] = {
                 "progress": 0,
-                "status": f"Failed: {result.unwrap_err()}"
+                "status": f"Failed: {result.unwrap_err()}",
             }
         connections.pop(id, None)
 
@@ -110,14 +169,14 @@ async def start_downsample(id: str):
         status_code=201,
         content={
             "message": f"Downsampling started. Track progress at /get_downsample_status/{id}"
-        }
+        },
     )
 
 
 @app.get("/get_downsample_status/{id}")
 async def get_downsample_status(id: str):
     return progress_store.get(id, {"progress": 0, "status": "Not started"})
-    
+
 
 @app.websocket("/ws/progress/{id}")
 async def websocket_progress(websocket: WebSocket, id: str):
@@ -137,23 +196,41 @@ async def websocket_progress(websocket: WebSocket, id: str):
 class PostBlobInput(BaseModel):
     blob: Blob
 
+
 @app.post("/create_blob")
 async def create_blob(input: PostBlobInput):
-    id = str(uuid.uuid5(uuid.NAMESPACE_X500, 'Mol* App Server'))
+    id = str(uuid.uuid5(uuid.NAMESPACE_X500, "Mol* App Server"))
     loop = asyncio.get_running_loop()
-    result: Result[None, str] = await loop.run_in_executor(None, write_blob_to_disk, id, input.blob)
+    result: Result[None, str] = await loop.run_in_executor(
+        None, write_blob_to_disk, id, input.blob
+    )
     if is_ok(result):
         return {"success": "true", "id": id}
     else:
         return {"success": "false", "message": result.err_value}
-            
+
 
 @app.get("/get_blob/{id}")
 async def get_blob(id: str):
     loop = asyncio.get_running_loop()
     result: Result[Blob, str] = await loop.run_in_executor(None, get_blob_from_disk, id)
     if is_ok(result):
-        return {"success": "true", "length": len(result.ok_value.data), "raw": result.ok_value.data}
+        return {
+            "success": "true",
+            "length": len(result.ok_value.data),
+            "raw": result.ok_value.data,
+        }
     else:
         return {"success": "false", "message": result.err_value}
 
+
+class VolumeRequest(BaseModel):
+    filepath: str
+
+
+@app.post("/process_volume")
+def process_volume(request: VolumeRequest):
+    print("Process volume...")
+    output = run_preprocessor(request.filepath)
+    print("Volume has been processed.")
+    return {"output_files": output}

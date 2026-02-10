@@ -11,22 +11,32 @@ const electron = require("electron");
 export class Ipc {
     static Ui = class {
         static invoke<Key extends keyof EventPayloadMapping>(
-            key: Key
+            key: Key,
         ): Promise<EventPayloadMapping[Key]> {
             return electron.ipcRenderer.invoke(key);
         }
+
+        // TODO: will be reworked
+        static invokeTwoWay<Key extends keyof EventPayloadMapping>(
+            key: Key,
+            payload: any,
+        ): Promise<EventPayloadMapping[Key]> {
+            return electron.ipcRenderer.invoke(key, payload);
+        }
+
         static on<Key extends keyof EventPayloadMapping>(
             key: Key,
-            callback: (payload: EventPayloadMapping[Key]) => void
+            callback: (payload: EventPayloadMapping[Key]) => void,
         ) {
             const _callback = (_: Electron.IpcRendererEvent, payload: any) =>
                 callback(payload);
             electron.ipcRenderer.on(key, _callback);
             return () => electron.ipcRenderer.off(key, _callback);
         }
+
         static send<Key extends keyof EventPayloadMapping>(
             key: Key,
-            payload: EventPayloadMapping[Key]
+            payload: EventPayloadMapping[Key],
         ) {
             electron.ipcRenderer.send(key, payload);
         }
@@ -53,6 +63,25 @@ electron.contextBridge.exposeInMainWorld("electron", {
     requestEnvironment: () => Ipc.Ui.invoke("requestEnvironment"),
 
     openFileExplorer: () => Ipc.Ui.invoke("openFileExplorer"),
+
+    // TODO: this IPC methods should be changed, now paths are not checked againts types.d.ts
+    getFileData: (paths: string[]) => {
+        return Ipc.Ui.invokeTwoWay("getFileData", paths as any);
+    },
+
+    saveData: (data: ArrayBuffer, path: string) => {
+        return Ipc.Ui.invokeTwoWay("saveData", {
+            data: data,
+            path: path,
+        } as any);
+    },
+
+    saveTemporaryData: (data: ArrayBuffer, path: string) => {
+        return Ipc.Ui.invokeTwoWay("saveTemporaryData", {
+            data: data,
+            path: path,
+        } as any);
+    },
 
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);

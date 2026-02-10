@@ -22,14 +22,3 @@
   --color-grey: #999;
   --color-background-blurred: rgba(71, 70, 70, 0.5);
 }
-
-/* TODO: remove when navigation links are gone in Viewer page */
-a {
-  font-weight: 500;
-  color: var(--mantine-primary-color-6);
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: var(--mantine-primary-color-7);
-}

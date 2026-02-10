@@ -6,26 +6,24 @@ import {
     type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../../components/common/button/Button";
 import {
     clearViewer,
     initMolstar,
-    loadDefaultPbdStructure,
     disposeMolstar,
-    loadDataFromFile,
+    loadFromFile,
     getSnapshot,
-    type CameraState,
-    setCamera,
-    type Base64Png,
-    loadDefaultMVSJFile,
-    loadDefaultMVSXFile,
-    downloadViewerState,
+    createDefaultMVSFromLocalFiles,
+    createMVSBlob,
+    getFullScreenSubscription,
+    type ViewMetadata,
+    exportStateTree,
+    convertStateTreeFromSingleToMultipleKind,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { useMolstar } from "../../services/MolstarProvider";
-import { LoadingOverlay, useComputedColorScheme } from "@mantine/core";
+import { LoadingOverlay } from "@mantine/core";
 import {
     useMenu,
     type MenuItem,
@@ -36,69 +34,211 @@ import type { TFunction } from "i18next";
 import { useFileData } from "../../services/FileDataProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
-import { ViewCard } from "../../components/view-card/ViewCard";
-import { NewViewCardCreator } from "../../components/view-card/NewViewCardCreator";
 import { IconPackageExport } from "@tabler/icons-react";
-import { SegmentedController } from "../../components/common/segmented-controller/SegmentedController";
-
-export type CameraView = CameraState & {
-    id: string;
-    title: string;
-    thumbnail?: Base64Png;
-};
+import { useProcessVolume } from "../../hooks/useProcessVolume";
+import { getFieldFromResponse } from "../../utils/responseUtils";
+import type { Subscription } from "rxjs";
+import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
+import { SceneManager } from "../../components/scene-manager/SceneManager";
 
 export function Viewer() {
+    // Use localization.
     const { t } = useTranslation();
-    const { snapshot, setSnapshot } = useMolstar();
-    const colorScheme = useComputedColorScheme();
-    const [molstarLoading, setMolstarLoading] = useState(true);
-    const { fileData, regime } = useFileData();
-    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
 
-    // Views.
-    const [views, setViews] = useState<CameraView[]>([]);
+    // Controlls Molstar snapshots.
+    const { snapshot, setSnapshot } = useMolstar();
+
+    // TODO: temporary state
+    const [volumes, setVolumes] = useState<string[]>([]);
+
+    // Imports hook vol-seg server communication.
+    const processVolume = useProcessVolume();
+
+    // Controls if Molstar is still in the initialization process.
+    const [molstarLoading, setMolstarLoading] = useState(true);
+
+    // Controls if the Molstar viewer is expanded or not.
+    const [molstarExpanded, setMolstarExpanded] = useState(false);
+
+    // Controls current regime of the application, stores current data.
+    const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
+
+    // Current view and views.
+    const [views, setViews] = useState<ViewMetadata[]>([]);
 
     // Add Edit root item button into the menu.
+    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
     useEffect(() => {
-        const edit = createEditRootMenuItem(t, views, setViews);
+        const edit = createEditRootMenuItem(
+            t,
+            regime.kind === "viewing" ? regime.stateTree : undefined,
+            setViews,
+            regime.kind === "viewing" && regime.deconstructedFile
+                ? regime.deconstructedFile.assets
+                : [],
+        );
         addRootMenuItem(edit);
         return () => {
             deleteRootMenuItem(edit.id);
         };
-    }, [t, views, setViews]);
-
-    // Sidebar state.
-    type SidebarType = "views" | "seg" | "anno";
-    const [sidebar, setSidebar] = useState<SidebarType>("views");
+    }, [t, views, setViews, regime]);
 
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
     useEffect(() => {
+        // Subscriptions.
+        let fullScreenSubscription: Subscription;
+
         initMolstar(
             parentRef.current as HTMLDivElement,
             {
                 showControls: true,
                 isExpanded: false,
-                darkMode: colorScheme === "dark",
             },
-            snapshot
+            snapshot,
         ).then(async () => {
-            // translateMolstarUi(parentRef);
             setMolstarLoading(false);
-            if (regime === "toView" && fileData && !snapshot) {
-                const result = await loadDataFromFile(fileData);
-                if (result) {
-                    setViews(result);
-                }
-            }
+            fullScreenSubscription = getFullScreenSubscription((val) => {
+                setMolstarExpanded(val);
+            });
         });
 
         return () => {
             const freshSnapshot = getSnapshot();
             setSnapshot(freshSnapshot);
+            clearViewer();
+            if (fullScreenSubscription) fullScreenSubscription.unsubscribe();
             disposeMolstar();
         };
     }, [setSnapshot]);
+
+    // Start deconstruction of file to view.
+    useEffect(() => {
+        const deconstruct = async () => {
+            if (molstarLoading || regime.kind !== "staging") {
+                return;
+            }
+
+            // Load the file.
+            const result = await loadFromFile(regime.fileToView);
+            if (!result) {
+                // TODO: report an error
+                return;
+            }
+
+            // Set the views in the editor.
+            setViews(result.views);
+
+            // Create an array with local assets (if there are some).
+            const assetsArray: FileData[] = Object.entries(
+                result.localAssets,
+            ).map(([path, data]) => ({
+                path: path,
+                name: path.split("/").pop() || "",
+                content: data,
+                extension: (path.split("/").pop() || "").split(".").pop() || "",
+                binary: true,
+            }));
+
+            // Set the regime with new assets and state tree.
+            setRegime({
+                ...regime,
+                kind: "viewing",
+                deconstructedFile: { assets: assetsArray },
+                stateTree:
+                    result.stateTree.kind === "multiple"
+                        ? result.stateTree
+                        : convertStateTreeFromSingleToMultipleKind(
+                              result.stateTree,
+                              {
+                                  node: result.stateTree.root,
+                                  metadata: result.views[0],
+                              },
+                          ),
+                sourceUrl: result.sourceUrl,
+            });
+        };
+
+        deconstruct();
+    }, [regime, setRegime, molstarLoading]);
+
+    // Start processing of volumetric data.
+    useEffect(() => {
+        if (regime.kind !== "processing" || !regime.fileToProcess) {
+            return;
+        }
+
+        processVolume.mutate(regime.fileToProcess.path, {
+            onSuccess: async (response) => {
+                // Parse string array containing absolute paths.
+                let absolutePaths: string[] = [];
+                try {
+                    absolutePaths = await getFieldFromResponse<string[]>(
+                        response,
+                        "output_files",
+                        "string",
+                    );
+                } catch (error) {
+                    // TODO: report an error
+                    console.log(error);
+                }
+
+                setVolumes(absolutePaths);
+
+                // Read assets from processed volume file.
+                const assets = await window.electron.getFileData(absolutePaths);
+
+                if (!assets) {
+                    // TODO: report an error
+                    return;
+                }
+
+                // Create MVS bundle from assets, containing just default view.
+                const defaultMVSData = await createDefaultMVSFromLocalFiles(
+                    assets,
+                    `Processed file <${regime.fileToProcess.name}>`,
+                );
+
+                // Path for temporary MVS processed file.
+                const path = `${`Processing/${new Date().toISOString().replace(/:/g, "-")}/MVS/tmp`}.${
+                    defaultMVSData.extension
+                }`;
+
+                // Create raw array buffer of MVS.
+                const arrayBuffer = await createMVSBlob(
+                    defaultMVSData.data,
+                ).arrayBuffer();
+
+                // Save MVS into file.
+                const saveDataResult = await window.electron.saveTemporaryData(
+                    arrayBuffer,
+                    path,
+                );
+
+                // TODO: report an error
+                if (!saveDataResult) {
+                    console.log("Default MVS could not be saved!");
+                    return;
+                }
+
+                // Sets regime to "staging".
+                setRegime({
+                    kind: "staging",
+                    fileToView: {
+                        path: path,
+                        extension: defaultMVSData.extension,
+                        name: "tmp",
+                        binary: defaultMVSData.isBinary,
+                        content: defaultMVSData.data,
+                    },
+                });
+            },
+            onError: (err) => {
+                // TODO: report an error
+                console.log(`Processing failed: ${err.message}`);
+            },
+        });
+    }, [regime, setRegime, setVolumes]);
 
     return (
         <div className="viewer">
@@ -115,89 +255,16 @@ export function Viewer() {
                         padding: ".5em",
                     }}
                 >
-                    <SegmentedController<SidebarType>
-                        value={sidebar}
-                        onChange={setSidebar}
-                        data={[
-                            { label: "Views", value: "views" },
-                            { label: "Segmentations", value: "seg" },
-                            { label: "Annotations", value: "anno" },
-                        ]}
-                        widthWrapOrientationLimit={292}
-                    />
-
-                    {sidebar === "views" && (
-                        <>
-                            <Button
-                                size="small"
-                                onClick={() => {
-                                    setViews(() => []);
-                                }}
-                            >
-                                {"Clear view"}
-                            </Button>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    gap: "1em",
-                                }}
-                            >
-                                {views.map((view, index) => (
-                                    <ViewCard
-                                        key={view.id}
-                                        title={view.title}
-                                        index={index}
-                                        thumbnail={view.thumbnail}
-                                        onClick={() => {
-                                            setCamera({
-                                                position: view.position,
-                                                up: view.up,
-                                                target: view.target,
-                                            });
-                                        }}
-                                        onSave={(newTitle: string) => {
-                                            setViews((prevViews) =>
-                                                prevViews.map((v) =>
-                                                    v.id === view.id
-                                                        ? {
-                                                              ...v,
-                                                              title: newTitle,
-                                                          }
-                                                        : v
-                                                )
-                                            );
-                                        }}
-                                    />
-                                ))}
-                                <NewViewCardCreator
-                                    index={views.length + 1}
-                                    onSave={(
-                                        position,
-                                        up,
-                                        target,
-                                        title,
-                                        id,
-                                        thumbnail
-                                    ) => {
-                                        setViews((prev) => [
-                                            ...prev,
-                                            {
-                                                id: id,
-                                                title: title,
-                                                thumbnail: thumbnail,
-                                                target: target,
-                                                position: position,
-                                                up: up,
-                                            },
-                                        ]);
-                                    }}
-                                />
-                            </div>
-                        </>
-                    )}
+                    {processVolume.isPending && "Processing..."}
+                    {processVolume.isSuccess &&
+                        `Processing finished succefully: ${volumes}`}
                 </Sidebar>
+                <SceneManager
+                    isMolstarExpanded={molstarExpanded}
+                    isMolstarLoading={molstarLoading}
+                    views={views}
+                    setViews={setViews}
+                ></SceneManager>
                 <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
                     <div
                         ref={parentRef}
@@ -212,49 +279,11 @@ export function Viewer() {
     );
 }
 
-async function loadStructureFromFile() {
-    const result = await window.electron.openFileExplorer();
-
-    // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
-    const fileData: FileData | null =
-        result && result.length > 0 ? result[0] : null;
-
-    // TODO: will handle this function better, now it returns just null or CameraView array
-    const loadResult = await loadDataFromFile(fileData);
-    if (loadResult) {
-        return loadResult;
-    }
-    return [];
-}
-
-// async function translateMolstarUi(parent: RefObject<HTMLDivElement | null>) {
-//     const btn = parent.current?.querySelector(
-//         'button[title="Reset Zoom"]'
-//     ) as HTMLButtonElement;
-//     if (btn) btn.title = "Custom Reset";
-//     const btn2 = parent.current?.querySelector(
-//         'button[title*="Set camera zoom to fit"]'
-//     ) as HTMLButtonElement;
-//     if (btn) {
-//         btn2.title = "Custom Reset Tooltip";
-//         btn2.textContent = "Custom Reset";
-//     }
-
-//     const screenshotBtn = parent.current?.querySelector(
-//         'button[title="Screenshot / State Snapshot"]'
-//     ) as HTMLButtonElement;
-//     if (screenshotBtn) screenshotBtn.style.display = "none";
-
-//     const toggleControlsBtn = parent.current?.querySelector(
-//         'button[title="Toggle Controls Panel"]'
-//     ) as HTMLButtonElement;
-//     if (toggleControlsBtn) toggleControlsBtn.style.display = "none";
-// }
-
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
-    views: CameraView[],
-    setViews: Dispatch<SetStateAction<CameraView[]>>
+    stateTree: MVSData | undefined,
+    setViews: Dispatch<SetStateAction<ViewMetadata[]>>,
+    assets: FileData[],
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
@@ -263,6 +292,7 @@ function createEditRootMenuItem(
         task: {
             action: () => {
                 clearViewer();
+                setViews(() => []);
             },
             type: "direct",
         },
@@ -274,36 +304,19 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                const fileData = await window.electron.openFileExplorer();
-                downloadViewerState(fileData, views);
+                // exportViewsAsMVSStory(views, assets);
+                if (stateTree) exportStateTree(stateTree, assets);
             },
             type: "direct",
         },
     };
 
-    const loadStructureFromFileItem: MenuItem = {
-        id: "load-structure-from-file",
-        title: "Load structure from file",
+    const loadDefaultPDBItem: MenuItem = {
+        id: "load-default-pdb",
+        title: "Load default PDB",
         task: {
             action: () => {
-                setViews(() => []);
-                (async () => {
-                    try {
-                        const newViews = await loadStructureFromFile();
-                        setViews(newViews);
-                    } catch (error) {}
-                })();
-            },
-            type: "direct",
-        },
-    };
-
-    const loadDefaultPBDItem: MenuItem = {
-        id: "load-default-pbd",
-        title: "Load default PBD",
-        task: {
-            action: () => {
-                loadDefaultPbdStructure();
+                loadDefaultPDBFile();
             },
             type: "direct",
         },
@@ -336,8 +349,7 @@ function createEditRootMenuItem(
         items: [
             clearViewerItem,
             exportViewerItem,
-            loadStructureFromFileItem,
-            loadDefaultPBDItem,
+            loadDefaultPDBItem,
             loadDefaultMVSJItem,
             loadDefaultMVSXItem,
         ],
@@ -350,4 +362,46 @@ function createEditRootMenuItem(
     };
 
     return edit;
+}
+async function loadDefaultMVSJFile() {
+    const response = await fetch(
+        "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
+    );
+    const rawData = await response.text();
+
+    await loadFromFile({
+        path: "",
+        extension: "mvsj",
+        name: "1cbs",
+        binary: false,
+        content: rawData,
+    });
+}
+
+async function loadDefaultMVSXFile() {
+    const response = await fetch(
+        "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
+    );
+    const arrayBuffer = await response.arrayBuffer();
+    const rawData = new Uint8Array(arrayBuffer);
+
+    await loadFromFile({
+        path: "",
+        extension: "mvsx",
+        name: "1h9t",
+        binary: true,
+        content: rawData,
+    });
+}
+async function loadDefaultPDBFile() {
+    const response = await fetch("https://files.rcsb.org/download/3PTB.pdb");
+    const rawData = await response.text();
+
+    await loadFromFile({
+        path: "",
+        extension: "pdb",
+        name: "3PTB",
+        binary: false,
+        content: rawData,
+    });
 }
