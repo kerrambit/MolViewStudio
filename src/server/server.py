@@ -1,5 +1,3 @@
-import subprocess
-import os
 from pathlib import Path
 from fastapi import FastAPI, Response, WebSocket, WebSocketDisconnect, responses  # type: ignore
 from result import Ok, Err, Result, is_ok, is_err  # type: ignore
@@ -10,8 +8,18 @@ from pydantic import BaseModel  # type: ignore
 from typing import Dict
 import uuid
 from settings import Settings, settings, Env
-import glob
 import json
+import shutil
+
+from volsegtools.converter import MapConverter  # type: ignore
+from volsegtools.preprocessor import (  # type: ignore
+    PreprocessorBuilder,
+    Preprocessor,
+)
+from volsegtools.downsampler import (  # type: ignore
+    HierarchyDownsampler,
+)
+from volsegtools.model.working_store import WorkingStore  # type: ignore
 
 # -------------------------------------
 
@@ -62,54 +70,37 @@ def get_blob_from_disk(id: str) -> Result[Blob, str]:
     return Ok(result)
 
 
-import subprocess
+def _process_volume(filepath: str, temporary_directory: str) -> str:
 
+    volume_source = [Path(filepath)]
 
-def run_preprocessor(filepath: str) -> str:
+    overwrite_tmp = True
+    rm_tmp = False
 
-    result1 = subprocess.run(
-        [
-            "uv",
-            "run",
-            "molstar-preprocessor",
-            "--volume-source",
-            filepath,
-            "--overwrite-tmp",
-        ],
-        capture_output=True,
-        text=True,
-    )
+    local_store_path = Path(temporary_directory) / "volsegtools_tmp"
+    if overwrite_tmp and local_store_path.exists():
+        shutil.rmtree(local_store_path)
 
-    if result1.returncode != 0:
-        raise RuntimeError(f"Command failed: {result1.stderr}")
+    working_store = WorkingStore(local_store_path)  # TODO: temporary hack
 
-    input_dir = "volsegtools_tmp"
-    cif2bcif_script = "node_modules/molstar/lib/commonjs/cli/cif2bcif/index.js"
+    builder = PreprocessorBuilder()
+    builder.set_converter(MapConverter())
+    builder.set_downsampler(HierarchyDownsampler())
 
-    bcif_files = glob.glob(os.path.join(input_dir, "*.bcif"))
+    for file in volume_source:
+        builder.add_volume_src_file(file)
 
-    output_files = []
-    for input_cif_path in bcif_files:
-        base_name = os.path.splitext(input_cif_path)[0]
-        input_bcif_path = base_name + ".bcif"
-        output_cif_path = base_name + ".cif"
+    builder.set_output_dir(local_store_path)
 
-        output_cif_path_absolute = os.path.abspath(output_cif_path)
-        output_files.append(output_cif_path_absolute)
+    try:
+        preprocessor: Preprocessor = builder.build()
+        preprocessor.sync_preprocess()
+    finally:
+        if rm_tmp and local_store_path.exists():
+            shutil.rmtree(local_store_path)
 
-        result2 = subprocess.run(
-            [
-                "node",
-                cif2bcif_script,
-                input_bcif_path,
-                output_cif_path,
-            ]
-        )
-
-        if result2.returncode != 0:
-            raise RuntimeError(f"Command failed: {result2.stderr}")
-
-    return json.dumps(output_files)
+    bcif_files = [str(p.absolute()) for p in local_store_path.glob("*.bcif")]
+    return json.dumps(bcif_files)
 
 
 # -------------------------------------
@@ -226,11 +217,14 @@ async def get_blob(id: str):
 
 class VolumeRequest(BaseModel):
     filepath: str
+    temporary_directory: str
 
 
 @app.post("/process_volume")
 def process_volume(request: VolumeRequest):
     print("Process volume...")
-    output = run_preprocessor(request.filepath)
+    print(f"Filepath: {request.filepath}")
+    print(f"Temp Dir: {request.temporary_directory}")
+    output = _process_volume(request.filepath, request.temporary_directory)
     print("Volume has been processed.")
     return {"output_files": output}
