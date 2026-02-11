@@ -17,9 +17,13 @@ def _process_volume(filepath: str, temporary_directory: str) -> Result[List[str]
     overwrite_tmp = True
     rm_tmp = False
 
+    Path(temporary_directory).mkdir(parents=True, exist_ok=True)
+
     local_store_path = Path(temporary_directory) / "volsegtools_tmp"
     if overwrite_tmp and local_store_path.exists():
         shutil.rmtree(local_store_path)
+
+    local_store_path.mkdir(parents=True, exist_ok=True)
 
     working_store = WorkingStore(local_store_path)  # TODO: temporary hack
 
