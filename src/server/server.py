@@ -75,6 +75,6 @@ def process_volume(request: VolumeRequest):
     raise HTTPException(
         status_code=500,
         detail={
-            "error": "feiwugfiuwefiowgei",
+            "error": result.err_value,
         },
     )
