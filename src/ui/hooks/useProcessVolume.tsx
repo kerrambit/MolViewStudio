@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { loggerUi } from "../utils/loggerUi";
 
 interface ProcessVolumeArgs {
     filepath: string;
@@ -8,9 +9,14 @@ interface ProcessVolumeArgs {
 export function useProcessVolume() {
     return useMutation({
         mutationFn: async (args: ProcessVolumeArgs) => {
-            const response = await fetch(
-                "http://localhost:41050/process_volume", // TODO: these urls must be kept in more structured and logical way
-                {
+            const endpoint = "http://localhost:41050/process_volume";
+
+            loggerUi.info("API Request: POST /process_volume");
+            loggerUi.info(`  - filepath: ${args.filepath}`);
+            loggerUi.info(`  - temporaryDirectory: ${args.temporaryDirectory}`);
+
+            try {
+                const response = await fetch(endpoint, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -19,19 +25,40 @@ export function useProcessVolume() {
                         filepath: args.filepath,
                         temporary_directory: args.temporaryDirectory,
                     }),
-                },
-            );
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage =
-                    errorData?.detail?.error ||
-                    errorData?.detail ||
-                    `Server returned ${response.status}`;
-                throw new Error(errorMessage);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage =
+                        errorData?.detail?.error ||
+                        errorData?.detail ||
+                        `Server returned ${response.status}`;
+
+                    loggerUi.error(
+                        `API Response: POST /process_volume - FAILED`,
+                    );
+                    loggerUi.error(`  - Status: ${response.status}`);
+                    loggerUi.error(`  - Error: ${errorMessage}`);
+
+                    throw new Error(errorMessage);
+                }
+
+                loggerUi.info(`API Response: POST /process_volume - SUCCESS`);
+                loggerUi.info(`  - Status: ${response.status}`);
+
+                return response;
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    !error.message.includes("Server returned")
+                ) {
+                    loggerUi.error(
+                        `API Request: POST /process_volume - NETWORK ERROR`,
+                    );
+                    loggerUi.error(`  - Error: ${error.message}`);
+                }
+                throw error;
             }
-
-            return response;
         },
     });
 }

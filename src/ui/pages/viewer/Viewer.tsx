@@ -199,8 +199,16 @@ export function Viewer() {
                         );
                     } catch (error) {
                         // TODO: report an error
+                        loggerUi.error(
+                            `Internal error. Unable to parse the response: <${error}>!`,
+                        );
                         console.log(error);
+                        return;
                     }
+
+                    loggerUi.info(
+                        `Processing outputted these raw files: [${absolutePaths}].`,
+                    );
 
                     setVolumes(absolutePaths);
 
@@ -210,6 +218,9 @@ export function Viewer() {
 
                     if (!assets) {
                         // TODO: report an error
+                        loggerUi.error(
+                            `Unable to read raw files: [${absolutePaths}]!`,
+                        );
                         return;
                     }
 
@@ -238,6 +249,7 @@ export function Viewer() {
 
                     // TODO: report an error
                     if (!saveDataResult) {
+                        loggerUi.error(`Default MVS could not be saved!`);
                         console.log("Default MVS could not be saved!");
                         return;
                     }
@@ -256,7 +268,6 @@ export function Viewer() {
                 },
                 onError: (err) => {
                     // TODO: report an error
-                    loggerUi.error(`Processing failed: ${err.message}`);
                     console.log(`Processing failed: ${err.message}`);
                 },
             },
