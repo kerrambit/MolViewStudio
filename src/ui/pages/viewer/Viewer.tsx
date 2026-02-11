@@ -194,7 +194,7 @@ export function Viewer() {
                         absolutePaths = await getFieldFromResponse<string[]>(
                             response,
                             "output_files",
-                            "string",
+                            "object",
                         );
                     } catch (error) {
                         // TODO: report an error
@@ -279,7 +279,7 @@ export function Viewer() {
                     >
                         {processVolume.isPending && "Processing..."}
                         {processVolume.isSuccess &&
-                            `Processing finished succefully: ${volumes}`}
+                            `Processing finished${volumes.length === 0 ? " with error!" : " succefully: "}${volumes}`}
                         {
                             <Button
                                 size="small"
