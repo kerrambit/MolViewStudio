@@ -40,7 +40,9 @@ export function useProcessVolume() {
                     loggerUi.error(`  - Status: ${response.status}`);
                     loggerUi.error(`  - Error: ${errorMessage}`);
 
-                    throw new Error(errorMessage);
+                    const error = new Error(errorMessage);
+                    (error as any).isServerError = true;
+                    throw error;
                 }
 
                 loggerUi.info(`API Response: POST /process_volume - SUCCESS`);
@@ -48,10 +50,7 @@ export function useProcessVolume() {
 
                 return response;
             } catch (error) {
-                if (
-                    error instanceof Error &&
-                    !error.message.includes("Server returned")
-                ) {
+                if (error instanceof Error && !(error as any).isServerError) {
                     loggerUi.error(
                         `API Request: POST /process_volume - NETWORK ERROR`,
                     );
