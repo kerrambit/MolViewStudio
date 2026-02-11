@@ -42,6 +42,7 @@ import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 import { useEnvironment } from "../../hooks/useEnvironment";
 import { Button } from "../../components/common/button/Button";
+import { loggerUi } from "../../utils/loggerUi";
 
 export function Viewer() {
     // Use localization.
@@ -255,6 +256,7 @@ export function Viewer() {
                 },
                 onError: (err) => {
                     // TODO: report an error
+                    loggerUi.error(`Processing failed: ${err.message}`);
                     console.log(`Processing failed: ${err.message}`);
                 },
             },

@@ -1,7 +1,7 @@
 from typing import List
 from result import Ok, Err, Result, is_ok
 from pathlib import Path
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
 import shutil
 from volsegtools.converter import MapConverter
@@ -72,7 +72,9 @@ def process_volume(request: VolumeRequest):
     if is_ok(result):
         return {"output_files": result.ok_value}
 
-    return Response(
-        content="Processing volue exceeded time limit becuae of CBIG properties.",
+    raise HTTPException(
         status_code=500,
+        detail={
+            "error": "feiwugfiuwefiowgei",
+        },
     )

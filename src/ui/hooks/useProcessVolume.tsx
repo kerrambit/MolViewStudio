@@ -23,7 +23,12 @@ export function useProcessVolume() {
             );
 
             if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
+                const errorData = await response.json();
+                const errorMessage =
+                    errorData?.detail?.error ||
+                    errorData?.detail ||
+                    `Server returned ${response.status}`;
+                throw new Error(errorMessage);
             }
 
             return response;
