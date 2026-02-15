@@ -30,7 +30,7 @@ interface Window {
 
         requestToOpenDevTools: () => Promise<void>;
 
-        requestEnvironment: () => Promise<Environment>;
+        requestEnvironment: () => Environment;
 
         // TODO: temporary return FileData[] instead of FileData
         openFileExplorer: () => Promise<FileData[] | null>;
@@ -50,6 +50,7 @@ interface Window {
 
 type Environment = {
     isDev: boolean;
+    userDataPath: string;
 };
 
 interface FileData {

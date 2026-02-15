@@ -13,7 +13,7 @@ export class Ipc {
             key: Key,
             handler: () =>
                 | Promise<EventPayloadMapping[Key]>
-                | EventPayloadMapping[Key]
+                | EventPayloadMapping[Key],
         ) {
             ipcMain.handle(key, (event) => {
                 validateEventFrame(event.senderFrame);
@@ -21,12 +21,22 @@ export class Ipc {
             });
         }
 
+        static handleSync<Key extends keyof EventPayloadMapping>(
+            key: Key,
+            handler: () => EventPayloadMapping[Key],
+        ) {
+            ipcMain.on(key, (event) => {
+                validateEventFrame(event.senderFrame);
+                event.returnValue = handler();
+            });
+        }
+
         // TODO: will be reworked
         static handleTwoWay<Key extends keyof EventPayloadMapping>(
             key: Key,
             handler: (
-                payload: any
-            ) => Promise<EventPayloadMapping[Key]> | EventPayloadMapping[Key]
+                payload: any,
+            ) => Promise<EventPayloadMapping[Key]> | EventPayloadMapping[Key],
         ) {
             ipcMain.handle(key, (event, payload) => {
                 validateEventFrame(event.senderFrame);
@@ -37,14 +47,14 @@ export class Ipc {
         static send<Key extends keyof EventPayloadMapping>(
             key: Key,
             payload: EventPayloadMapping[Key],
-            window: BrowserWindow
+            window: BrowserWindow,
         ) {
             window.webContents.send(key, payload);
         }
 
         static on<Key extends keyof EventPayloadMapping>(
             key: Key,
-            callback: (payload: EventPayloadMapping[Key]) => void
+            callback: (payload: EventPayloadMapping[Key]) => void,
         ) {
             ipcMain.on(key, (event, payload) => {
                 validateEventFrame(event.senderFrame);
@@ -70,7 +80,7 @@ export function validateEventFrame(frame: WebFrameMain | null) {
     }
     if (frame.url !== pathToFileURL(getUiPath()).toString()) {
         logger.warn(
-            `While validating event frame, malicious event may have occured!`
+            `While validating event frame, malicious event may have occured!`,
         );
         throw new Error("Malicious Event Occured!");
     }

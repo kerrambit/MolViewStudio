@@ -14,7 +14,7 @@ import "./index.css";
 const router = createMemoryRouter(routes);
 const queryClient = new QueryClient();
 
-const env = await window.electron.requestEnvironment();
+const env = window.electron.requestEnvironment();
 
 createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
@@ -32,5 +32,5 @@ createRoot(document.getElementById("root")!).render(
                 </FileDataProvider>
             </UserSettingsProvider>
         </ThemeProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
 );

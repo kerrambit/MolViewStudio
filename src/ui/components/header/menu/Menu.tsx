@@ -1,7 +1,6 @@
 import React from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
 import { useTheme } from "../../../services/ThemeProvider";
-import { useEffect, useState } from "react";
 import {
     useMenu,
     type Action,
@@ -11,6 +10,7 @@ import {
     type RootMenuItem,
     type Section,
 } from "../../../services/MenuProvider";
+import { useEnvironment } from "../../../hooks/useEnvironment";
 
 import "./Menu.css";
 
@@ -22,12 +22,7 @@ export function Menu({ className = "" }: MenuProps) {
     const { theme } = useTheme();
     const { menu } = useMenu();
 
-    const [isDev, setIsDev] = useState(false);
-    useEffect(() => {
-        window.electron.requestEnvironment().then((env) => {
-            setIsDev(env.isDev);
-        });
-    }, []);
+    const { isDev } = useEnvironment();
 
     return (
         <div className={className}>
