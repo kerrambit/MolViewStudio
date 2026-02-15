@@ -1,9 +1,10 @@
 from typing import List
-from result import Ok, Err, Result, is_ok  # type: ignore
-from pathlib import Path
-from fastapi import FastAPI, Response, HTTPException  # type: ignore
 from pydantic import BaseModel  # type: ignore
+import os
 import shutil
+from pathlib import Path
+from result import Ok, Err, Result, is_ok  # type: ignore
+from fastapi import FastAPI, Response, HTTPException  # type: ignore
 from volsegtools.converter import MapConverter  # type: ignore
 from volsegtools.preprocessor import PreprocessorBuilder, Preprocessor  # type: ignore
 from volsegtools.downsampler import HierarchyDownsampler  # type: ignore
@@ -16,14 +17,19 @@ def _process_volume(filepath: str, temporary_directory: str) -> Result[List[str]
 
     overwrite_tmp = True
     rm_tmp = False
+    local_store_path = Path(temporary_directory)
 
-    Path(temporary_directory).mkdir(parents=True, exist_ok=True)
-
-    local_store_path = Path(temporary_directory) / "volsegtools_tmp"
     if overwrite_tmp and local_store_path.exists():
         shutil.rmtree(local_store_path)
 
     local_store_path.mkdir(parents=True, exist_ok=True)
+
+    original_cwd = (
+        os.getcwd()
+    )  # TODO: this is a fix before releasing of volsegtools 0.0.3
+    os.chdir(
+        temporary_directory
+    )  # TODO: this is a fix before releasing of volsegtools 0.0.3
 
     working_store = WorkingStore(local_store_path)  # TODO: temporary hack
 
@@ -42,6 +48,9 @@ def _process_volume(filepath: str, temporary_directory: str) -> Result[List[str]
     except Exception as e:
         return Err(f"{str(e)}")
     finally:
+        os.chdir(
+            original_cwd
+        )  # TODO: this is a fix before releasing of volsegtools 0.0.3
         if rm_tmp and local_store_path.exists():
             shutil.rmtree(local_store_path)
 
