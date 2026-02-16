@@ -216,10 +216,10 @@ export function Viewer() {
                     const assets =
                         await window.electron.getFileData(absolutePaths);
 
-                    if (!assets) {
+                    if (assets instanceof Error) {
                         // TODO: report an error
                         loggerUi.error(
-                            `Unable to read raw files: [${absolutePaths}]!`,
+                            `Unable to read these assets [${absolutePaths}] from processed volume! Details: <${assets.message}>.`,
                         );
                         return;
                     }

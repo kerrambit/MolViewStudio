@@ -15,6 +15,11 @@ import { useFileData, type Regime } from "../../services/FileDataProvider";
 import "./Home.css";
 import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
+import {
+    MVSFilters,
+    StructuralFilters,
+    VolumeFilters,
+} from "../../../types/fileFilters.ts";
 
 export default function Home() {
     const navigate = useNavigate();
@@ -244,29 +249,39 @@ function loadAndHandleFile(
     },
 ) {
     window.electron
-        .openFileExplorer()
+        .openFileExplorer(
+            false,
+            regimeKind === "processing"
+                ? [VolumeFilters]
+                : [MVSFilters, StructuralFilters],
+        )
         .then((fileData) => {
-            if (fileData) {
-                // TODO: openFileExplorer temporary return FileData[] instead of FileData, this we need to look for the first element here
-                loggerUi.info(`File <${fileData[0].path}> was selected.`);
+            if (!(fileData instanceof Error)) {
+                if (fileData.length > 0) {
+                    loggerUi.info(`File <${fileData[0].path}> was selected.`);
 
-                let regime: Regime;
-                if (regimeKind === "processing") {
-                    regime = { kind: "processing", fileToProcess: fileData[0] };
-                } else {
-                    regime = {
-                        kind: "staging",
-                        fileToView: fileData[0],
-                    };
+                    let regime: Regime;
+                    if (regimeKind === "processing") {
+                        regime = {
+                            kind: "processing",
+                            fileToProcess: fileData[0],
+                        };
+                    } else {
+                        regime = {
+                            kind: "staging",
+                            fileToView: fileData[0],
+                        };
+                    }
+
+                    actions.setRegime(regime);
+                    actions.navigate("/viewer");
                 }
-
-                actions.setRegime(regime);
-                actions.navigate("/viewer");
             } else {
-                loggerUi.error(`File was null!`);
+                // TODO: notification
             }
         })
         .catch((error) => {
-            loggerUi.error(`${error}`);
+            // TODO: notification
+            loggerUi.error(`Error occured: <${error}>!`);
         });
 }
