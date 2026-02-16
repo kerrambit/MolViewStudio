@@ -1,5 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { loggerUi } from "../utils/loggerUi";
+import { getDomain } from "../../api/domain";
+import { API } from "../../api/endpoints";
 
 interface ProcessVolumeArgs {
     filepath: string;
@@ -9,9 +11,9 @@ interface ProcessVolumeArgs {
 export function useProcessVolume() {
     return useMutation({
         mutationFn: async (args: ProcessVolumeArgs) => {
-            const endpoint = "http://localhost:41050/process_volume";
+            const endpoint = getDomain() + API.processVolume();
 
-            loggerUi.info("API Request: POST /process_volume");
+            loggerUi.info(`API Request: POST ${API.processVolume()}`);
             loggerUi.info(`  - filepath: ${args.filepath}`);
             loggerUi.info(`  - temporaryDirectory: ${args.temporaryDirectory}`);
 
@@ -35,7 +37,7 @@ export function useProcessVolume() {
                         `Server returned ${response.status}`;
 
                     loggerUi.error(
-                        `API Response: POST /process_volume - FAILED`,
+                        `API Response: POST ${API.processVolume()} - FAILED`,
                     );
                     loggerUi.error(`  - Status: ${response.status}`);
                     loggerUi.error(`  - Error: ${errorMessage}`);
@@ -45,14 +47,16 @@ export function useProcessVolume() {
                     throw error;
                 }
 
-                loggerUi.info(`API Response: POST /process_volume - SUCCESS`);
+                loggerUi.info(
+                    `API Response: POST ${API.processVolume()} - SUCCESS`,
+                );
                 loggerUi.info(`  - Status: ${response.status}`);
 
                 return response;
             } catch (error) {
                 if (error instanceof Error && !(error as any).isServerError) {
                     loggerUi.error(
-                        `API Request: POST /process_volume - NETWORK ERROR`,
+                        `API Request: POST ${API.processVolume()} - NETWORK ERROR`,
                     );
                     loggerUi.error(`  - Error: ${error.message}`);
                 }
