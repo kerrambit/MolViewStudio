@@ -24,13 +24,6 @@ def _process_volume(filepath: str, temporary_directory: str) -> Result[List[str]
 
     local_store_path.mkdir(parents=True, exist_ok=True)
 
-    original_cwd = (
-        os.getcwd()
-    )  # TODO: this is a fix before releasing of volsegtools 0.0.3
-    os.chdir(
-        temporary_directory
-    )  # TODO: this is a fix before releasing of volsegtools 0.0.3
-
     working_store = WorkingStore(local_store_path)  # TODO: temporary hack
 
     builder = PreprocessorBuilder()
@@ -48,9 +41,6 @@ def _process_volume(filepath: str, temporary_directory: str) -> Result[List[str]
     except Exception as e:
         return Err(f"{str(e)}")
     finally:
-        os.chdir(
-            original_cwd
-        )  # TODO: this is a fix before releasing of volsegtools 0.0.3
         if rm_tmp and local_store_path.exists():
             shutil.rmtree(local_store_path)
 
