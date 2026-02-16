@@ -88,7 +88,7 @@ export default function Home() {
                     onRejectHandler(rejections);
                 }}
                 enableMultipleInputFiles={false}
-                allowedExtensions={["pdb", "mvsx", "mvsj"]}
+                allowedExtensions={[]} // TODO: disable all files until https://github.com/kerrambit/MolStarApp/issues/84 is solved
             >
                 {renderDropzoneButtonsArea(actions)}
             </Dropzone>
@@ -96,7 +96,7 @@ export default function Home() {
     );
 }
 
-// TODO: the part with file extensions must be reimplemented, basically this should be defined in one place (one file), similir thing happens also in electron/main.tsx
+// TODO: problem is that this is not unifed with electron/fileDataUtils.ts, see https://github.com/kerrambit/MolStarApp/issues/84
 function onDropHandler(
     files: File[],
     actions: {
@@ -177,6 +177,7 @@ function onDropHandler(
 }
 
 function onRejectHandler(rejections: FileRejection[]) {
+    // TODO: notification
     loggerUi.warn(
         `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
     );
