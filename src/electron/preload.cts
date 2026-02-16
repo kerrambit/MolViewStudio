@@ -68,7 +68,11 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     requestEnvironment: () => Ipc.Ui.invokeSync("requestEnvironment"),
 
-    openFileExplorer: () => Ipc.Ui.invoke("openFileExplorer"),
+    openFileExplorer: (multiSelections: boolean, filters: FileFilter[]) =>
+        Ipc.Ui.invokeTwoWay("openFileExplorer", {
+            multiSelections,
+            filters,
+        } as any),
 
     // TODO: this IPC methods should be changed, now paths are not checked againts types.d.ts
     getFileData: (paths: string[]) => {

@@ -7,11 +7,10 @@ type EventPayloadMapping = {
     requestUserSettings: UserSettings;
     requestApplicationExit: void;
     requestToOpenDevTools: void;
-    // TODO: temporary return FileData[] instead of FileData
-    openFileExplorer: FileData[] | null;
+    openFileExplorer: FileData[] | Error;
     saveData: boolean;
     saveTemporaryData: boolean;
-    getFileData: FileData[] | null;
+    getFileData: FileData[] | Error;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
 };
@@ -32,10 +31,12 @@ interface Window {
 
         requestEnvironment: () => Environment;
 
-        // TODO: temporary return FileData[] instead of FileData
-        openFileExplorer: () => Promise<FileData[] | null>;
+        openFileExplorer: (
+            multiSelections: boolean,
+            filters: FileFilter[],
+        ) => Promise<FileData[] | Error>;
 
-        getFileData: (paths: string[]) => Promise<FileData[] | null>;
+        getFileData: (paths: string[]) => Promise<FileData[] | Error>;
 
         saveData: (data: ArrayBuffer, path: string) => Promise<boolean>;
 
@@ -47,6 +48,11 @@ interface Window {
         changeUserSettings: (settings: UserSettings) => void;
     };
 }
+
+type FileFilter = {
+    name: string;
+    extensions: string[];
+};
 
 type Environment = {
     isDev: boolean;
