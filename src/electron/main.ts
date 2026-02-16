@@ -255,7 +255,7 @@ app.on("ready", () => {
     // We also handle close events here: mainly stopping the server when app is being stopped.
     Promise.all([
         runServer(userSettings.serverPort),
-        (resolve: () => {}) => setTimeout(resolve, 1500),
+        new Promise((resolve) => setTimeout(resolve, 1500)),
     ])
         .then((results) => {
             const serverProcess = results[0];
@@ -323,7 +323,8 @@ function runServer(serverPort: number): Promise<ChildProcess> {
             }
         });
 
-        const waitForServer = (url: string, retries = 50, delay = 200) => {
+        // Try to connect to server at maximum for one minute.
+        const waitForServer = (url: string, retries = 30, delay = 2000) => {
             return new Promise<void>((res, rej) => {
                 const attempt = () => {
                     http.get(url, () => res()).on("error", () => {
@@ -339,7 +340,7 @@ function runServer(serverPort: number): Promise<ChildProcess> {
             });
         };
 
-        waitForServer(`http://localhost:${serverPort}/health`)
+        waitForServer(`http://localhost:${serverPort}`)
             .then(() => resolve(serverProcess))
             .catch((err) => reject(err));
     });
