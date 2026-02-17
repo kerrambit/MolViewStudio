@@ -314,18 +314,19 @@ async function saveFile(fullFilePath: string, data: ArrayBuffer) {
 
         await writeFile(fullFilePath, buffer);
 
-        // TODO: send a success message back to the Renderer
         logger.info(`Successfully saved file to <${fullFilePath}>.`);
-
-        return true;
+        return;
     } catch (error) {
-        // TODO: send a failure message back to the Renderer
         logger.error(
             `Failed to save file <${fullFilePath}>! Details: <${
                 (error as Error).message
             }>.`,
             error,
         );
-        return false;
+        return new Error(
+            `Failed to save file <${fullFilePath}>! Details: <${
+                (error as Error).message
+            }>.`,
+        );
     }
 }

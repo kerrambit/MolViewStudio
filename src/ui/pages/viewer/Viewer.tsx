@@ -248,9 +248,13 @@ export function Viewer() {
                         );
 
                     // TODO: report an error
-                    if (!saveDataResult) {
-                        loggerUi.error(`Default MVS could not be saved!`);
-                        console.log("Default MVS could not be saved!");
+                    if (saveDataResult instanceof Error) {
+                        loggerUi.error(
+                            `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
+                        );
+                        console.log(
+                            `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
+                        );
                         return;
                     }
 

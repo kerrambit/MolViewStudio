@@ -8,8 +8,8 @@ type EventPayloadMapping = {
     requestApplicationExit: void;
     requestToOpenDevTools: void;
     openFileExplorer: FileData[] | Error;
-    saveData: boolean;
-    saveTemporaryData: boolean;
+    saveData: void | Error;
+    saveTemporaryData: void | Error;
     getFileData: FileData[] | Error;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
@@ -38,12 +38,12 @@ interface Window {
 
         getFileData: (paths: string[]) => Promise<FileData[] | Error>;
 
-        saveData: (data: ArrayBuffer, path: string) => Promise<boolean>;
+        saveData: (data: ArrayBuffer, path: string) => Promise<void | Error>;
 
         saveTemporaryData: (
             data: ArrayBuffer,
             path: string,
-        ) => Promise<boolean>;
+        ) => Promise<void | Error>;
 
         changeUserSettings: (settings: UserSettings) => void;
     };
