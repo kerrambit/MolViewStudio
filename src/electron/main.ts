@@ -16,9 +16,10 @@ import {
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
 import { ChildProcess, spawn } from "child_process";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { writeFile, mkdir } from "fs/promises";
 import { logger } from "./utils/logger.js";
+import { readFiles } from "./utils/fileDataUtils.js";
 
 app.on("ready", () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -93,50 +94,7 @@ app.on("ready", () => {
     });
 
     Ipc.Electron.handleTwoWay("getFileData", (paths: string[]) => {
-        const collectedFileData: FileData[] = [];
-        paths.map((filePath: string) => {
-            try {
-                const fileName = path.basename(filePath);
-                const fileExtension = path
-                    .extname(filePath)
-                    .toLowerCase()
-                    .slice(1);
-
-                let fileContent: string | Uint8Array<ArrayBuffer>;
-                if (
-                    fileExtension === "mvsx" ||
-                    fileExtension === "cvsx" ||
-                    fileExtension === "bcif" ||
-                    fileExtension === "map"
-                ) {
-                    const buffer = readFileSync(filePath);
-                    fileContent = new Uint8Array(buffer);
-                } else if (fileExtension === "mvsj") {
-                    fileContent = readFileSync(filePath, "utf8");
-                } else {
-                    fileContent = readFileSync(filePath, "utf8");
-                }
-
-                collectedFileData.push({
-                    path: filePath,
-                    extension: fileExtension,
-                    name: fileName,
-                    binary:
-                        fileExtension === "cvsx" ||
-                        fileExtension === "mvsx" ||
-                        fileExtension === "bcif" ||
-                        fileExtension === "map",
-                    content: fileContent,
-                });
-            } catch (err) {
-                logger.error(
-                    `While reading file <${filePath}>, an error occured: <${err}>!`,
-                );
-                throw new Error(`Failed to read file: ${err}`);
-            }
-        });
-
-        return collectedFileData;
+        return readFiles(paths);
     });
 
     // A request from UI to save data into filesystem.
@@ -164,87 +122,32 @@ app.on("ready", () => {
         return { isDev: isDev(), userDataPath: app.getPath("userData") };
     });
 
-    // TODO: unify the file processing in UI's dropzone component
-    // TODO: openFileExplorer should take props which decied if multi-selection is enabled, right now, we have to enable it by default
-    Ipc.Electron.handle("openFileExplorer", async () => {
-        const openDialogResult = await dialog.showOpenDialog({
-            properties: ["openFile", "multiSelections"],
-            filters: [
-                {
-                    name: "All Files",
-                    extensions: ["*"],
-                },
-                {
-                    name: "MVS Extension Files",
-                    extensions: ["mvsj", "mvsx"],
-                },
-                {
-                    name: "Structural Files",
-                    extensions: ["pdb", "cif", "bcif", "mcif", "sdf"],
-                },
-                {
-                    name: "CVSX Files",
-                    extensions: ["cvsx"],
-                },
-                {
-                    name: "Volume Files",
-                    extensions: ["map"],
-                },
-            ],
-        });
+    Ipc.Electron.handleTwoWay(
+        "openFileExplorer",
+        async ({
+            multiSelections,
+            filters,
+        }: {
+            multiSelections: boolean;
+            filters: FileFilter[];
+        }) => {
+            const openDialogResult = await dialog.showOpenDialog({
+                properties: multiSelections
+                    ? ["openFile", "multiSelections"]
+                    : ["openFile"],
+                filters: filters,
+            });
 
-        if (
-            openDialogResult.canceled ||
-            openDialogResult.filePaths.length === 0
-        ) {
-            return null;
-        }
-
-        const collectedFileData: FileData[] = [];
-        openDialogResult.filePaths.map((filePath: string) => {
-            try {
-                const fileName = path.basename(filePath);
-                const fileExtension = path
-                    .extname(filePath)
-                    .toLowerCase()
-                    .slice(1);
-
-                let fileContent: string | Uint8Array<ArrayBuffer>;
-                if (
-                    fileExtension === "mvsx" ||
-                    fileExtension === "cvsx" ||
-                    fileExtension === "bcif" ||
-                    fileExtension === "map"
-                ) {
-                    const buffer = readFileSync(filePath);
-                    fileContent = new Uint8Array(buffer);
-                } else if (fileExtension === "mvsj") {
-                    fileContent = readFileSync(filePath, "utf8");
-                } else {
-                    fileContent = readFileSync(filePath, "utf8");
-                }
-
-                collectedFileData.push({
-                    path: filePath,
-                    extension: fileExtension,
-                    name: fileName,
-                    binary:
-                        fileExtension === "cvsx" ||
-                        fileExtension === "mvsx" ||
-                        fileExtension === "bcif" ||
-                        fileExtension === "map",
-                    content: fileContent,
-                });
-            } catch (err) {
-                logger.error(
-                    `While reading file <${filePath}>, an error occured: <${err}>!`,
-                );
-                throw new Error(`Failed to read file: ${err}`);
+            if (
+                openDialogResult.canceled ||
+                openDialogResult.filePaths.length === 0
+            ) {
+                return [];
             }
-        });
 
-        return collectedFileData;
-    });
+            return readFiles(openDialogResult.filePaths);
+        },
+    );
 
     // Create tray.
     createTray(mainWindow);
@@ -411,18 +314,19 @@ async function saveFile(fullFilePath: string, data: ArrayBuffer) {
 
         await writeFile(fullFilePath, buffer);
 
-        // TODO: send a success message back to the Renderer
         logger.info(`Successfully saved file to <${fullFilePath}>.`);
-
-        return true;
+        return;
     } catch (error) {
-        // TODO: send a failure message back to the Renderer
         logger.error(
             `Failed to save file <${fullFilePath}>! Details: <${
                 (error as Error).message
             }>.`,
             error,
         );
-        return false;
+        return new Error(
+            `Failed to save file <${fullFilePath}>! Details: <${
+                (error as Error).message
+            }>.`,
+        );
     }
 }

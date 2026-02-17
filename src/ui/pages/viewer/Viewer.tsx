@@ -216,10 +216,10 @@ export function Viewer() {
                     const assets =
                         await window.electron.getFileData(absolutePaths);
 
-                    if (!assets) {
+                    if (assets instanceof Error) {
                         // TODO: report an error
                         loggerUi.error(
-                            `Unable to read raw files: [${absolutePaths}]!`,
+                            `Unable to read these assets [${absolutePaths}] from processed volume! Details: <${assets.message}>.`,
                         );
                         return;
                     }
@@ -248,9 +248,13 @@ export function Viewer() {
                         );
 
                     // TODO: report an error
-                    if (!saveDataResult) {
-                        loggerUi.error(`Default MVS could not be saved!`);
-                        console.log("Default MVS could not be saved!");
+                    if (saveDataResult instanceof Error) {
+                        loggerUi.error(
+                            `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
+                        );
+                        console.log(
+                            `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
+                        );
                         return;
                     }
 
