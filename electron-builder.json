@@ -20,7 +20,6 @@
   "msi": {
     "oneClick": false,
     "perMachine": true,
-    "allowToChangeInstallationDirectory": false,
     "shortcutName": "MolStarApp",
     "createDesktopShortcut": false
   }
