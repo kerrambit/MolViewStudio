@@ -12,10 +12,12 @@
   },
   "linux": {
     "target": "AppImage",
-    "category": "Science"
+    "category": "Science",
+    "icon": "./desktopIcon.png"
   },
   "win": {
-    "target": ["msi"]
+    "target": ["msi"],
+    "icon": "./desktopIcon.ico"
   },
   "msi": {
     "oneClick": false,
