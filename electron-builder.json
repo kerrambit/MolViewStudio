@@ -6,15 +6,23 @@
         "to": ".",
         "filter": "MolStarAppServer*"
       }],
-  "icon": "./desktopIcon.png",
+  "icon": "./desktopIcon.ico",
   "mac": {
     "target": "dmg"
   },
   "linux": {
     "target": "AppImage",
-    "category": "Science"
+    "category": "Science",
+    "icon": "./desktopIcon.png"
   },
   "win": {
-    "target": ["portable", "msi"]
+    "target": ["msi"],
+    "icon": "./desktopIcon.ico"
+  },
+  "msi": {
+    "oneClick": false,
+    "perMachine": true,
+    "shortcutName": "MolStarApp",
+    "createDesktopShortcut": false
   }
 }
