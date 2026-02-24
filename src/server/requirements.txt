@@ -1,5 +1,5 @@
 fastapi==0.116.1
-pydantic==2.11.7
+pydantic==2.12.5
 result==0.17.0
 uvicorn==0.35.0
-volsegtools==0.0.3
+volsegtools==0.0.5
