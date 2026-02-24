@@ -11,7 +11,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:server": "pyinstaller --onefile src/server/main.py --name MolStarAppServer --distpath ./dist-server --workpath ./tmp/server --specpath ./tmp/server --clean",
+    "build:server": "pyinstaller --onefile src/server/main.py --name MolStarAppServer --distpath ./dist-server --workpath ./tmp/server --specpath ./tmp/server",
     "server": "node scripts/run-server.ts",
     "transpile:electron": "tsc --project src/electron/tsconfig.json",
     "dist:win": "npm run transpile:electron && npm run build && electron-builder --win --x64",
