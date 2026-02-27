@@ -1,5 +1,6 @@
-fastapi==0.116.1
-pydantic==2.11.7
+fastapi==0.133.1
+pydantic==2.12.5
 result==0.17.0
-uvicorn==0.35.0
-volsegtools==0.0.3
+uvicorn==0.41.0
+volsegtools==0.0.5
+appdirs==1.4.4
