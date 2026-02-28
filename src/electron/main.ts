@@ -45,16 +45,21 @@ app.on("ready", () => {
 
     // Create splash window.
     const splash = new BrowserWindow({
-        width: 450,
+        width: 498,
         height: 300,
         transparent: true,
         frame: false,
         alwaysOnTop: true,
+        resizable: false,
+        movable: false,
+        center: true,
+        hasShadow: false,
+        skipTaskbar: true,
     });
 
     // Show splash screen. Source: https://www.freepik.com/free-vector/superimposed-water-drop-shape-abstract-graphics-background_14803692.htm#fromView=search&page=1&position=5&uuid=851272e9-7991-4653-9e3f-c5086e86f2da&query=Splash+molecules.
     splash.loadFile(path.join(getAssetsPath(), "splash.png"));
-    splash.center();
+    splash.setIgnoreMouseEvents(true);
 
     // Initialize logging.
     logger.initialize();
