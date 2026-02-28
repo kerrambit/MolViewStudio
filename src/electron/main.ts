@@ -16,10 +16,11 @@ import {
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
 import { ChildProcess, spawn } from "child_process";
-import { existsSync, readFileSync } from "fs";
+import { existsSync } from "fs";
 import { writeFile, mkdir } from "fs/promises";
 import { logger } from "./utils/logger.js";
 import { readFiles } from "./utils/fileDataUtils.js";
+import { SplashScreen } from "./utils/splashScreen.js";
 
 app.on("ready", () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -43,23 +44,11 @@ app.on("ready", () => {
         mainWindow.loadFile(getUiPath());
     }
 
-    // Create splash window.
-    const splash = new BrowserWindow({
+    // Create and show splash screen. Source: https://www.freepik.com/free-vector/superimposed-water-drop-shape-abstract-graphics-background_14803692.htm#fromView=search&page=1&position=5&uuid=851272e9-7991-4653-9e3f-c5086e86f2da&query=Splash+molecules.
+    const splash = new SplashScreen(path.join(getAssetsPath(), "splash.png"), {
         width: 498,
         height: 300,
-        transparent: true,
-        frame: false,
-        alwaysOnTop: true,
-        resizable: false,
-        movable: false,
-        center: true,
-        hasShadow: false,
-        skipTaskbar: true,
     });
-
-    // Show splash screen. Source: https://www.freepik.com/free-vector/superimposed-water-drop-shape-abstract-graphics-background_14803692.htm#fromView=search&page=1&position=5&uuid=851272e9-7991-4653-9e3f-c5086e86f2da&query=Splash+molecules.
-    splash.loadFile(path.join(getAssetsPath(), "splash.png"));
-    splash.setIgnoreMouseEvents(true);
 
     // Initialize logging.
     logger.initialize();
