@@ -44,6 +44,8 @@ import { useEnvironment } from "../../hooks/useEnvironment";
 import { Button } from "../../components/common/button/Button";
 import { loggerUi } from "../../utils/loggerUi";
 
+const MOLSTAR_EXPANDED = false;
+
 export function Viewer() {
     // Use localization.
     const { t } = useTranslation();
@@ -58,14 +60,14 @@ export function Viewer() {
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
     const [volumes, setVolumes] = useState<string[]>([]);
 
-    // Imports hook vol-seg server communication.
+    // Imports hook for volseg server communication.
     const processVolume = useProcessVolume();
 
     // Controls if Molstar is still in the initialization process.
     const [molstarLoading, setMolstarLoading] = useState(true);
 
     // Controls if the Molstar viewer is expanded or not.
-    const [molstarExpanded, setMolstarExpanded] = useState(false);
+    const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
 
     // Controls current regime of the application, stores current data.
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
@@ -104,6 +106,7 @@ export function Viewer() {
             },
             snapshot,
         ).then(async () => {
+            isExpanded: MOLSTAR_EXPANDED,
             setMolstarLoading(false);
             fullScreenSubscription = getFullScreenSubscription((val) => {
                 setMolstarExpanded(val);
@@ -129,6 +132,7 @@ export function Viewer() {
             // Load the file.
             const result = await loadFromFile(regime.fileToView);
             if (!result) {
+                console.log("Error when loading file into the Molstar viewer!");
                 // TODO: report an error
                 return;
             }
@@ -354,7 +358,6 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                // exportViewsAsMVSStory(views, assets);
                 if (stateTree) exportStateTree(stateTree, assets);
             },
             type: "direct",
