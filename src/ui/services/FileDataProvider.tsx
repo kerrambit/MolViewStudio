@@ -1,5 +1,8 @@
 import { createContext, useState, type ReactNode, useContext } from "react";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
+import type { SerializedAssets } from "../../molstar-wrapper/src";
+import type { PluginState } from "molstar/lib/mol-plugin/state";
+import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
 export type ProcessingRegime = {
     kind: "processing";
@@ -23,6 +26,17 @@ export type ViewingRegime = {
     sourceUrl: string;
 };
 
+export type RestoringRegime = {
+    kind: "restoring";
+    fileToView: FileData;
+    deconstructedFile: DeconstructedFileToView;
+    stateTree: MVSData;
+    sourceUrl: string;
+    snapshot: PluginState.Snapshot;
+    snapshotManagerState: PluginStateSnapshotManager.StateSnapshot;
+    arcpAssets: SerializedAssets;
+};
+
 export type IdlingRegime = {
     kind: "idling";
 };
@@ -31,6 +45,7 @@ export type Regime =
     | ProcessingRegime
     | StagingRegime
     | ViewingRegime
+    | RestoringRegime
     | IdlingRegime;
 
 export type FileDataContextType = {
