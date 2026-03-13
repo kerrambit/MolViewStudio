@@ -4,6 +4,7 @@ import {
     useState,
     type Dispatch,
     type SetStateAction,
+    useRef,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,11 +19,13 @@ import {
     type ViewMetadata,
     exportStateTree,
     convertStateTreeFromSingleToMultipleKind,
+    serializeMVSXAssets,
+    extractViewsFromMVS,
+    getSnapshotManagerState,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
-import { useMolstar } from "../../services/MolstarProvider";
 import { LoadingOverlay } from "@mantine/core";
 import {
     useMenu,
@@ -53,9 +56,6 @@ export function Viewer() {
     // Use environment.
     const env = useEnvironment();
 
-    // Controlls Molstar snapshots.
-    const { snapshot, setSnapshot } = useMolstar();
-
     // TODO: temporary state
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
     const [volumes, setVolumes] = useState<string[]>([]);
@@ -71,6 +71,8 @@ export function Viewer() {
 
     // Controls current regime of the application, stores current data.
     const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
+    const regimeReference = useRef(regime);
+    regimeReference.current = regime;
 
     // Current view and views.
     const [views, setViews] = useState<ViewMetadata[]>([]);
@@ -98,15 +100,25 @@ export function Viewer() {
         // Subscriptions.
         let fullScreenSubscription: Subscription;
 
+        // Call initializing function.
         initMolstar(
             parentRef.current as HTMLDivElement,
             {
                 showControls: true,
-                isExpanded: false,
+                isExpanded: MOLSTAR_EXPANDED,
             },
-            snapshot,
+            // If the regime is in "restoring" state, we will supply the initializator the snapshots, assets to fully restore the session.
+            regimeReference.current.kind === "restoring"
+                ? regimeReference.current.snapshot
+                : null,
+            regimeReference.current.kind === "restoring"
+                ? regimeReference.current.arcpAssets
+                : null,
+            regimeReference.current.kind === "restoring"
+                ? regimeReference.current.snapshotManagerState
+                : null,
         ).then(async () => {
-            isExpanded: MOLSTAR_EXPANDED,
+            // Molstar is fully initialized.
             setMolstarLoading(false);
             fullScreenSubscription = getFullScreenSubscription((val) => {
                 setMolstarExpanded(val);
@@ -114,13 +126,51 @@ export function Viewer() {
         });
 
         return () => {
-            const freshSnapshot = getSnapshot();
-            setSnapshot(freshSnapshot);
-            clearViewer();
-            if (fullScreenSubscription) fullScreenSubscription.unsubscribe();
-            disposeMolstar();
+            // Molstar clean-up procedure.
+            const runCleanup = async () => {
+                // If the current state is "viewing", and the Molstar is about to be destroyed,
+                // we have to save the session to be able to later restore it (in the application lifetime).
+                if (regimeReference.current.kind === "viewing") {
+                    setRegime({
+                        ...regimeReference.current,
+                        kind: "restoring",
+                        snapshot: getSnapshot(),
+                        arcpAssets: await serializeMVSXAssets(),
+                        snapshotManagerState: await getSnapshotManagerState(),
+                    });
+                }
+
+                clearViewer();
+                if (fullScreenSubscription)
+                    fullScreenSubscription.unsubscribe();
+                disposeMolstar();
+            };
+
+            // Run async clean-up procedure.
+            runCleanup().catch(() => {
+                clearViewer();
+                if (fullScreenSubscription)
+                    fullScreenSubscription.unsubscribe();
+                disposeMolstar();
+            });
         };
-    }, [setSnapshot]);
+    }, []);
+
+    // Restore the previous workspace.
+    useEffect(() => {
+        if (molstarLoading || regime.kind !== "restoring") {
+            return;
+        }
+
+        // Set the views in the editor.
+        setViews(extractViewsFromMVS(regime.stateTree));
+
+        // Set the regime back to viewing.
+        setRegime({
+            ...regime,
+            kind: "viewing",
+        });
+    }, [regime, setRegime, molstarLoading]);
 
     // Start deconstruction of file to view.
     useEffect(() => {
@@ -347,6 +397,7 @@ function createEditRootMenuItem(
             action: () => {
                 clearViewer();
                 setViews(() => []);
+                // TODO: set regime to "idling"
             },
             type: "direct",
         },

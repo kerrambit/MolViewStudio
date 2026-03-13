@@ -8,6 +8,7 @@ import {
     addViewIntoStateTree,
     applyChangesToNode,
     applySnapshotByIndex,
+    getCurrentSnapshotIndex,
     getSnapshotChangeSubscription,
     updateSnapshotInManager,
     type Base64Png,
@@ -40,6 +41,9 @@ export function SceneManager(props: SceneManagerProps) {
     useEffect(() => {
         let sub: Subscription;
         if (!props.isMolstarLoading) {
+            // We reset the index according to `molstar.managers.snapshot.state.current` as soon as the information is available for us.
+            setActiveViewCardIndex(getCurrentSnapshotIndex());
+
             sub = getSnapshotChangeSubscription((index, _) => {
                 setActiveViewCardIndex(index);
             });
