@@ -179,8 +179,6 @@ export function getCurrentSnapshotIndex(): number {
     const current = molstar.managers.snapshot.state.current;
     if (current) {
         const entries = molstar.managers.snapshot.state.entries;
-        let currentIndex = -1;
-
         for (let i = 0; i < entries.count(); i++) {
             const entry = entries.get(i);
             if (entry?.snapshot?.id === current) {
