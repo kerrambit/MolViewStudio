@@ -10,7 +10,7 @@ import {
     IconFolderOpen,
 } from "@tabler/icons-react";
 import { useEffect } from "react";
-import { useFileData, type Regime } from "../../services/FileDataProvider";
+import { useRegime, type Regime } from "../../services/RegimeProvider.tsx";
 
 import "./Home.css";
 import "@mantine/core/styles.css";
@@ -23,7 +23,7 @@ import {
 
 export default function Home() {
     const navigate = useNavigate();
-    const { setRegime } = useFileData();
+    const { setRegime } = useRegime();
     const { addMenuItemIntoSection } = useMenu();
 
     const actions = { setRegime, navigate };

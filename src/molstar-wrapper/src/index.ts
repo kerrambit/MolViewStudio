@@ -46,12 +46,16 @@ interface MolstarProps {
  * @param container HTML element into which the plugin is mounted
  * @param props configuration properties
  * @param snapshot optional state snapshot to restore a previous session
+ * @param assets optional assets to restore a previous session
+ * @param snapshotManagerState optional state of snapshot manager to restore previous session
  * @returns initialized `PluginUIContext` instance
  */
 export async function initMolstar(
     container: HTMLDivElement,
     props: MolstarProps,
     snapshot: PluginState.Snapshot | null,
+    assets: SerializedAssets | null,
+    snapshotManagerState: PluginStateSnapshotManager.StateSnapshot | null,
 ) {
     if (molstar) return molstar;
 
@@ -79,30 +83,8 @@ export async function initMolstar(
         },
     });
 
-    // molstar.behaviors.interaction.click.subscribe(
-    //     ({ current, button /*, modifiers*/ }) => {
-    //         if (!current.loci) return;
-
-    //         if (button === ButtonsType.Flag.Secondary) {
-    //         }
-
-    //         if (StructureElement.Loci.is(current.loci)) {
-    //             const location = StructureElement.Loci.getFirstLocation(
-    //                 current.loci
-    //             );
-    //             if (location) {
-    //                 const element = location.unit.model.atomicHierarchy.atoms;
-    //                 const name = element.type_symbol.value(0);
-    //                 console.log(`Clicked on element: ${name}.`);
-    //             }
-    //         }
-    //     }
-    // );
-
-    // molstar.behaviors.interaction.hover.subscribe(({ current }) => {});
-
-    if (snapshot) {
-        molstar.state.setSnapshot(snapshot);
+    if (assets && snapshotManagerState && snapshot) {
+        await restoreSessionState(assets, snapshotManagerState, snapshot);
     }
 
     return molstar;
@@ -188,6 +170,27 @@ export function getSnapshotChangeSubscription(
 }
 
 /**
+ * Returns current snapshot index. Defaults to index 0.
+ * @returns current snapshot index
+ */
+export function getCurrentSnapshotIndex(): number {
+    if (!molstar) return 0;
+
+    const current = molstar.managers.snapshot.state.current;
+    if (current) {
+        const entries = molstar.managers.snapshot.state.entries;
+        for (let i = 0; i < entries.count(); i++) {
+            const entry = entries.get(i);
+            if (entry?.snapshot?.id === current) {
+                return i;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Updates given region state.
  * @param region region to update
  * @param state region can be `hidden` or `full`
@@ -212,6 +215,15 @@ export function updateRegionState(
 export function getSnapshot(): PluginState.Snapshot {
     if (!molstar) throw new Error("Molstar is not initialized!");
     return molstar.state.getSnapshot();
+}
+
+/**
+ * Retrieves snapshot manager state.
+ * @returns Molstar snapshot manager state.
+ */
+export function getSnapshotManagerState(): Promise<PluginStateSnapshotManager.StateSnapshot> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    return molstar.managers.snapshot.getStateSnapshot();
 }
 
 /**
@@ -508,6 +520,75 @@ export function setBackgroundColor(color: HexColor) {
         );
     }
     molstar.state.setSnapshot({ ...snapshot });
+}
+
+/**
+ * Serialized form of in-memory MVSX assets that can survive plugin disposal.
+ */
+export interface SerializedAssets {
+    entries: Array<{
+        asset: Asset;
+        data: Uint8Array;
+    }>;
+}
+
+/**
+ * Extracts all "mvsx-file" tagged assets from the asset manager into
+ * plain transferable data.
+ * Call this before disposing the plugin.
+ * @returns serialized assets
+ */
+export async function serializeMVSXAssets(): Promise<SerializedAssets> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries: SerializedAssets["entries"] = [];
+
+    for (const entry of molstar.managers.asset.assets) {
+        if (entry.tag !== "mvsx-file") continue;
+        if (!Asset.isUrl(entry.asset)) continue;
+
+        const data = new Uint8Array(await entry.file.arrayBuffer());
+        entries.push({
+            asset: { kind: "url", id: entry.asset.id, url: entry.asset.url },
+            data,
+        });
+    }
+
+    return { entries };
+}
+
+/**
+ * Re-registers previously serialized MVSX assets into the asset manager
+ * of the new plugin instance.
+ * Call this before `setSnapshot`.
+ * @param serialized serialized assets as returned by `serializeMVSXAssets`
+ */
+function restoreMVSXAssets(serialized: SerializedAssets) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    for (const entry of serialized.entries) {
+        const file = new File([entry.data.buffer as ArrayBuffer], "raw-data");
+        // Re-use the exact same asset id and url so the snapshot's arcp:// references resolve to these entries.
+        molstar.managers.asset.set(entry.asset, file, { tag: "mvsx-file" });
+    }
+}
+
+/**
+ * Restores the previously stored sessions.
+ * @param serialized serialized assets as returned by `serializeMVSXAssets`
+ * @param snapshotManagerState Molstar's snapshot manager state
+ * @param snapshot Molstar's snapshot
+ */
+async function restoreSessionState(
+    serialized: SerializedAssets,
+    snapshotManagerState: PluginStateSnapshotManager.StateSnapshot,
+    snapshot: PluginState.Snapshot,
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    restoreMVSXAssets(serialized);
+    await molstar.managers.snapshot.setStateSnapshot(snapshotManagerState);
+    await molstar.state.setSnapshot(snapshot);
 }
 
 /**
@@ -1141,7 +1222,7 @@ export async function createDefaultMVSFromLocalFiles(
  * @param mvsData MVS
  * @returns array of views metadata
  */
-function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
+export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     let snapshots: Snapshot[] = [];
     if (mvsData.kind !== "multiple") {
         const snapshot = {
