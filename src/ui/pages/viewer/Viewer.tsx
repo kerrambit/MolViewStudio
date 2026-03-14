@@ -34,7 +34,7 @@ import {
     type Section,
 } from "../../services/MenuProvider";
 import type { TFunction } from "i18next";
-import { useFileData } from "../../services/FileDataProvider";
+import { useFileData, type Regime } from "../../services/FileDataProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { IconPackageExport } from "@tabler/icons-react";
@@ -87,6 +87,7 @@ export function Viewer() {
             regime.kind === "viewing" && regime.deconstructedFile
                 ? regime.deconstructedFile.assets
                 : [],
+            setRegime,
         );
         addRootMenuItem(edit);
         return () => {
@@ -388,6 +389,7 @@ function createEditRootMenuItem(
     stateTree: MVSData | undefined,
     setViews: Dispatch<SetStateAction<ViewMetadata[]>>,
     assets: FileData[],
+    setRegime: (regime: Regime) => void,
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
@@ -397,7 +399,9 @@ function createEditRootMenuItem(
             action: () => {
                 clearViewer();
                 setViews(() => []);
-                // TODO: set regime to "idling"
+                setRegime({
+                    kind: "idling",
+                });
             },
             type: "direct",
         },
