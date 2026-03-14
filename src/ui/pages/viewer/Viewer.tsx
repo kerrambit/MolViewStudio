@@ -34,7 +34,7 @@ import {
     type Section,
 } from "../../services/MenuProvider";
 import type { TFunction } from "i18next";
-import { useFileData, type Regime } from "../../services/FileDataProvider";
+import { useRegime, type Regime } from "../../services/RegimeProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { IconPackageExport } from "@tabler/icons-react";
@@ -70,7 +70,7 @@ export function Viewer() {
     const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
 
     // Controls current regime of the application, stores current data.
-    const { regime, setRegime } = useFileData(); // TODO: rename to useRegime() probably
+    const { regime, setRegime } = useRegime();
     const regimeReference = useRef(regime);
     regimeReference.current = regime;
 

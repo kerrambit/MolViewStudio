@@ -48,31 +48,31 @@ export type Regime =
     | RestoringRegime
     | IdlingRegime;
 
-export type FileDataContextType = {
+export type RegimeContextType = {
     regime: Regime;
     setRegime: (regime: Regime) => void;
 };
 
 const initialRegime: IdlingRegime = { kind: "idling" };
 
-export const FileDataContext = createContext<FileDataContextType | undefined>(
+export const RegimeContext = createContext<RegimeContextType | undefined>(
     undefined,
 );
 
-export function useFileData() {
-    const context = useContext(FileDataContext);
+export function useRegime() {
+    const context = useContext(RegimeContext);
     if (!context) {
-        throw new Error("File data must be used within FileDataProvider");
+        throw new Error("Regime must be used within RegimeProvider");
     }
     return context;
 }
 
-export function FileDataProvider({ children }: { children: ReactNode }) {
+export function RegimeProvider({ children }: { children: ReactNode }) {
     const [regime, setRegime] = useState<Regime>(initialRegime);
 
     return (
-        <FileDataContext.Provider value={{ regime, setRegime }}>
+        <RegimeContext.Provider value={{ regime, setRegime }}>
             {children}
-        </FileDataContext.Provider>
+        </RegimeContext.Provider>
     );
 }

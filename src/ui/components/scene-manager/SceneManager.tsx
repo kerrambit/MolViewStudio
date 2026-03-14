@@ -16,7 +16,7 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
-import { useFileData, type Regime } from "../../services/FileDataProvider";
+import { useRegime, type Regime } from "../../services/RegimeProvider";
 import type { Subscription } from "rxjs";
 
 interface SceneManagerProps {
@@ -32,7 +32,7 @@ export function SceneManager(props: SceneManagerProps) {
     const [sidebar, setSidebar] = useState<SidebarType>("views");
 
     // Regime.
-    const { regime, setRegime } = useFileData();
+    const { regime, setRegime } = useRegime();
 
     // State for the index of currently active view card (default is the first one).
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
