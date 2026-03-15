@@ -2,7 +2,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { createRoot } from "react-dom/client";
 import routes from "./router/routes.tsx";
 import { UserSettingsProvider } from "./services/UserSettingsProvider.tsx";
-import { ThemeProvider } from "./services/ThemeProvider.tsx";
+import { AppearanceProvider } from "./services/AppearanceProvider.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RegimeProvider } from "./services/RegimeProvider.tsx";
 import { MenuProvider } from "./services/MenuProvider.tsx";
@@ -17,8 +17,8 @@ const env = window.electron.requestEnvironment();
 
 createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-            <UserSettingsProvider>
+        <UserSettingsProvider>
+            <AppearanceProvider>
                 <RegimeProvider>
                     <MenuProvider
                         isDev={env.isDev}
@@ -27,7 +27,7 @@ createRoot(document.getElementById("root")!).render(
                         <RouterProvider router={router} />
                     </MenuProvider>
                 </RegimeProvider>
-            </UserSettingsProvider>
-        </ThemeProvider>
+            </AppearanceProvider>
+        </UserSettingsProvider>
     </QueryClientProvider>,
 );

@@ -1,12 +1,11 @@
-import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { Button } from "../common/button/Button";
 import { useTranslation } from "react-i18next";
+import { useAppearance } from "../../services/AppearanceProvider";
 
 export function SchemeSelector() {
     const { t } = useTranslation();
-    const { setColorScheme } = useMantineColorScheme();
-    const computedColorScheme = useComputedColorScheme("light");
+    const { colorScheme, setColorScheme } = useAppearance();
 
     return (
         <div>
@@ -16,12 +15,10 @@ export function SchemeSelector() {
                 tooltip={t("Toggle scheme.")}
                 ariaLabel={t("Toggle scheme.")}
                 onClick={() =>
-                    setColorScheme(
-                        computedColorScheme === "light" ? "dark" : "light"
-                    )
+                    setColorScheme(colorScheme === "light" ? "dark" : "light")
                 }
             >
-                {computedColorScheme === "light" ? (
+                {colorScheme === "light" ? (
                     <IconMoon size={20} />
                 ) : (
                     <IconSun size={20} />

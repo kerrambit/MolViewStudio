@@ -53,7 +53,7 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
 
     // TODO: replace with some pending/loading button.
     if (!settings) {
-        return <div>Loading...</div>;
+        return <div>Loading user settings...</div>;
     }
 
     return (

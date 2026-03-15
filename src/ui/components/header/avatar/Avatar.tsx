@@ -1,10 +1,10 @@
 import { Avatar as MantineAvatar } from "@mantine/core";
+import { useAppearance } from "../../../services/AppearanceProvider";
 
 import "./Avatar.css";
-import { useTheme } from "../../../services/ThemeProvider";
 
 export function Avatar() {
-    const { theme } = useTheme();
+    const { colorTheme } = useAppearance();
 
     const user = {
         name: "John Doe",
@@ -17,7 +17,7 @@ export function Avatar() {
             variant="filled"
             key={user.name}
             name={user.name}
-            color={theme.primaryColor}
+            color={colorTheme.primaryColor}
             size="md"
             onClick={() => console.log("Clicked on avatar.")}
         />
