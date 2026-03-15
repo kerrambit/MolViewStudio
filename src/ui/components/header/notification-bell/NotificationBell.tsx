@@ -1,11 +1,11 @@
 import { Indicator } from "@mantine/core";
 import { IconBell } from "@tabler/icons-react";
-import { useTheme } from "../../../services/ThemeProvider";
+import { useAppearance } from "../../../services/AppearanceProvider";
 
 import "./NotificationBell.css";
 
 export function NotificationBell() {
-    const { theme } = useTheme();
+    const { colorTheme } = useAppearance();
     const unreadNotifications = 5;
     const anyUnreadNotifications = unreadNotifications > 0;
 
@@ -20,7 +20,7 @@ export function NotificationBell() {
                 processing
                 size={12}
                 offset={7}
-                color={theme.primaryColor}
+                color={colorTheme.primaryColor}
                 disabled={!anyUnreadNotifications}
             >
                 <IconBell size={28} />

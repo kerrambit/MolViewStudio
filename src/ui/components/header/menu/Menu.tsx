@@ -1,6 +1,6 @@
 import React from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
-import { useTheme } from "../../../services/ThemeProvider";
+import { useAppearance } from "../../../services/AppearanceProvider";
 import {
     useMenu,
     type Action,
@@ -19,7 +19,7 @@ interface MenuProps {
 }
 
 export function Menu({ className = "" }: MenuProps) {
-    const { theme } = useTheme();
+    const { colorTheme } = useAppearance();
     const { menu } = useMenu();
 
     const { isDev } = useEnvironment();
@@ -31,7 +31,7 @@ export function Menu({ className = "" }: MenuProps) {
                 {isDev ? (
                     <Badge
                         title="You are in developer mode."
-                        color={theme.primaryColor}
+                        color={colorTheme.primaryColor}
                     >
                         DEV
                     </Badge>
