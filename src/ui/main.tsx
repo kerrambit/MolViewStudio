@@ -17,8 +17,8 @@ const env = window.electron.requestEnvironment();
 
 createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-            <UserSettingsProvider>
+        <UserSettingsProvider>
+            <ThemeProvider>
                 <RegimeProvider>
                     <MenuProvider
                         isDev={env.isDev}
@@ -27,7 +27,7 @@ createRoot(document.getElementById("root")!).render(
                         <RouterProvider router={router} />
                     </MenuProvider>
                 </RegimeProvider>
-            </UserSettingsProvider>
-        </ThemeProvider>
+            </ThemeProvider>
+        </UserSettingsProvider>
     </QueryClientProvider>,
 );

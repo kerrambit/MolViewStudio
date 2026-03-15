@@ -93,4 +93,18 @@ type Language = "en" | "de";
 type UserSettings = {
     lang: Language;
     serverPort: number;
+    colorScheme: "light" | "dark";
+    colorTheme:
+        | "ocean"
+        | "forest"
+        | "sunset"
+        | "royal"
+        | "crimson"
+        | "golden"
+        | "teal"
+        | "lavender"
+        | "charcoal"
+        | "sky"
+        | "emerald"
+        | "amber";
 };
