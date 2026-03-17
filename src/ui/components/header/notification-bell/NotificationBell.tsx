@@ -1,17 +1,15 @@
 import { Indicator } from "@mantine/core";
 import { IconBell } from "@tabler/icons-react";
-import { useAppearance } from "../../../services/AppearanceProvider";
 
 import "./NotificationBell.css";
 
 export function NotificationBell() {
-    const { colorTheme } = useAppearance();
-    const unreadNotifications = 5;
+    const unreadNotifications = 0; // TODO: until https://github.com/kerrambit/MolStarApp/issues/98 is solved
     const anyUnreadNotifications = unreadNotifications > 0;
 
     return (
         <div
-            title={`You have ${unreadNotifications} unread notifications.`}
+            title={`You have ${unreadNotifications === 0 ? "no" : unreadNotifications} unread notifications.`}
             className="notificationBell"
         >
             <Indicator
@@ -20,7 +18,7 @@ export function NotificationBell() {
                 processing
                 size={12}
                 offset={7}
-                color={colorTheme.primaryColor}
+                color="yellow"
                 disabled={!anyUnreadNotifications}
             >
                 <IconBell size={28} />

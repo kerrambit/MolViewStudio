@@ -8,6 +8,7 @@ import { RegimeProvider } from "./services/RegimeProvider.tsx";
 import { MenuProvider } from "./services/MenuProvider.tsx";
 
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 import "./index.css";
 
 const router = createMemoryRouter(routes);

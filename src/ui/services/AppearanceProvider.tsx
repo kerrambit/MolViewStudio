@@ -13,6 +13,7 @@ import {
     useMantineTheme,
 } from "@mantine/core";
 import { useUserSettings } from "./UserSettingsProvider";
+import { Notifications } from "@mantine/notifications";
 
 type AppearanceContextType = {
     setColorTheme: (theme: ThemeType) => void;
@@ -143,6 +144,14 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
                 // Our overriden manager for color scheme.
                 colorSchemeManager={colorSchemeManager}
             >
+                <Notifications
+                    limit={5}
+                    // We use "top-right" position for notifications and we need to put the first notification little lower so it does not collied with our header component.
+                    styles={{
+                        root: { top: 55, pointerEvents: "none" },
+                        notification: { pointerEvents: "all" },
+                    }}
+                />
                 {children}
             </MantineProvider>
         </AppearanceContext.Provider>
