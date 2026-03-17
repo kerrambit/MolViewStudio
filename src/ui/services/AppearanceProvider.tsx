@@ -145,6 +145,12 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
                 colorSchemeManager={colorSchemeManager}
             >
                 <Notifications
+                    limit={5}
+                    // We use "top-right" position for notifications and we need to put the first notification little lower so it does not collied with our header component.
+                    styles={{
+                        root: { top: 55, pointerEvents: "none" },
+                        notification: { pointerEvents: "all" },
+                    }}
                 />
                 {children}
             </MantineProvider>
