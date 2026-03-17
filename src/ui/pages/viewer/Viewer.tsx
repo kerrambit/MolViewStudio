@@ -52,6 +52,7 @@ import {
     pushSuccessNotification,
 } from "../../services/NotificationService";
 
+const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
 
 export function Viewer() {
@@ -110,7 +111,7 @@ export function Viewer() {
         initMolstar(
             parentRef.current as HTMLDivElement,
             {
-                showControls: true,
+                showControls: MOLSTAR_SHOW_CONTROLS,
                 isExpanded: MOLSTAR_EXPANDED,
             },
             // If the regime is in "restoring" state, we will supply the initializator the snapshots, assets to fully restore the session.
