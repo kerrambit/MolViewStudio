@@ -20,6 +20,7 @@ import {
 } from "../../../molstar-wrapper/src";
 
 import "./ViewCard.css";
+import { pushWarningNotification } from "../../services/NotificationService";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -211,7 +212,9 @@ export function ViewCard(props: ViewCardProps) {
                                         try {
                                             img = await getCanvasScreenshot();
                                         } catch {
-                                            // TODO: send notification, log error
+                                            pushWarningNotification(
+                                                "Application could not save the canvas screenshot! The current view will contain no screeshot.",
+                                            );
                                             img = undefined;
                                         }
 
@@ -251,7 +254,9 @@ export function ViewCard(props: ViewCardProps) {
                                         try {
                                             img = await getCanvasScreenshot();
                                         } catch {
-                                            // TODO: send notification, log error
+                                            pushWarningNotification(
+                                                "Application could not save the canvas screenshot! The current view will contain no screeshot.",
+                                            );
                                             img = undefined;
                                         }
                                         props.onFork(

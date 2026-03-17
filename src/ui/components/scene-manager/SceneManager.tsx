@@ -18,6 +18,7 @@ import {
 } from "../../../molstar-wrapper/src";
 import { useRegime, type Regime } from "../../services/RegimeProvider";
 import type { Subscription } from "rxjs";
+import { pushErrorNotification } from "../../services/NotificationService";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -277,8 +278,9 @@ function handleOnUpdate(
     );
 
     if (!result.success) {
-        // TODO: report an error
-        console.log(`Error: <${result.error}>!`);
+        pushErrorNotification(
+            `Error occured while updating snapshot in Molstar snapshots' manager: "${result.error.message}"!`,
+        );
         return;
     }
 

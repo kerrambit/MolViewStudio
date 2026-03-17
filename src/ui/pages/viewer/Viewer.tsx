@@ -46,6 +46,11 @@ import { SceneManager } from "../../components/scene-manager/SceneManager";
 import { useEnvironment } from "../../hooks/useEnvironment";
 import { Button } from "../../components/common/button/Button";
 import { loggerUi } from "../../utils/loggerUi";
+import {
+    pushErrorNotification,
+    pushInfoNotification,
+    pushSuccessNotification,
+} from "../../services/NotificationService";
 
 const MOLSTAR_EXPANDED = false;
 
@@ -183,8 +188,12 @@ export function Viewer() {
             // Load the file.
             const result = await loadFromFile(regime.fileToView);
             if (!result) {
-                console.log("Error when loading file into the Molstar viewer!");
-                // TODO: report an error
+                pushErrorNotification(
+                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer!`,
+                );
+                loggerUi.error(
+                    `Error when loading file "${regime.fileToView.path} into the Molstar viewer!"`,
+                );
                 return;
             }
 
@@ -253,11 +262,12 @@ export function Viewer() {
                             "object",
                         );
                     } catch (error) {
-                        // TODO: report an error
+                        pushErrorNotification(
+                            `An internal error occurred! For more information, see the logs or open an issue at https://github.com/kerrambit/MolStarApp.`,
+                        );
                         loggerUi.error(
                             `Internal error. Unable to parse the response: <${error}>!`,
                         );
-                        console.log(error);
                         return;
                     }
 
@@ -272,7 +282,9 @@ export function Viewer() {
                         await window.electron.getFileData(absolutePaths);
 
                     if (assets instanceof Error) {
-                        // TODO: report an error
+                        pushErrorNotification(
+                            `Application was not able to read processed assets! For more information, see the logs.`,
+                        );
                         loggerUi.error(
                             `Unable to read these assets [${absolutePaths}] from processed volume! Details: <${assets.message}>.`,
                         );
@@ -302,16 +314,16 @@ export function Viewer() {
                             path,
                         );
 
-                    // TODO: report an error
                     if (saveDataResult instanceof Error) {
                         loggerUi.error(
                             `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
                         );
-                        console.log(
-                            `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
-                        );
                         return;
                     }
+
+                    pushSuccessNotification(
+                        `File "${regime.fileToProcess.path}" was successfully processed.`,
+                    );
 
                     // Sets regime to "staging".
                     setRegime({
@@ -326,8 +338,12 @@ export function Viewer() {
                     });
                 },
                 onError: (err) => {
-                    // TODO: report an error
-                    console.log(`Processing failed: ${err.message}`);
+                    pushErrorNotification(
+                        `Processing of file "${regime.fileToProcess.path}" failed! For more information, see the logs. You might need to restart the application and try processing once more.`,
+                    );
+                    loggerUi.error(
+                        `Processing of file "${regime.fileToProcess.path}" failed! See details: <${err.message}>.`,
+                    );
                 },
             },
         );
@@ -413,7 +429,8 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                if (stateTree) exportStateTree(stateTree, assets);
+                if (stateTree) await exportStateTree(stateTree, assets);
+                pushInfoNotification(`Export finished!`);
             },
             type: "direct",
         },
