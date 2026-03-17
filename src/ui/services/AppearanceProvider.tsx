@@ -13,6 +13,7 @@ import {
     useMantineTheme,
 } from "@mantine/core";
 import { useUserSettings } from "./UserSettingsProvider";
+import { Notifications } from "@mantine/notifications";
 
 type AppearanceContextType = {
     setColorTheme: (theme: ThemeType) => void;
@@ -143,6 +144,8 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
                 // Our overriden manager for color scheme.
                 colorSchemeManager={colorSchemeManager}
             >
+                <Notifications
+                />
                 {children}
             </MantineProvider>
         </AppearanceContext.Provider>
