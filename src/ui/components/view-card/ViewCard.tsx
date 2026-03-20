@@ -151,9 +151,23 @@ export function ViewCard(props: ViewCardProps) {
             )}
 
             {props.active && (
-                <CameraTextInputGroup
-                    cameraState={cameraState}
-                ></CameraTextInputGroup>
+                <>
+                    {!props.metadata.referenceCamera && (
+                        <div
+                            style={{
+                                fontSize: "11px",
+                                margin: "1em",
+                                fontStyle: "italic",
+                            }}
+                        >
+                            (View has no camera node yet.)
+                        </div>
+                    )}
+
+                    <CameraTextInputGroup
+                        cameraState={cameraState}
+                    ></CameraTextInputGroup>
+                </>
             )}
 
             <div
