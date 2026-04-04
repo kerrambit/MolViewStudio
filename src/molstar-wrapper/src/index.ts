@@ -848,7 +848,7 @@ export async function exportStateTree(
 
     // Let user download the story.
     const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
-    download(blob, filename);
+    download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
 }
 
 /**

@@ -1,11 +1,4 @@
-import {
-    useEffect,
-    createRef,
-    useState,
-    type Dispatch,
-    type SetStateAction,
-    useRef,
-} from "react";
+import { useEffect, createRef, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
     clearViewer,
@@ -16,11 +9,9 @@ import {
     createDefaultMVSFromLocalFiles,
     createMVSBlob,
     getFullScreenSubscription,
-    type ViewMetadata,
     exportStateTree,
     convertStateTreeFromSingleToMultipleKind,
     serializeMVSXAssets,
-    extractViewsFromMVS,
     getSnapshotManagerState,
 } from "../../../molstar-wrapper/src";
 
@@ -80,16 +71,12 @@ export function Viewer() {
     const regimeReference = useRef(regime);
     regimeReference.current = regime;
 
-    // Current view and views.
-    const [views, setViews] = useState<ViewMetadata[]>([]);
-
     // Add Edit root item button into the menu.
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
     useEffect(() => {
         const edit = createEditRootMenuItem(
             t,
             regime.kind === "viewing" ? regime.stateTree : undefined,
-            setViews,
             regime.kind === "viewing" && regime.deconstructedFile
                 ? regime.deconstructedFile.assets
                 : [],
@@ -99,7 +86,7 @@ export function Viewer() {
         return () => {
             deleteRootMenuItem(edit.id);
         };
-    }, [t, views, setViews, regime]);
+    }, [t, regime]);
 
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
@@ -169,9 +156,6 @@ export function Viewer() {
             return;
         }
 
-        // Set the views in the editor.
-        setViews(extractViewsFromMVS(regime.stateTree));
-
         // Set the regime back to viewing.
         setRegime({
             ...regime,
@@ -198,9 +182,6 @@ export function Viewer() {
                 return;
             }
 
-            // Set the views in the editor.
-            setViews(result.views);
-
             // Create an array with local assets (if there are some).
             const assetsArray: FileData[] = Object.entries(
                 result.localAssets,
@@ -217,6 +198,7 @@ export function Viewer() {
                 ...regime,
                 kind: "viewing",
                 deconstructedFile: { assets: assetsArray },
+                views: result.views,
                 stateTree:
                     result.stateTree.kind === "multiple"
                         ? result.stateTree
@@ -384,8 +366,6 @@ export function Viewer() {
                 <SceneManager
                     isMolstarExpanded={molstarExpanded}
                     isMolstarLoading={molstarLoading}
-                    views={views}
-                    setViews={setViews}
                 ></SceneManager>
                 <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
                     <div
@@ -404,7 +384,6 @@ export function Viewer() {
 function createEditRootMenuItem(
     t: TFunction<"translation", undefined>,
     stateTree: MVSData | undefined,
-    setViews: Dispatch<SetStateAction<ViewMetadata[]>>,
     assets: FileData[],
     setRegime: (regime: Regime) => void,
 ) {
@@ -415,7 +394,6 @@ function createEditRootMenuItem(
         task: {
             action: () => {
                 clearViewer();
-                setViews(() => []);
                 setRegime({
                     kind: "idling",
                 });
