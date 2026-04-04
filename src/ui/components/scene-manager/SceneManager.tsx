@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { SegmentedController } from "../common/segmented-controller/SegmentedController";
 import { Sidebar } from "../common/sidebar/Sidebar";
-import { Button } from "../common/button/Button";
 import { ViewCard } from "../view-card/ViewCard";
 import {
     addNewSnapshotToManager,
@@ -23,8 +22,6 @@ import { pushErrorNotification } from "../../services/NotificationService";
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
     isMolstarLoading: boolean;
-    views: ViewMetadata[];
-    setViews: React.Dispatch<React.SetStateAction<ViewMetadata[]>>;
 }
 
 export function SceneManager(props: SceneManagerProps) {
@@ -85,17 +82,6 @@ export function SceneManager(props: SceneManagerProps) {
                         gap: "0.75em",
                     }}
                 >
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            // TODO: clear views from state tree, but how? Should we erase them completely? Then we lose information about downloads nodes etc.
-                            console.log("Not implemented!");
-                            // props.setViews(() => []);
-                            // clearAllSnapshotsFromManager();
-                        }}
-                    >
-                        {"Clear views"}
-                    </Button>
                     <div
                         style={{
                             display: "flex",
@@ -104,52 +90,40 @@ export function SceneManager(props: SceneManagerProps) {
                             gap: "1em",
                         }}
                     >
-                        {props.views.map((view, index) => (
-                            <ViewCard
-                                key={view.id}
-                                metadata={view}
-                                index={index}
-                                active={index === activeViewCardIndex}
-                                onClick={async () => {
-                                    await applySnapshotByIndex(index);
-                                    setActiveViewCardIndex(index);
-                                }}
-                                onSave={(
-                                    title,
-                                    description,
-                                    descriptionFormat,
-                                    referenceCamera,
-                                    thumbnail,
-                                    backgroundColor,
-                                ) => {
-                                    handleOnUpdate(
-                                        regime,
-                                        setRegime,
-                                        props,
-                                        index,
-                                        view.id,
+                        {regime.kind === "viewing" &&
+                            regime.views.map((view, index) => (
+                                <ViewCard
+                                    key={view.id}
+                                    metadata={view}
+                                    index={index}
+                                    cameraState={cameraState}
+                                    active={index === activeViewCardIndex}
+                                    onClick={async () => {
+                                        await applySnapshotByIndex(index);
+                                        //setActiveViewCardIndex(index);
+                                    }}
+                                    onSave={(
                                         title,
                                         description,
                                         descriptionFormat,
                                         referenceCamera,
                                         thumbnail,
                                         backgroundColor,
-                                    );
-                                }}
-                                onFork={(
-                                    id,
-                                    title,
-                                    description,
-                                    descriptionFormat,
-                                    referenceCamera,
-                                    thumbnail,
-                                    backgroundColor,
-                                ) => {
-                                    handleOnFork(
-                                        regime,
-                                        setRegime,
-                                        props,
-                                        index,
+                                    ) => {
+                                        handleOnUpdate(
+                                            regime,
+                                            setRegime,
+                                            index,
+                                            view.id,
+                                            title,
+                                            description,
+                                            descriptionFormat,
+                                            referenceCamera,
+                                            thumbnail,
+                                            backgroundColor,
+                                        );
+                                    }}
+                                    onFork={(
                                         id,
                                         title,
                                         description,
@@ -157,10 +131,22 @@ export function SceneManager(props: SceneManagerProps) {
                                         referenceCamera,
                                         thumbnail,
                                         backgroundColor,
-                                    );
-                                }}
-                            />
-                        ))}
+                                    ) => {
+                                        handleOnFork(
+                                            regime,
+                                            setRegime,
+                                            index,
+                                            id,
+                                            title,
+                                            description,
+                                            descriptionFormat,
+                                            referenceCamera,
+                                            thumbnail,
+                                            backgroundColor,
+                                        );
+                                    }}
+                                />
+                            ))}
                     </div>
                 </div>
             )}
@@ -171,7 +157,6 @@ export function SceneManager(props: SceneManagerProps) {
 function handleOnFork(
     regime: Regime,
     setRegime: (regime: Regime) => void,
-    props: SceneManagerProps,
     activeViewCardIndex: number,
     id: string,
     title: string,
@@ -181,21 +166,19 @@ function handleOnFork(
     thumbnail: Base64Png | undefined,
     backgroundColor: HexColor | undefined,
 ): void {
-    // Add view to the list.
-    props.setViews((prev) => [
-        ...prev,
-        {
-            id: id,
-            key: id,
-            title: title,
-            description: description,
-            description_format: descriptionFormat,
-            referenceCamera: referenceCamera,
-            thumbnail: thumbnail,
-            linger_duration_ms: 5000,
-            transition_duration_ms: undefined,
-        },
-    ]);
+    // Create new view.
+    const newView: ViewMetadata = {
+        id: id,
+        key: id,
+        title: title,
+        description: description,
+        description_format: descriptionFormat,
+        referenceCamera: referenceCamera,
+        backgroundColor: backgroundColor,
+        thumbnail: thumbnail,
+        linger_duration_ms: 5000,
+        transition_duration_ms: undefined,
+    };
 
     // Add new snapshot to the Molstar manager.
     addNewSnapshotToManager(
@@ -233,14 +216,17 @@ function handleOnFork(
             },
         });
 
-        setRegime({ ...regime, stateTree: newStateTree });
+        setRegime({
+            ...regime,
+            stateTree: newStateTree,
+            views: [...regime.views, newView],
+        });
     }
 }
 
 function handleOnUpdate(
     regime: Regime,
     setRegime: (regime: Regime) => void,
-    props: SceneManagerProps,
     activeViewCardIndex: number,
     id: string,
     title: string,
@@ -250,25 +236,6 @@ function handleOnUpdate(
     thumbnail: Base64Png | undefined,
     backgroundColor: HexColor | undefined,
 ): void {
-    // Update view in the list.
-    props.setViews((prev) =>
-        prev.map((view) =>
-            view.id === id
-                ? {
-                      ...view,
-                      title: title,
-                      description: description,
-                      description_format: descriptionFormat,
-                      referenceCamera: referenceCamera,
-                      thumbnail: thumbnail,
-                      backgroundColor: backgroundColor,
-                      linger_duration_ms: 5000,
-                      transition_duration_ms: undefined,
-                  }
-                : view,
-        ),
-    );
-
     // Update existing snapshot in the Molstar manager by its index.
     const result = updateSnapshotInManager(
         activeViewCardIndex,
@@ -279,7 +246,7 @@ function handleOnUpdate(
 
     if (!result.success) {
         pushErrorNotification(
-            `Error occured while updating snapshot in Molstar snapshots' manager: "${result.error.message}"!`,
+            `Internal error occured while updating snapshot in Molstar snapshots' manager: "${result.error.message}"!`,
         );
         return;
     }
@@ -308,6 +275,21 @@ function handleOnUpdate(
 
         setRegime({
             ...regime,
+            views: regime.views.map((view) =>
+                view.id === id
+                    ? {
+                          ...view,
+                          title,
+                          description,
+                          description_format: descriptionFormat,
+                          referenceCamera,
+                          thumbnail,
+                          backgroundColor,
+                          linger_duration_ms: 5000,
+                          transition_duration_ms: undefined,
+                      }
+                    : view,
+            ),
             stateTree: {
                 ...regime.stateTree,
                 snapshots: updatedSnapshots,
