@@ -96,7 +96,6 @@ export function SceneManager(props: SceneManagerProps) {
                                     key={view.id}
                                     metadata={view}
                                     index={index}
-                                    cameraState={cameraState}
                                     active={index === activeViewCardIndex}
                                     onClick={async () => {
                                         await applySnapshotByIndex(index);
