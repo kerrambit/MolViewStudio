@@ -21,7 +21,7 @@
   },
   "msi": {
     "oneClick": false,
-    "perMachine": true,
+    "perMachine": false,
     "shortcutName": "MolStarApp",
     "createDesktopShortcut": false
   }
