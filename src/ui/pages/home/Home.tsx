@@ -20,6 +20,7 @@ import {
     StructuralFilters,
     VolumeFilters,
 } from "../../../types/fileFilters.ts";
+import { pushWarningNotification } from "../../services/NotificationService.ts";
 
 export default function Home() {
     const navigate = useNavigate();
@@ -182,8 +183,10 @@ function onDropHandler(
 }
 
 function onRejectHandler(rejections: FileRejection[]) {
-    // TODO: notification
     loggerUi.warn(
+        `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
+    );
+    pushWarningNotification(
         `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
     );
 }

@@ -51,7 +51,7 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
             });
     }, []);
 
-    // TODO: replace with some pending/loading button.
+    // TODO: replace with some pending/loading page.
     if (!settings) {
         return <div>Loading user settings...</div>;
     }
