@@ -42,6 +42,11 @@ import {
     pushInfoNotification,
     pushSuccessNotification,
 } from "../../services/NotificationService";
+import {
+    useDialogue,
+    type DialogueProps,
+} from "../../services/DialogueProvider";
+import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -53,25 +58,22 @@ export function Viewer() {
     // Use environment.
     const env = useEnvironment();
 
-    // TODO: temporary state
+    // Use dialogue.
+    const { showDialogue } = useDialogue();
+
+    // TODO: temporary states
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
     const [volumes, setVolumes] = useState<string[]>([]);
 
     // Imports hook for volseg server communication.
     const processVolume = useProcessVolume();
 
-    // Controls if Molstar is still in the initialization process.
-    const [molstarLoading, setMolstarLoading] = useState(true);
-
-    // Controls if the Molstar viewer is expanded or not.
-    const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
-
     // Controls current regime of the application, stores current data.
     const { regime, setRegime } = useRegime();
     const regimeReference = useRef(regime);
     regimeReference.current = regime;
 
-    // Add Edit root item button into the menu.
+    // Add Edit root item into the menu.
     const { deleteRootMenuItem, addRootMenuItem } = useMenu();
     useEffect(() => {
         const edit = createEditRootMenuItem(
@@ -81,12 +83,19 @@ export function Viewer() {
                 ? regime.deconstructedFile.assets
                 : [],
             setRegime,
+            showDialogue,
         );
         addRootMenuItem(edit);
         return () => {
             deleteRootMenuItem(edit.id);
         };
     }, [t, regime]);
+
+    // Controls if Molstar is still in the initialization process.
+    const [molstarLoading, setMolstarLoading] = useState(true);
+
+    // Controls if the Molstar viewer is expanded or not.
+    const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
 
     // Initialize Molstar viewer.
     const parentRef = createRef<HTMLDivElement>();
@@ -386,17 +395,34 @@ function createEditRootMenuItem(
     stateTree: MVSData | undefined,
     assets: FileData[],
     setRegime: (regime: Regime) => void,
+    showDialogue: <T = void>(
+        options: DialogueProps<T>,
+    ) => Promise<T | undefined>,
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
         title: t("menu.pageSpecific.viewer.Clear viewer"),
         icon: { icon: BroomIcon, position: "left" },
         task: {
-            action: () => {
-                clearViewer();
-                setRegime({
-                    kind: "idling",
+            action: async () => {
+                const confirmed = await showDialogue<boolean>({
+                    title: "Confirmation",
+                    showCloseButton: false,
+                    content: (close) => (
+                        <ConfirmationDialogueContent
+                            close={close}
+                            doYouReallyWantToQuestion="Do you really want to clear the
+                viewer?"
+                        />
+                    ),
                 });
+
+                if (confirmed === true) {
+                    clearViewer();
+                    setRegime({
+                        kind: "idling",
+                    });
+                }
             },
             type: "direct",
         },

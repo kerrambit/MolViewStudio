@@ -6,6 +6,7 @@ import { AppearanceProvider } from "./services/AppearanceProvider.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RegimeProvider } from "./services/RegimeProvider.tsx";
 import { MenuProvider } from "./services/MenuProvider.tsx";
+import { DialogueProvider } from "./services/DialogueProvider.tsx";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
@@ -21,12 +22,14 @@ createRoot(document.getElementById("root")!).render(
         <UserSettingsProvider>
             <AppearanceProvider>
                 <RegimeProvider>
-                    <MenuProvider
-                        isDev={env.isDev}
-                        navigate={(path) => router.navigate(path)}
-                    >
-                        <RouterProvider router={router} />
-                    </MenuProvider>
+                    <DialogueProvider>
+                        <MenuProvider
+                            isDev={env.isDev}
+                            navigate={(path) => router.navigate(path)}
+                        >
+                            <RouterProvider router={router} />
+                        </MenuProvider>
+                    </DialogueProvider>
                 </RegimeProvider>
             </AppearanceProvider>
         </UserSettingsProvider>
