@@ -1507,7 +1507,7 @@ interface LoadFromFileResult {
  */
 export async function loadFromFile(
     fileData: FileData | null,
-): Promise<LoadFromFileResult | null> {
+): Promise<LoadFromFileResult | undefined | null> {
     // TODO: handle errors based on some result pattern so we can progate error message above
     if (!molstar) throw new Error("Molstar is not initialized!");
 
@@ -1559,5 +1559,5 @@ export async function loadFromFile(
         return null;
     }
 
-    return null;
+    return undefined;
 }
