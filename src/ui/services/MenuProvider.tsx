@@ -4,24 +4,37 @@ import React, {
     useContext,
     type ForwardRefExoticComponent,
     type RefAttributes,
+    useRef,
 } from "react";
 import "../i18n";
+import { type Icon, type IconProps } from "@tabler/icons-react";
 import {
-    IconCircleDashedX,
-    IconUserCog,
-    type Icon,
-    type IconProps,
-} from "@tabler/icons-react";
+    createExitMenuItem,
+    createExitSection,
+    createFileRootMenuItem,
+    createGeneralFileSection,
+    createHelpRootMenuItem,
+    createOnlyDevSection,
+    createOpenDevToolsMenuItem,
+    createOpenFileInViewerMenuItem,
+    createProcessFileMenuItem,
+    createSettingsRootMenuItem,
+} from "../features/menu/systemMenuItems";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
+import { useFileManagement } from "../hooks/useFileManagement";
 
 /**
  * The action can be either:
  * - `direct`: the action is executed immediately.
  * - `secondary`: the action triggers an intermediate step,
- *   such as opening a file explorer or another dialog, before
- *   the actual action runs.
+ * such as opening a file explorer or another dialog, before
+ * the actual action runs.
  */
 export type ActionType = "direct" | "secondary";
 
+/**
+ * Type for the icon of menu items.
+ */
 export type MenuIcon = {
     icon:
         | ForwardRefExoticComponent<IconProps & RefAttributes<Icon>>
@@ -29,20 +42,35 @@ export type MenuIcon = {
     position: "left" | "right";
 };
 
+/**
+ * Section groups `MenuItem` inside one `RootMenuItem`. One `RootMenuItem` can have any number of `Section`.
+ */
 export type Section = {
     id: string;
     title?: string;
     items: MenuItem[];
+    /**
+     * Section can be made hidden according to some condition.
+     */
     visible?: () => boolean;
 };
 
+/**
+ * Dropdown is collection of `Section`.
+ */
 export type Dropdown = Section[];
 
+/**
+ * Action does not group `MenuItem` as `Dropdown`, it has just one direct function assigned to it.
+ */
 export type Action = {
     action: () => void;
     type: ActionType;
 };
 
+/**
+ * Belongs to given `Section`. Can have tree-like structure, either leaf as `Action` or parent node as `Dropdown`, meaning another section can be opened in it.
+ */
 export type MenuItem = {
     id: string;
     title: string;
@@ -51,11 +79,18 @@ export type MenuItem = {
 };
 
 /**
- * The highest priority is 1. The lowest is 10. The root menu items are sorted according to priority.
+ * The highest priority is 1. The lowest is 10. Collection of `RootMenuItem` is sorted according to the priority.
  */
 export type Priority = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+/**
+ * Parent of all `MenuItem`.
+ */
 export type RootMenuItem = MenuItem & { priority: Priority };
 
+/**
+ * Menu consists of individual `RootMenuItem` objects.
+ */
 export type Menu = RootMenuItem[];
 
 type MenuContextType = {
@@ -67,8 +102,17 @@ type MenuContextType = {
     addMenuItemIntoSection: (
         rootMenuItemId: string,
         sectionId: string,
-        newItem: MenuItem
+        newItem: MenuItem,
+        index?: number,
     ) => void;
+    addSectionIntoRootItem: (
+        rootMenuItemId: string,
+        section: Section,
+        index?: number,
+    ) => void;
+    deleteMenuItem: (menuItemId: string) => void;
+    replaceMenuItem: (menuItemId: string, newItem: MenuItem) => void;
+    restoreMenuItem: (menuItemId: string) => void;
 };
 
 export const MenuContext = createContext<MenuContextType | null>(null);
@@ -83,14 +127,22 @@ export function useMenu() {
 
 type MenuProviderProps = {
     children: React.ReactNode;
-    isDev: boolean;
-    navigate: (path: string) => void;
 };
 
-export function MenuProvider({ children, isDev, navigate }: MenuProviderProps) {
+export function MenuProvider({ children }: MenuProviderProps) {
+    // Use navigation.
+    const navigate = useNavigate();
+
+    // Use file management.
+    const { loadAndHandleFile } = useFileManagement();
+
+    // Menu state in the initial state.
     const [menu, setMenu] = useState<Menu>(() =>
-        createInitialMenu(isDev, navigate)
+        createInitialMenu(navigate, loadAndHandleFile),
     );
+
+    // For replace/restore functionality. Keeps original `MenuItem` to be restored.
+    const backups = useRef<Map<string, MenuItem>>(new Map());
 
     const addRootMenuItem = (item: RootMenuItem) => {
         setMenu((prev) => {
@@ -98,23 +150,67 @@ export function MenuProvider({ children, isDev, navigate }: MenuProviderProps) {
         });
     };
 
+    const addSectionIntoRootItem = (
+        rootMenuItemId: string,
+        section: Section,
+        index?: number,
+    ) => {
+        setMenu((prev) =>
+            prev.map((root) => {
+                if (root.id !== rootMenuItemId) return root;
+                if (!Array.isArray(root.task)) return root;
+
+                const newSections = [...root.task];
+
+                if (
+                    index !== undefined &&
+                    index >= 0 &&
+                    index <= newSections.length
+                ) {
+                    newSections.splice(index, 0, section);
+                } else {
+                    newSections.push(section);
+                }
+
+                return {
+                    ...root,
+                    task: newSections,
+                };
+            }),
+        );
+    };
+
     const addMenuItemIntoSection = (
         rootMenuItemId: string,
         sectionId: string,
-        newItem: MenuItem
+        newItem: MenuItem,
+        index?: number,
     ) => {
         const addItemToSection = (sections: Dropdown): Dropdown => {
             return sections.map((section) => {
                 if (section.id === sectionId) {
                     const alreadyExists = section.items.some(
-                        (item) => item.id === newItem.id
+                        (item) => item.id === newItem.id,
                     );
                     if (alreadyExists) {
                         return section;
                     }
+
+                    const newItems = [...section.items];
+
+                    if (
+                        index !== undefined &&
+                        index >= 0 &&
+                        index <= newItems.length
+                    ) {
+                        newItems.splice(index, 0, newItem);
+                    } else {
+                        newItems.push(newItem);
+                    }
+
                     return {
                         ...section,
-                        items: [...section.items, newItem],
+                        items: newItems,
                     };
                 }
 
@@ -144,8 +240,111 @@ export function MenuProvider({ children, isDev, navigate }: MenuProviderProps) {
                     ...root,
                     task: addItemToSection(root.task),
                 };
-            })
+            }),
         );
+    };
+
+    const deleteMenuItem = (menuItemId: string) => {
+        const removeRecursive = (sections: Dropdown): Dropdown => {
+            return sections.map((section) => {
+                const filteredItems = section.items.filter(
+                    (item) => item.id !== menuItemId,
+                );
+
+                const deeplyCleanedItems = filteredItems.map((item) => {
+                    if (Array.isArray(item.task)) {
+                        return {
+                            ...item,
+                            task: removeRecursive(item.task),
+                        };
+                    }
+                    return item;
+                });
+
+                return {
+                    ...section,
+                    items: deeplyCleanedItems,
+                };
+            });
+        };
+
+        setMenu((prev) =>
+            prev.map((root) => {
+                if (!Array.isArray(root.task)) return root;
+                return {
+                    ...root,
+                    task: removeRecursive(root.task),
+                };
+            }),
+        );
+    };
+
+    const replaceMenuItem = (menuItemId: string, newItem: MenuItem) => {
+        setMenu((prev) => {
+            let foundOriginal: MenuItem | undefined;
+
+            const searchRecursive = (sections: Dropdown) => {
+                for (const section of sections) {
+                    for (const item of section.items) {
+                        if (item.id === menuItemId) foundOriginal = item;
+                        else if (Array.isArray(item.task))
+                            searchRecursive(item.task);
+                    }
+                }
+            };
+
+            for (const root of prev) {
+                if (Array.isArray(root.task)) searchRecursive(root.task);
+            }
+
+            if (foundOriginal && !backups.current.has(menuItemId)) {
+                backups.current.set(menuItemId, foundOriginal);
+            }
+
+            const doReplace = (sections: Dropdown): Dropdown => {
+                return sections.map((sec) => ({
+                    ...sec,
+                    items: sec.items.map((item) => {
+                        if (item.id === menuItemId) return newItem;
+                        if (Array.isArray(item.task))
+                            return { ...item, task: doReplace(item.task) };
+                        return item;
+                    }),
+                }));
+            };
+
+            return prev.map((root) => {
+                if (!Array.isArray(root.task)) return root;
+                return { ...root, task: doReplace(root.task) };
+            });
+        });
+    };
+
+    const restoreMenuItem = (menuItemId: string) => {
+        const originalItem = backups.current.get(menuItemId);
+
+        if (originalItem) {
+            setMenu((prev) => {
+                const doReplace = (sections: Dropdown): Dropdown => {
+                    return sections.map((sec) => ({
+                        ...sec,
+                        items: sec.items.map((item) => {
+                            if (item.id === menuItemId) return originalItem;
+                            if (Array.isArray(item.task))
+                                return { ...item, task: doReplace(item.task) };
+                            return item;
+                        }),
+                    }));
+                };
+
+                return prev.map((root) => {
+                    if (!Array.isArray(root.task)) return root;
+                    return { ...root, task: doReplace(root.task) };
+                });
+            });
+
+            backups.current.delete(menuItemId);
+        }
     };
 
     const deleteRootMenuItem = (id: string) => {
@@ -172,6 +371,10 @@ export function MenuProvider({ children, isDev, navigate }: MenuProviderProps) {
                 deleteRootMenuItem,
                 addRootMenuItem,
                 addMenuItemIntoSection,
+                addSectionIntoRootItem,
+                deleteMenuItem,
+                replaceMenuItem,
+                restoreMenuItem,
             }}
         >
             {children}
@@ -180,72 +383,25 @@ export function MenuProvider({ children, isDev, navigate }: MenuProviderProps) {
 }
 
 function createInitialMenu(
-    isDev: boolean,
-    navigate: (path: string) => void
+    navigate: NavigateFunction,
+    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
 ): Menu {
-    // TODO: translate titles
-
-    const openDevTools: MenuItem = {
-        id: crypto.randomUUID(),
-        title: "Open DevTools",
-        icon: { icon: IconUserCog, position: "left" },
-        task: {
-            action: () => {
-                window.electron.requestToOpenDevTools();
-            },
-            type: "direct",
-        },
-    };
-    const exit: MenuItem = {
-        id: crypto.randomUUID(),
-        title: "Exit",
-        icon: { icon: IconCircleDashedX, position: "left" },
-        task: {
-            action: () => {
-                window.electron.requestApplicationExit();
-            },
-            type: "direct",
-        },
-    };
-    const generalFileSection: Section = {
-        id: "general-file",
-        items: [],
-    };
-    const devFileSection: Section = {
-        id: crypto.randomUUID(),
-        title: "For developers",
-        visible: () => {
-            return isDev;
-        },
-        items: [openDevTools],
-    };
-    const exitSection: Section = {
-        id: crypto.randomUUID(),
-        items: [exit],
-    };
-    const file: RootMenuItem = {
-        id: "file",
-        title: "File",
-        task: [generalFileSection, devFileSection, exitSection],
-        priority: 1,
-    };
-    const settings: RootMenuItem = {
-        id: crypto.randomUUID(),
-        title: "Settings",
-        task: {
-            action: () => {
-                navigate("/settings");
-            },
-            type: "direct",
-        },
-        priority: 5,
-    };
-    const help: RootMenuItem = {
-        id: crypto.randomUUID(),
-        title: "Help",
-        task: [],
-        priority: 10,
-    };
-
-    return [file, settings, help];
+    return [
+        createFileRootMenuItem([
+            createGeneralFileSection([
+                createOpenFileInViewerMenuItem(() =>
+                    loadAndHandleFile("viewing"),
+                ),
+                createProcessFileMenuItem(() =>
+                    loadAndHandleFile("processing"),
+                ),
+            ]),
+            createOnlyDevSection("file-dev", "For developers", [
+                createOpenDevToolsMenuItem(),
+            ]),
+            createExitSection([createExitMenuItem()]),
+        ]),
+        createSettingsRootMenuItem(navigate),
+        createHelpRootMenuItem([]),
+    ];
 }
