@@ -108,3 +108,5 @@ type UserSettings = {
         | "emerald"
         | "amber";
 };
+
+type TranslateFunction = TFunction<"translation", undefined>;
