@@ -1,88 +1,24 @@
 import { useNavigate, type NavigateFunction } from "react-router-dom";
-import { Dropzone } from "../../components/common/dropzone/Dropzone";
 import { Button } from "../../components/common/button/Button";
 import type { FileRejection, FileWithPath } from "@mantine/dropzone";
 import { loggerUi } from "../../utils/loggerUi";
-import { useMenu } from "../../services/MenuProvider";
-import {
-    IconChartBubbleFilled,
-    IconFileTime,
-    IconFolderOpen,
-} from "@tabler/icons-react";
-import { useEffect } from "react";
+import { Dropzone } from "../../components/common/dropzone/Dropzone.tsx";
+import { pushWarningNotification } from "../../services/NotificationService.ts";
 import { useRegime, type Regime } from "../../services/RegimeProvider.tsx";
+import { useFileManagement } from "../../hooks/useFileManagement.ts";
 
 import "./Home.css";
 import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
-import {
-    MVSFilters,
-    StructuralFilters,
-    VolumeFilters,
-} from "../../../types/fileFilters.ts";
-import { pushWarningNotification } from "../../services/NotificationService.ts";
 
 export default function Home() {
+    // TODO: these are temporary until https://github.com/kerrambit/MolStarApp/issues/84 is resolved
     const navigate = useNavigate();
     const { setRegime } = useRegime();
-    const { addMenuItemIntoSection } = useMenu();
-
     const actions = { setRegime, navigate };
 
-    // TODO: extract it into seperate function
-    useEffect(() => {
-        addMenuItemIntoSection("file", "general-file", {
-            id: "open-file-in-viewer",
-            title: "Open file in viewer",
-            icon: { icon: IconFolderOpen, position: "left" },
-            task: {
-                action: () => {
-                    loadAndHandleFile("viewing", actions);
-                },
-                type: "secondary",
-            },
-        });
-
-        addMenuItemIntoSection("file", "general-file", {
-            id: "process-file",
-            title: "Process file",
-            icon: { icon: IconFolderOpen, position: "left" },
-            task: {
-                action: () => {
-                    loadAndHandleFile("processing", actions);
-                },
-                type: "secondary",
-            },
-        });
-
-        // TODO: implement recent files history
-        addMenuItemIntoSection("file", "general-file", {
-            id: "recent-file",
-            title: "Open recent file",
-            icon: { icon: IconFileTime, position: "left" },
-            task: [
-                {
-                    id: crypto.randomUUID(),
-                    items: [
-                        {
-                            id: "recent-file-</home/user/data/emd-1832.cvsx>",
-                            title: "/home/user/data/emd-1832.cvsx",
-                            icon: {
-                                icon: IconChartBubbleFilled,
-                                position: "left",
-                            },
-                            task: {
-                                action: () => {
-                                    console.log("Loading recent file...");
-                                },
-                                type: "direct",
-                            },
-                        },
-                    ],
-                },
-            ],
-        });
-    }, []);
+    // Hook for loading and handling file.
+    const { loadAndHandleFile } = useFileManagement();
 
     return (
         <div className="home">
@@ -94,9 +30,9 @@ export default function Home() {
                     onRejectHandler(rejections);
                 }}
                 enableMultipleInputFiles={false}
-                allowedExtensions={[]} // TODO: disable all files until https://github.com/kerrambit/MolStarApp/issues/84 is solved
+                allowedExtensions={[]} // TODO: disabled all files until https://github.com/kerrambit/MolStarApp/issues/84 is solved
             >
-                {renderDropzoneButtonsArea(actions)}
+                {renderDropzoneButtonsArea(loadAndHandleFile)}
             </Dropzone>
         </div>
     );
@@ -189,25 +125,23 @@ function onRejectHandler(rejections: FileRejection[]) {
     pushWarningNotification(
         `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
     );
+    pushWarningNotification(`Dropzone is not implemented at the moment yet!`);
 }
 
-function renderDropzoneButtonsArea(actions: {
-    setRegime: (regime: Regime) => void;
-    navigate: NavigateFunction;
-}) {
+function renderDropzoneButtonsArea(
+    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
+) {
     return (
         <div className="home__buttonsArea">
             <div style={{ pointerEvents: "auto" }}>
                 <Button
                     variant="ghost"
                     onClick={() => {
-                        dropzoneButtonHandler(
-                            {
-                                label: "Open file in viewer...",
-                                regimeKind: "viewing",
-                            },
-                            actions,
-                        );
+                        dropzoneButtonHandler({
+                            label: "Open file in viewer...",
+                            regimeKind: "viewing",
+                            loadAndHandleFile,
+                        });
                     }}
                 >
                     Open file in viewer...
@@ -217,13 +151,11 @@ function renderDropzoneButtonsArea(actions: {
                 <Button
                     variant="ghost"
                     onClick={() => {
-                        dropzoneButtonHandler(
-                            {
-                                label: "Process file...",
-                                regimeKind: "processing",
-                            },
-                            actions,
-                        );
+                        dropzoneButtonHandler({
+                            label: "Process file...",
+                            regimeKind: "processing",
+                            loadAndHandleFile,
+                        });
                     }}
                 >
                     Process file...
@@ -233,58 +165,11 @@ function renderDropzoneButtonsArea(actions: {
     );
 }
 
-function dropzoneButtonHandler(
-    config: { label: string; regimeKind: "processing" | "viewing" },
-    actions: {
-        setRegime: (regime: Regime) => void;
-        navigate: NavigateFunction;
-    },
-) {
+function dropzoneButtonHandler(config: {
+    label: string;
+    regimeKind: "processing" | "viewing";
+    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>;
+}) {
     loggerUi.info(config.label);
-    loadAndHandleFile(config.regimeKind, actions);
-}
-
-function loadAndHandleFile(
-    regimeKind: "processing" | "viewing",
-    actions: {
-        setRegime: (regime: Regime) => void;
-        navigate: NavigateFunction;
-    },
-) {
-    window.electron
-        .openFileExplorer(
-            false,
-            regimeKind === "processing"
-                ? [VolumeFilters]
-                : [MVSFilters, StructuralFilters],
-        )
-        .then((fileData) => {
-            if (!(fileData instanceof Error)) {
-                if (fileData.length > 0) {
-                    loggerUi.info(`File <${fileData[0].path}> was selected.`);
-
-                    let regime: Regime;
-                    if (regimeKind === "processing") {
-                        regime = {
-                            kind: "processing",
-                            fileToProcess: fileData[0],
-                        };
-                    } else {
-                        regime = {
-                            kind: "staging",
-                            fileToView: fileData[0],
-                        };
-                    }
-
-                    actions.setRegime(regime);
-                    actions.navigate("/viewer");
-                }
-            } else {
-                // TODO: notification
-            }
-        })
-        .catch((error) => {
-            // TODO: notification
-            loggerUi.error(`Error occured: <${error}>!`);
-        });
+    config.loadAndHandleFile(config.regimeKind);
 }
