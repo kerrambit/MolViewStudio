@@ -24,15 +24,13 @@ import {
     type RootMenuItem,
     type Section,
 } from "../../services/MenuProvider";
-import type { TFunction } from "i18next";
 import { useRegime, type Regime } from "../../services/RegimeProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
-import { IconPackageExport } from "@tabler/icons-react";
+import { IconPackageExport, IconWorldDownload } from "@tabler/icons-react";
 import { useProcessVolume } from "../../hooks/useProcessVolume";
 import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
-import type { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 import { useEnvironment } from "../../hooks/useEnvironment";
 import { Button } from "../../components/common/button/Button";
@@ -41,12 +39,20 @@ import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
+    pushWarningNotification,
 } from "../../services/NotificationService";
 import {
     useDialogue,
     type DialogueProps,
 } from "../../services/DialogueProvider";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
+import {
+    createExitMenuItem,
+    createOnlyDevSection,
+    createOpenFileInViewerMenuItem,
+    createProcessFileMenuItem,
+} from "../../features/menu/systemMenuItems";
+import { useFileManagement } from "../../hooks/useFileManagement";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -61,6 +67,9 @@ export function Viewer() {
     // Use dialogue.
     const { showDialogue } = useDialogue();
 
+    // Use file management.
+    const { loadAndHandleFile } = useFileManagement();
+
     // TODO: temporary states
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
     const [volumes, setVolumes] = useState<string[]>([]);
@@ -68,26 +77,49 @@ export function Viewer() {
     // Imports hook for volseg server communication.
     const processVolume = useProcessVolume();
 
-    // Controls current regime of the application, stores current data.
+    // Use regime to control the current regime of the application.
     const { regime, setRegime } = useRegime();
     const regimeReference = useRef(regime);
     regimeReference.current = regime;
 
-    // Add Edit root item into the menu.
-    const { deleteRootMenuItem, addRootMenuItem } = useMenu();
+    // Use menu.
+    const {
+        deleteRootMenuItem,
+        addRootMenuItem,
+        replaceMenuItem,
+        restoreMenuItem,
+    } = useMenu();
+
+    // Update menu for Viewer page.
     useEffect(() => {
-        const edit = createEditRootMenuItem(
-            t,
-            regime.kind === "viewing" ? regime.stateTree : undefined,
-            regime.kind === "viewing" && regime.deconstructedFile
-                ? regime.deconstructedFile.assets
-                : [],
-            setRegime,
-            showDialogue,
-        );
+        // Create Viewer-specific root menu item.
+        const edit = createEditRootMenuItem(t, regime, setRegime, showDialogue);
         addRootMenuItem(edit);
+
+        // Create custom menu items for existing menu items.
+        const {
+            customExitAction,
+            customOpenFileInViewerAction,
+            customProcessFileAction,
+        } = createCustomMenuItems(showDialogue, loadAndHandleFile);
+
+        // Replace original menu items with custom ones.
+        replaceMenuItem("exit", createExitMenuItem(customExitAction));
+        replaceMenuItem(
+            "open-file-in-viewer",
+            createOpenFileInViewerMenuItem(customOpenFileInViewerAction),
+        );
+        replaceMenuItem(
+            "process-file",
+            createProcessFileMenuItem(customProcessFileAction),
+        );
+
         return () => {
+            // In clean-up, remove page-specific "Edit" root item and restore original menu items.
             deleteRootMenuItem(edit.id);
+            restoreMenuItem("exit");
+            restoreMenuItem("open-file-in-viewer");
+            restoreMenuItem("process-file");
         };
     }, [t, regime]);
 
@@ -181,12 +213,17 @@ export function Viewer() {
 
             // Load the file.
             const result = await loadFromFile(regime.fileToView);
-            if (!result) {
+            if (result === null) {
                 pushErrorNotification(
                     `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer!`,
                 );
                 loggerUi.error(
                     `Error when loading file "${regime.fileToView.path} into the Molstar viewer!"`,
+                );
+                return;
+            } else if (result === undefined) {
+                pushInfoNotification(
+                    "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
                 );
                 return;
             }
@@ -390,10 +427,64 @@ export function Viewer() {
     );
 }
 
+function createCustomMenuItems(
+    showDialogue: <T = void>(
+        options: DialogueProps<T>,
+    ) => Promise<T | undefined>,
+    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
+) {
+    const customExitAction = async () => {
+        const confirmed = await showDialogue<boolean>({
+            title: "Confirmation",
+            showCloseButton: false,
+            content: (close) => (
+                <ConfirmationDialogueContent
+                    close={close}
+                    doYouReallyWantToQuestion="Do you really want to exit the application?"
+                />
+            ),
+        });
+        if (confirmed) window.electron.requestApplicationExit();
+    };
+
+    const customOpenFileInViewerAction = async () => {
+        const confirmed = await showDialogue<boolean>({
+            title: "Confirmation",
+            showCloseButton: false,
+            content: (close) => (
+                <ConfirmationDialogueContent
+                    close={close}
+                    doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                />
+            ),
+        });
+        if (confirmed) loadAndHandleFile("viewing");
+    };
+
+    const customProcessFileAction = async () => {
+        const confirmed = await showDialogue<boolean>({
+            title: "Confirmation",
+            showCloseButton: false,
+            content: (close) => (
+                <ConfirmationDialogueContent
+                    close={close}
+                    doYouReallyWantToQuestion="Do you really want to process new file?"
+                />
+            ),
+        });
+        if (confirmed) loadAndHandleFile("processing");
+    };
+
+    return {
+        customExitAction,
+        customOpenFileInViewerAction,
+        customProcessFileAction,
+    };
+}
+
 function createEditRootMenuItem(
-    t: TFunction<"translation", undefined>,
-    stateTree: MVSData | undefined,
-    assets: FileData[],
+    t: TranslateFunction,
+    regime: Regime,
     setRegime: (regime: Regime) => void,
     showDialogue: <T = void>(
         options: DialogueProps<T>,
@@ -434,8 +525,18 @@ function createEditRootMenuItem(
         icon: { icon: IconPackageExport, position: "left" },
         task: {
             action: async () => {
-                if (stateTree) await exportStateTree(stateTree, assets);
-                pushInfoNotification(`Export finished!`);
+                if (regime.kind === "viewing") {
+                    pushInfoNotification(`Export started.`);
+                    await exportStateTree(
+                        regime.stateTree,
+                        regime.deconstructedFile.assets,
+                    );
+                    pushSuccessNotification(`Export finished!`);
+                } else {
+                    pushWarningNotification(
+                        `Export is not possible now! You are probably still processing data or you are viewing non-MVS file.`,
+                    );
+                }
             },
             type: "direct",
         },
@@ -443,10 +544,11 @@ function createEditRootMenuItem(
 
     const loadDefaultPDBItem: MenuItem = {
         id: "load-default-pdb",
+        icon: { icon: IconWorldDownload, position: "left" },
         title: "Load default PDB",
         task: {
             action: () => {
-                loadDefaultPDBFile();
+                loadDefaultPDBFile(setRegime);
             },
             type: "direct",
         },
@@ -454,10 +556,11 @@ function createEditRootMenuItem(
 
     const loadDefaultMVSJItem: MenuItem = {
         id: "load-default-mvsj",
+        icon: { icon: IconWorldDownload, position: "left" },
         title: "Load default MVSJ",
         task: {
             action: () => {
-                loadDefaultMVSJFile();
+                loadDefaultMVSJFile(setRegime);
             },
             type: "direct",
         },
@@ -465,73 +568,84 @@ function createEditRootMenuItem(
 
     const loadDefaultMVSXItem: MenuItem = {
         id: "load-default-mvsx",
+        icon: { icon: IconWorldDownload, position: "left" },
         title: "Load default MVSX",
         task: {
             action: () => {
-                loadDefaultMVSXFile();
+                loadDefaultMVSXFile(setRegime);
             },
             type: "direct",
         },
     };
 
     const section: Section = {
-        id: "general-edit",
-        items: [
-            clearViewerItem,
-            exportViewerItem,
-            loadDefaultPDBItem,
-            loadDefaultMVSJItem,
-            loadDefaultMVSXItem,
-        ],
+        id: "edit-general",
+        items: [clearViewerItem, exportViewerItem],
     };
     const edit: RootMenuItem = {
         id: "edit",
         title: "Edit",
-        task: [section],
+        task: [
+            section,
+            createOnlyDevSection("edit-dev", "For developers", [
+                loadDefaultPDBItem,
+                loadDefaultMVSJItem,
+                loadDefaultMVSXItem,
+            ]),
+        ],
         priority: 3,
     };
 
     return edit;
 }
-async function loadDefaultMVSJFile() {
+async function loadDefaultMVSJFile(setRegime: (regime: Regime) => void) {
     const response = await fetch(
         "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
     );
     const rawData = await response.text();
 
-    await loadFromFile({
-        path: "",
-        extension: "mvsj",
-        name: "1cbs",
-        binary: false,
-        content: rawData,
+    setRegime({
+        kind: "staging",
+        fileToView: {
+            path: "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
+            extension: "mvsj",
+            name: "1cbs.mvsj",
+            binary: false,
+            content: rawData,
+        },
     });
 }
 
-async function loadDefaultMVSXFile() {
+async function loadDefaultMVSXFile(setRegime: (regime: Regime) => void) {
     const response = await fetch(
         "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
     );
     const arrayBuffer = await response.arrayBuffer();
     const rawData = new Uint8Array(arrayBuffer);
 
-    await loadFromFile({
-        path: "",
-        extension: "mvsx",
-        name: "1h9t",
-        binary: true,
-        content: rawData,
+    setRegime({
+        kind: "staging",
+        fileToView: {
+            path: "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
+            extension: "mvsx",
+            name: "1h9t.mvsx",
+            binary: true,
+            content: rawData,
+        },
     });
 }
-async function loadDefaultPDBFile() {
+async function loadDefaultPDBFile(setRegime: (regime: Regime) => void) {
     const response = await fetch("https://files.rcsb.org/download/3PTB.pdb");
     const rawData = await response.text();
 
-    await loadFromFile({
-        path: "",
-        extension: "pdb",
-        name: "3PTB",
-        binary: false,
-        content: rawData,
+    setRegime({
+        kind: "staging",
+        fileToView: {
+            path: "https://files.rcsb.org/download/3PTB.pdb",
+            extension: "pdb",
+            name: "3PTB.pdb",
+            binary: false,
+            content: rawData,
+        },
     });
 }
