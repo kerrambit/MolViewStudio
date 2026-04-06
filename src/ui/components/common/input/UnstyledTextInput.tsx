@@ -30,6 +30,11 @@ interface UnstyledTextInputProps {
     maxLength?: number;
 
     /**
+     * Optional flag indicating if the value in controlled mode can be empty string. Default is 'false'.
+     */
+    canBeEmpty?: boolean;
+
+    /**
      * Placeholder text shown when the input is empty.
      */
     placeholder?: string;
@@ -65,6 +70,7 @@ export function UnstyledTextInput({
     value: controlledValue,
     defaultValue = "",
     maxLength = 80,
+    canBeEmpty = false,
     placeholder = "Enter value...",
     tooltip = "",
     enabled = true,
@@ -96,7 +102,7 @@ export function UnstyledTextInput({
 
     const handleBlur = () => {
         const trimmedValue = value.trim();
-        if (!trimmedValue) {
+        if (!trimmedValue && !canBeEmpty) {
             setError("Value cannot be empty!");
         } else {
             setError(null);
