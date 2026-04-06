@@ -10,8 +10,7 @@
 }
 
 .unstyledTextInput__prefix {
-  font-weight: bold;
-  font-size: 0.83em;
+  font-size: 0.91em;
   margin-right: .25em;
   user-select: none;
   color: black;
@@ -20,12 +19,17 @@
 .unstyledTextInput__input-field {
   border: none;
   background: transparent;
-  font-size: 0.83em;
+  font-size: 0.91em;
   font-weight: bold;
-  padding: 2px 4px;
+  padding: 4px 6px;
   outline: none;
   flex: 1;
-  width: 90%;
+  width: 100%;
+}
+
+.unstyledTextInput__input-field::placeholder {
+  color: var(--color-grey-lighter-dark);
+  font-weight: bold;
 }
 
 .unstyledTextInput__input-field:hover {
