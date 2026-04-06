@@ -18,6 +18,7 @@ import {
 import { useRegime, type Regime } from "../../services/RegimeProvider";
 import type { Subscription } from "rxjs";
 import { pushErrorNotification } from "../../services/NotificationService";
+import { StoryOptions } from "./story-options/StoryOptions";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -26,8 +27,8 @@ interface SceneManagerProps {
 
 export function SceneManager(props: SceneManagerProps) {
     // Sidebar state.
-    type SidebarType = "views" | "seg" | "anno";
-    const [sidebar, setSidebar] = useState<SidebarType>("views");
+    type SidebarType = "storyOptions" | "assets" | "views";
+    const [sidebar, setSidebar] = useState<SidebarType>("storyOptions");
 
     // Regime.
     const { regime, setRegime } = useRegime();
@@ -66,12 +67,29 @@ export function SceneManager(props: SceneManagerProps) {
                     value={sidebar}
                     onChange={setSidebar}
                     data={[
+                        { label: "Story Options", value: "storyOptions" },
+                        { label: "Assets", value: "assets" },
                         { label: "Views", value: "views" },
-                        { label: "Segmentations", value: "seg" },
-                        { label: "Annotations", value: "anno" },
                     ]}
                     widthWrapOrientationLimit={292}
                 />
+            )}
+
+            {sidebar === "storyOptions" && (
+                <StoryOptions
+                    title={undefined}
+                    onTitleChange={function (
+                        _newTitle: string | undefined,
+                    ): void {
+                        throw new Error("Function not implemented.");
+                    }}
+                    description={undefined}
+                    onDescriptionChange={function (
+                        _newDescription: string | undefined,
+                    ): void {
+                        throw new Error("Function not implemented.");
+                    }}
+                ></StoryOptions>
             )}
 
             {sidebar === "views" && (
