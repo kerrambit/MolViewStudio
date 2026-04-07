@@ -228,22 +228,11 @@ export function Viewer() {
                 return;
             }
 
-            // Create an array with local assets (if there are some).
-            const assetsArray: FileData[] = Object.entries(
-                result.localAssets,
-            ).map(([path, data]) => ({
-                path: path,
-                name: path.split("/").pop() || "",
-                content: data,
-                extension: (path.split("/").pop() || "").split(".").pop() || "",
-                binary: true,
-            }));
 
             // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
                 kind: "viewing",
-                deconstructedFile: { assets: assetsArray },
                 views: result.views,
                 stateTree:
                     result.stateTree.kind === "multiple"
@@ -529,7 +518,6 @@ function createEditRootMenuItem(
                     pushInfoNotification(`Export started.`);
                     await exportStateTree(
                         regime.stateTree,
-                        regime.deconstructedFile.assets,
                     );
                     pushSuccessNotification(`Export finished!`);
                 } else {

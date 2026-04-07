@@ -14,14 +14,9 @@ export type StagingRegime = {
     fileToView: FileData;
 };
 
-export type DeconstructedFileToView = {
-    assets: FileData[];
-};
-
 export type ViewingRegime = {
     kind: "viewing";
     fileToView: FileData;
-    deconstructedFile: DeconstructedFileToView;
     views: ViewMetadata[];
     stateTree: MVSData;
     sourceUrl: string;
@@ -30,13 +25,12 @@ export type ViewingRegime = {
 export type RestoringRegime = {
     kind: "restoring";
     fileToView: FileData;
-    deconstructedFile: DeconstructedFileToView;
     views: ViewMetadata[];
     stateTree: MVSData;
     sourceUrl: string;
     snapshot: PluginState.Snapshot;
     snapshotManagerState: PluginStateSnapshotManager.StateSnapshot;
-    arcpAssets: SerializedAssets;
+    arcpAssets: SerializedAssets; // TODO: this will be probably in my ManagedAssetsProvider
 };
 
 export type IdlingRegime = {
