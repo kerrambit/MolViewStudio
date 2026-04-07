@@ -19,6 +19,9 @@ import { useRegime, type Regime } from "../../services/RegimeProvider";
 import type { Subscription } from "rxjs";
 import { pushErrorNotification } from "../../services/NotificationService";
 import { StoryOptions } from "./story-options/StoryOptions";
+import { Button } from "../common/button/Button";
+import { AllFiles } from "../../../types/fileFilters";
+import { useManagedAssets } from "../../services/ManagedAssetsProvider";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -32,6 +35,9 @@ export function SceneManager(props: SceneManagerProps) {
 
     // Regime.
     const { regime, setRegime } = useRegime();
+
+    // Use managed assets.
+    const { addLocalAsset, addRemoteAsset, getAllAssets } = useManagedAssets();
 
     // State for the index of currently active view card (default is the first one).
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
@@ -90,6 +96,40 @@ export function SceneManager(props: SceneManagerProps) {
                         throw new Error("Function not implemented.");
                     }}
                 ></StoryOptions>
+            )}
+
+            {sidebar === "assets" && (
+                <div>
+                    {getAllAssets().map((asset) => (
+                        <p key={asset.asset.id}>{asset.name}</p>
+                    ))}
+                    <Button
+                        onClick={async () => {
+                            const result =
+                                await window.electron.openFileExplorer(false, [
+                                    AllFiles,
+                                ]);
+
+                            if (!(result instanceof Error)) {
+                                addLocalAsset(
+                                    result[0],
+                                    `volumes/${result[0].name}`,
+                                );
+                            }
+                        }}
+                    >
+                        Add local asset
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            addRemoteAsset(
+                                "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
+                            );
+                        }}
+                    >
+                        Add remote asset
+                    </Button>
+                </div>
             )}
 
             {sidebar === "views" && (
