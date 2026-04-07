@@ -53,6 +53,10 @@ import {
     createProcessFileMenuItem,
 } from "../../features/menu/systemMenuItems";
 import { useFileManagement } from "../../hooks/useFileManagement";
+import {
+    useManagedAssets,
+    type ManagedAsset,
+} from "../../services/ManagedAssetsProvider";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -69,6 +73,8 @@ export function Viewer() {
 
     // Use file management.
     const { loadAndHandleFile } = useFileManagement();
+
+    const { getAllLocalAssets, addAsset, clearAssets } = useManagedAssets();
 
     // TODO: temporary states
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
@@ -93,7 +99,14 @@ export function Viewer() {
     // Update menu for Viewer page.
     useEffect(() => {
         // Create Viewer-specific root menu item.
-        const edit = createEditRootMenuItem(t, regime, setRegime, showDialogue);
+        const edit = createEditRootMenuItem(
+            t,
+            regime,
+            setRegime,
+            showDialogue,
+            getAllLocalAssets,
+            clearAssets,
+        );
         addRootMenuItem(edit);
 
         // Create custom menu items for existing menu items.
@@ -121,7 +134,7 @@ export function Viewer() {
             restoreMenuItem("open-file-in-viewer");
             restoreMenuItem("process-file");
         };
-    }, [t, regime]);
+    }, [t, regime, setRegime, showDialogue, getAllLocalAssets, clearAssets]);
 
     // Controls if Molstar is still in the initialization process.
     const [molstarLoading, setMolstarLoading] = useState(true);
@@ -228,6 +241,11 @@ export function Viewer() {
                 return;
             }
 
+            // Clears all managed assets and then register local assets in ManagedAssetsProvider.
+            clearAssets();
+            result.localAssets.forEach((a) => {
+                addAsset(a);
+            });
 
             // Set the regime with new assets and state tree.
             setRegime({
@@ -349,7 +367,7 @@ export function Viewer() {
                         fileToView: {
                             path: path,
                             extension: defaultMVSData.extension,
-                            name: "tmp",
+                            name: `export.${defaultMVSData.extension}`,
                             binary: defaultMVSData.isBinary,
                             content: defaultMVSData.data,
                         },
@@ -478,6 +496,8 @@ function createEditRootMenuItem(
     showDialogue: <T = void>(
         options: DialogueProps<T>,
     ) => Promise<T | undefined>,
+    getAllLocalAssets: () => ManagedAsset[],
+    clearAssets: () => void,
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
@@ -498,7 +518,8 @@ function createEditRootMenuItem(
                 });
 
                 if (confirmed === true) {
-                    clearViewer();
+                    clearAssets();
+                    await clearViewer();
                     setRegime({
                         kind: "idling",
                     });
@@ -518,11 +539,12 @@ function createEditRootMenuItem(
                     pushInfoNotification(`Export started.`);
                     await exportStateTree(
                         regime.stateTree,
+                        getAllLocalAssets(),
                     );
                     pushSuccessNotification(`Export finished!`);
                 } else {
                     pushWarningNotification(
-                        `Export is not possible now! You are probably still processing data or you are viewing non-MVS file.`,
+                        `Export is currently unavailable! This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
                     );
                 }
             },
