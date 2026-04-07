@@ -545,6 +545,7 @@ export function setBackgroundColor(color: HexColor) {
 export interface SerializedAssets {
     entries: Array<{
         asset: Asset;
+        isStatic?: boolean;
         data: Uint8Array;
     }>;
 }
@@ -561,12 +562,12 @@ export async function serializeMVSXAssets(): Promise<SerializedAssets> {
     const entries: SerializedAssets["entries"] = [];
 
     for (const entry of molstar.managers.asset.assets) {
-        if (entry.tag !== "mvsx-file") continue;
         if (!Asset.isUrl(entry.asset)) continue;
 
         const data = new Uint8Array(await entry.file.arrayBuffer());
         entries.push({
             asset: { kind: "url", id: entry.asset.id, url: entry.asset.url },
+            isStatic: entry.isStatic,
             data,
         });
     }
@@ -586,7 +587,10 @@ function restoreMVSXAssets(serialized: SerializedAssets) {
     for (const entry of serialized.entries) {
         const file = new File([entry.data.buffer as ArrayBuffer], "raw-data");
         // Re-use the exact same asset id and url so the snapshot's arcp:// references resolve to these entries.
-        molstar.managers.asset.set(entry.asset, file, { tag: "mvsx-file" });
+        molstar.managers.asset.set(entry.asset, file, {
+            tag: "mvsx-file",
+            isStatic: entry.isStatic,
+        });
     }
 }
 
