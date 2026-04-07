@@ -28,6 +28,14 @@ import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
+// TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
+interface ManagedAsset {
+    asset: Asset.Url;
+    relativePath: string;
+    tag: "local" | "remote";
+    name: string;
+}
+
 /**
  * Instance of `PluginUIContext`.
  */
@@ -244,6 +252,15 @@ export async function clearViewer() {
     clearAllSnapshotsFromManager();
     clearMVSXFileAssets();
     await molstar.clear();
+}
+
+/**
+ * Retrieves all file assets from Molstar repository.
+ * @returns file assets from Molstar repository
+ */
+export function getAllFileAssetsFromMolstar() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    return molstar.managers.asset.assets;
 }
 
 /**
@@ -596,8 +613,7 @@ async function restoreSessionState(
  */
 type DownloadAsset = {
     relativeUrl: string;
-    format: "mmcif" | "bcif";
-    content: string | Uint8Array<ArrayBuffer>;
+    content: Uint8Array<ArrayBuffer>;
 };
 
 /**
@@ -624,33 +640,18 @@ async function buildMVSSnapshot(
     for (let i = 0; i < urls.length; ++i) {
         const downloadAsset = urls[i];
         // TODO: this logic below might be needed to seperate, and made more general
-        if (downloadAsset.format === "mmcif") {
-            builder
-                .download({
-                    url: downloadAsset.relativeUrl,
-                })
-                .parse({ format: "mmcif" })
-                .volume()
-                .representation({
-                    type: "isosurface",
-                    relative_isovalue: 1.0,
-                    show_wireframe: false,
-                    show_faces: true,
-                });
-        } else if (downloadAsset.format === "bcif") {
-            builder
-                .download({
-                    url: downloadAsset.relativeUrl,
-                })
-                .parse({ format: "bcif" })
-                .volume({ channel_id: "1" })
-                .representation({
-                    type: "isosurface",
-                    relative_isovalue: 1.0,
-                    show_wireframe: false,
-                    show_faces: true,
-                });
-        }
+        builder
+            .download({
+                url: downloadAsset.relativeUrl,
+            })
+            .parse({ format: "bcif" }) // TODO: or "mmcif"?
+            .volume({ channel_id: "1" })
+            .representation({
+                type: "isosurface",
+                relative_isovalue: 1.0,
+                show_wireframe: false,
+                show_faces: true,
+            });
     }
 
     // Include camera and thumbnail.
@@ -729,9 +730,8 @@ function transformFileDataIntoDownloadAssets(
         const filenameWithExtension = asset.name;
         const relativeUrl = `${cleanPrefix}${filenameWithExtension}`;
         return {
-            format: asset.extension === "cif" ? "mmcif" : "bcif",
             relativeUrl: relativeUrl,
-            content: asset.content,
+            content: fileContentToUint8Array(asset.content),
         };
     });
 }
@@ -818,18 +818,16 @@ async function createArchive(
  */
 async function transfromStateTree(
     stateTree: MVSData,
-    assets: FileData[],
+    assets: DownloadAsset[],
 ): Promise<MVSData | Uint8Array<ArrayBuffer>> {
     if (assets.length === 0) {
         return stateTree;
     }
 
-    return await createArchive(
-        stateTree,
-        transformFileDataIntoDownloadAssets(assets),
-    );
+    return await createArchive(stateTree, assets);
 }
 
+// TODO: handle errors
 /**
  * Exports `stateTree` with possible local `assets` in the form of MVS.
  * Opens a file explorer for user to choose file location.
@@ -838,15 +836,51 @@ async function transfromStateTree(
  */
 export async function exportStateTree(
     stateTree: MVSData,
-    assets: FileData[],
+    localAssets: ManagedAsset[],
 ): Promise<void> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const internalCache = molstar.managers.asset.assets;
+    const localFiles: DownloadAsset[] = [];
+
+    // Find data (binary) for local assets (managed assets hold only virtual references to local assets which are actually stored inside Molstar' asset manager).
+    for (const managedAsset of localAssets) {
+        if (managedAsset.tag === "local") {
+            const targetUrl = managedAsset.asset.url;
+            let foundData: Uint8Array | undefined;
+            for (const wrapper of internalCache.values()) {
+                if (
+                    wrapper.asset.kind == "url" &&
+                    wrapper.asset.url === targetUrl &&
+                    wrapper.isStatic
+                ) {
+                    foundData = new Uint8Array(
+                        await wrapper.file.arrayBuffer(),
+                    );
+                    break;
+                }
+            }
+
+            if (foundData) {
+                localFiles.push({
+                    relativeUrl: managedAsset.relativePath,
+                    content: foundData as Uint8Array<ArrayBuffer>,
+                });
+            } else {
+                console.warn(
+                    `Failed to find ${targetUrl} inside Molstar's cache!`,
+                );
+            }
+        }
+    }
+
     // Prepare state tree (either MVSData if .mvsj, otherwise Uint8Array<ArrayBuffer>> for .mvsx).
-    const data = await transfromStateTree(stateTree, assets);
+    const data = await transfromStateTree(stateTree, localFiles);
 
     // Create data blob out of MVSStory.
     const blob = createMVSBlob(data);
 
-    // Let user download the story.
+    // Let the user to download the story.
     const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
 }
@@ -1296,6 +1330,61 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     return views;
 }
 
+function fileContentToUint8Array(
+    content: string | Uint8Array<ArrayBuffer>,
+): Uint8Array<ArrayBuffer> {
+    if (typeof content === "string") {
+        return new TextEncoder().encode(content) as Uint8Array<ArrayBuffer>;
+    }
+    return content;
+}
+
+function generateArchiveID(bytes: Uint8Array<ArrayBuffer>) {
+    return `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(bytes, 42)}`;
+}
+
+export function addLocalAssetIntoMolstar(file: FileData) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const browserFile = new File([file.content], file.name, {
+        type: file.binary ? "application/octet-stream" : "text/plain",
+    });
+
+    const url = arcpUri(
+        generateArchiveID(fileContentToUint8Array(file.content)),
+        file.name,
+    );
+
+    const asset = Asset.Url(url);
+    molstar.managers.asset.set(asset, browserFile, {
+        isStatic: true,
+        tag: "mvsx-file",
+    });
+
+    return { asset, url };
+}
+
+export function addRemoteAssetIntoMolstar(url: string) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const asset = Asset.Url(url);
+    molstar.managers.asset.set(asset, new File([], url), {
+        isStatic: false,
+        tag: undefined,
+    });
+
+    return { asset };
+}
+
+export function removeAssetFromMolstar(asset: Asset) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entry = molstar.managers.asset.get(asset);
+    if (!entry) return;
+
+    molstar.managers.asset.release(entry.asset); // TODO: or delete?
+}
+
 /**
  * Creates arcp URI.
  * @param archiveId id of the given archive
@@ -1309,6 +1398,7 @@ function arcpUri(archiveId: string, path: string): string {
 /**
  * Ensures that a specific URL (typically an `arcp://` URI) is registered in the
  * Molstar AssetManager by pre-loading it with provided data.
+ *
  * @param manager Molstar AssetManager instance responsible for data lifecycle
  * @param url unique identifier for the asset
  * @param data raw file data as a Uint8Array
@@ -1363,17 +1453,10 @@ async function _loadMVSXFile(
     mvsData: MVSData;
     sourceUrl: string;
     views: ViewMetadata[];
-    assets: Record<string, Uint8Array<ArrayBuffer>>;
+    assets: ManagedAsset[];
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    // Create an archive ID.
-    const archiveId = `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(
-        data,
-        42,
-    )}${Date.now()}`;
-
-    // Unzipping MVSX archive into dictionary.
     let files: { [path: string]: Uint8Array<ArrayBuffer> };
     try {
         files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
@@ -1382,19 +1465,31 @@ async function _loadMVSXFile(
         throw err;
     }
 
-    // Register files into Molstar AsssetManager.
+    const archiveId = generateArchiveID(data);
+    const assets: ManagedAsset[] = [];
+
     for (const path in files) {
         const url = arcpUri(archiveId, path);
+        // TODO: use my own addLocalAssetIntoMolstar?
         ensureUrlAsset(molstar.managers.asset, url, files[path], {
             isFile: true,
         });
+
+        if (path === indexFilePath) continue;
+
+        assets.push({
+            asset: Asset.Url(url),
+            relativePath: path, // E.g. "volumes/volume_0_0.bcif".
+            tag: "local",
+            name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
+        });
     }
 
-    // Deconstruct files into assets files and the index file (.mvsj).
-    const { [indexFilePath]: _, ...assets } = files;
+    const { [indexFilePath]: _ } = files;
+
     const indexFile = files[indexFilePath];
     if (!indexFile)
-        throw new Error(`File ${indexFile} not found in the MVSX archive`);
+        throw new Error(`File ${indexFile} not found in the MVSX archive!`);
 
     const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
     const sourceUrl = arcpUri(archiveId, indexFilePath);
@@ -1431,7 +1526,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     let viewsToReturn: ViewMetadata[] = [];
-    let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
+    let assetsToReturn: ManagedAsset[] = [];
     let stateTree: MVSData = createDefaultMVSData();
     let sourceUrl: string = "";
 
@@ -1496,7 +1591,7 @@ async function loadMVSJFile(index: string) {
 interface LoadFromFileResult {
     stateTree: MVSData;
     views: ViewMetadata[];
-    localAssets: Record<string, Uint8Array<ArrayBuffer>>;
+    localAssets: ManagedAsset[];
     sourceUrl: string;
 }
 
@@ -1518,7 +1613,7 @@ export async function loadFromFile(
     if (fileData.extension === "mvsj") {
         return {
             ...(await loadMVSJFile(fileData.content as string)),
-            localAssets: {},
+            localAssets: [],
             sourceUrl: "",
         };
     }
@@ -1531,7 +1626,6 @@ export async function loadFromFile(
         fileData.extension = "mmcif";
     }
 
-    // TODO: solve how to handle other files, not to return null
     const file = new File([fileData.content], fileData.name);
     const assetFile = Asset.File(file);
 
