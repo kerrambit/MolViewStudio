@@ -60,6 +60,11 @@ interface UnstyledTextInputProps {
     onBlur?: (value: string | undefined) => void;
 
     /**
+     * Callback fired when the input has error.
+     */
+    onErrorChange?: (hasError: boolean) => void;
+
+    /**
      * Optional inline styles applied to the root container.
      */
     style?: CSSProperties;
@@ -76,12 +81,17 @@ export function UnstyledTextInput({
     enabled = true,
     onValueChange,
     onBlur,
+    onErrorChange,
     style,
 }: UnstyledTextInputProps) {
     const [internalValue, setInternalValue] = useState(defaultValue);
     const isControlled = controlledValue !== undefined;
     const value = isControlled ? controlledValue : internalValue;
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        onErrorChange?.(error !== null);
+    }, [error]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.currentTarget.value;
