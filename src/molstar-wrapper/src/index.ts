@@ -1386,7 +1386,7 @@ export function removeAssetFromMolstar(asset: Asset) {
     const entry = molstar.managers.asset.get(asset);
     if (!entry) return;
 
-    molstar.managers.asset.release(entry.asset); // TODO: or delete?
+    molstar.managers.asset.delete(entry.asset);
 }
 
 /**
