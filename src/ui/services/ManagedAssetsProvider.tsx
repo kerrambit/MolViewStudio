@@ -68,8 +68,17 @@ type ManagedAssetsContextType = {
      */
     addRemoteAsset: (url: string) => void;
 
-    // TODO: test this
+    /**
+     * Tries to remove the asset from both local system and Molstar inner repository.
+     * @param url url of asset to delete
+     * @returns false if the url is not found in the map, true if url was found and asset was removed from both places
+     */
     removeAsset: (url: string) => boolean;
+
+    editRelativePathOfLocalAsset: (
+        url: string,
+        newRelativePath: string,
+    ) => void;
 
     /**
      * Clears all assets from local system.
@@ -173,6 +182,29 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         [assets],
     );
 
+    // TODO: not sure if prod ready... do I need to touch Molstar here to fix the arcp url too?
+    const editRelativePathOfLocalAsset = useCallback(
+        (url: string, newRelativePath: string) => {
+            setAssets((prev) => {
+                if (!prev.has(url)) return prev;
+
+                const existingAsset = prev.get(url)!;
+                if (existingAsset.tag !== "local") return prev;
+                if (existingAsset.relativePath === newRelativePath) return prev;
+
+                const newMap = new Map(prev);
+
+                newMap.set(url, {
+                    ...existingAsset,
+                    relativePath: newRelativePath,
+                });
+
+                return newMap;
+            });
+        },
+        [],
+    );
+
     const clearAssets = useCallback(() => {
         setAssets(new Map());
     }, [assets]);
@@ -197,6 +229,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 addLocalAsset,
                 addRemoteAsset,
                 removeAsset,
+                editRelativePathOfLocalAsset,
                 clearAssets,
                 getAllLocalAssets,
                 getAllRemoteAssets,
