@@ -1334,6 +1334,45 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     return views;
 }
 
+export function extractUrlsFromMVS(mvsData: any): Set<string> {
+    let snapshots: any[] = [];
+
+    if (mvsData.kind !== "multiple") {
+        snapshots.push({ root: mvsData.root, metadata: mvsData.metadata });
+    } else {
+        snapshots = mvsData.snapshots;
+    }
+
+    const remoteUrls = new Set<string>();
+    const normalizePath = (path: string) =>
+        path.startsWith("./") ? path.slice(2) : path;
+
+    const traverseNode = (node: any) => {
+        if (node.params) {
+            if (typeof node.params.url === "string") {
+                remoteUrls.add(normalizePath(node.params.url));
+            }
+            if (typeof node.params.uri === "string") {
+                remoteUrls.add(normalizePath(node.params.uri));
+            }
+        }
+
+        if (node.children && Array.isArray(node.children)) {
+            for (const child of node.children) {
+                traverseNode(child);
+            }
+        }
+    };
+
+    snapshots.forEach((snapshot) => {
+        if (snapshot.root) {
+            traverseNode(snapshot.root);
+        }
+    });
+
+    return remoteUrls;
+}
+
 function fileContentToUint8Array(
     content: string | Uint8Array<ArrayBuffer>,
 ): Uint8Array<ArrayBuffer> {
@@ -1518,6 +1557,7 @@ async function _loadMVSXFile(
 }> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
+    // Unzip archive.
     let files: { [path: string]: Uint8Array<ArrayBuffer> };
     try {
         files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
@@ -1526,15 +1566,36 @@ async function _loadMVSXFile(
         throw err;
     }
 
+    // Generate session archive ID.
     const archiveId = generateArchiveID();
-    const assets: ManagedAsset[] = [];
 
+    // Get .mvsj file.
+    const { [indexFilePath]: _ } = files;
+    const indexFile = files[indexFilePath];
+    if (!indexFile)
+        throw new Error(`File ${indexFile} not found in the MVSX archive!`);
+
+    // Decode .mvsj.
+    const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
+    const sourceUrl = arcpUri(archiveId, indexFilePath);
+
+    // Retrieve all URLs from MVS.
+    const urls = extractUrlsFromMVS(mvsData);
+
+    // Iterate through local files in archive.
+    const assets: ManagedAsset[] = [];
     for (const path in files) {
+        // if it is remote URL, skip it.
+        if (!urls.has(path)) {
+            continue;
+        }
+
+        urls.delete(path);
+
         const url = arcpUri(archiveId, path);
-        // TODO: use my own addLocalAssetIntoMolstar?
         const asset = ensureUrlAsset(molstar.managers.asset, url, files[path], {
             isFile: true,
-        });
+        }); // TODO: use my own addLocalAssetIntoMolstar?
 
         if (path === indexFilePath) continue;
 
@@ -1546,17 +1607,16 @@ async function _loadMVSXFile(
         });
     }
 
-    const { [indexFilePath]: _ } = files;
+    urls.forEach((remoteUrl) => {
+        assets.push({
+            asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+            relativePath: remoteUrl,
+            tag: "remote",
+            name: remoteUrl,
+        });
+    });
 
-    const indexFile = files[indexFilePath];
-    if (!indexFile)
-        throw new Error(`File ${indexFile} not found in the MVSX archive!`);
-
-    const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
-    const sourceUrl = arcpUri(archiveId, indexFilePath);
-
-    // TODO: parse mvsData to get all remote URLs into assets, assets should not be called localAssets anywhere
-
+    // Extract views.
     const views = extractViewsFromMVS(mvsData);
 
     return { mvsData, sourceUrl, views, assets };
@@ -1616,7 +1676,7 @@ async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
 
     return {
         views: viewsToReturn,
-        localAssets: assetsToReturn,
+        assets: assetsToReturn,
         stateTree: stateTree,
         sourceUrl: sourceUrl,
     };
@@ -1638,6 +1698,19 @@ async function loadMVSJFile(index: string) {
         );
     }
 
+    // Retrieve all remote URLs from MVS.
+    const remoteUrls = extractUrlsFromMVS(mvsData);
+
+    const assets: ManagedAsset[] = [];
+    remoteUrls.forEach((remoteUrl) => {
+        assets.push({
+            asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+            relativePath: remoteUrl,
+            tag: "remote",
+            name: remoteUrl,
+        });
+    });
+
     await loadMVS(molstar, mvsData, {
         appendSnapshots: false,
         keepCamera: false,
@@ -1646,7 +1719,7 @@ async function loadMVSJFile(index: string) {
         sanityChecks: true,
     });
 
-    return { views: extractViewsFromMVS(mvsData), stateTree: mvsData };
+    return { assets, views: extractViewsFromMVS(mvsData), stateTree: mvsData };
 }
 
 /**
@@ -1655,7 +1728,7 @@ async function loadMVSJFile(index: string) {
 interface LoadFromFileResult {
     stateTree: MVSData;
     views: ViewMetadata[];
-    localAssets: ManagedAsset[];
+    assets: ManagedAsset[];
     sourceUrl: string;
 }
 
@@ -1677,7 +1750,6 @@ export async function loadFromFile(
     if (fileData.extension === "mvsj") {
         return {
             ...(await loadMVSJFile(fileData.content as string)),
-            localAssets: [],
             sourceUrl: "",
         };
     }

@@ -243,7 +243,7 @@ export function Viewer() {
 
             // Clears all managed assets and then register local assets in ManagedAssetsProvider.
             clearAssets();
-            result.localAssets.forEach((a) => {
+            result.assets.forEach((a) => {
                 addAsset(a);
             });
 
