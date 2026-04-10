@@ -74,6 +74,7 @@ export function Viewer() {
     // Use file management.
     const { loadAndHandleFile } = useFileManagement();
 
+    // Use assets.
     const { getAllLocalAssets, addAsset, clearAssets } = useManagedAssets();
 
     // TODO: temporary states
@@ -224,17 +225,20 @@ export function Viewer() {
                 return;
             }
 
+            pushInfoNotification("Import started.");
+
             // Load the file.
             const result = await loadFromFile(regime.fileToView);
-            if (result === null) {
+            if (result instanceof Error) {
                 pushErrorNotification(
-                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer!`,
+                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
                 );
                 loggerUi.error(
-                    `Error when loading file "${regime.fileToView.path} into the Molstar viewer!"`,
+                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
                 );
                 return;
             } else if (result === undefined) {
+                clearAssets();
                 pushInfoNotification(
                     "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
                 );
@@ -264,6 +268,8 @@ export function Viewer() {
                           ),
                 sourceUrl: result.sourceUrl,
             });
+
+            pushSuccessNotification("Import ended!");
         };
 
         deconstruct();
@@ -537,11 +543,15 @@ function createEditRootMenuItem(
             action: async () => {
                 if (regime.kind === "viewing") {
                     pushInfoNotification(`Export started.`);
-                    await exportStateTree(
+                    const result = await exportStateTree(
                         regime.stateTree,
                         getAllLocalAssets(),
                     );
-                    pushSuccessNotification(`Export finished!`);
+                    if (result.success) {
+                        pushSuccessNotification(`Export finished!`);
+                    } else {
+                        pushErrorNotification(result.error.message);
+                    }
                 } else {
                     pushWarningNotification(
                         `Export is currently unavailable! This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,

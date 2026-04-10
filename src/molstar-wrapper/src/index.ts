@@ -831,17 +831,17 @@ async function transfromStateTree(
     return await createArchive(stateTree, assets);
 }
 
-// TODO: handle errors
 /**
  * Exports `stateTree` with possible local `assets` in the form of MVS.
  * Opens a file explorer for user to choose file location.
  * @param stateTree state tree to export
  * @param assets assets
+ * @return Error if there is an internal error in Molstar asset cache, othewise it returns true
  */
 export async function exportStateTree(
     stateTree: MVSData,
     localAssets: ManagedAsset[],
-): Promise<void> {
+): Promise<Result<boolean>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const internalCache = molstar.managers.asset.assets;
@@ -871,9 +871,12 @@ export async function exportStateTree(
                     content: foundData as Uint8Array<ArrayBuffer>,
                 });
             } else {
-                console.warn(
-                    `Failed to find ${targetUrl} inside Molstar's cache!`,
-                );
+                return {
+                    success: false,
+                    error: new Error(
+                        `Internal error: failed to find ${targetUrl} inside Molstar's cache! Please, consider reporting this bug.`,
+                    ),
+                };
             }
         }
     }
@@ -887,6 +890,8 @@ export async function exportStateTree(
     // Let the user to download the story.
     const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
+
+    return { success: true, value: true };
 }
 
 /**
@@ -1458,9 +1463,6 @@ export function replaceAssetRelativePathFromMolstar(
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    console.log(molstar.managers.asset.assets);
-    console.log(asset);
-
     const entry = molstar.managers.asset.get(asset);
     if (!entry) return undefined;
 
@@ -1537,33 +1539,29 @@ function decodeUtf8(bytes: Uint8Array): string {
     return _decoder.decode(bytes);
 }
 
-// TODO: handle errors using result pattern
 /**
  * Internally loads given `.mvsx` archive file using given instance of `RuntimeContext`.
  * @param runtimeCtx `RuntimeContext` instance
  * @param data data of `.mvsx` in the form of bytes
  * @param indexFilePath name of the index file
- * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets
+ * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets if success, otherwise Error
  */
 async function _loadMVSXFile(
     runtimeCtx: RuntimeContext,
     data: Uint8Array<ArrayBuffer>,
     indexFilePath: string = "index.mvsj",
-): Promise<{
-    mvsData: MVSData;
-    sourceUrl: string;
-    views: ViewMetadata[];
-    assets: ManagedAsset[];
-}> {
+): Promise<Result<LoadFromFileResult>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     // Unzip archive.
     let files: { [path: string]: Uint8Array<ArrayBuffer> };
     try {
         files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
-    } catch (err) {
-        console.log("Invalid MVSX file!");
-        throw err;
+    } catch (error) {
+        return {
+            success: false,
+            error: new Error(`Invalid .mvsx archive: "${error}"!`),
+        };
     }
 
     // Generate session archive ID.
@@ -1572,12 +1570,25 @@ async function _loadMVSXFile(
     // Get .mvsj file.
     const { [indexFilePath]: _ } = files;
     const indexFile = files[indexFilePath];
-    if (!indexFile)
-        throw new Error(`File ${indexFile} not found in the MVSX archive!`);
+    if (!indexFile) {
+        return {
+            success: false,
+            error: new Error(
+                `File "${indexFilePath}" was not found in the .mvsx archive!`,
+            ),
+        };
+    }
 
     // Decode .mvsj.
-    const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
-    const sourceUrl = arcpUri(archiveId, indexFilePath);
+    let mvsData: MVSData = createDefaultMVSData();
+    try {
+        mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
+    } catch (error) {
+        return {
+            success: false,
+            error: new Error(`Validation of .mvsj failed: "${error}"!`),
+        };
+    }
 
     // Retrieve all URLs from MVS.
     const urls = extractUrlsFromMVS(mvsData);
@@ -1585,7 +1596,7 @@ async function _loadMVSXFile(
     // Iterate through local files in archive.
     const assets: ManagedAsset[] = [];
     for (const path in files) {
-        // if it is remote URL, skip it.
+        // If it is remote URL, skip it.
         if (!urls.has(path)) {
             continue;
         }
@@ -1607,6 +1618,7 @@ async function _loadMVSXFile(
         });
     }
 
+    // Push remaining (remote) assets.
     urls.forEach((remoteUrl) => {
         assets.push({
             asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
@@ -1619,12 +1631,20 @@ async function _loadMVSXFile(
     // Extract views.
     const views = extractViewsFromMVS(mvsData);
 
-    return { mvsData, sourceUrl, views, assets };
+    return {
+        success: true,
+        value: {
+            stateTree: mvsData,
+            sourceUrl: arcpUri(archiveId, indexFilePath),
+            views,
+            assets,
+        },
+    };
 }
 
 /**
  * Creates default MVS of `multiple` kind.
- * @returns MVS
+ * @returns default MVS
  */
 function createDefaultMVSData() {
     const snapshots: Snapshot[] = [];
@@ -1640,86 +1660,96 @@ function createDefaultMVSData() {
     return initialStateTree;
 }
 
-// TODO: handle errors using result pattern
 /**
  * Loads given `MVSX` archive.
  * @param rawData data of `.mvsx` archive as bytes
- * @returns views and assets of the given MVSX file
+ * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets if success, otherwise Error
  */
-async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
+async function loadMVSXFile(
+    rawData: Uint8Array<ArrayBuffer>,
+): Promise<Result<LoadFromFileResult>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    let viewsToReturn: ViewMetadata[] = [];
-    let assetsToReturn: ManagedAsset[] = [];
-    let stateTree: MVSData = createDefaultMVSData();
-    let sourceUrl: string = "";
-
-    await molstar.runTask(
+    const taskResult = await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
             const parsed = await _loadMVSXFile(ctx, rawData);
-            viewsToReturn = parsed.views;
-            assetsToReturn = parsed.assets;
-            stateTree = parsed.mvsData;
-            sourceUrl = parsed.sourceUrl;
+
+            if (!parsed.success) {
+                return parsed;
+            }
 
             if (!molstar) throw new Error("Molstar is not initialized!");
-            await loadMVS(molstar, parsed.mvsData, {
+
+            await loadMVS(molstar, parsed.value.stateTree, {
                 sanityChecks: true,
-                sourceUrl: parsed.sourceUrl,
+                sourceUrl: parsed.value.sourceUrl,
                 extensions: [],
                 appendSnapshots: false,
                 keepCamera: false,
                 keepCameraOrientation: false,
             });
+
+            return parsed;
         }),
     );
 
-    return {
-        views: viewsToReturn,
-        assets: assetsToReturn,
-        stateTree: stateTree,
-        sourceUrl: sourceUrl,
-    };
+    return taskResult;
 }
 
-// TODO: handle errors using result pattern
 /**
  * Loads MVSJ file.
- * @param rawData data of `.mvsj` file.
- * @returns views
+ * @param rawData data of `.mvsj` file
+ * @returns views and remote assets if success, else Error
  */
-async function loadMVSJFile(index: string) {
+async function loadMVSJFile(index: string): Promise<
+    Result<{
+        assets: ManagedAsset[];
+        views: ViewMetadata[];
+        stateTree: MVSData;
+    }>
+> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    const mvsData: MVSData = MVSData.fromMVSJ(index);
-    if (!MVSData.isValid(mvsData)) {
-        throw new Error(
-            `Error when parsing MVSJ: ${MVSData.validationIssues(mvsData)}`,
-        );
-    }
+    try {
+        const mvsData: MVSData = MVSData.fromMVSJ(index);
 
-    // Retrieve all remote URLs from MVS.
-    const remoteUrls = extractUrlsFromMVS(mvsData);
+        // Retrieve all remote URLs from MVS.
+        const remoteUrls = extractUrlsFromMVS(mvsData);
 
-    const assets: ManagedAsset[] = [];
-    remoteUrls.forEach((remoteUrl) => {
-        assets.push({
-            asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
-            relativePath: remoteUrl,
-            tag: "remote",
-            name: remoteUrl,
+        // Extract all remote assets and store them.
+        const assets: ManagedAsset[] = [];
+        remoteUrls.forEach((remoteUrl) => {
+            assets.push({
+                asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+                relativePath: remoteUrl,
+                tag: "remote",
+                name: remoteUrl,
+            });
         });
-    });
 
-    await loadMVS(molstar, mvsData, {
-        appendSnapshots: false,
-        keepCamera: false,
-        keepCameraOrientation: false,
-        extensions: [],
-        sanityChecks: true,
-    });
+        // Load MVS into viewer.
+        await loadMVS(molstar, mvsData, {
+            appendSnapshots: false,
+            keepCamera: false,
+            keepCameraOrientation: false,
+            extensions: [],
+            sanityChecks: true,
+        });
 
-    return { assets, views: extractViewsFromMVS(mvsData), stateTree: mvsData };
+        return {
+            success: true,
+            value: {
+                assets,
+                views: extractViewsFromMVS(mvsData),
+                stateTree: mvsData,
+            },
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: new Error(`Validation of .mvsj failed: "${error}"!`),
+        };
+    }
 }
 
 /**
@@ -1735,30 +1765,35 @@ interface LoadFromFileResult {
 /**
  * Loads data into viewer from the file.
  * @param fileData data to load
- * @returns views and possible assets from the loaded file, or null, if any problem occurs
+ * @returns assets, views, state tree and source url if success, undefined if file is not MVSX or MVSJ; Error otherwise
  */
 export async function loadFromFile(
-    fileData: FileData | null,
-): Promise<LoadFromFileResult | undefined | null> {
-    // TODO: handle errors based on some result pattern so we can progate error message above
+    fileData: FileData,
+): Promise<LoadFromFileResult | undefined | Error> {
     if (!molstar) throw new Error("Molstar is not initialized!");
-
-    if (!fileData) return null;
 
     await clearViewer();
 
     if (fileData.extension === "mvsj") {
-        return {
-            ...(await loadMVSJFile(fileData.content as string)),
-            sourceUrl: "",
-        };
-    }
-
-    if (fileData.extension === "mvsx") {
-        return await loadMVSXFile(fileData.content as Uint8Array<ArrayBuffer>);
-    }
-
-    if (fileData.extension === "bcif") {
+        const result = await loadMVSJFile(fileData.content as string);
+        if (result.success) {
+            return {
+                stateTree: result.value.stateTree,
+                views: result.value.views,
+                assets: result.value.assets,
+                sourceUrl: "",
+            };
+        }
+        return result.error;
+    } else if (fileData.extension === "mvsx") {
+        const result = await loadMVSXFile(
+            fileData.content as Uint8Array<ArrayBuffer>,
+        );
+        if (result.success) {
+            return result.value;
+        }
+        return result.error;
+    } else if (fileData.extension === "bcif") {
         fileData.extension = "mmcif";
     }
 
@@ -1781,12 +1816,9 @@ export async function loadFromFile(
             "default",
         );
     } catch (error) {
-        console.log(
-            "Error occured when loading data from file: <",
-            error,
-            ">.",
+        return new Error(
+            `Error occured when loading data from file "${fileData.path}! Details: "${error}"."`,
         );
-        return null;
     }
 
     return undefined;
