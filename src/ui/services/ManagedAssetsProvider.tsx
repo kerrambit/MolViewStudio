@@ -10,9 +10,11 @@ import {
     addLocalAssetIntoMolstar,
     addRemoteAssetIntoMolstar,
     removeAssetFromMolstar,
+    replaceAssetRelativePathFromMolstar,
 } from "../../molstar-wrapper/src";
 import { Asset } from "molstar/lib/mol-util/assets";
 
+// TODO: will require an ID for communication for our state tree
 /**
  * Object mirroring Assets as managed by Molstar Asset Manager.
  */
@@ -58,9 +60,9 @@ type ManagedAssetsContextType = {
      * Adds new local asset into the system and the Molstar inner repository.
      *
      * @param file file to add
-     * @param relativeUrl relative URL to the asset (e.g. "volumes/first_section/data.bcif")
+     * @param relativeUrl relative URL to the asset (in this format: "volumes/first_section/", or "" for current path as relative path)
      */
-    addLocalAsset: (file: FileData, relativeUrl: string) => void;
+    addLocalAsset: (file: FileData, relativeUrl: string) => boolean;
 
     /**
      * Adds new remote asset into the system and the Molstar inner repository.
@@ -75,10 +77,17 @@ type ManagedAssetsContextType = {
      */
     removeAsset: (url: string) => boolean;
 
+    /**
+     * Edits relative path of local asset.
+     * Beware that original object is deleted both from map and Molstar!
+     * @param url url of asset
+     * @param newRelativePath new relative path (e.g. "volumes/segments/", or "" for no folders)
+     * @returns false if given url does not exist, otherwise true
+     */
     editRelativePathOfLocalAsset: (
         url: string,
         newRelativePath: string,
-    ) => void;
+    ) => boolean;
 
     /**
      * Clears all assets from local system.
@@ -134,17 +143,22 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const addLocalAsset = useCallback(
-        (file: FileData, relativePath: string): void => {
-            const { asset, url } = addLocalAssetIntoMolstar(file);
+        (file: FileData, relativePath: string): boolean => {
+            const result = addLocalAssetIntoMolstar(file, relativePath);
+
+            if (!result) {
+                return false;
+            }
 
             const entry: ManagedAsset = {
-                asset,
-                relativePath,
+                asset: result.asset,
+                relativePath: `${relativePath}${file.name}`,
                 tag: "local",
                 name: file.name,
             };
 
-            setAssets((prev) => new Map(prev).set(url, entry));
+            setAssets((prev) => new Map(prev).set(result.url, entry));
+            return true;
         },
         [],
     );
@@ -182,27 +196,43 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         [assets],
     );
 
-    // TODO: not sure if prod ready... do I need to touch Molstar here to fix the arcp url too?
     const editRelativePathOfLocalAsset = useCallback(
-        (url: string, newRelativePath: string) => {
+        (url: string, newRelativePath: string): boolean => {
+            if (!assets.has(url)) return false;
+
+            const existingAsset = assets.get(url)!;
+            if (existingAsset.tag !== "local") return false;
+
+            const newFullPath = `${newRelativePath}${existingAsset.name}`;
+            if (existingAsset.relativePath === newFullPath) return false;
+
+            const result = replaceAssetRelativePathFromMolstar(
+                existingAsset.asset,
+                newFullPath,
+            );
+
+            if (!result) {
+                return false;
+            }
+
             setAssets((prev) => {
-                if (!prev.has(url)) return prev;
-
-                const existingAsset = prev.get(url)!;
-                if (existingAsset.tag !== "local") return prev;
-                if (existingAsset.relativePath === newRelativePath) return prev;
-
                 const newMap = new Map(prev);
 
-                newMap.set(url, {
+                // TODO: in the future, when ManagedAsset has ID, we need just to replace the object here
+                newMap.delete(url);
+
+                newMap.set(result.url, {
                     ...existingAsset,
-                    relativePath: newRelativePath,
+                    asset: result.asset,
+                    relativePath: newFullPath,
                 });
 
                 return newMap;
             });
+
+            return true;
         },
-        [],
+        [assets],
     );
 
     const clearAssets = useCallback(() => {

@@ -15,7 +15,9 @@ import {
     EditAssetDialogueContent,
     type EditAssetDialogueReturnType,
 } from "../../common/dialogue/EditAssetDialogueContent";
-import { pushWarningNotification } from "../../../services/NotificationService";
+import {
+    pushErrorNotification,
+} from "../../../services/NotificationService";
 
 export function Assets() {
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
@@ -28,6 +30,7 @@ export function Assets() {
         getAllLocalAssets,
         getAllRemoteAssets,
         removeAsset,
+        editRelativePathOfLocalAsset,
     } = useManagedAssets();
 
     return (
@@ -74,19 +77,16 @@ export function Assets() {
                                             );
 
                                         if (result) {
-                                            pushWarningNotification(
-                                                "Editing of relative path is not implemented yet!",
-                                            );
-                                            // TODO: I am not sure if it is needed to fix also arcp url, I think it is not necesarry?
-                                            // but it would be unifed in general
-                                            // Now even when I add new local asset the same file, it replaces the old one but I am not sure why and what happens
-                                            // with an old arcp address
-                                            // now any assets not on ./ wont work anyway as my buildMVS fucntion does not do it anyway
-
-                                            // editRelativePathOfLocalAsset(
-                                            //     asset.asset.url,
-                                            //     `${result.relativePath}${asset.name}`,
-                                            // );
+                                            const wasSuccessful =
+                                                editRelativePathOfLocalAsset(
+                                                    asset.asset.url,
+                                                    `${result.relativePath}`,
+                                                );
+                                            if (!wasSuccessful) {
+                                                pushErrorNotification(
+                                                    `Asset "${result.relativePath}${asset.name}" already exists!`,
+                                                );
+                                            }
                                         }
                                     }}
                                     tooltip="Edit local asset."
@@ -127,10 +127,15 @@ export function Assets() {
                                 });
 
                             if (result) {
-                                addLocalAsset(
+                                const wasSuccessful = addLocalAsset(
                                     result.file,
-                                    `${result.relativePath}${result.file.name}`,
+                                    result.relativePath,
                                 );
+                                if (!wasSuccessful) {
+                                    pushErrorNotification(
+                                        `Asset "${result.relativePath}${result.file.name}" already exists!`,
+                                    );
+                                }
                             }
                         }}
                         tooltip="Open dialogue to add new local asset."

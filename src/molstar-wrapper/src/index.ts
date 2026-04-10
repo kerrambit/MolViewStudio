@@ -1343,23 +1343,47 @@ function fileContentToUint8Array(
     return content;
 }
 
-function generateArchiveID(bytes: Uint8Array<ArrayBuffer>) {
-    return `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(bytes, 42)}`;
+// session archive ID — generated once, stored somewhere stable
+let sessionArchiveId: string | null = null;
+
+export function generateArchiveID(): string {
+    if (!sessionArchiveId) {
+        sessionArchiveId = `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(
+            new TextEncoder().encode(`session-${Date.now()}`),
+            42,
+        )}${Date.now()}`;
+    }
+    return sessionArchiveId;
 }
 
-export function addLocalAssetIntoMolstar(file: FileData) {
+export function resetSessionArchiveId() {
+    sessionArchiveId = null;
+}
+
+/**
+ * Add new local asset into Molstar asset manager.
+ * @param file file
+ * @param relativePath e.g. "volumes/seg/"
+ * @returns `undefined` if there is already asset present
+ */
+export function addLocalAssetIntoMolstar(file: FileData, relativePath: string) {
     if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const fullPath = relativePath
+        ? `${relativePath.replace(/\/+$/, "")}/${file.name}`
+        : file.name;
+
+    const url = arcpUri(generateArchiveID(), fullPath);
+    const asset = Asset.getUrlAsset(molstar.managers.asset, url);
+
+    if (molstar.managers.asset.has(asset)) {
+        return undefined;
+    }
 
     const browserFile = new File([file.content], file.name, {
         type: file.binary ? "application/octet-stream" : "text/plain",
     });
 
-    const url = arcpUri(
-        generateArchiveID(fileContentToUint8Array(file.content)),
-        file.name,
-    );
-
-    const asset = Asset.Url(url);
     molstar.managers.asset.set(asset, browserFile, {
         isStatic: true,
         tag: "mvsx-file",
@@ -1387,6 +1411,37 @@ export function removeAssetFromMolstar(asset: Asset) {
     if (!entry) return;
 
     molstar.managers.asset.delete(entry.asset);
+}
+
+export function replaceAssetRelativePathFromMolstar(
+    asset: Asset.Url,
+    newRelativeFilePath: string,
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    console.log(molstar.managers.asset.assets);
+    console.log(asset);
+
+    const entry = molstar.managers.asset.get(asset);
+    if (!entry) return undefined;
+
+    const file = entry.file as File;
+
+    molstar.managers.asset.delete(asset);
+
+    const newUrl = arcpUri(generateArchiveID(), newRelativeFilePath);
+    const newAsset = Asset.getUrlAsset(molstar.managers.asset, newUrl);
+
+    if (molstar.managers.asset.has(newAsset)) {
+        return undefined;
+    }
+
+    molstar.managers.asset.set(newAsset, file, {
+        isStatic: true,
+        tag: "mvsx-file",
+    });
+
+    return { asset: newAsset, url: newUrl };
 }
 
 /**
@@ -1424,6 +1479,8 @@ function ensureUrlAsset(
             options?.isFile ? { isStatic: true, tag: "mvsx-file" } : undefined,
         );
     }
+
+    return asset;
 }
 
 /**
@@ -1469,20 +1526,20 @@ async function _loadMVSXFile(
         throw err;
     }
 
-    const archiveId = generateArchiveID(data);
+    const archiveId = generateArchiveID();
     const assets: ManagedAsset[] = [];
 
     for (const path in files) {
         const url = arcpUri(archiveId, path);
         // TODO: use my own addLocalAssetIntoMolstar?
-        ensureUrlAsset(molstar.managers.asset, url, files[path], {
+        const asset = ensureUrlAsset(molstar.managers.asset, url, files[path], {
             isFile: true,
         });
 
         if (path === indexFilePath) continue;
 
         assets.push({
-            asset: Asset.Url(url),
+            asset: asset,
             relativePath: path, // E.g. "volumes/volume_0_0.bcif".
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
@@ -1497,6 +1554,9 @@ async function _loadMVSXFile(
 
     const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
     const sourceUrl = arcpUri(archiveId, indexFilePath);
+
+    // TODO: parse mvsData to get all remote URLs into assets, assets should not be called localAssets anywhere
+
     const views = extractViewsFromMVS(mvsData);
 
     return { mvsData, sourceUrl, views, assets };
