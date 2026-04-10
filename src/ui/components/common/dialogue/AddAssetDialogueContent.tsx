@@ -36,7 +36,6 @@ export function AddAssetDialogueContent({
     const compileFinalPath = () => {
         const validFolders = pathSegments.filter((seg) => seg.trim() !== "");
         const folderPath = validFolders.join("/");
-        console.log(folderPath);
         return folderPath ? `${folderPath}/` : "";
     };
 

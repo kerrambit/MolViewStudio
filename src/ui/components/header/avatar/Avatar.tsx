@@ -19,7 +19,6 @@ export function Avatar() {
             name={user.name}
             color={colorTheme.primaryColor}
             size="md"
-            onClick={() => console.log("Clicked on avatar.")}
         />
     );
 }
