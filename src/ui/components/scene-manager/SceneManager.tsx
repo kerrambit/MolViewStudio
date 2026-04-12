@@ -76,19 +76,33 @@ export function SceneManager(props: SceneManagerProps) {
                 />
             )}
 
-            {sidebar === "storyOptions" && (
+            {sidebar === "storyOptions" && regime.kind === "viewing" && (
                 <StoryOptions
-                    title={undefined}
-                    onTitleChange={function (
-                        _newTitle: string | undefined,
-                    ): void {
-                        throw new Error("Function not implemented.");
+                    title={regime.stateTree.metadata.title}
+                    onTitleChange={(newTitle) => {
+                        setRegime({
+                            ...regime,
+                            stateTree: {
+                                ...regime.stateTree,
+                                metadata: {
+                                    ...regime.stateTree.metadata,
+                                    title: newTitle,
+                                },
+                            },
+                        });
                     }}
-                    description={undefined}
-                    onDescriptionChange={function (
-                        _newDescription: string | undefined,
-                    ): void {
-                        throw new Error("Function not implemented.");
+                    description={regime.stateTree.metadata.description}
+                    onDescriptionChange={(newDescription) => {
+                        setRegime({
+                            ...regime,
+                            stateTree: {
+                                ...regime.stateTree,
+                                metadata: {
+                                    ...regime.stateTree.metadata,
+                                    description: newDescription,
+                                },
+                            },
+                        });
                     }}
                 ></StoryOptions>
             )}
