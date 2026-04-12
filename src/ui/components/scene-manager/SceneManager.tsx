@@ -107,7 +107,9 @@ export function SceneManager(props: SceneManagerProps) {
                 ></StoryOptions>
             )}
 
-            {sidebar === "assets" && <Assets></Assets>}
+            {sidebar === "assets" && regime.kind === "viewing" && (
+                <Assets></Assets>
+            )}
 
             {sidebar === "views" && (
                 <div
