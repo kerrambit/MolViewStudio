@@ -21,6 +21,7 @@ import {
 
 import "./ViewCard.css";
 import { pushWarningNotification } from "../../services/NotificationService";
+import { Thumbnail } from "../common/thumbnail/Thumbnail";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -118,7 +119,7 @@ export function ViewCard(props: ViewCardProps) {
                 }}
             >
                 <UnstyledTextInput
-                    prefix={`${props.index + 1}. `}
+                    prefix={`${props.index + 1}. view`}
                     value={currentName}
                     placeholder="Change name for this view..."
                     tooltip="Change name for this view..."
@@ -132,22 +133,16 @@ export function ViewCard(props: ViewCardProps) {
             </div>
 
             {props.metadata.thumbnail && (
-                <img
+                <Thumbnail
                     onClick={() => {
                         if (props.onClick) {
                             props.onClick();
                         }
                     }}
-                    style={{
-                        cursor: "pointer",
-                        maxWidth: "90%",
-                        borderRadius: "6px",
-                        paddingBottom: "1em",
-                    }}
-                    title="Click to set the current camera position to this view."
+                    title="Click to select this view."
                     src={props.metadata.thumbnail}
-                    alt={`${props.metadata.title || "New view..."} - thumbnail`}
-                />
+                    alt={`${props.metadata.title || `${props.index}. view`} - thumbnail`}
+                ></Thumbnail>
             )}
 
             {props.active && (
