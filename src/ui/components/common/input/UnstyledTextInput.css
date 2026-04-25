@@ -19,16 +19,22 @@
 .unstyledTextInput__input-field {
   border: none;
   background: transparent;
-  font-size: 0.91em;
-  font-weight: bold;
+  font-size: 0.84em;
   padding: 4px 6px;
   outline: none;
   flex: 1;
   width: 100%;
 }
 
+.unstyledTextInput__input-field--bold {
+  font-weight: bold;
+}
+
 .unstyledTextInput__input-field::placeholder {
   color: var(--color-grey-lighter-dark);
+}
+
+.unstyledTextInput__input-field--bold::placeholder {
   font-weight: bold;
 }
 

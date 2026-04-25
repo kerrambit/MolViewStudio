@@ -126,6 +126,7 @@ export function ViewCard(props: ViewCardProps) {
                     enabled={props.active}
                     onValueChange={setCurrentName}
                     onBlur={setCurrentName}
+                    bold={true}
                     style={{
                         margin: "1em",
                     }}

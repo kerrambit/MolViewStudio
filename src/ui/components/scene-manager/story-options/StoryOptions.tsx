@@ -16,6 +16,7 @@ export function StoryOptions(props: StoryOptionsProps) {
             <UnstyledTextInput
                 value={props.title}
                 placeholder="Enter title of your story..."
+                bold={true}
                 tooltip={
                     props.title?.length === 0
                         ? "Enter title of your story..."

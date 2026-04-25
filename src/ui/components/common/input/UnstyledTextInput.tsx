@@ -50,6 +50,11 @@ interface UnstyledTextInputProps {
     enabled?: boolean;
 
     /**
+     * Whether the input field text should be in bold. Default is `false`.
+     */
+    bold?: boolean;
+
+    /**
      * Callback fired whenever the input value changes due to user input. Called on each keystroke with the raw (untrimmed) value.
      */
     onValueChange?: (value: string | undefined) => void;
@@ -79,6 +84,7 @@ export function UnstyledTextInput({
     placeholder = "Enter value...",
     tooltip = "",
     enabled = true,
+    bold = false,
     onValueChange,
     onBlur,
     onErrorChange,
@@ -143,7 +149,7 @@ export function UnstyledTextInput({
                     onKeyDown={handleKeyPressed}
                     className={`unstyledTextInput__input-field ${
                         error ? "unstyledTextInput__input-error" : ""
-                    }`}
+                    } ${bold ? "unstyledTextInput__input-field--bold" : ""}`}
                 />
             </div>
             {error && (
