@@ -15,9 +15,7 @@ import {
     EditAssetDialogueContent,
     type EditAssetDialogueReturnType,
 } from "../../common/dialogue/EditAssetDialogueContent";
-import {
-    pushErrorNotification,
-} from "../../../services/NotificationService";
+import { pushErrorNotification } from "../../../services/NotificationService";
 
 export function Assets() {
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
@@ -107,7 +105,8 @@ export function Assets() {
                     style={{
                         display: "flex",
                         justifyContent: "center",
-                        marginTop: "2em",
+                        marginTop:
+                            getAllLocalAssets().length === 0 ? "0em" : "1em",
                     }}
                 >
                     <Button
@@ -175,7 +174,8 @@ export function Assets() {
                     style={{
                         display: "flex",
                         justifyContent: "center",
-                        marginTop: "2em",
+                        marginTop:
+                            getAllRemoteAssets().length === 0 ? "0em" : "1em",
                         gap: "0.5em",
                     }}
                 >
