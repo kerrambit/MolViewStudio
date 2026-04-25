@@ -255,7 +255,6 @@ export function Viewer() {
             setRegime({
                 ...regime,
                 kind: "viewing",
-                views: result.views,
                 stateTree:
                     result.stateTree.kind === "multiple"
                         ? result.stateTree

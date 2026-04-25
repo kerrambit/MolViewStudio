@@ -1,6 +1,6 @@
 import { createContext, useState, type ReactNode, useContext } from "react";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
-import type { SerializedAssets, ViewMetadata } from "../../molstar-wrapper/src";
+import type { SerializedAssets } from "../../molstar-wrapper/src";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
@@ -17,7 +17,6 @@ export type StagingRegime = {
 export type ViewingRegime = {
     kind: "viewing";
     fileToView: FileData;
-    views: ViewMetadata[];
     stateTree: MVSData;
     sourceUrl: string;
 };
@@ -25,7 +24,6 @@ export type ViewingRegime = {
 export type RestoringRegime = {
     kind: "restoring";
     fileToView: FileData;
-    views: ViewMetadata[];
     stateTree: MVSData;
     sourceUrl: string;
     snapshot: PluginState.Snapshot;
