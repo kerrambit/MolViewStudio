@@ -27,6 +27,7 @@ import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
+import { UUID } from "molstar/lib/mol-util"; // Import Mol*'s UUID utility if needed
 
 // TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
 interface ManagedAsset {
@@ -245,12 +246,20 @@ export function disposeMolstar() {
 }
 
 /**
- * Clears the viewer.
+ * Clears the viewer, clears the snapshots and file assets.
  */
 export async function clearViewer() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearAllSnapshotsFromManager();
     clearMVSXFileAssets();
+    await molstar.clear();
+}
+
+/**
+ * Clears only the viewer content.
+ */
+export async function clearViewerContent() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
     await molstar.clear();
 }
 
@@ -1012,17 +1021,25 @@ export function clearAllSnapshotsFromManager() {
  * @param title title of the snapshot
  * @param description description of the snapshot
  * @param descriptionFormat format of description of the snapshot
+ * @param emptySnapshot decides if the snapshot to add should be empty
  */
 export function addNewSnapshotToManager(
     key: string,
     title: string,
     description: string = "",
     descriptionFormat: "markdown" | "plaintext",
+    emptySnapshot: boolean = false,
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    // Capture current plugin state.
-    const currentState = molstar.state.getSnapshot();
+    let currentState: PluginState.Snapshot;
+    if (emptySnapshot) {
+        currentState = {
+            id: UUID.create22(),
+        };
+    } else {
+        currentState = molstar.state.getSnapshot();
+    }
 
     // Add to the snapshot manager.
     molstar.managers.snapshot.add({
@@ -1643,14 +1660,57 @@ async function _loadMVSXFile(
 }
 
 /**
+ * Adds an empty, default snapshot to an existing MVS state tree.
+ * Safely converts `single` MVS data to `multiple` if needed.
+ *
+ * @param stateTree current MVSData tree
+ * @returns new MVSData object with the appended snapshot
+ */
+export function addEmptySnapshotToTree(stateTree: MVSData) {
+    const emptyNode: Snapshot = {
+        root: {
+            kind: "root" as const,
+            children: [],
+        },
+        metadata: {
+            key: crypto.randomUUID(),
+            title: "New View",
+            linger_duration_ms: 5000,
+        },
+    };
+
+    if (stateTree.kind !== "multiple") {
+        const data = createDefaultMVSData(stateTree.metadata);
+
+        data.snapshots.push({
+            root: stateTree.root,
+            metadata: { linger_duration_ms: 5000 },
+        });
+        data.snapshots.push(emptyNode);
+
+        return { newStateTree: data, createdNode: emptyNode };
+    }
+
+    return {
+        newStateTree: {
+            ...stateTree,
+            snapshots: [...stateTree.snapshots, emptyNode],
+        },
+        createdNode: emptyNode,
+    };
+}
+
+/**
  * Creates default MVS of `multiple` kind.
+ *
+ * @param metadata if provided, this object is used as global metadata
  * @returns default MVS
  */
-function createDefaultMVSData() {
+function createDefaultMVSData(metadata?: GlobalMetadata) {
     const snapshots: Snapshot[] = [];
     const initialStateTree: MVSData = {
         kind: "multiple",
-        metadata: {
+        metadata: metadata ?? {
             title: undefined,
             timestamp: new Date(0).toISOString(),
             version: `${MVSData.SupportedVersion}`,
