@@ -38,6 +38,11 @@
   font-weight: bold;
 }
 
+.unstyledTextInput__input-field--permanentBackground {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+}
+
 .unstyledTextInput__input-field:hover {
   background-color: rgba(0, 0, 0, 0.08);
   border-radius: 6px;

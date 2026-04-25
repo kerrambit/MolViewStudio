@@ -31,7 +31,7 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
                 width: "95%",
                 paddingLeft: "0.5em",
                 paddingRight: "0.5em",
-                gap: "0.15em",
+                gap: "0.25em",
             }}
         >
             <div
@@ -45,6 +45,8 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
                 <UnstyledTextInput
                     prefix="Camera position"
                     value={cameraPositionString}
+                    tooltip="Camera position. Cannot edit this value!"
+                    permanentInputFieldBackground={true}
                     style={{
                         width: "90%",
                     }}
@@ -77,6 +79,8 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
                 <UnstyledTextInput
                     prefix="Up"
                     value={cameraUpString}
+                    permanentInputFieldBackground={true}
+                    tooltip="Camera up vector. Cannot edit this value!"
                     style={{
                         width: "90%",
                     }}
@@ -109,6 +113,8 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
                 <UnstyledTextInput
                     prefix="Target"
                     value={cameraTargetString}
+                    permanentInputFieldBackground={true}
+                    tooltip="Camera target. Cannot edit this value!"
                     style={{
                         width: "90%",
                     }}

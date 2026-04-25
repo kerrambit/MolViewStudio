@@ -55,6 +55,11 @@ interface UnstyledTextInputProps {
     bold?: boolean;
 
     /**
+     * Whether the input field text should have background to differentiate from other UI components. Default is `false`.
+     */
+    permanentInputFieldBackground?: boolean;
+
+    /**
      * Callback fired whenever the input value changes due to user input. Called on each keystroke with the raw (untrimmed) value.
      */
     onValueChange?: (value: string | undefined) => void;
@@ -85,6 +90,7 @@ export function UnstyledTextInput({
     tooltip = "",
     enabled = true,
     bold = false,
+    permanentInputFieldBackground = false,
     onValueChange,
     onBlur,
     onErrorChange,
@@ -147,9 +153,10 @@ export function UnstyledTextInput({
                     onChange={handleChange}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyPressed}
+                    // TODO: when permanent background is applied, we should get also darker hover and focus
                     className={`unstyledTextInput__input-field ${
                         error ? "unstyledTextInput__input-error" : ""
-                    } ${bold ? "unstyledTextInput__input-field--bold" : ""}`}
+                    } ${bold ? "unstyledTextInput__input-field--bold" : ""} ${permanentInputFieldBackground ? "unstyledTextInput__input-field--permanentBackground" : ""}`}
                 />
             </div>
             {error && (
