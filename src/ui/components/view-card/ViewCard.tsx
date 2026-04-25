@@ -6,11 +6,7 @@ import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
 import { Color } from "molstar/lib/mol-util/color";
 import {
     areCameraStatesEqual,
-    fromMVSPosition,
     getBackgroundColorChangeSubscription,
-    getCanvasScreenshot,
-    setBackgroundColor,
-    setCamera,
     toMVSPosition,
     useLiveCameraState,
     type Base64Png,
@@ -18,10 +14,9 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
+import { Thumbnail } from "../common/thumbnail/Thumbnail";
 
 import "./ViewCard.css";
-import { pushWarningNotification } from "../../services/NotificationService";
-import { Thumbnail } from "../common/thumbnail/Thumbnail";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
