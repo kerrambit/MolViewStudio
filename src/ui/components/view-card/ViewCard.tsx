@@ -26,7 +26,6 @@ import { Thumbnail } from "../common/thumbnail/Thumbnail";
 export interface ViewCardProps {
     metadata: ViewMetadata;
     index: number;
-    active: boolean;
     onClick?: () => void;
     onSave?: (
         title: string,
@@ -78,28 +77,25 @@ export function ViewCard(props: ViewCardProps) {
     const cameraState = useLiveCameraState();
 
     // Dirty properties of the view card.
-    const isNameChanged = props.active && currentName !== props.metadata.title;
-    const isCameraChanged =
-        props.active &&
-        !areCameraStatesEqual(
-            cameraState
-                ? {
-                      position: toMVSPosition({
-                          position: cameraState.position as any,
-                          target: cameraState.target as any,
-                          fov: cameraState.fov,
-                          mode: cameraState.mode,
-                      }),
-                      target: cameraState.target,
-                      up: cameraState.up,
+    const isNameChanged = currentName !== props.metadata.title;
+    const isCameraChanged = !areCameraStatesEqual(
+        cameraState
+            ? {
+                  position: toMVSPosition({
+                      position: cameraState.position as any,
+                      target: cameraState.target as any,
                       fov: cameraState.fov,
                       mode: cameraState.mode,
-                  }
-                : cameraState,
-            props.metadata.referenceCamera,
-        );
+                  }),
+                  target: cameraState.target,
+                  up: cameraState.up,
+                  fov: cameraState.fov,
+                  mode: cameraState.mode,
+              }
+            : cameraState,
+        props.metadata.referenceCamera,
+    );
     const isBackgroundColorChanged =
-        props.active &&
         currentBackgroundColor !== props.metadata.backgroundColor;
     const isDirty =
         isNameChanged || isCameraChanged || isBackgroundColorChanged;
@@ -107,7 +103,7 @@ export function ViewCard(props: ViewCardProps) {
     // CSS class builder depends on the active property of view card.
     const viewCardClasses = buildCSSClassString([
         "viewCard",
-        props.active && "viewCard--active",
+        "viewCard--active",
     ]);
 
     // Render compoment.
@@ -123,7 +119,7 @@ export function ViewCard(props: ViewCardProps) {
                     value={currentName}
                     placeholder="Change name for this view..."
                     tooltip="Change name for this view..."
-                    enabled={props.active}
+                    enabled={true}
                     onValueChange={setCurrentName}
                     onBlur={setCurrentName}
                     bold={true}
@@ -146,25 +142,9 @@ export function ViewCard(props: ViewCardProps) {
                 ></Thumbnail>
             )}
 
-            {props.active && (
-                <>
-                    {!props.metadata.referenceCamera && (
-                        <div
-                            style={{
-                                fontSize: "11px",
-                                margin: "1em",
-                                fontStyle: "italic",
-                            }}
-                        >
-                            (View has no camera node yet.)
-                        </div>
-                    )}
-
-                    <CameraTextInputGroup
-                        cameraState={cameraState}
-                    ></CameraTextInputGroup>
-                </>
-            )}
+            <CameraTextInputGroup
+                cameraState={cameraState}
+            ></CameraTextInputGroup>
 
             <div
                 style={{
@@ -176,21 +156,7 @@ export function ViewCard(props: ViewCardProps) {
                     flexDirection: "column",
                 }}
             >
-                {!props.active && (
-                    <Button
-                        size="small"
-                        tooltip="The current camera position will be set to this view."
-                        label="Load view"
-                        variant="secondary"
-                        onClick={() => {
-                            if (props.onClick) {
-                                props.onClick();
-                            }
-                        }}
-                    ></Button>
-                )}
-
-                {props.active && isDirty && (
+                {isDirty && (
                     <div
                         style={{
                             display: "flex",
@@ -200,6 +166,31 @@ export function ViewCard(props: ViewCardProps) {
                         }}
                     >
                         <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "center",
+                                gap: "1em",
+                            }}
+                        >
+                            <Button
+                                size="small"
+                                tooltip="Open View Builder dialogue."
+                                label="Builder"
+                                variant="secondary"
+                                onClick={async () => {}}
+                            ></Button>
+
+                            <Button
+                                size="small"
+                                tooltip="Open View Options dialogue."
+                                label="Options"
+                                variant="secondary"
+                                onClick={async () => {}}
+                            ></Button>
+                        </div>
+
+                        {/* <div
                             style={{
                                 display: "flex",
                                 flexDirection: "row",
@@ -290,41 +281,65 @@ export function ViewCard(props: ViewCardProps) {
                                     }
                                 }}
                             ></Button>
-                        </div>
+                        </div> */}
 
-                        <Button
-                            size="small"
-                            tooltip="Reverse changes for this view."
-                            variant="primary"
-                            onClick={() => {
-                                setCurrentName(
-                                    props.metadata.title || "New view...",
-                                );
-                                if (props.metadata.backgroundColor) {
-                                    setCurrentBackgroundColor(
-                                        props.metadata.backgroundColor,
-                                    );
-                                    setBackgroundColor(
-                                        props.metadata.backgroundColor,
-                                    );
-                                }
-                                if (props.metadata.referenceCamera) {
-                                    setCamera({
-                                        ...props.metadata.referenceCamera,
-                                        position: fromMVSPosition(
-                                            props.metadata.referenceCamera
-                                                .position as any,
-                                            props.metadata.referenceCamera
-                                                .target as any,
-                                            props.metadata.referenceCamera.fov,
-                                            props.metadata.referenceCamera.mode,
-                                        ),
-                                    });
-                                }
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: "center",
+                                gap: "1em",
                             }}
                         >
-                            Revert changes
-                        </Button>
+                            <Button
+                                size="small"
+                                tooltip="Revert changes."
+                                label="Revert"
+                                variant="secondary"
+                                onClick={() => {
+                                    //     setCurrentName(
+                                    //         props.metadata.title || "New view...",
+                                    //     );
+                                    //     if (props.metadata.backgroundColor) {
+                                    //         setCurrentBackgroundColor(
+                                    //             props.metadata.backgroundColor,
+                                    //         );
+                                    //         setBackgroundColor(
+                                    //             props.metadata.backgroundColor,
+                                    //         );
+                                    //     }
+                                    //     if (props.metadata.referenceCamera) {
+                                    //         setCamera({
+                                    //             ...props.metadata.referenceCamera,
+                                    //             position: fromMVSPosition(
+                                    //                 props.metadata.referenceCamera
+                                    //                     .position as any,
+                                    //                 props.metadata.referenceCamera
+                                    //                     .target as any,
+                                    //                 props.metadata.referenceCamera
+                                    //                     .fov,
+                                    //                 props.metadata.referenceCamera
+                                    //                     .mode,
+                                    //             ),
+                                    //         });
+                                    //     }
+                                }}
+                            ></Button>
+                            <Button
+                                size="small"
+                                label="Copy"
+                                tooltip="Create a copy of this view."
+                                variant="secondary"
+                                onClick={() => {}}
+                            ></Button>
+                            <Button
+                                size="small"
+                                label="Save"
+                                tooltip="Save this view."
+                                variant="primary"
+                                onClick={() => {}}
+                            ></Button>
+                        </div>
                     </div>
                 )}
             </div>
