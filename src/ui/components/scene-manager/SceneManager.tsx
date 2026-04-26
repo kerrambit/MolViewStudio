@@ -17,7 +17,7 @@ export function SceneManager(props: SceneManagerProps) {
     const [sidebar, setSidebar] = useState<SidebarType>("storyOptions");
 
     // Regime.
-    const { regime, setRegime } = useRegime();
+    const { regime } = useRegime();
 
     // Render component.
     return (
@@ -27,7 +27,7 @@ export function SceneManager(props: SceneManagerProps) {
                 padding: ".5em",
             }}
         >
-            {/* Fix: segmented controller was visible in Molstar Full-Screen, that is why we can if molstar is expanded. */}
+            {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
             {!props.isMolstarExpanded && (
                 <SegmentedController<SidebarType>
                     value={sidebar}
@@ -42,35 +42,7 @@ export function SceneManager(props: SceneManagerProps) {
             )}
 
             {sidebar === "storyOptions" && regime.kind === "viewing" && (
-                // TODO: we probably can save data directly in component, no need to prop drill and save it here
-                <StoryOptions
-                    title={regime.stateTree.metadata.title}
-                    onTitleChange={(newTitle) => {
-                        setRegime({
-                            ...regime,
-                            stateTree: {
-                                ...regime.stateTree,
-                                metadata: {
-                                    ...regime.stateTree.metadata,
-                                    title: newTitle,
-                                },
-                            },
-                        });
-                    }}
-                    description={regime.stateTree.metadata.description}
-                    onDescriptionChange={(newDescription) => {
-                        setRegime({
-                            ...regime,
-                            stateTree: {
-                                ...regime.stateTree,
-                                metadata: {
-                                    ...regime.stateTree.metadata,
-                                    description: newDescription,
-                                },
-                            },
-                        });
-                    }}
-                ></StoryOptions>
+                <StoryOptions></StoryOptions>
             )}
 
             {sidebar === "assets" && regime.kind === "viewing" && (

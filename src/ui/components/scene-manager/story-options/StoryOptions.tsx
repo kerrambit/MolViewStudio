@@ -1,29 +1,48 @@
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
 import { UnstyledTextArea } from "../../common/input/UnstyledTextArea";
+import { useRegime } from "../../../services/RegimeProvider";
 
-interface StoryOptionsProps {
-    title: string | undefined;
-    onTitleChange: (newTitle: string | undefined) => void;
-    description: string | undefined;
-    onDescriptionChange: (newDescription: string | undefined) => void;
-}
+export function StoryOptions() {
+    const { regime, setRegime } = useRegime();
 
-export function StoryOptions(props: StoryOptionsProps) {
+    const metadata =
+        regime.kind === "viewing" ? regime.stateTree?.metadata : undefined;
+
+    const handleUpdateMetadata = (
+        key: "title" | "description",
+        value: string | undefined,
+    ) => {
+        if (regime.kind !== "viewing" || !regime.stateTree) return;
+
+        setRegime({
+            ...regime,
+            stateTree: {
+                ...regime.stateTree,
+                metadata: {
+                    ...(regime.stateTree.metadata || {}),
+                    [key]: value,
+                },
+            },
+        });
+    };
+
     return (
         <div>
             <Text size="xl">Title</Text>
             <UnstyledTextInput
-                value={props.title}
+                value={metadata?.title}
                 placeholder="Enter title of your story..."
                 bold={true}
                 tooltip={
-                    props.title?.length === 0
+                    !metadata?.title || metadata.title.length === 0
                         ? "Enter title of your story..."
                         : "Change title of your story..."
                 }
-                onValueChange={props.onTitleChange}
-                onBlur={props.onTitleChange}
+                onValueChange={(newTitle) =>
+                    handleUpdateMetadata("title", newTitle)
+                }
+                onBlur={(newTitle) => handleUpdateMetadata("title", newTitle)}
                 canBeEmpty={true}
             />
 
@@ -31,14 +50,18 @@ export function StoryOptions(props: StoryOptionsProps) {
                 Description
             </Text>
             <UnstyledTextArea
-                value={props.description}
+                value={metadata?.description}
                 placeholder="Write your story description here..."
                 tooltip="Write your story description here..."
                 minRows={31}
                 maxRows={31}
-                onValueChange={props.onDescriptionChange}
-                onBlur={props.onDescriptionChange}
-            ></UnstyledTextArea>
+                onValueChange={(newDescription) =>
+                    handleUpdateMetadata("description", newDescription)
+                }
+                onBlur={(newDescription) =>
+                    handleUpdateMetadata("description", newDescription)
+                }
+            />
         </div>
     );
 }
