@@ -14,11 +14,15 @@ import {
 } from "../../molstar-wrapper/src";
 import { Asset } from "molstar/lib/mol-util/assets";
 
-// TODO: will require an ID for communication for our state tree
 /**
  * Object mirroring Assets as managed by Molstar Asset Manager.
  */
 export interface ManagedAsset {
+    /**
+     * Id of the managed assset, which does not change through the app lifetime.
+     */
+    id: string;
+
     /**
      * All managed assets are of type `Url`, that is because remotes are URL always,
      * and local files are converted into assets in the form of `arcp` protocol and thus available via URL, too.
@@ -26,7 +30,7 @@ export interface ManagedAsset {
     asset: Asset.Url;
 
     /**
-     * Relative path inside MVSX archive.
+     * Relative path inside MVSX archive. E.g. "volume.bcif" or "volumes/volume.bcif".
      * For `remote` ManagedAsset it is same as `asset.url`.
      */
     relativePath: string;
@@ -41,6 +45,11 @@ export interface ManagedAsset {
      * For `remote` ManagedAsset it is same as `asset.url`.
      */
     name: string;
+
+    /**
+     * Flag if the given asset is referenced in any view.
+     */
+    used: boolean;
 }
 
 type ManagedAssetsContextType = {
@@ -88,6 +97,14 @@ type ManagedAssetsContextType = {
         url: string,
         newRelativePath: string,
     ) => boolean;
+
+    /**
+     * Marks a managed asset's 'used' flag as true or false.
+     * @param url url of the asset
+     * @param used boolean flag indicating if it's used
+     * @returns false if the asset was not found, true if successfully updated
+     */
+    markAssetAsUsed: (url: string, used: boolean) => boolean;
 
     /**
      * Clears all assets from local system.
@@ -151,10 +168,12 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
             }
 
             const entry: ManagedAsset = {
+                id: crypto.randomUUID(),
                 asset: result.asset,
                 relativePath: `${relativePath}${file.name}`,
                 tag: "local",
                 name: file.name,
+                used: false,
             };
 
             setAssets((prev) => new Map(prev).set(result.url, entry));
@@ -167,10 +186,12 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         const { asset } = addRemoteAssetIntoMolstar(url);
 
         const entry: ManagedAsset = {
+            id: crypto.randomUUID(),
             asset,
             relativePath: url,
             tag: "remote",
             name: url,
+            used: false,
         };
 
         setAssets((prev) => new Map(prev).set(url, entry));
@@ -218,13 +239,36 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
             setAssets((prev) => {
                 const newMap = new Map(prev);
 
-                // TODO: in the future, when ManagedAsset has ID, we need just to replace the object here
                 newMap.delete(url);
 
                 newMap.set(result.url, {
                     ...existingAsset,
                     asset: result.asset,
                     relativePath: newFullPath,
+                });
+
+                return newMap;
+            });
+
+            return true;
+        },
+        [assets],
+    );
+
+    const markAssetAsUsed = useCallback(
+        (url: string, used: boolean): boolean => {
+            if (!assets.has(url)) return false;
+
+            setAssets((prev) => {
+                const existingAsset = prev.get(url);
+                if (!existingAsset || existingAsset.used === used) {
+                    return prev;
+                }
+
+                const newMap = new Map(prev);
+                newMap.set(url, {
+                    ...existingAsset,
+                    used,
                 });
 
                 return newMap;
@@ -260,6 +304,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 addRemoteAsset,
                 removeAsset,
                 editRelativePathOfLocalAsset,
+                markAssetAsUsed,
                 clearAssets,
                 getAllLocalAssets,
                 getAllRemoteAssets,

@@ -31,10 +31,12 @@ import { UUID } from "molstar/lib/mol-util"; // Import Mol*'s UUID utility if ne
 
 // TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
 interface ManagedAsset {
+    id: string;
     asset: Asset.Url;
     relativePath: string;
     tag: "local" | "remote";
     name: string;
+    used: boolean;
 }
 
 /**
@@ -1422,6 +1424,178 @@ export function extractUrlsFromMVS(mvsData: any): Set<string> {
     return remoteUrls;
 }
 
+/**
+ * Traverses an MVS node and its children immutably.
+ * Replaces any `url` parameters with the corresponding `ManagedAsset.id`.
+ */
+function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
+    let newParams = node.params;
+
+    if (newParams && typeof newParams.url === "string") {
+        const currentUrl = newParams.url;
+        const normalizedCurrentUrl = currentUrl.startsWith("./")
+            ? currentUrl.slice(2)
+            : currentUrl;
+
+        const matchedAsset = assets.find((a) => {
+            const assetUrl =
+                typeof a.asset === "string" ? a.asset : a.asset?.url;
+
+            return (
+                assetUrl === currentUrl ||
+                a.relativePath === normalizedCurrentUrl
+            );
+        });
+        if (matchedAsset) {
+            newParams = {
+                ...newParams,
+                url: matchedAsset.id,
+            };
+        }
+    } else if (newParams && typeof newParams.uri === "string") {
+        const currentUri = newParams.uri;
+        const normalizedCurrentUrl = currentUri.startsWith("./")
+            ? currentUri.slice(2)
+            : currentUri;
+
+        const matchedAsset = assets.find((a) => {
+            const assetUrl =
+                typeof a.asset === "string" ? a.asset : a.asset?.url;
+
+            return (
+                assetUrl === currentUri ||
+                a.relativePath === normalizedCurrentUrl
+            );
+        });
+
+        if (matchedAsset) {
+            newParams = {
+                ...newParams,
+                url: matchedAsset.id,
+            };
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            replaceNodeUrlsWithIds(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Replaces local/remote asset paths in the MVS tree with their internal ManagedAsset IDs.
+ * Handles both `single` and `multiple` MVSData kinds safely.
+ *
+ * @param stateTree The current MVS source tree
+ * @param assets Array of currently managed assets
+ * @returns A new, immutable MVSData tree
+ */
+export function injectAssetIdsIntoTree(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) {
+        return stateTree;
+    }
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: replaceNodeUrlsWithIds(snapshot.root, assets),
+        })),
+    };
+}
+
+/**
+ * Traverses an MVS node and its children immutably.
+ * Replaces any `url` or `uri` parameters matching an Asset ID back to its relative path.
+ */
+function replaceNodeIdsWithRelativePaths(
+    node: any,
+    assets: ManagedAsset[],
+): any {
+    let newParams = node.params;
+
+    if (newParams) {
+        if (typeof newParams.url === "string") {
+            const currentId = newParams.url;
+            const matchedAsset = assets.find((a) => a.id === currentId);
+
+            if (matchedAsset) {
+                let newPath = matchedAsset.relativePath;
+                if (matchedAsset.tag === "local" && !newPath.startsWith("./")) {
+                    newPath = `./${newPath}`;
+                }
+                newParams = {
+                    ...newParams,
+                    url: newPath,
+                };
+            }
+        } else if (typeof newParams.uri === "string") {
+            const currentId = newParams.uri;
+            const matchedAsset = assets.find((a) => a.id === currentId);
+
+            if (matchedAsset) {
+                let newPath = matchedAsset.relativePath;
+                if (matchedAsset.tag === "local" && !newPath.startsWith("./")) {
+                    newPath = `./${newPath}`;
+                }
+                newParams = {
+                    ...newParams,
+                    uri: newPath,
+                };
+            }
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            replaceNodeIdsWithRelativePaths(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Replaces internal ManagedAsset IDs in the MVS tree back to their relative/remote paths.
+ * Useful before exporting or saving the MVS file.
+ *
+ * @param stateTree The current MVS source tree (with IDs)
+ * @param assets Array of currently managed assets
+ * @returns A new, immutable MVSData tree (with paths)
+ */
+export function injectRelativePathsBasedOnAssetIdsIntoTree(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) {
+        return stateTree;
+    }
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: replaceNodeIdsWithRelativePaths(snapshot.root, assets),
+        })),
+    };
+}
+
 function fileContentToUint8Array(
     content: string | Uint8Array<ArrayBuffer>,
 ): Uint8Array<ArrayBuffer> {
@@ -1662,20 +1836,24 @@ async function _loadMVSXFile(
         if (path === indexFilePath) continue;
 
         assets.push({
+            id: crypto.randomUUID(),
             asset: asset,
             relativePath: path, // E.g. "volumes/volume_0_0.bcif".
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
+            used: true,
         });
     }
 
     // Push remaining (remote) assets.
     urls.forEach((remoteUrl) => {
         assets.push({
+            id: crypto.randomUUID(),
             asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
             relativePath: remoteUrl,
             tag: "remote",
             name: remoteUrl,
+            used: true,
         });
     });
 
@@ -1818,10 +1996,12 @@ async function loadMVSJFile(index: string): Promise<
         const assets: ManagedAsset[] = [];
         remoteUrls.forEach((remoteUrl) => {
             assets.push({
+                id: crypto.randomUUID(),
                 asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
                 relativePath: remoteUrl,
                 tag: "remote",
                 name: remoteUrl,
+                used: true,
             });
         });
 

@@ -94,7 +94,12 @@ export function Assets() {
                                     onClick={() => {
                                         removeAsset(asset.asset.url);
                                     }}
-                                    tooltip="Delete local asset."
+                                    tooltip={
+                                        asset.used
+                                            ? "Cannot delete local asset, as it is being referenced in view."
+                                            : "Delete local asset."
+                                    }
+                                    enabled={asset.used}
                                 ></DeleteActionIcon>
                             </div>
                         </ActionableListItem>
@@ -164,7 +169,12 @@ export function Assets() {
                                 onClick={() => {
                                     removeAsset(asset.asset.url);
                                 }}
-                                tooltip="Delete remote asset."
+                                tooltip={
+                                    asset.used
+                                        ? "Cannot delete remote asset, as it is being referenced in view."
+                                        : "Delete remote asset."
+                                }
+                                enabled={asset.used}
                             ></DeleteActionIcon>
                         </ActionableListItem>
                     ))}

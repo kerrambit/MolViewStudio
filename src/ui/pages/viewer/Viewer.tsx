@@ -12,6 +12,8 @@ import {
     exportStateTree,
     serializeMVSXAssets,
     getSnapshotManagerState,
+    injectAssetIdsIntoTree,
+    injectRelativePathsBasedOnAssetIdsIntoTree,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -74,7 +76,8 @@ export function Viewer() {
     const { loadAndHandleFile } = useFileManagement();
 
     // Use assets.
-    const { getAllLocalAssets, addAsset, clearAssets } = useManagedAssets();
+    const { getAllAssets, getAllLocalAssets, addAsset, clearAssets } =
+        useManagedAssets();
 
     // TODO: temporary states
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
@@ -105,6 +108,7 @@ export function Viewer() {
             setRegime,
             showDialogue,
             getAllLocalAssets,
+            getAllAssets,
             clearAssets,
         );
         addRootMenuItem(edit);
@@ -250,11 +254,17 @@ export function Viewer() {
                 addAsset(a);
             });
 
+            // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
+            const stateTree = injectAssetIdsIntoTree(
+                result.stateTree,
+                result.assets,
+            );
+
             // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
                 kind: "viewing",
-                stateTree: result.stateTree,
+                stateTree: stateTree,
                 sourceUrl: result.sourceUrl,
             });
 
@@ -492,6 +502,7 @@ function createEditRootMenuItem(
         options: DialogueProps<T>,
     ) => Promise<T | undefined>,
     getAllLocalAssets: () => ManagedAsset[],
+    getAllAssets: () => ManagedAsset[],
     clearAssets: () => void,
 ) {
     const clearViewerItem: MenuItem = {
@@ -532,10 +543,15 @@ function createEditRootMenuItem(
             action: async () => {
                 if (regime.kind === "viewing") {
                     pushInfoNotification(`Export started.`);
+
                     const result = await exportStateTree(
-                        regime.stateTree,
+                        injectRelativePathsBasedOnAssetIdsIntoTree(
+                            regime.stateTree,
+                            getAllAssets(),
+                        ),
                         getAllLocalAssets(),
                     );
+
                     if (result.success) {
                         pushSuccessNotification(`Export finished!`);
                     } else {
