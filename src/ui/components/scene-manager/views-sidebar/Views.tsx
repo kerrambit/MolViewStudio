@@ -19,6 +19,7 @@ import { CreateViewCard } from "../../view-card/CreateViewCard";
  */
 interface ViewsProps {
     isMolstarLoading: boolean;
+    onOpenBuilder?: (key: string) => void;
 }
 
 export function Views(props: ViewsProps) {
@@ -107,6 +108,7 @@ export function Views(props: ViewsProps) {
                             onClick={async () => {
                                 await applySnapshotByIndex(index);
                             }}
+                            onOpenBuilder={props.onOpenBuilder}
                             onSave={(
                                 title,
                                 description,

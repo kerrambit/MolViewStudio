@@ -22,6 +22,7 @@ export interface ViewCardProps {
     metadata: ViewMetadata;
     index: number;
     onClick?: () => void;
+    onOpenBuilder?: (key: string) => void;
     onSave?: (
         title: string,
         description: string | undefined,
@@ -173,7 +174,13 @@ export function ViewCard(props: ViewCardProps) {
                                 tooltip="Open View Builder dialogue."
                                 label="Builder"
                                 variant="secondary"
-                                onClick={async () => {}}
+                                onClick={async () => {
+                                    if (props.onOpenBuilder) {
+                                        props.onOpenBuilder(
+                                            props.metadata.key!,
+                                        );
+                                    }
+                                }}
                             ></Button>
 
                             <Button
