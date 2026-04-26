@@ -89,7 +89,7 @@ export function Views(props: ViewsProps) {
                                 result.createdNode.metadata.title ?? "New View",
                                 result.createdNode.metadata.description,
                                 result.createdNode.metadata
-                                    .description_format ?? "plaintext",
+                                    .description_format ?? "markdown",
                                 true,
                             );
 
@@ -173,6 +173,7 @@ export function Views(props: ViewsProps) {
                     ) : (
                         <InactiveViewCard
                             index={index}
+                            key={view.key}
                             title={view.title}
                             thumbnail={view.thumbnail}
                             onClick={async () => {
