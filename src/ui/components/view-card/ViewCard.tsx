@@ -171,7 +171,7 @@ export function ViewCard(props: ViewCardProps) {
                         >
                             <Button
                                 size="small"
-                                tooltip="Open View Builder dialogue."
+                                tooltip="Open View Builder sidebar."
                                 label="Builder"
                                 variant="secondary"
                                 onClick={async () => {
@@ -185,7 +185,7 @@ export function ViewCard(props: ViewCardProps) {
 
                             <Button
                                 size="small"
-                                tooltip="Open View Options dialogue."
+                                tooltip="Open View Options sidebar."
                                 label="Options"
                                 variant="secondary"
                                 onClick={async () => {}}
