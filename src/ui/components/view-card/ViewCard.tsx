@@ -4,6 +4,7 @@ import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../utils/cssClassBuilder";
 import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
 import { Color } from "molstar/lib/mol-util/color";
+import { Thumbnail } from "../common/thumbnail/Thumbnail";
 import {
     areCameraStatesEqual,
     getBackgroundColorChangeSubscription,
@@ -14,7 +15,6 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
-import { Thumbnail } from "../common/thumbnail/Thumbnail";
 
 import "./ViewCard.css";
 
@@ -341,3 +341,147 @@ export function ViewCard(props: ViewCardProps) {
         </div>
     );
 }
+
+// function handleOnFork(
+//     regime: Regime,
+//     setRegime: (regime: Regime) => void,
+//     activeViewCardIndex: number,
+//     id: string,
+//     title: string,
+//     description: string | undefined,
+//     descriptionFormat: "markdown" | "plaintext" | undefined,
+//     referenceCamera: CameraState,
+//     thumbnail: Base64Png | undefined,
+//     backgroundColor: HexColor | undefined,
+// ): void {
+//     // Create new view.
+//     const newView: ViewMetadata = {
+//         id: id,
+//         key: id,
+//         title: title,
+//         description: description,
+//         description_format: descriptionFormat,
+//         referenceCamera: referenceCamera,
+//         backgroundColor: backgroundColor,
+//         thumbnail: thumbnail,
+//         linger_duration_ms: 5000,
+//         transition_duration_ms: undefined,
+//     };
+
+//     // Add new snapshot to the Molstar manager.
+//     addNewSnapshotToManager(
+//         id,
+//         title,
+//         description,
+//         descriptionFormat || "plaintext",
+//     );
+
+//     // Update state tree.
+//     if (regime.kind === "viewing" && regime.stateTree.kind === "multiple") {
+//         // Create copy of current root and apply changes to it.
+//         const newNode = applyChangesToNode(
+//             regime.stateTree.snapshots[activeViewCardIndex].root,
+//             {
+//                 referenceCamera: referenceCamera,
+//                 thumbnail: thumbnail,
+//                 backgroundColor: backgroundColor,
+//             },
+//         );
+
+//         const newStateTree = addViewIntoStateTree(regime.stateTree, {
+//             node: newNode,
+//             metadata: {
+//                 id: id,
+//                 key: id,
+//                 title: title,
+//                 description: description,
+//                 description_format: descriptionFormat,
+//                 referenceCamera: referenceCamera,
+//                 backgroundColor: backgroundColor,
+//                 thumbnail: thumbnail,
+//                 linger_duration_ms: 5000,
+//                 transition_duration_ms: undefined,
+//             },
+//         });
+
+//         setRegime({
+//             ...regime,
+//             stateTree: newStateTree,
+//             views: [...regime.views, newView],
+//         });
+//     }
+// }
+
+// function handleOnUpdate(
+//     regime: Regime,
+//     setRegime: (regime: Regime) => void,
+//     activeViewCardIndex: number,
+//     id: string,
+//     title: string,
+//     description: string | undefined,
+//     descriptionFormat: "markdown" | "plaintext" | undefined,
+//     referenceCamera: CameraState,
+//     thumbnail: Base64Png | undefined,
+//     backgroundColor: HexColor | undefined,
+// ): void {
+//     // Update existing snapshot in the Molstar manager by its index.
+//     const result = updateSnapshotInManager(
+//         activeViewCardIndex,
+//         title,
+//         description,
+//         descriptionFormat || "plaintext",
+//     );
+
+//     if (!result.success) {
+//         pushErrorNotification(
+//             `Internal error occured while updating snapshot in Molstar snapshots' manager: "${result.error.message}"!`,
+//         );
+//         return;
+//     }
+
+//     // Update state tree.
+//     if (regime.kind === "viewing" && regime.stateTree.kind === "multiple") {
+//         const updatedSnapshots = [...regime.stateTree.snapshots];
+//         const snapshotToUpdate = { ...updatedSnapshots[activeViewCardIndex] };
+
+//         snapshotToUpdate.root = applyChangesToNode(snapshotToUpdate.root, {
+//             referenceCamera: referenceCamera,
+//             thumbnail: thumbnail,
+//             backgroundColor: backgroundColor,
+//         });
+
+//         snapshotToUpdate.metadata = {
+//             ...snapshotToUpdate.metadata,
+//             title: title,
+//             description: description,
+//             description_format: descriptionFormat,
+//             linger_duration_ms: 5000,
+//             transition_duration_ms: undefined,
+//         };
+
+//         updatedSnapshots[activeViewCardIndex] = snapshotToUpdate;
+
+//         setRegime({
+//             ...regime,
+//             views: regime.views.map((view) =>
+//                 view.id === id
+//                     ? {
+//                           ...view,
+//                           title,
+//                           description,
+//                           description_format: descriptionFormat,
+//                           referenceCamera,
+//                           thumbnail,
+//                           backgroundColor,
+//                           linger_duration_ms: 5000,
+//                           transition_duration_ms: undefined,
+//                       }
+//                     : view,
+//             ),
+//             stateTree: {
+//                 ...regime.stateTree,
+//                 snapshots: updatedSnapshots,
+//             },
+//         });
+//     }
+// }
