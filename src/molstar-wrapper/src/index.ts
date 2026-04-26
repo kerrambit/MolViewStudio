@@ -1139,22 +1139,24 @@ export async function applySnapshotByIndex(
 /**
  * Converts `multiple` kind to `single` kind by adding new `view`.
  * @param stateTree `single` state tree to convert
- * @param view view which will be added as the default one
  * @returns `multiple` state tree with one view (snapshot)
  */
 export function convertStateTreeFromSingleToMultipleKind(
-    stateTree: MVSData_State,
-    view: View,
+    stateTree: MVSData,
 ): MVSData_States {
+    if (stateTree.kind === "multiple") {
+        return stateTree;
+    }
+
     const snaphot: Snapshot = {
-        root: view.node,
+        root: stateTree.root,
         metadata: {
-            title: view.metadata?.title,
-            description: view.metadata?.description,
-            description_format: view.metadata?.description_format,
-            key: view.metadata?.key,
-            linger_duration_ms: view.metadata?.linger_duration_ms || 5000,
-            transition_duration_ms: view.metadata?.transition_duration_ms,
+            title: undefined,
+            description: undefined,
+            description_format: undefined,
+            key: undefined,
+            linger_duration_ms: 5000,
+            transition_duration_ms: undefined,
         },
     };
 
@@ -1172,6 +1174,31 @@ export function convertStateTreeFromSingleToMultipleKind(
     };
 
     return multipleMVS;
+}
+
+/**
+ * Checks all snapshots in the MVS tree. If any are missing a `key` in their metadata,
+ * it creates a new immutable tree with stable UUIDs assigned to those snapshots.
+ *
+ * @param stateTree state tree to fix
+ * @returns new fixed state tree
+ */
+export function ensureAllSnapshotsHaveKeys(
+    stateTree: MVSData_States,
+): MVSData_States {
+    const needsFixing = stateTree.snapshots.some((snap) => !snap.metadata.key);
+    if (!needsFixing) return stateTree;
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snap) => ({
+            ...snap,
+            metadata: {
+                ...snap.metadata,
+                key: snap.metadata.key || crypto.randomUUID(),
+            },
+        })),
+    };
 }
 
 /**
@@ -1330,7 +1357,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
         const canvasParams = canvasNode?.params as CanvasParams | undefined;
 
         const view: ViewMetadata = {
-            id: crypto.randomUUID(),
+            id: metadata.key ?? crypto.randomUUID(),
             key: metadata.key,
             description: metadata.description,
             description_format: metadata.description_format,
@@ -1556,6 +1583,13 @@ function decodeUtf8(bytes: Uint8Array): string {
     return _decoder.decode(bytes);
 }
 
+interface LoadMVSXFileResult {
+    stateTree: MVSData;
+    views: ViewMetadata[]; // TODO: probably remove this
+    assets: ManagedAsset[];
+    sourceUrl: string;
+}
+
 /**
  * Internally loads given `.mvsx` archive file using given instance of `RuntimeContext`.
  * @param runtimeCtx `RuntimeContext` instance
@@ -1567,7 +1601,7 @@ async function _loadMVSXFile(
     runtimeCtx: RuntimeContext,
     data: Uint8Array<ArrayBuffer>,
     indexFilePath: string = "index.mvsj",
-): Promise<Result<LoadFromFileResult>> {
+): Promise<Result<LoadMVSXFileResult>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     // Unzip archive.
@@ -1666,7 +1700,10 @@ async function _loadMVSXFile(
  * @param stateTree current MVSData tree
  * @returns new MVSData object with the appended snapshot
  */
-export function addEmptySnapshotToTree(stateTree: MVSData) {
+export function addEmptySnapshotToTree(stateTree: MVSData): {
+    newStateTree: MVSData_States;
+    createdNode: Snapshot;
+} {
     const emptyNode: Snapshot = {
         root: {
             kind: "root" as const,
@@ -1727,18 +1764,18 @@ function createDefaultMVSData(metadata?: GlobalMetadata) {
  */
 async function loadMVSXFile(
     rawData: Uint8Array<ArrayBuffer>,
-): Promise<Result<LoadFromFileResult>> {
+): Promise<Result<LoadMVSXFileResult>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     const taskResult = await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
+            if (!molstar) throw new Error("Molstar is not initialized!");
+
             const parsed = await _loadMVSXFile(ctx, rawData);
 
             if (!parsed.success) {
                 return parsed;
             }
-
-            if (!molstar) throw new Error("Molstar is not initialized!");
 
             await loadMVS(molstar, parsed.value.stateTree, {
                 sanityChecks: true,
@@ -1771,6 +1808,7 @@ async function loadMVSJFile(index: string): Promise<
     if (!molstar) throw new Error("Molstar is not initialized!");
 
     try {
+        // Parse MVSJ format to MVSData object.
         const mvsData: MVSData = MVSData.fromMVSJ(index);
 
         // Retrieve all remote URLs from MVS.
@@ -1816,8 +1854,8 @@ async function loadMVSJFile(index: string): Promise<
  * Result of `loadFromFile` function.
  */
 interface LoadFromFileResult {
-    stateTree: MVSData;
-    views: ViewMetadata[];
+    stateTree: MVSData_States;
+    views: ViewMetadata[]; // TODO: probably remove this
     assets: ManagedAsset[];
     sourceUrl: string;
 }
@@ -1838,7 +1876,11 @@ export async function loadFromFile(
         const result = await loadMVSJFile(fileData.content as string);
         if (result.success) {
             return {
-                stateTree: result.value.stateTree,
+                stateTree: ensureAllSnapshotsHaveKeys(
+                    convertStateTreeFromSingleToMultipleKind(
+                        result.value.stateTree,
+                    ),
+                ),
                 views: result.value.views,
                 assets: result.value.assets,
                 sourceUrl: "",
@@ -1850,7 +1892,16 @@ export async function loadFromFile(
             fileData.content as Uint8Array<ArrayBuffer>,
         );
         if (result.success) {
-            return result.value;
+            return {
+                stateTree: ensureAllSnapshotsHaveKeys(
+                    convertStateTreeFromSingleToMultipleKind(
+                        result.value.stateTree,
+                    ),
+                ),
+                views: result.value.views,
+                assets: result.value.assets,
+                sourceUrl: result.value.sourceUrl,
+            };
         }
         return result.error;
     } else if (fileData.extension === "bcif") {

@@ -10,7 +10,6 @@ import {
     createMVSBlob,
     getFullScreenSubscription,
     exportStateTree,
-    convertStateTreeFromSingleToMultipleKind,
     serializeMVSXAssets,
     getSnapshotManagerState,
 } from "../../../molstar-wrapper/src";
@@ -255,16 +254,7 @@ export function Viewer() {
             setRegime({
                 ...regime,
                 kind: "viewing",
-                stateTree:
-                    result.stateTree.kind === "multiple"
-                        ? result.stateTree
-                        : convertStateTreeFromSingleToMultipleKind(
-                              result.stateTree,
-                              {
-                                  node: result.stateTree.root,
-                                  metadata: result.views[0],
-                              },
-                          ),
+                stateTree: result.stateTree,
                 sourceUrl: result.sourceUrl,
             });
 
