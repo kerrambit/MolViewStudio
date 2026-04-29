@@ -34,11 +34,7 @@ export function StoryOptions() {
                 value={metadata?.title}
                 placeholder="Enter title of your story..."
                 bold={true}
-                tooltip={
-                    !metadata?.title || metadata.title.length === 0
-                        ? "Enter title of your story..."
-                        : "Change title of your story..."
-                }
+                tooltip={metadata?.title}
                 onValueChange={(newTitle) =>
                     handleUpdateMetadata("title", newTitle)
                 }
@@ -51,8 +47,8 @@ export function StoryOptions() {
             </Text>
             <UnstyledTextArea
                 value={metadata?.description}
-                placeholder="Write your story description here..."
-                tooltip="Write your story description here..."
+                placeholder="Write your story description here."
+                tooltip="Write your story description here."
                 minRows={31}
                 maxRows={31}
                 onValueChange={(newDescription) =>
