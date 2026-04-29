@@ -14,38 +14,108 @@ import {
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { CloseActionIcon } from "../../common/actionable-list-item/actions/CloseActionIcon";
 import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
+import {
+    buildRenderTreeForMolstar,
+    getAllDownloadUrlsFromSnapshot,
+    removeAssetFromRoot,
+    addAssetToRoot,
+    loadMVSIntoMolstar,
+} from "../../../../molstar-wrapper/src";
+import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
+import { pushErrorNotification } from "../../../services/NotificationService";
 
+/**
+ * Properties for ViewBuilder.
+ */
 interface ViewBuilderProps {
     viewKey: string;
     onClose?: () => void;
 }
 
+/**
+ * View Builder component.
+ */
 export function ViewBuilder(props: ViewBuilderProps) {
-    const { regime } = useRegime();
+    // Use regime.
+    const { regime, setRegime } = useRegime();
+
+    // Use managed assets.
     const { getAllAssets } = useManagedAssets();
 
-    // 1. STATE FOR ACCORDION (Which one is visually expanded)
-    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(
-        "asset-1",
-    );
-
-    // 2. NEW STATE FOR SELECTION (Which one is checked)
-    // You can initialize this to null, or default it to the first asset in the list.
-    const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
-
-    type TabType = "representation" | "volume";
-    const [activeTab, setActiveTab] = useState<TabType>("representation");
-
+    // If regime is not viewing or if the provided key does not match with any view, do not render anything.
     if (regime.kind !== "viewing") return <></>;
-
     const view = regime.stateTree.snapshots.find(
         (snap) => snap.metadata.key === props.viewKey,
     );
     if (!view) return <></>;
 
+    // Array of currently used asset IDs.
+    const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(
+        getAllDownloadUrlsFromSnapshot(view),
+    );
+
+    // ID of the asset currently visually expanded.
+    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(
+        selectedAssetIds.sort().length > 0 ? selectedAssetIds[0] : null,
+    );
+
+    // Currently active tab for visually expanded asset.
+    type TabType = "representation" | "volume";
+    const [activeTab, setActiveTab] = useState<TabType>("representation");
+
+    // Memoized list of all loaded assets in the app.
     const assetsInView = useMemo(() => {
         return getAllAssets();
     }, [getAllAssets]);
+
+    // Async function to handle asset toggle.
+    const handleAssetToggle = async (
+        toggledAssetId: string,
+        isChecked: boolean,
+    ) => {
+        // Update local array state.
+        let newSelectedIds: string[];
+        if (isChecked) {
+            newSelectedIds = [...selectedAssetIds, toggledAssetId];
+        } else {
+            newSelectedIds = selectedAssetIds.filter(
+                (id) => id !== toggledAssetId,
+            );
+        }
+        setSelectedAssetIds(newSelectedIds);
+
+        // Update the state tree.
+        const updatedTree: MVSData_States = {
+            ...regime.stateTree,
+            snapshots: regime.stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === props.viewKey) {
+                    return {
+                        ...snap,
+                        root: isChecked
+                            ? addAssetToRoot(snap.root, toggledAssetId)
+                            : removeAssetFromRoot(snap.root, toggledAssetId),
+                    };
+                }
+                return snap;
+            }),
+        };
+
+        setRegime({
+            ...regime,
+            stateTree: updatedTree,
+        });
+
+        // Rerender in Molstar.
+        const renderTree = buildRenderTreeForMolstar(
+            updatedTree,
+            getAllAssets(),
+        );
+
+        const result = await loadMVSIntoMolstar(renderTree);
+        if (!result.success) {
+            pushErrorNotification(`${result.error}`);
+        }
+    };
 
     return (
         <div
@@ -90,8 +160,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
             >
                 {assetsInView.map((asset) => {
                     const isExpanded = expandedAssetId === asset.id;
-                    // Check if THIS asset is the currently selected one
-                    const isSelected = selectedAssetId === asset.id;
+                    const isSelected = selectedAssetIds.includes(asset.id);
 
                     return (
                         <div
@@ -140,13 +209,12 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                     {asset.name}
                                 </div>
                                 <Checkbox
-                                    // Make the checkbox fully controlled by our state
                                     checked={isSelected}
-                                    onChange={(_) => {
-                                        // If clicked, set it as the selected asset.
-                                        // Optional: if you want them to be able to UN-check it entirely,
-                                        // you could do: setSelectedAssetId(e.currentTarget.checked ? asset.id : null)
-                                        setSelectedAssetId(asset.id);
+                                    onChange={(e) => {
+                                        handleAssetToggle(
+                                            asset.id,
+                                            e.currentTarget.checked,
+                                        );
                                     }}
                                     onClick={(e) => e.stopPropagation()}
                                     mr="sm"

@@ -1385,6 +1385,140 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     return views;
 }
 
+/**
+ * Removed download node from the state tree.
+ * @param rootNode root node
+ * @param assetIdToRemove url in download node which will be removed
+ * @returns modified node
+ */
+export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
+    return {
+        ...rootNode,
+        children: rootNode.children?.filter((child: any) => {
+            if (
+                child.kind === "download" &&
+                child.params?.url === assetIdToRemove
+            ) {
+                return false;
+            }
+            return true;
+        }),
+    };
+}
+
+export function addAssetToRoot(rootNode: any, assetIdToAdd: string) {
+    // TODO: pass data as param, now we use default one value
+    const newDownloadBranch = {
+        kind: "download",
+        params: { url: assetIdToAdd },
+        children: [
+            {
+                kind: "parse",
+                params: { format: "bcif" },
+                children: [
+                    {
+                        kind: "volume",
+                        params: { channel_id: "0" },
+                        children: [
+                            {
+                                kind: "volume_representation",
+                                params: {
+                                    type: "isosurface",
+                                    relative_isovalue: 1,
+                                },
+                                children: [],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    };
+
+    return {
+        ...rootNode,
+        children: [...(rootNode.children || []), newDownloadBranch],
+    };
+}
+
+/**
+ * Retrieves all download urls from snapshot.
+ * @param snapshot snapshot
+ * @returns list of urls
+ */
+export function getAllDownloadUrlsFromSnapshot(snapshot: Snapshot): string[] {
+    const urls: string[] = [];
+    if (!snapshot || !snapshot.root || !snapshot.root.children) return urls;
+
+    snapshot.root.children.forEach((child: any) => {
+        if (child.kind === "download" && child.params?.url) {
+            urls.push(child.params.url);
+        }
+    });
+    return urls;
+}
+
+/**
+ * Replace asset IDs in node with arcp protocol url value.
+ * @param node node
+ * @param assets list of assets
+ * @returns modified node
+ */
+function replaceNodeIdsWithMolstarUrls(node: any, assets: ManagedAsset[]): any {
+    let newParams = node.params;
+
+    if (newParams && typeof newParams.url === "string") {
+        const currentId = newParams.url;
+        const matchedAsset = assets.find((a) => a.id === currentId);
+
+        if (matchedAsset) {
+            const internalUrl =
+                typeof matchedAsset.asset === "string"
+                    ? matchedAsset.asset
+                    : matchedAsset.asset.url;
+
+            newParams = {
+                ...newParams,
+                url: internalUrl,
+            };
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            replaceNodeIdsWithMolstarUrls(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Builds state tree with urls in arcp format.
+ * @param stateTree state tree (urls are IDs of managed assets)
+ * @param assets assets
+ * @returns modified state tree
+ */
+export function buildRenderTreeForMolstar(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) return stateTree;
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: replaceNodeIdsWithMolstarUrls(snapshot.root, assets),
+        })),
+    };
+}
+
 export function extractUrlsFromMVS(mvsData: any): Set<string> {
     let snapshots: any[] = [];
 
@@ -1969,6 +2103,29 @@ async function loadMVSXFile(
     );
 
     return taskResult;
+}
+
+export async function loadMVSIntoMolstar(
+    stateTree: MVSData_States,
+): Promise<Result<MVSData_States>> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    try {
+        await loadMVS(molstar, stateTree, {
+            appendSnapshots: false,
+            keepCamera: true,
+            keepCameraOrientation: true,
+            extensions: [],
+            sanityChecks: true,
+        });
+        return { success: true, value: stateTree };
+    } catch (err) {
+        return {
+            success: false,
+            error: new Error(
+                `Error occured when loading MVS! Details: "${err}"."`,
+            ),
+        };
+    }
 }
 
 /**
