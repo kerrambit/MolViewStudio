@@ -47,9 +47,9 @@ export interface ManagedAsset {
     name: string;
 
     /**
-     * Flag if the given asset is referenced in any view.
+     * Number of times this asset is referenced across all views.
      */
-    used: boolean;
+    useCount: number;
 }
 
 type ManagedAssetsContextType = {
@@ -99,12 +99,18 @@ type ManagedAssetsContextType = {
     ) => boolean;
 
     /**
-     * Marks a managed asset's 'used' flag as true or false.
+     * Increments the reference counter for a given asset.
      * @param url url of the asset
-     * @param used boolean flag indicating if it's used
      * @returns false if the asset was not found, true if successfully updated
      */
-    markAssetAsUsed: (url: string, used: boolean) => boolean;
+    incrementAssetUseCount: (url: string) => boolean;
+
+    /**
+     * Decrements the reference counter for a given asset. Will not drop below 0.
+     * @param url url of the asset
+     * @returns false if the asset was not found, true if successfully updated
+     */
+    decrementAssetUseCount: (url: string) => boolean;
 
     /**
      * Clears all assets from local system.
@@ -173,7 +179,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 relativePath: `${relativePath}${file.name}`,
                 tag: "local",
                 name: file.name,
-                used: false,
+                useCount: 0,
             };
 
             setAssets((prev) => new Map(prev).set(result.url, entry));
@@ -191,7 +197,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
             relativePath: url,
             tag: "remote",
             name: url,
-            used: false,
+            useCount: 0,
         };
 
         setAssets((prev) => new Map(prev).set(url, entry));
@@ -255,20 +261,41 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         [assets],
     );
 
-    const markAssetAsUsed = useCallback(
-        (url: string, used: boolean): boolean => {
+    const incrementAssetUseCount = useCallback(
+        (url: string): boolean => {
             if (!assets.has(url)) return false;
 
             setAssets((prev) => {
                 const existingAsset = prev.get(url);
-                if (!existingAsset || existingAsset.used === used) {
-                    return prev;
-                }
+                if (!existingAsset) return prev;
 
                 const newMap = new Map(prev);
                 newMap.set(url, {
                     ...existingAsset,
-                    used,
+                    useCount: existingAsset.useCount + 1,
+                });
+
+                return newMap;
+            });
+
+            return true;
+        },
+        [assets],
+    );
+
+    const decrementAssetUseCount = useCallback(
+        (url: string): boolean => {
+            if (!assets.has(url)) return false;
+
+            setAssets((prev) => {
+                const existingAsset = prev.get(url);
+
+                if (!existingAsset || existingAsset.useCount === 0) return prev;
+
+                const newMap = new Map(prev);
+                newMap.set(url, {
+                    ...existingAsset,
+                    useCount: existingAsset.useCount - 1,
                 });
 
                 return newMap;
@@ -281,7 +308,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
 
     const clearAssets = useCallback(() => {
         setAssets(new Map());
-    }, [assets]);
+    }, []);
 
     const getAllLocalAssets = useCallback((): ManagedAsset[] => {
         return Array.from(assets.values()).filter((e) => e.tag === "local");
@@ -304,7 +331,8 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 addRemoteAsset,
                 removeAsset,
                 editRelativePathOfLocalAsset,
-                markAssetAsUsed,
+                incrementAssetUseCount,
+                decrementAssetUseCount,
                 clearAssets,
                 getAllLocalAssets,
                 getAllRemoteAssets,

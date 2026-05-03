@@ -9,7 +9,6 @@ import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {
     GlobalMetadata,
     MVSData,
-    type MVSData_State,
     type MVSData_States,
     type SnapshotMetadata,
     type Snapshot,
@@ -1975,7 +1974,7 @@ async function _loadMVSXFile(
             relativePath: path, // E.g. "volumes/volume_0_0.bcif".
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
-            used: true,
+            useCount: 1,
         });
     }
 
@@ -1987,7 +1986,7 @@ async function _loadMVSXFile(
             relativePath: remoteUrl,
             tag: "remote",
             name: remoteUrl,
-            used: true,
+            useCount: 1,
         });
     });
 
@@ -2158,7 +2157,7 @@ async function loadMVSJFile(index: string): Promise<
                 relativePath: remoteUrl,
                 tag: "remote",
                 name: remoteUrl,
-                used: true,
+                useCount: 1,
             });
         });
 
