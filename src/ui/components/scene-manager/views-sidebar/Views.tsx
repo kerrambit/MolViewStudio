@@ -4,15 +4,25 @@ import { ViewCard } from "../../view-card/ViewCard";
 import {
     addEmptySnapshotToTree,
     addNewSnapshotToManager,
+    applyBackgroundColorToNode,
+    applyChangesToNode,
     applySnapshotByIndex,
     clearViewerContent,
     extractViewsFromMVS,
     getCurrentSnapshotIndex,
     getSnapshotChangeSubscription,
+    reloadMolstarAndRestoreIndex,
 } from "../../../../molstar-wrapper/src";
 import type { Subscription } from "rxjs";
 import { InactiveViewCard } from "../../view-card/InactiveViewCard";
 import { CreateViewCard } from "../../view-card/CreateViewCard";
+import { useDialogue } from "../../../services/DialogueProvider";
+import {
+    ViewOptionsDialogueContent,
+    type ViewOptionsDialogueContentReturnType,
+} from "./ViewOptionsDialogueContent";
+import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
+import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 
 interface ViewsProps {
     isMolstarLoading: boolean;
@@ -23,6 +33,12 @@ interface ViewsProps {
 export function Views(props: ViewsProps) {
     // Use regime.
     const { regime, setRegime } = useRegime();
+
+    // Use dialogue.
+    const { showDialogue } = useDialogue();
+
+    // Use assets.
+    const { getAllAssets } = useManagedAssets();
 
     // Memoize views extracted from state tree.
     const viewItems = useMemo(() => {
@@ -71,6 +87,7 @@ export function Views(props: ViewsProps) {
         };
     }, [props.isMolstarLoading, props.onOpenBuilder]);
 
+    // Render.
     return (
         <div
             style={{
@@ -132,67 +149,202 @@ export function Views(props: ViewsProps) {
                             onClick={async () => {
                                 await applySnapshotByIndex(index);
                             }}
-                            onOpenBuilder={props.onOpenBuilder}
-                            onSave={(
-                                title,
-                                description,
-                                descriptionFormat,
-                                referenceCamera,
-                                thumbnail,
-                                backgroundColor,
-                            ) => {
-                                // handleOnUpdate(
-                                //     regime,
-                                //     setRegime,
-                                //     index,
-                                //     view.id,
-                                //     title,
-                                //     description,
-                                //     descriptionFormat,
-                                //     referenceCamera,
-                                //     thumbnail,
-                                //     backgroundColor,
-                                // );
-                                console.log(
-                                    "Save",
-                                    title,
-                                    description,
-                                    descriptionFormat,
-                                    referenceCamera,
-                                    thumbnail,
-                                    backgroundColor,
-                                );
+                            onCameraSave={(referenceCamera, thumbnail) => {
+                                // Ignore other not-viewing regime.
+                                if (regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Create updated source tree.
+                                const updatedTree = {
+                                    ...regime.stateTree,
+                                    snapshots: regime.stateTree.snapshots.map(
+                                        (snap) => {
+                                            if (
+                                                snap.metadata.key === view.key!
+                                            ) {
+                                                return {
+                                                    ...snap,
+                                                    root: applyChangesToNode(
+                                                        snap.root,
+                                                        referenceCamera,
+                                                        UiLocalStorageService.getPendingScreenshot(
+                                                            view.key!,
+                                                        )
+                                                            ? thumbnail
+                                                            : undefined,
+                                                    ),
+                                                };
+                                            }
+                                            return snap;
+                                        },
+                                    ),
+                                };
+
+                                // Update state tree.
+                                setRegime({
+                                    ...regime,
+                                    stateTree: updatedTree,
+                                });
                             }}
-                            onFork={(
-                                id,
-                                title,
-                                description,
-                                descriptionFormat,
-                                referenceCamera,
-                                thumbnail,
-                                backgroundColor,
-                            ) => {
-                                // handleOnFork(
-                                //     regime,
-                                //     setRegime,
-                                //     index,
-                                //     id,
-                                //     title,
-                                //     description,
-                                //     descriptionFormat,
-                                //     referenceCamera,
-                                //     thumbnail,
-                                //     backgroundColor,
-                                // );
-                                console.log(
-                                    "Fork",
-                                    id,
-                                    title,
-                                    description,
-                                    descriptionFormat,
-                                    referenceCamera,
-                                    thumbnail,
-                                    backgroundColor,
+                            onBackgrounColorChange={(color) => {
+                                // Ignore other not-viewing regime.
+                                if (regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Create updated source tree.
+                                const updatedTree = {
+                                    ...regime.stateTree,
+                                    snapshots: regime.stateTree.snapshots.map(
+                                        (snap) => {
+                                            if (
+                                                snap.metadata.key === view.key
+                                            ) {
+                                                return {
+                                                    ...snap,
+                                                    root: applyBackgroundColorToNode(
+                                                        snap.root,
+                                                        color,
+                                                    ),
+                                                };
+                                            }
+                                            return snap;
+                                        },
+                                    ),
+                                };
+
+                                // Update state tree.
+                                setRegime({
+                                    ...regime,
+                                    stateTree: updatedTree,
+                                });
+                            }}
+                            onTitleChange={(title) => {
+                                // Ignore other not-viewing regime.
+                                if (regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Create updated source tree.
+                                const updatedTree = {
+                                    ...regime.stateTree,
+                                    snapshots: regime.stateTree.snapshots.map(
+                                        (snap) => {
+                                            if (
+                                                snap.metadata.key === view.key
+                                            ) {
+                                                return {
+                                                    ...snap,
+                                                    metadata: {
+                                                        ...snap.metadata,
+                                                        title: title,
+                                                    },
+                                                };
+                                            }
+                                            return snap;
+                                        },
+                                    ),
+                                };
+
+                                // Update state tree.
+                                setRegime({
+                                    ...regime,
+                                    stateTree: updatedTree,
+                                });
+
+                                // TODO: use updateSnapshotInManager to update
+                            }}
+                            onOpenBuilder={props.onOpenBuilder} // Propagate up to SceneManager.
+                            onOpenOptions={async (key) => {
+                                // Show dialogue.
+                                const result =
+                                    await showDialogue<ViewOptionsDialogueContentReturnType>(
+                                        {
+                                            title: "View Options",
+                                            width: "1000px",
+                                            showCloseButton: true,
+                                            content: (close) => (
+                                                <ViewOptionsDialogueContent
+                                                    viewKey={key}
+                                                    backgroundColor={
+                                                        view.backgroundColor
+                                                    }
+                                                    thumbnail={view.thumbnail}
+                                                    close={close}
+                                                />
+                                            ),
+                                        },
+                                    );
+
+                                // Ignore other not-viewing regime.
+                                if (!result || regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Saves the screenshot preference for the specific view.
+                                UiLocalStorageService.setPendingScreenshot(
+                                    view.key!,
+                                    result.captureScreenshot,
+                                );
+
+                                // Create updated source tree.
+                                let updatedTree = {
+                                    ...regime.stateTree,
+                                    snapshots: regime.stateTree.snapshots.map(
+                                        (snap) => {
+                                            if (snap.metadata.key === key) {
+                                                return {
+                                                    ...snap,
+                                                    metadata: {
+                                                        ...snap.metadata,
+                                                        linger_duration_ms:
+                                                            result.lingerDuration,
+                                                        transition_duration_ms:
+                                                            result.transitionDuration,
+                                                        description:
+                                                            result.description,
+                                                        description_format:
+                                                            result.descriptionFormat,
+                                                    },
+                                                };
+                                            }
+                                            return snap;
+                                        },
+                                    ),
+                                };
+
+                                // Update also background color.
+                                updatedTree = {
+                                    ...updatedTree,
+                                    snapshots: updatedTree.snapshots.map(
+                                        (snap) => {
+                                            if (snap.metadata.key === key) {
+                                                return {
+                                                    ...snap,
+                                                    root: applyBackgroundColorToNode(
+                                                        snap.root,
+                                                        result.canvasColor,
+                                                    ),
+                                                };
+                                            }
+                                            return snap;
+                                        },
+                                    ),
+                                };
+
+                                // Update state tree.
+                                setRegime({
+                                    ...regime,
+                                    stateTree: updatedTree,
+                                });
+
+                                // TODO: is it really necessary to reload whole Molstar, isn't enought to call updateSnapshotInManager only?
+                                // Reload Molstar viewer.
+                                reloadMolstarAndRestoreIndex(
+                                    key,
+                                    getAllAssets(),
+                                    updatedTree,
                                 );
                             }}
                         />

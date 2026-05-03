@@ -921,25 +921,18 @@ function copyNode(node: MVSTree) {
  */
 export function applyChangesToNode(
     node: MVSTree,
-    changes: {
-        referenceCamera?: CameraState | undefined;
-        thumbnail?: Base64Png;
-        backgroundColor?: HexColor;
-    },
+    referenceCamera?: CameraState | undefined,
+    thumbnail?: Base64Png,
 ): MVSTree {
-    // Copy of original node.
     const nodeCopy = copyNode(node);
 
-    // Only apply changes if we have reference camera data.
-    if (changes.referenceCamera) {
-        const { position, target, up } = changes.referenceCamera;
+    if (referenceCamera) {
+        const { position, target, up } = referenceCamera;
 
-        // Find existing camera node.
         let cameraNode = nodeCopy.children?.find(
             (child) => child.kind === "camera",
         );
 
-        // Update existing camera node.
         if (cameraNode) {
             cameraNode.params = {
                 position: Array.from(position) as [number, number, number],
@@ -947,28 +940,32 @@ export function applyChangesToNode(
                 up: Array.from(up) as [number, number, number],
             };
 
-            // Update or add thumbnail in custom.
-            if (changes.thumbnail) {
+            if (thumbnail) {
                 cameraNode.custom = {
                     ...(cameraNode.custom || {}),
-                    thumbnail: changes.thumbnail,
+                    thumbnail: thumbnail,
                 };
+            } else if (cameraNode.custom) {
+                delete cameraNode.custom.thumbnail;
+
+                if (Object.keys(cameraNode.custom).length === 0) {
+                    delete cameraNode.custom;
+                }
             }
         } else {
-            // Create new camera node.
-            const newCameraNode = {
+            const newCameraNode: any = {
                 kind: "camera" as const,
                 params: {
                     position: Array.from(position) as [number, number, number],
                     target: Array.from(target) as [number, number, number],
                     up: Array.from(up) as [number, number, number],
                 },
-                custom: changes.thumbnail
-                    ? { thumbnail: changes.thumbnail }
-                    : undefined,
             };
 
-            // Add camera node as first child.
+            if (thumbnail) {
+                newCameraNode.custom = { thumbnail: thumbnail };
+            }
+
             if (!nodeCopy.children) {
                 nodeCopy.children = [];
             }
@@ -976,32 +973,42 @@ export function applyChangesToNode(
         }
     }
 
-    // Only apply changes if we have reference background color data.
-    if (changes.backgroundColor) {
-        // Find existing canvas node.
+    return nodeCopy;
+}
+
+export function applyBackgroundColorToNode(
+    node: MVSTree,
+    backgroundColor?: HexColor,
+): MVSTree {
+    const nodeCopy = copyNode(node);
+
+    if (backgroundColor) {
         let canvasNode = nodeCopy.children?.find(
             (child) => child.kind === "canvas",
         );
 
-        // Update existing camera node.
         if (canvasNode) {
             canvasNode.params = {
-                background_color: changes.backgroundColor as ColorT,
+                background_color: backgroundColor as ColorT,
             };
         } else {
-            // Create new canvas node.
             const newCanvasNode = {
                 kind: "canvas" as const,
                 params: {
-                    background_color: changes.backgroundColor as ColorT,
+                    background_color: backgroundColor as ColorT,
                 },
             };
 
-            // Add canvas node to the end.
             if (!nodeCopy.children) {
                 nodeCopy.children = [];
             }
             nodeCopy.children.push(newCanvasNode);
+        }
+    } else {
+        if (nodeCopy.children) {
+            nodeCopy.children = nodeCopy.children.filter(
+                (child) => child.kind !== "canvas",
+            );
         }
     }
 
@@ -1825,6 +1832,30 @@ function replaceNodeIdsWithRelativePaths(
         params: newParams,
         children: newChildren,
     };
+}
+
+export async function reloadMolstarAndRestoreIndex(
+    viewKey: string,
+    assets: ManagedAsset[],
+    updatedTree: MVSData_States,
+) {
+    // Build and load the tree.
+    const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
+    const result = await loadMVSIntoMolstar(renderTree);
+
+    if (!result.success) {
+        return result.error;
+    }
+
+    // Find the index of the view we are currently editing.
+    const currentIndex = updatedTree.snapshots.findIndex(
+        (snap) => snap.metadata.key === viewKey,
+    );
+
+    // Immediately force Molstar back to that index.
+    if (currentIndex !== -1) {
+        await applySnapshotByIndex(currentIndex);
+    }
 }
 
 /**

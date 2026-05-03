@@ -15,20 +15,15 @@ import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { CloseActionIcon } from "../../common/actionable-list-item/actions/CloseActionIcon";
 import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
 import {
-    buildRenderTreeForMolstar,
     getAllDownloadUrlsFromSnapshot,
     removeAssetFromRoot,
     addAssetToRoot,
-    loadMVSIntoMolstar,
     updateNodeParamInAssetBranch,
     getVolumeParamsForAsset,
-    applySnapshotByIndex,
+    reloadMolstarAndRestoreIndex,
 } from "../../../../molstar-wrapper/src";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import {
-    pushErrorNotification,
-    pushWarningNotification,
-} from "../../../services/NotificationService";
+import { pushWarningNotification } from "../../../services/NotificationService";
 import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 
 /**
@@ -74,32 +69,6 @@ export function ViewBuilder(props: ViewBuilderProps) {
         return getAllAssets();
     }, [getAllAssets]);
 
-    const reloadMolstarAndRestoreIndex = async (
-        updatedTree: MVSData_States,
-    ) => {
-        // Build and load the tree.
-        const renderTree = buildRenderTreeForMolstar(
-            updatedTree,
-            getAllAssets(),
-        );
-        const result = await loadMVSIntoMolstar(renderTree);
-
-        if (!result.success) {
-            pushErrorNotification(result.error.message);
-            return;
-        }
-
-        // Find the index of the view we are currently editing.
-        const currentIndex = updatedTree.snapshots.findIndex(
-            (snap) => snap.metadata.key === props.viewKey,
-        );
-
-        // Immediately force Molstar back to that index.
-        if (currentIndex !== -1) {
-            await applySnapshotByIndex(currentIndex);
-        }
-    };
-
     // Handler when asset is toggled.
     const handleAssetToggle = async (
         toggledAssetId: string,
@@ -116,7 +85,8 @@ export function ViewBuilder(props: ViewBuilderProps) {
         }
 
         // Inform managed asset manager this given asset count was increased/decreased.
-        const a = getAllAssets().find((a) => a.id === toggledAssetId);
+        const allAssets = getAllAssets();
+        const a = allAssets.find((a) => a.id === toggledAssetId);
         if (a) {
             if (isChecked) {
                 incrementAssetUseCount(a.asset.url);
@@ -159,7 +129,11 @@ export function ViewBuilder(props: ViewBuilderProps) {
         });
 
         // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
-        await reloadMolstarAndRestoreIndex(updatedTree);
+        await reloadMolstarAndRestoreIndex(
+            props.viewKey,
+            allAssets,
+            updatedTree,
+        );
     };
 
     const handleNodeParamChange = async (
@@ -197,7 +171,11 @@ export function ViewBuilder(props: ViewBuilderProps) {
         });
 
         // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
-        await reloadMolstarAndRestoreIndex(updatedTree);
+        await reloadMolstarAndRestoreIndex(
+            props.viewKey,
+            getAllAssets(),
+            updatedTree,
+        );
     };
 
     return (
