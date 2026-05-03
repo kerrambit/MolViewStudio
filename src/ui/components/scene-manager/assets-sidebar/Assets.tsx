@@ -10,11 +10,11 @@ import { useDialogue } from "../../../services/DialogueProvider";
 import {
     AddAssetDialogueContent,
     type AddAssetDialogueReturnType,
-} from "../../common/dialogue/AddAssetDialogueContent";
+} from "./AddAssetDialogueContent";
 import {
     EditAssetDialogueContent,
     type EditAssetDialogueReturnType,
-} from "../../common/dialogue/EditAssetDialogueContent";
+} from "./EditAssetDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
 
 export function Assets() {

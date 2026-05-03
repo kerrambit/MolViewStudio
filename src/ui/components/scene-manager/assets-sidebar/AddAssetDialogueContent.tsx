@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Text } from "@mantine/core";
 import { AllFiles } from "../../../../types/fileFilters";
-import { Button } from "../button/Button";
-import { UnstyledTextInput } from "../input/UnstyledTextInput";
+import { Button } from "../../common/button/Button";
+import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
 
 export interface AddAssetDialogueReturnType {
     file: FileData;
