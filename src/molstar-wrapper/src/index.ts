@@ -35,7 +35,7 @@ interface ManagedAsset {
     relativePath: string;
     tag: "local" | "remote";
     name: string;
-    used: boolean;
+    useCount: number;
 }
 
 /**
@@ -1387,7 +1387,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
 /**
  * Removed download node from the state tree.
  * @param rootNode root node
- * @param assetIdToRemove url in download node which will be removed
+ * @param assetIdToRemove managed asset id in download node which will be removed
  * @returns modified node
  */
 export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
@@ -1405,15 +1405,33 @@ export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
     };
 }
 
-export function addAssetToRoot(rootNode: any, assetIdToAdd: string) {
-    // TODO: pass data as param, now we use default one value
+/**
+ * Add new asset to the download node with default values.
+ * @param rootNode root node
+ * @param assetIdToAdd managed asset id
+ * @param extension extension of the data (supported are `bcif` and `cif`)
+ * @returns modified node
+ */
+export function addAssetToRoot(
+    rootNode: any,
+    assetIdToAdd: string,
+    extension: string | undefined,
+) {
+    // TODO: let the user to select this
+    let format: string = "bcif";
+    if (extension === "bcif") {
+        format = "bcif";
+    } else if (extension === "cif") {
+        format = "mmcif";
+    }
+
     const newDownloadBranch = {
         kind: "download",
         params: { url: assetIdToAdd },
         children: [
             {
                 kind: "parse",
-                params: { format: "bcif" },
+                params: { format: format },
                 children: [
                     {
                         kind: "volume",
@@ -1455,6 +1473,111 @@ export function getAllDownloadUrlsFromSnapshot(snapshot: Snapshot): string[] {
         }
     });
     return urls;
+}
+
+/**
+ * Recursively updates a parameter inside a specific node kind, but only for the branch belonging to the target asset id.
+ *
+ * @param node node to update, start with root
+ * @param targetAssetId node which is updated has to have this id as download url
+ * @param targetNodeKind node type to update, e.g. "volume_representation" or "color"
+ * @param paramKey parameter to update, e.g. "relative_isovalue"
+ * @param paramValue value which will used to update
+ * @param inTargetBranch recursive helper paramter
+ * @returns updated node
+ */
+export function updateNodeParamInAssetBranch(
+    node: any,
+    targetAssetId: string,
+    targetNodeKind: string,
+    paramKey: string,
+    paramValue: any,
+    inTargetBranch: boolean = false,
+): any {
+    let isCurrentlyInTargetBranch = inTargetBranch;
+    if (node.kind === "download" && node.params?.url === targetAssetId) {
+        isCurrentlyInTargetBranch = true;
+    }
+
+    let newParams = node.params;
+
+    if (isCurrentlyInTargetBranch && node.kind === targetNodeKind) {
+        newParams = {
+            ...newParams,
+            [paramKey]: paramValue,
+        };
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            updateNodeParamInAssetBranch(
+                child,
+                targetAssetId,
+                targetNodeKind,
+                paramKey,
+                paramValue,
+                isCurrentlyInTargetBranch,
+            ),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Retrieves current parameters of sepcific download node branch.
+ *
+ * @param rootNode root node
+ * @param assetId asset id, see ManagedAsset
+ * @returns extracted information
+ */
+export function getVolumeParamsForAsset(rootNode: any, assetId: string) {
+    // Some default values.
+    const params = {
+        type: "isosurface",
+        relative_isovalue: 1.0,
+        show_wireframe: false,
+        show_faces: true,
+        color: "#00805c",
+    };
+
+    function traverse(node: any, inBranch: boolean) {
+        let currentInBranch = inBranch;
+
+        if (node.kind === "download" && node.params?.url === assetId) {
+            currentInBranch = true;
+        }
+
+        if (currentInBranch) {
+            if (node.kind === "volume_representation" && node.params) {
+                if (node.params.type !== undefined)
+                    params.type = node.params.type;
+                if (node.params.relative_isovalue !== undefined)
+                    params.relative_isovalue = node.params.relative_isovalue;
+                if (node.params.show_wireframe !== undefined)
+                    params.show_wireframe = node.params.show_wireframe;
+                if (node.params.show_faces !== undefined)
+                    params.show_faces = node.params.show_faces;
+            }
+            if (node.kind === "color" && node.params?.color) {
+                params.color = node.params.color;
+            }
+        }
+
+        if (Array.isArray(node.children)) {
+            for (const child of node.children) {
+                traverse(child, currentInBranch);
+            }
+        }
+    }
+
+    traverse(rootNode, false);
+    return params;
 }
 
 /**

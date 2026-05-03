@@ -20,9 +20,16 @@ import {
     removeAssetFromRoot,
     addAssetToRoot,
     loadMVSIntoMolstar,
+    updateNodeParamInAssetBranch,
+    getVolumeParamsForAsset,
+    applySnapshotByIndex,
 } from "../../../../molstar-wrapper/src";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import { pushErrorNotification } from "../../../services/NotificationService";
+import {
+    pushErrorNotification,
+    pushWarningNotification,
+} from "../../../services/NotificationService";
+import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 
 /**
  * Properties for ViewBuilder.
@@ -39,41 +46,66 @@ export function ViewBuilder(props: ViewBuilderProps) {
     // Use regime.
     const { regime, setRegime } = useRegime();
 
-    // Use managed assets.
-    const { getAllAssets } = useManagedAssets();
+    // Use assets.
+    const { getAllAssets, incrementAssetUseCount, decrementAssetUseCount } =
+        useManagedAssets();
 
-    // If regime is not viewing or if the provided key does not match with any view, do not render anything.
+    // Render nothing if regime is not "viewing", or if no view was found with given key.
     if (regime.kind !== "viewing") return <></>;
     const view = regime.stateTree.snapshots.find(
         (snap) => snap.metadata.key === props.viewKey,
     );
     if (!view) return <></>;
 
-    // Array of currently used asset IDs.
+    // State for all selected assets IDs in UI.
     const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(
         getAllDownloadUrlsFromSnapshot(view),
     );
 
-    // ID of the asset currently visually expanded.
-    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(
-        selectedAssetIds.sort().length > 0 ? selectedAssetIds[0] : null,
-    );
+    // State to keep track which asset in the list is expanded.
+    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
 
-    // Currently active tab for visually expanded asset.
+    // State to keep track which tab is opened in the expanded asset.
     type TabType = "representation" | "volume";
     const [activeTab, setActiveTab] = useState<TabType>("representation");
 
-    // Memoized list of all loaded assets in the app.
+    // Memoized list of all managed assets in the application.
     const assetsInView = useMemo(() => {
         return getAllAssets();
     }, [getAllAssets]);
 
-    // Async function to handle asset toggle.
+    const reloadMolstarAndRestoreIndex = async (
+        updatedTree: MVSData_States,
+    ) => {
+        // Build and load the tree.
+        const renderTree = buildRenderTreeForMolstar(
+            updatedTree,
+            getAllAssets(),
+        );
+        const result = await loadMVSIntoMolstar(renderTree);
+
+        if (!result.success) {
+            pushErrorNotification(result.error.message);
+            return;
+        }
+
+        // Find the index of the view we are currently editing.
+        const currentIndex = updatedTree.snapshots.findIndex(
+            (snap) => snap.metadata.key === props.viewKey,
+        );
+
+        // Immediately force Molstar back to that index.
+        if (currentIndex !== -1) {
+            await applySnapshotByIndex(currentIndex);
+        }
+    };
+
+    // Handler when asset is toggled.
     const handleAssetToggle = async (
         toggledAssetId: string,
         isChecked: boolean,
     ) => {
-        // Update local array state.
+        // If it is checked, it means we need to add it, otherwise remove it.
         let newSelectedIds: string[];
         if (isChecked) {
             newSelectedIds = [...selectedAssetIds, toggledAssetId];
@@ -82,9 +114,21 @@ export function ViewBuilder(props: ViewBuilderProps) {
                 (id) => id !== toggledAssetId,
             );
         }
+
+        // Inform managed asset manager this given asset count was increased/decreased.
+        const a = getAllAssets().find((a) => a.id === toggledAssetId);
+        if (a) {
+            if (isChecked) {
+                incrementAssetUseCount(a.asset.url);
+            } else {
+                decrementAssetUseCount(a.asset.url);
+            }
+        }
+
+        // Update UI state.
         setSelectedAssetIds(newSelectedIds);
 
-        // Update the state tree.
+        // Create updated state tree.
         const updatedTree: MVSData_States = {
             ...regime.stateTree,
             snapshots: regime.stateTree.snapshots.map((snap) => {
@@ -92,7 +136,15 @@ export function ViewBuilder(props: ViewBuilderProps) {
                     return {
                         ...snap,
                         root: isChecked
-                            ? addAssetToRoot(snap.root, toggledAssetId)
+                            ? addAssetToRoot(
+                                  snap.root,
+                                  toggledAssetId,
+                                  getExtensionFromFileName(
+                                      getAllAssets().find(
+                                          (a) => a.id === toggledAssetId,
+                                      )?.name,
+                                  ),
+                              )
                             : removeAssetFromRoot(snap.root, toggledAssetId),
                     };
                 }
@@ -100,21 +152,52 @@ export function ViewBuilder(props: ViewBuilderProps) {
             }),
         };
 
+        // Update regime.
         setRegime({
             ...regime,
             stateTree: updatedTree,
         });
 
-        // Rerender in Molstar.
-        const renderTree = buildRenderTreeForMolstar(
-            updatedTree,
-            getAllAssets(),
-        );
+        // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
+        await reloadMolstarAndRestoreIndex(updatedTree);
+    };
 
-        const result = await loadMVSIntoMolstar(renderTree);
-        if (!result.success) {
-            pushErrorNotification(`${result.error}`);
-        }
+    const handleNodeParamChange = async (
+        assetId: string,
+        nodeKind: string,
+        paramKey: string,
+        newValue: any,
+    ) => {
+        if (regime.kind !== "viewing") return;
+
+        // Create updated state tree.
+        const updatedTree: MVSData_States = {
+            ...regime.stateTree,
+            snapshots: regime.stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === props.viewKey) {
+                    return {
+                        ...snap,
+                        root: updateNodeParamInAssetBranch(
+                            snap.root,
+                            assetId,
+                            nodeKind, // E.g. "volume_representation" or "color"
+                            paramKey,
+                            newValue,
+                        ),
+                    };
+                }
+                return snap;
+            }),
+        };
+
+        // Update regime.
+        setRegime({
+            ...regime,
+            stateTree: updatedTree,
+        });
+
+        // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
+        await reloadMolstarAndRestoreIndex(updatedTree);
     };
 
     return (
@@ -161,6 +244,11 @@ export function ViewBuilder(props: ViewBuilderProps) {
                 {assetsInView.map((asset) => {
                     const isExpanded = expandedAssetId === asset.id;
                     const isSelected = selectedAssetIds.includes(asset.id);
+
+                    const currentParams = getVolumeParamsForAsset(
+                        view.root,
+                        asset.id,
+                    );
 
                     return (
                         <div
@@ -276,15 +364,60 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                                 label="Type"
                                                 data={[
                                                     "isosurface",
-                                                    "gaussian-surface",
-                                                    "surface",
+                                                    "grid_slice",
                                                 ]}
-                                                defaultValue="isosurface"
+                                                value={currentParams.type}
+                                                onChange={(val) => {
+                                                    if (val === "grid_slice") {
+                                                        pushWarningNotification(
+                                                            "The volume type of 'grid_slice' is not supported at the moment!",
+                                                        );
+                                                    } else if (val) {
+                                                        handleNodeParamChange(
+                                                            asset.id,
+                                                            "volume_representation",
+                                                            "type",
+                                                            val,
+                                                        );
+                                                    }
+                                                }}
                                                 size="xs"
                                             />
                                             <NumberInput
                                                 label="Relative isosurface"
-                                                defaultValue={1.5}
+                                                defaultValue={
+                                                    currentParams.relative_isovalue
+                                                }
+                                                onBlur={(e) => {
+                                                    const val = parseFloat(
+                                                        e.currentTarget.value,
+                                                    );
+                                                    if (!isNaN(val)) {
+                                                        handleNodeParamChange(
+                                                            asset.id,
+                                                            "volume_representation",
+                                                            "relative_isovalue",
+                                                            val,
+                                                        );
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        const val = parseFloat(
+                                                            e.currentTarget
+                                                                .value,
+                                                        );
+                                                        if (!isNaN(val)) {
+                                                            handleNodeParamChange(
+                                                                asset.id,
+                                                                "volume_representation",
+                                                                "relative_isovalue",
+                                                                val,
+                                                            );
+                                                        }
+                                                        e.currentTarget.blur();
+                                                    }
+                                                }}
                                                 step={0.1}
                                                 size="xs"
                                             />
@@ -292,35 +425,51 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                                 <Checkbox
                                                     label="Show wireframe"
                                                     size="xs"
-                                                    defaultChecked
+                                                    checked={
+                                                        currentParams.show_wireframe
+                                                    }
+                                                    onChange={(e) => {
+                                                        handleNodeParamChange(
+                                                            asset.id,
+                                                            "volume_representation",
+                                                            "show_wireframe",
+                                                            e.currentTarget
+                                                                .checked,
+                                                        );
+                                                    }}
                                                 />
                                                 <Checkbox
                                                     label="Show faces"
                                                     size="xs"
-                                                    defaultChecked
+                                                    checked={
+                                                        currentParams.show_faces
+                                                    }
+                                                    onChange={(e) => {
+                                                        handleNodeParamChange(
+                                                            asset.id,
+                                                            "volume_representation",
+                                                            "show_faces",
+                                                            e.currentTarget
+                                                                .checked,
+                                                        );
+                                                    }}
                                                 />
                                             </Group>
                                             <ColorInput
                                                 label="Color"
-                                                defaultValue="#00805c"
+                                                defaultValue={
+                                                    currentParams.color
+                                                }
                                                 size="xs"
                                                 format="hex"
-                                                swatches={[
-                                                    "#2e2e2e",
-                                                    "#868e96",
-                                                    "#fa5252",
-                                                    "#e64980",
-                                                    "#be4bdb",
-                                                    "#7950f2",
-                                                    "#4c6ef5",
-                                                    "#228be6",
-                                                    "#15aabf",
-                                                    "#12b886",
-                                                    "#40c057",
-                                                    "#82c91e",
-                                                    "#fab005",
-                                                    "#fd7e14",
-                                                ]}
+                                                onChangeEnd={(val) => {
+                                                    handleNodeParamChange(
+                                                        asset.id,
+                                                        "color",
+                                                        "color",
+                                                        val,
+                                                    );
+                                                }}
                                             />
                                         </div>
                                     )}
