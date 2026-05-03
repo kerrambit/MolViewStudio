@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRegime } from "../../../services/RegimeProvider";
 import { ViewCard } from "../../view-card/ViewCard";
 import {
@@ -14,12 +14,10 @@ import type { Subscription } from "rxjs";
 import { InactiveViewCard } from "../../view-card/InactiveViewCard";
 import { CreateViewCard } from "../../view-card/CreateViewCard";
 
-/**
- * Props for Views component.
- */
 interface ViewsProps {
     isMolstarLoading: boolean;
-    onOpenBuilder?: (key: string) => void;
+    isBuilderOpen: boolean;
+    onOpenBuilder?: (key: string | undefined) => void;
 }
 
 export function Views(props: ViewsProps) {
@@ -37,6 +35,18 @@ export function Views(props: ViewsProps) {
     // State for the index of currently active view card (default is the first one).
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
 
+    // We use a reference to safely pass the latest variables into the Molstar event listener without having to tear down and rebuild the subscription every time a view changes.
+    const latestDataRef = useRef({
+        isBuilderOpen: props.isBuilderOpen,
+        viewItems,
+    });
+    useEffect(() => {
+        latestDataRef.current = {
+            isBuilderOpen: props.isBuilderOpen,
+            viewItems,
+        };
+    }, [props.isBuilderOpen, viewItems]);
+
     // Callback for snapshot selected changed from Molstar UI.
     useEffect(() => {
         let sub: Subscription;
@@ -46,13 +56,20 @@ export function Views(props: ViewsProps) {
 
             sub = getSnapshotChangeSubscription((index, _) => {
                 setActiveViewCardIndex(index);
+                const { isBuilderOpen, viewItems } = latestDataRef.current;
+                if (isBuilderOpen && props.onOpenBuilder) {
+                    const newView = viewItems[index];
+                    if (newView) {
+                        props.onOpenBuilder(newView.key);
+                    }
+                }
             });
         }
 
         return () => {
             if (sub) sub.unsubscribe();
         };
-    }, [props.isMolstarLoading]);
+    }, [props.isMolstarLoading, props.onOpenBuilder]);
 
     return (
         <div
@@ -84,9 +101,12 @@ export function Views(props: ViewsProps) {
 
                             await clearViewerContent();
 
-                            addNewSnapshotToManager(
+                            const newKey =
                                 result.createdNode.metadata.key ??
-                                    crypto.randomUUID(),
+                                crypto.randomUUID();
+
+                            addNewSnapshotToManager(
+                                newKey,
                                 result.createdNode.metadata.title ?? "New View",
                                 result.createdNode.metadata.description,
                                 result.createdNode.metadata
@@ -95,6 +115,10 @@ export function Views(props: ViewsProps) {
                             );
 
                             await applySnapshotByIndex(viewItems.length);
+
+                            if (props.isBuilderOpen && props.onOpenBuilder) {
+                                props.onOpenBuilder(newKey);
+                            }
                         }
                     }}
                 />
@@ -180,6 +204,12 @@ export function Views(props: ViewsProps) {
                             thumbnail={view.thumbnail}
                             onClick={async () => {
                                 await applySnapshotByIndex(index);
+                                if (
+                                    props.isBuilderOpen &&
+                                    props.onOpenBuilder
+                                ) {
+                                    props.onOpenBuilder(view.key);
+                                }
                             }}
                         ></InactiveViewCard>
                     ),

@@ -180,7 +180,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                         root: updateNodeParamInAssetBranch(
                             snap.root,
                             assetId,
-                            nodeKind, // E.g. "volume_representation" or "color"
+                            nodeKind,
                             paramKey,
                             newValue,
                         ),

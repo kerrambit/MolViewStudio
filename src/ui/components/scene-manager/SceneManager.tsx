@@ -60,18 +60,22 @@ export function SceneManager(props: SceneManagerProps) {
                     <Views
                         isMolstarLoading={props.isMolstarLoading}
                         onOpenBuilder={(key) => setIsBuilderOpen(key)}
+                        isBuilderOpen={!!isBuilderOpen}
                     ></Views>
                 )}
             </Sidebar>
 
-            {isBuilderOpen && (
-                <Sidebar>
-                    <ViewBuilder
-                        viewKey={isBuilderOpen}
-                        onClose={() => setIsBuilderOpen(undefined)}
-                    ></ViewBuilder>
-                </Sidebar>
-            )}
+            {regime.kind === "viewing" &&
+                sidebar === "views" &&
+                isBuilderOpen && (
+                    <Sidebar>
+                        <ViewBuilder
+                            key={isBuilderOpen}
+                            viewKey={isBuilderOpen}
+                            onClose={() => setIsBuilderOpen(undefined)}
+                        ></ViewBuilder>
+                    </Sidebar>
+                )}
         </>
     );
 }
