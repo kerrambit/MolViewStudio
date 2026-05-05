@@ -6,6 +6,7 @@ import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
 import { Color } from "molstar/lib/mol-util/color";
 import { Thumbnail } from "../common/thumbnail/Thumbnail";
 import {
+    areCameraStatesEqual,
     getBackgroundColorChangeSubscription,
     getCanvasScreenshot,
     toMVSPosition,
@@ -18,6 +19,7 @@ import {
 import { pushWarningNotification } from "../../services/NotificationService";
 
 import "./ViewCard.css";
+import { CameraStatus } from "./CameraStatus";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -78,6 +80,31 @@ export function ViewCard(props: ViewCardProps) {
     // Camera hook.
     const cameraState = useLiveCameraState();
 
+    // Function to check if the camera has moved with respect to initial camera position.
+    const hasCameraMoved = () => {
+        if (!cameraState || !props.metadata.referenceCamera) {
+            return false;
+        }
+
+        const liveCameraReferenced = {
+            ...cameraState,
+            position: toMVSPosition({
+                position: cameraState.position as any,
+                target: cameraState.target as any,
+                fov: cameraState.fov,
+                mode: cameraState.mode,
+            }),
+        };
+
+        return !areCameraStatesEqual(
+            props.metadata.referenceCamera,
+            liveCameraReferenced,
+        );
+    };
+
+    // Boolean variable storing information if the camera has moved with respect to initial camera position.
+    const isCameraMoved = hasCameraMoved();
+
     // CSS class builder depends on the active property of view card.
     const viewCardClasses = buildCSSClassString([
         "viewCard",
@@ -133,6 +160,13 @@ export function ViewCard(props: ViewCardProps) {
             <CameraTextInputGroup
                 cameraState={cameraState}
             ></CameraTextInputGroup>
+
+            <CameraStatus
+                doesReferenceCameraExist={
+                    props.metadata.referenceCamera !== undefined
+                }
+                isCameraMoved={isCameraMoved}
+            />
 
             <div
                 style={{
