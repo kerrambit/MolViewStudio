@@ -11,7 +11,11 @@ import {
     extractViewsFromMVS,
     getCurrentSnapshotIndex,
     getSnapshotChangeSubscription,
-    reloadMolstarAndRestoreIndex,
+    updateLiveBackgroundColor,
+    updateSnapshotBackgroundColorInManager,
+    updateSnapshotCameraInManager,
+    updateSnapshotDescriptionInManager,
+    updateSnapshotTitleInManager,
 } from "../../../../molstar-wrapper/src";
 import type { Subscription } from "rxjs";
 import { InactiveViewCard } from "../../view-card/InactiveViewCard";
@@ -21,24 +25,26 @@ import {
     ViewOptionsDialogueContent,
     type ViewOptionsDialogueContentReturnType,
 } from "./ViewOptionsDialogueContent";
-import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 
+/**
+ * Properties for Views component.
+ */
 interface ViewsProps {
     isMolstarLoading: boolean;
     isBuilderOpen: boolean;
     onOpenBuilder?: (key: string | undefined) => void;
 }
 
+/**
+ * Views component.
+ */
 export function Views(props: ViewsProps) {
     // Use regime.
     const { regime, setRegime } = useRegime();
 
     // Use dialogue.
     const { showDialogue } = useDialogue();
-
-    // Use assets.
-    const { getAllAssets } = useManagedAssets();
 
     // Memoize views extracted from state tree.
     const viewItems = useMemo(() => {
@@ -104,11 +110,13 @@ export function Views(props: ViewsProps) {
                     gap: "1em",
                 }}
             >
+                {/* We render "CreateViewCard" component always as the first card. */}
                 <CreateViewCard
                     onClick={async () => {
                         if (regime.kind === "viewing") {
                             const result = addEmptySnapshotToTree(
                                 regime.stateTree,
+                                "New View",
                             );
 
                             setRegime({
@@ -118,16 +126,13 @@ export function Views(props: ViewsProps) {
 
                             await clearViewerContent();
 
-                            const newKey =
-                                result.createdNode.metadata.key ??
-                                crypto.randomUUID();
+                            const newKey = result.createdNode.metadata.key!;
 
                             addNewSnapshotToManager(
                                 newKey,
-                                result.createdNode.metadata.title ?? "New View",
+                                result.createdNode.metadata.title!,
                                 result.createdNode.metadata.description,
-                                result.createdNode.metadata
-                                    .description_format ?? "markdown",
+                                result.createdNode.metadata.description_format!,
                                 true,
                             );
 
@@ -150,7 +155,7 @@ export function Views(props: ViewsProps) {
                                 await applySnapshotByIndex(index);
                             }}
                             onCameraSave={(referenceCamera, thumbnail) => {
-                                // Ignore other not-viewing regime.
+                                // Ignore other non-viewing regime.
                                 if (regime.kind !== "viewing") {
                                     return;
                                 }
@@ -186,9 +191,12 @@ export function Views(props: ViewsProps) {
                                     ...regime,
                                     stateTree: updatedTree,
                                 });
+
+                                // Update snapshot's camera in Molstar snapshot manager.
+                                updateSnapshotCameraInManager(index);
                             }}
                             onBackgrounColorChange={(color) => {
-                                // Ignore other not-viewing regime.
+                                // Ignore other non-viewing regime.
                                 if (regime.kind !== "viewing") {
                                     return;
                                 }
@@ -221,7 +229,7 @@ export function Views(props: ViewsProps) {
                                 });
                             }}
                             onTitleChange={(title) => {
-                                // Ignore other not-viewing regime.
+                                // Ignore other non-viewing regime.
                                 if (regime.kind !== "viewing") {
                                     return;
                                 }
@@ -253,7 +261,10 @@ export function Views(props: ViewsProps) {
                                     stateTree: updatedTree,
                                 });
 
-                                // TODO: use updateSnapshotInManager to update
+                                // Update snapshot's title in Molstar snapshot manager.
+                                if (title) {
+                                    updateSnapshotTitleInManager(index, title);
+                                }
                             }}
                             onOpenBuilder={props.onOpenBuilder} // Propagate up to SceneManager.
                             onOpenOptions={async (key) => {
@@ -277,7 +288,7 @@ export function Views(props: ViewsProps) {
                                         },
                                     );
 
-                                // Ignore other not-viewing regime.
+                                // Ignore other non-viewing regime.
                                 if (!result || regime.kind !== "viewing") {
                                     return;
                                 }
@@ -339,13 +350,21 @@ export function Views(props: ViewsProps) {
                                     stateTree: updatedTree,
                                 });
 
-                                // TODO: is it really necessary to reload whole Molstar, isn't enought to call updateSnapshotInManager only?
-                                // Reload Molstar viewer.
-                                reloadMolstarAndRestoreIndex(
-                                    key,
-                                    getAllAssets(),
-                                    updatedTree,
+                                // Update snapshot's description in Molstar snapshot manager.
+                                updateSnapshotDescriptionInManager(
+                                    index,
+                                    result.description,
+                                    result.descriptionFormat,
                                 );
+
+                                // Update snapshot's background color in Molstar snapshot manager.
+                                updateSnapshotBackgroundColorInManager(
+                                    index,
+                                    result.canvasColor,
+                                );
+
+                                // Update live renderer with new background color.
+                                updateLiveBackgroundColor(result.canvasColor);
                             }}
                         />
                     ) : (

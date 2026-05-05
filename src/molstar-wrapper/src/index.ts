@@ -1060,17 +1060,76 @@ export function addNewSnapshotToManager(
     });
 }
 
+export function updateSnapshotBackgroundColorInManager(
+    index: number,
+    backgroundColor: HexColor | undefined,
+): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    if (
+        entry.snapshot.canvas3d?.props?.renderer.backgroundColor &&
+        backgroundColor
+    ) {
+        const cleanHex = backgroundColor.replace("#", "");
+        const numericColor = parseInt(cleanHex, 16) as Color;
+        entry.snapshot.canvas3d.props.renderer.backgroundColor = numericColor;
+    }
+
+    molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, entry);
+
+    return { success: true, value: null };
+}
+
+export function updateLiveBackgroundColor(
+    backgroundColor: HexColor | undefined,
+): void {
+    if (!molstar || !molstar.canvas3d) return;
+
+    if (backgroundColor) {
+        const cleanHex = backgroundColor.replace("#", "");
+        const numericColor = parseInt(cleanHex, 16) as Color;
+
+        molstar.canvas3d.setProps({
+            renderer: { backgroundColor: numericColor },
+        });
+    } else {
+        molstar.canvas3d.setProps({
+            renderer: { backgroundColor: 0xffffff as Color },
+        });
+    }
+
+    molstar.canvas3d.requestDraw();
+}
+
 /**
  * Update existing snapshot in the Molstar's snapshot manager.
  * @param index index of the snapshot to update
- * @param title nwe title
  * @param description new description
  * @param descriptionFormat new description format
  * @returns if there is error, result with `Error` is returned, otherise null
  */
-export function updateSnapshotInManager(
+export function updateSnapshotDescriptionInManager(
     index: number,
-    title: string,
     description: string = "",
     descriptionFormat: "markdown" | "plaintext",
 ): Result<null> {
@@ -1095,12 +1154,75 @@ export function updateSnapshotInManager(
             error: new Error(`Given entry on index <${index}> was not found!`),
         };
     }
-    const snapshot = molstar.state.getSnapshot();
-    molstar.managers.snapshot.replace(entry.snapshot.id, snapshot, {
-        key: entry.key,
-        name: title,
+
+    molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, {
+        ...entry,
         description: description,
         descriptionFormat: descriptionFormat,
+    });
+
+    return { success: true, value: null };
+}
+
+export function updateSnapshotTitleInManager(
+    index: number,
+    title: string,
+): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, {
+        ...entry,
+        name: title,
+    });
+
+    return { success: true, value: null };
+}
+
+export function updateSnapshotCameraInManager(index: number): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+    const snapshot = molstar.state.getSnapshot();
+    molstar.managers.snapshot.replace(entry.snapshot.id, snapshot, {
+        ...entry,
     });
 
     return { success: true, value: null };
@@ -2163,9 +2285,13 @@ async function _loadMVSXFile(
  * Safely converts `single` MVS data to `multiple` if needed.
  *
  * @param stateTree current MVSData tree
+ * @param initialTitle title for snapshot
  * @returns new MVSData object with the appended snapshot
  */
-export function addEmptySnapshotToTree(stateTree: MVSData): {
+export function addEmptySnapshotToTree(
+    stateTree: MVSData,
+    initialTitle: string,
+): {
     newStateTree: MVSData_States;
     createdNode: Snapshot;
 } {
@@ -2178,6 +2304,7 @@ export function addEmptySnapshotToTree(stateTree: MVSData): {
             key: crypto.randomUUID(),
             title: "New View",
             linger_duration_ms: 5000,
+            description_format: "markdown",
         },
     };
 
