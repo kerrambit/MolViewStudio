@@ -542,7 +542,7 @@ function createEditRootMenuItem(
         task: {
             action: async () => {
                 if (regime.kind === "viewing") {
-                    pushInfoNotification(`Export started.`);
+                    pushInfoNotification(`Preparing files for export...`);
 
                     const result = await exportStateTree(
                         injectRelativePathsBasedOnAssetIdsIntoTree(
@@ -553,7 +553,7 @@ function createEditRootMenuItem(
                     );
 
                     if (result.success) {
-                        pushSuccessNotification(`Export finished!`);
+                        pushSuccessNotification(`Export ready!`);
                     } else {
                         pushErrorNotification(result.error.message);
                     }
