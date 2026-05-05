@@ -209,7 +209,6 @@ export function ViewOptionsDialogueContent({
                     }}
                 >
                     <Textarea
-                        placeholder="Enter your description..."
                         value={description}
                         onChange={(e) => setDescription(e.currentTarget.value)}
                         styles={{
@@ -219,7 +218,6 @@ export function ViewOptionsDialogueContent({
                                 height: "100%",
                                 backgroundColor: "var(--mantine-color-gray-2)",
                                 border: "none",
-                                textAlign: description ? "left" : "center",
                             },
                         }}
                         style={{ height: "100%" }}
