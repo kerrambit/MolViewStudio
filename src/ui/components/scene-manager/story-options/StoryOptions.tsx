@@ -15,14 +15,31 @@ export function StoryOptions() {
     ) => {
         if (regime.kind !== "viewing" || !regime.stateTree) return;
 
+        if (value === "") {
+            value = undefined;
+        }
+
+        const newMetadata: any = { ...(regime.stateTree.metadata || {}) };
+
+        if (value === undefined) {
+            delete newMetadata[key];
+
+            if (key === "description") {
+                delete newMetadata.description_format;
+            }
+        } else {
+            newMetadata[key] = value;
+
+            if (key === "description") {
+                newMetadata.description_format = "plaintext";
+            }
+        }
+
         setRegime({
             ...regime,
             stateTree: {
                 ...regime.stateTree,
-                metadata: {
-                    ...(regime.stateTree.metadata || {}),
-                    [key]: value,
-                },
+                metadata: newMetadata,
             },
         });
     };
