@@ -19,7 +19,7 @@ export interface ViewOptionsDialogueContentReturnType {
     transitionDuration: number | undefined;
     canvasColor: HexColor | undefined;
     captureScreenshot: boolean;
-    descriptionFormat: "plaintext" | "markdown";
+    descriptionFormat: "plaintext" | "markdown" | undefined;
     description: string | undefined;
 }
 
@@ -264,16 +264,25 @@ export function ViewOptionsDialogueContent({
                 <Button
                     label="Save"
                     variant="primary"
-                    onClick={() =>
+                    onClick={() => {
+                        let _description = description;
+                        let _descriptionFormat = descriptionFormat as
+                            | "plaintext"
+                            | "markdown"
+                            | undefined;
+                        if (description === "") {
+                            _description = undefined;
+                            _descriptionFormat = undefined;
+                        }
                         close({
                             lingerDuration,
                             transitionDuration,
                             canvasColor,
                             captureScreenshot,
-                            descriptionFormat,
-                            description,
-                        })
-                    }
+                            descriptionFormat: _descriptionFormat,
+                            description: _description,
+                        });
+                    }}
                     tooltip="Save view options."
                 />
             </div>

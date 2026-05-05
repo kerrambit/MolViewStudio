@@ -354,7 +354,7 @@ export function Views(props: ViewsProps) {
                                 updateSnapshotDescriptionInManager(
                                     index,
                                     result.description,
-                                    result.descriptionFormat,
+                                    result.descriptionFormat ?? "markdown",
                                 );
 
                                 // Update snapshot's background color in Molstar snapshot manager.
