@@ -2302,7 +2302,7 @@ export function addEmptySnapshotToTree(
         },
         metadata: {
             key: crypto.randomUUID(),
-            title: "New View",
+            title: initialTitle,
             linger_duration_ms: 5000,
             description_format: "markdown",
         },
