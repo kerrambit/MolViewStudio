@@ -1,6 +1,6 @@
 import type { CameraState } from "../../../../molstar-wrapper/src";
 import { UnstyledTextInput } from "./UnstyledTextInput";
-import { CopyActionIcon } from "../actionable-list-item/actions/CopyActionIcon";
+import { CopyActionIcon } from "../actionables/actions/CopyActionIcon";
 import {
     pushInfoNotification,
     pushWarningNotification,

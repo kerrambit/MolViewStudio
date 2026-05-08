@@ -12,7 +12,7 @@ import {
     Group,
 } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import { CloseActionIcon } from "../../common/actionable-list-item/actions/CloseActionIcon";
+import { CloseActionIcon } from "../../common/actionables/actions/CloseActionIcon";
 import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
 import {
     getAllDownloadUrlsFromSnapshot,

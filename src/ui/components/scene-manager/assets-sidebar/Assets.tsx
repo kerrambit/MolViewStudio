@@ -3,9 +3,9 @@ import { Button } from "../../common/button/Button";
 import { Text } from "@mantine/core";
 import { useState } from "react";
 import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
-import { EditActionIcon } from "../../common/actionable-list-item/actions/EditActionIcon";
-import { DeleteActionIcon } from "../../common/actionable-list-item/actions/DeleteActionIcon";
-import { ActionableListItem } from "../../common/actionable-list-item/ActionableListItem";
+import { EditActionIcon } from "../../common/actionables/actions/EditActionIcon";
+import { DeleteActionIcon } from "../../common/actionables/actions/DeleteActionIcon";
+import { ActionableListItem } from "../../common/actionables/ActionableListItem";
 import { useDialogue } from "../../../services/DialogueProvider";
 import {
     AddAssetDialogueContent,
