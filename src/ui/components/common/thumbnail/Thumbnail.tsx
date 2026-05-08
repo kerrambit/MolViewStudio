@@ -22,7 +22,7 @@ export function Thumbnail(props: ThumbnailProps) {
                 cursor: props.onClick ? "pointer" : "default",
                 maxWidth: "90%",
                 borderRadius: "6px",
-                paddingBottom: "1em",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
                 ...props.style,
             }}
         />

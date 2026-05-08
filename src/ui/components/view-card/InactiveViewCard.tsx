@@ -32,20 +32,29 @@ export function InactiveViewCard(props: InactiveViewCardProps) {
             </div>
 
             {props.thumbnail && (
-                <Thumbnail
-                    onClick={() => {
-                        if (props.onClick) {
-                            props.onClick();
-                        }
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        paddingBottom: "1em",
                     }}
-                    title="Click to select this view."
-                    src={props.thumbnail}
-                    alt={`${props.title || `${props.index}. view`} - thumbnail`}
-                ></Thumbnail>
+                >
+                    <Thumbnail
+                        onClick={() => {
+                            if (props.onClick) {
+                                props.onClick();
+                            }
+                        }}
+                        title="Click to select this view."
+                        src={props.thumbnail}
+                        alt={`${props.title || `${props.index}. view`} - thumbnail`}
+                    ></Thumbnail>
+                </div>
             )}
 
             <div
                 style={{
+                    marginTop: "1em",
                     marginBottom: "1em",
                 }}
             >
