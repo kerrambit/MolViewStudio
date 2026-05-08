@@ -5,7 +5,7 @@ interface CameraStatusProps {
 
 export function CameraStatus(props: CameraStatusProps) {
     let statusText = "No camera saved.";
-    let statusColor = "var(--mantine-color-gray-2)";
+    let statusColor = "var(--mantine-color-gray-6)";
 
     if (props.doesReferenceCameraExist) {
         if (props.isCameraMoved) {
