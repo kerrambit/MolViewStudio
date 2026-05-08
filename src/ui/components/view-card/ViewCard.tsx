@@ -3,8 +3,16 @@ import { Button } from "../common/button/Button";
 import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../utils/cssClassBuilder";
 import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
-import { Color } from "molstar/lib/mol-util/color";
+import { DeleteActionIcon } from "../common/actionables/actions/DeleteActionIcon";
+import { ChevronUpActionIcon } from "../common/actionables/actions/ChevronUpActionIcon";
+import { ChevronDownActionIcon } from "../common/actionables/actions/ChevronDownActionIcon";
+import { RevertActionIcon } from "../common/actionables/actions/RevertActionIcon";
+import { CopyActionIcon } from "../common/actionables/actions/CopyActionIcon";
+import { ActionableTile } from "../common/actionables/ActionableTile";
 import { Thumbnail } from "../common/thumbnail/Thumbnail";
+import { pushWarningNotification } from "../../services/NotificationService";
+import { CameraStatus } from "./CameraStatus";
+import { Color } from "molstar/lib/mol-util/color";
 import {
     areCameraStatesEqual,
     getBackgroundColorChangeSubscription,
@@ -16,10 +24,8 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../molstar-wrapper/src";
-import { pushWarningNotification } from "../../services/NotificationService";
 
 import "./ViewCard.css";
-import { CameraStatus } from "./CameraStatus";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -34,6 +40,9 @@ export interface ViewCardProps {
         referenceCamera: CameraState,
         thumbnail: Base64Png | undefined,
     ) => void;
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
+    onDelete?: () => void;
 }
 
 export function ViewCard(props: ViewCardProps) {
@@ -114,12 +123,18 @@ export function ViewCard(props: ViewCardProps) {
 
     // Render compoment.
     return (
-        <div className={viewCardClasses}>
+        <div className={viewCardClasses} style={{ gap: "0.5em" }}>
+            {/* Header. */}
             <div
                 style={{
-                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0.5em 1em",
+                    borderBottom: "1px solid var(--color-grey-light)",
                 }}
             >
+                {/* Title of the view. */}
                 <UnstyledTextInput
                     prefix={`${props.index + 1}. view`}
                     value={currentName}
@@ -139,29 +154,58 @@ export function ViewCard(props: ViewCardProps) {
                         }
                     }}
                     bold={true}
-                    style={{
-                        margin: "1em",
-                    }}
                 />
+
+                {/* Header actions. */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.3em",
+                    }}
+                >
+                    <ChevronDownActionIcon
+                        tooltip="Move this view down."
+                        onClick={() => {}}
+                    ></ChevronDownActionIcon>
+
+                    <ChevronUpActionIcon
+                        tooltip="Move this view up."
+                        onClick={() => {}}
+                    ></ChevronUpActionIcon>
+
+                    <DeleteActionIcon
+                        tooltip="Delete this view."
+                        onClick={() => {}}
+                    ></DeleteActionIcon>
+                </div>
             </div>
 
+            {/* Thumbnail. */}
             {props.metadata.thumbnail && (
-                <Thumbnail
-                    onClick={() => {
-                        if (props.onClick) {
-                            props.onClick();
-                        }
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        paddingBottom: "1em",
+                        paddingTop: "1em",
                     }}
-                    title="Click to select this view."
-                    src={props.metadata.thumbnail}
-                    alt={`${props.metadata.title || `${props.index}. view`} - thumbnail`}
-                ></Thumbnail>
+                >
+                    <Thumbnail
+                        onClick={() => {
+                            if (props.onClick) props.onClick();
+                        }}
+                        title="Click to select this view."
+                        src={props.metadata.thumbnail}
+                        alt={`${props.metadata.title || `${props.index}. view`} - thumbnail`}
+                    />
+                </div>
             )}
 
-            <CameraTextInputGroup
-                cameraState={cameraState}
-            ></CameraTextInputGroup>
+            {/* Camera position. */}
+            <CameraTextInputGroup cameraState={cameraState} />
 
+            {/* Camera status. */}
             <CameraStatus
                 doesReferenceCameraExist={
                     props.metadata.referenceCamera !== undefined
@@ -169,127 +213,119 @@ export function ViewCard(props: ViewCardProps) {
                 isCameraMoved={isCameraMoved}
             />
 
+            {/* Buttons. */}
             <div
                 style={{
-                    marginTop: "0.75em",
-                    paddingLeft: "5em",
-                    paddingRight: "5em",
-                    display: "flex",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                }}
-            >
-                <Button
-                    label="Capture camera"
-                    tooltip="Captures current camera position and saves it. If capturing of screenshot is enabled in Options, screenshot is created, too."
-                    size="small"
-                    onClick={async () => {
-                        if (props.onCameraSave && cameraState) {
-                            let img: Base64Png | undefined;
-                            try {
-                                img = await getCanvasScreenshot();
-                            } catch {
-                                pushWarningNotification(
-                                    "Application could not save the canvas screenshot! The current view will contain no screeshot.",
-                                );
-                                img = undefined;
-                            }
-
-                            props.onCameraSave(
-                                {
-                                    ...cameraState,
-                                    position: toMVSPosition({
-                                        position: cameraState.position as any,
-                                        target: cameraState.target as any,
-                                        fov: cameraState.fov,
-                                        mode: cameraState.mode,
-                                    }),
-                                },
-                                img,
-                            );
-                        }
-                    }}
-                />
-            </div>
-
-            <div
-                style={{
-                    display: "flex",
-                    paddingTop: "1em",
                     paddingBottom: "1em",
-                    paddingRight: "1em",
-                    paddingLeft: "1em",
+                    paddingTop: "1em",
+                    display: "flex",
                     flexDirection: "column",
+                    gap: "0.5em",
+                    width: "90%",
                 }}
             >
+                {/* Primary button & utility action icons. */}
                 <div
                     style={{
                         display: "flex",
-                        flexDirection: "column",
+                        gap: "0.5em",
+                        alignItems: "stretch",
                         justifyContent: "center",
-                        gap: "1em",
                     }}
                 >
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "center",
-                            gap: "1em",
-                        }}
-                    >
-                        <Button
-                            size="small"
-                            tooltip="Open View Builder sidebar."
-                            label="Builder"
-                            variant="secondary"
-                            onClick={async () => {
-                                if (props.onOpenBuilder) {
-                                    props.onOpenBuilder(props.metadata.key!);
+                    <Button
+                        label="Capture camera"
+                        tooltip="Captures current camera position and saves it."
+                        size="small"
+                        variant="secondary"
+                        onClick={async () => {
+                            if (props.onCameraSave && cameraState) {
+                                // Retrieve canvas screenshot.
+                                let img: Base64Png | undefined;
+                                try {
+                                    img = await getCanvasScreenshot();
+                                } catch {
+                                    pushWarningNotification(
+                                        "Application could not save the canvas screenshot! The current view will contain no screenshot.",
+                                    );
+                                    img = undefined;
                                 }
-                            }}
-                        ></Button>
 
-                        <Button
-                            size="small"
-                            tooltip="Open View Options dialogue."
-                            label="Options"
-                            variant="secondary"
-                            onClick={async () => {
-                                if (props.onOpenOptions) {
-                                    props.onOpenOptions(props.metadata.key!);
-                                }
-                            }}
-                        ></Button>
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "center",
-                            gap: "1em",
-                        }}
-                    >
-                        <Button
-                            size="small"
-                            tooltip="Revert changes."
-                            label="Revert"
-                            variant="secondary"
-                            onClick={() => {
-                                pushWarningNotification(
-                                    `Revert of changes is not implemented yet!`,
+                                props.onCameraSave(
+                                    {
+                                        ...cameraState,
+                                        position: toMVSPosition({
+                                            position:
+                                                cameraState.position as any,
+                                            target: cameraState.target as any,
+                                            fov: cameraState.fov,
+                                            mode: cameraState.mode,
+                                        }),
+                                    },
+                                    img,
                                 );
-                            }}
-                        ></Button>
-                        <Button
-                            size="small"
-                            label="Copy"
-                            tooltip="Create a copy of this view."
-                            variant="secondary"
-                            onClick={props.onCopy}
-                        ></Button>
+                            }
+                        }}
+                    />
+
+                    {/* Revert action icon. */}
+                    <div style={{ display: "flex", gap: "0.5em" }}>
+                        <ActionableTile>
+                            <RevertActionIcon
+                                tooltip="Reverse changes."
+                                onClick={() => {
+                                    pushWarningNotification(
+                                        `Revert of changes is not implemented yet!`,
+                                    );
+                                }}
+                            ></RevertActionIcon>
+                        </ActionableTile>
+
+                        {/* Copy action icon. */}
+                        <ActionableTile>
+                            <CopyActionIcon
+                                tooltip="Create copy of this view."
+                                onClick={() => {
+                                    if (props.onCopy) props.onCopy();
+                                }}
+                            ></CopyActionIcon>
+                        </ActionableTile>
                     </div>
+                </div>
+
+                {/* Secondary buttons. */}
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "0.5em",
+                    }}
+                >
+                    {/* View Builder button. */}
+                    <Button
+                        size="small"
+                        tooltip="Open View Builder sidebar."
+                        label="Builder"
+                        variant="secondary"
+                        onClick={() => {
+                            if (props.onOpenBuilder) {
+                                props.onOpenBuilder(props.metadata.key!);
+                            }
+                        }}
+                    />
+
+                    {/* View Options button. */}
+                    <Button
+                        size="small"
+                        tooltip="Open View Options dialogue."
+                        label="Options"
+                        variant="secondary"
+                        onClick={() => {
+                            if (props.onOpenOptions) {
+                                props.onOpenOptions(props.metadata.key!);
+                            }
+                        }}
+                    />
                 </div>
             </div>
         </div>
