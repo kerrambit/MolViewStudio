@@ -140,8 +140,6 @@ export function Views(props: ViewsProps) {
                                 stateTree: result.newStateTree,
                             });
 
-                            await clearViewerContent();
-
                             const newKey = result.createdNode.metadata.key!;
 
                             addNewSnapshotToManager(
