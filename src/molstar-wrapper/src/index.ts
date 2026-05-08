@@ -1010,6 +1010,34 @@ export function createCopyOfSnapshot(stateTree: MVSData_States, index: number) {
     };
 }
 
+/**
+ * Removes a snapshot at the specified index from the MVS state tree.
+ * Returns both the new React-safe state tree and the removed snapshot.
+ */
+export function removeSnapshotFromTree(
+    stateTree: MVSData_States,
+    index: number,
+) {
+    if (index < 0 || index >= stateTree.snapshots.length) {
+        return {
+            updatedTree: stateTree,
+            removedSnapshot: undefined,
+        };
+    }
+
+    const removedSnapshot = stateTree.snapshots[index];
+
+    const updatedTree: MVSData_States = {
+        ...stateTree,
+        snapshots: stateTree.snapshots.filter((_, i) => i !== index),
+    };
+
+    return {
+        updatedTree,
+        removedSnapshot,
+    };
+}
+
 export function applyBackgroundColorToNode(
     node: MVSTree,
     backgroundColor?: HexColor,
@@ -1130,6 +1158,34 @@ export function updateSnapshotBackgroundColorInManager(
     }
 
     molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, entry);
+
+    return { success: true, value: null };
+}
+
+export function removeSnapshotInManager(index: number): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    molstar.managers.snapshot.remove(entry.snapshot.id);
 
     return { success: true, value: null };
 }

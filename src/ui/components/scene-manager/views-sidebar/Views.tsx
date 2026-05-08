@@ -10,8 +10,11 @@ import {
     clearViewerContent,
     createCopyOfSnapshot,
     extractViewsFromMVS,
+    getAllDownloadUrlsFromSnapshot,
     getCurrentSnapshotIndex,
     getSnapshotChangeSubscription,
+    removeSnapshotFromTree,
+    removeSnapshotInManager,
     updateLiveBackgroundColor,
     updateSnapshotBackgroundColorInManager,
     updateSnapshotCameraInManager,
@@ -29,6 +32,7 @@ import {
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../utils/loggerUi";
+import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
 
 /**
  * Properties for Views component.
@@ -48,6 +52,9 @@ export function Views(props: ViewsProps) {
 
     // Use dialogue.
     const { showDialogue } = useDialogue();
+
+    // Use assets.
+    const { getAllAssets, decrementAssetUseCount } = useManagedAssets();
 
     // Memoize views extracted from state tree.
     const viewItems = useMemo(() => {
@@ -73,6 +80,11 @@ export function Views(props: ViewsProps) {
             viewItems,
             activeViewCardIndex,
         };
+
+        // If there are no views or all views were removed, clear viewer.
+        if (viewItems.length === 0) {
+            clearViewerContent();
+        }
     }, [props.isBuilderOpen, viewItems, activeViewCardIndex]);
 
     // Callback for snapshot selected changed from Molstar UI.
@@ -175,6 +187,71 @@ export function Views(props: ViewsProps) {
                             key={view.id}
                             index={index}
                             metadata={view}
+                            onDelete={async () => {
+                                // Ignore other non-viewing regime.
+                                if (regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Create updated tree.
+                                const { updatedTree, removedSnapshot } =
+                                    removeSnapshotFromTree(
+                                        regime.stateTree,
+                                        index,
+                                    );
+
+                                // Internal bug in assigned index out of range, do not update anything.
+                                if (!removedSnapshot) {
+                                    pushErrorNotification(
+                                        `Internal error occured! Unable to delete the view. Try once more.`,
+                                    );
+                                    loggerUi.error(
+                                        `Internal error occured! Unable to delete the view. Index <${index}> was out of range (there are currently only <${regime.stateTree.snapshots.length}> snapshots)!`,
+                                    );
+                                    return;
+                                }
+
+                                // Decrease count for deleted assets.
+                                const allAssets = getAllAssets();
+                                const assetsIdsInDeletedSnapshot =
+                                    getAllDownloadUrlsFromSnapshot(
+                                        removedSnapshot,
+                                    );
+                                assetsIdsInDeletedSnapshot.forEach((id) => {
+                                    const a = allAssets.find(
+                                        (a) => a.id === id,
+                                    );
+                                    if (a) {
+                                        decrementAssetUseCount(a.asset.url);
+                                    }
+                                });
+
+                                // Update regime.
+                                setRegime({
+                                    ...regime,
+                                    stateTree: updatedTree,
+                                });
+
+                                // Update Molstar's snapshot.
+                                removeSnapshotInManager(index);
+
+                                // Move to previous view.
+                                await applySnapshotByIndex(
+                                    index === 0 ? index : index - 1,
+                                );
+
+                                // When I delete view, and buidler is opened, it doe snot update and it is empty
+                                if (
+                                    props.isBuilderOpen &&
+                                    props.onOpenBuilder
+                                ) {
+                                    props.onOpenBuilder(
+                                        updatedTree.snapshots.at(
+                                            index === 0 ? index : index - 1,
+                                        )?.metadata.key,
+                                    );
+                                }
+                            }}
                             onCopy={async () => {
                                 // Ignore other non-viewing regime.
                                 if (regime.kind !== "viewing") {

@@ -176,7 +176,9 @@ export function ViewCard(props: ViewCardProps) {
 
                     <DeleteActionIcon
                         tooltip="Delete this view."
-                        onClick={() => {}}
+                        onClick={() => {
+                            if (props.onDelete) props.onDelete();
+                        }}
                     ></DeleteActionIcon>
                 </div>
             </div>
