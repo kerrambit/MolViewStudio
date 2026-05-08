@@ -8,6 +8,7 @@ import {
     applyChangesToNode,
     applySnapshotByIndex,
     clearViewerContent,
+    createCopyOfSnapshot,
     extractViewsFromMVS,
     getCurrentSnapshotIndex,
     getSnapshotChangeSubscription,
@@ -26,6 +27,8 @@ import {
     type ViewOptionsDialogueContentReturnType,
 } from "./ViewOptionsDialogueContent";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
+import { pushErrorNotification } from "../../../services/NotificationService";
+import { loggerUi } from "../../../utils/loggerUi";
 
 /**
  * Properties for Views component.
@@ -129,32 +132,39 @@ export function Views(props: ViewsProps) {
                 {/* We render "CreateViewCard" component always as the first card. */}
                 <CreateViewCard
                     onClick={async () => {
-                        if (regime.kind === "viewing") {
-                            const result = addEmptySnapshotToTree(
-                                regime.stateTree,
-                                "New View",
-                            );
+                        // Ignore other non-viewing regime.
+                        if (regime.kind !== "viewing") {
+                            return;
+                        }
 
-                            setRegime({
-                                ...regime,
-                                stateTree: result.newStateTree,
-                            });
+                        // Create updated tree.
+                        const result = addEmptySnapshotToTree(
+                            regime.stateTree,
+                            "New View",
+                        );
 
-                            const newKey = result.createdNode.metadata.key!;
+                        // Update regime.
+                        setRegime({
+                            ...regime,
+                            stateTree: result.newStateTree,
+                        });
 
-                            addNewSnapshotToManager(
-                                newKey,
-                                result.createdNode.metadata.title!,
-                                result.createdNode.metadata.description,
-                                result.createdNode.metadata.description_format!,
-                                true,
-                            );
+                        const newKey = result.createdNode.metadata.key!;
 
-                            await applySnapshotByIndex(viewItems.length);
+                        // Update Molstar's snapshot.
+                        addNewSnapshotToManager(
+                            newKey,
+                            result.createdNode.metadata.title!,
+                            result.createdNode.metadata.description,
+                            result.createdNode.metadata.description_format!,
+                            true,
+                        );
 
-                            if (props.isBuilderOpen && props.onOpenBuilder) {
-                                props.onOpenBuilder(newKey);
-                            }
+                        // Move to newly created view.
+                        await applySnapshotByIndex(viewItems.length);
+
+                        if (props.isBuilderOpen && props.onOpenBuilder) {
+                            props.onOpenBuilder(newKey);
                         }
                     }}
                 />
@@ -165,8 +175,56 @@ export function Views(props: ViewsProps) {
                             key={view.id}
                             index={index}
                             metadata={view}
-                            onClick={async () => {
-                                await applySnapshotByIndex(index);
+                            onCopy={async () => {
+                                // Ignore other non-viewing regime.
+                                if (regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Create updated tree.
+                                const { updatedTree, newSnapshot } =
+                                    createCopyOfSnapshot(
+                                        regime.stateTree,
+                                        index,
+                                    );
+
+                                // Internal bug in assigned index out of range, do not update anything.
+                                if (!newSnapshot) {
+                                    pushErrorNotification(
+                                        `Internal error occured! Unable to create copy of the view. Try once more.`,
+                                    );
+                                    loggerUi.error(
+                                        `Internal error occured! Unable to create copy of the view. Index <${index}> was out of range (there are currently only <${regime.stateTree.snapshots.length}> snapshots)!`,
+                                    );
+                                    return;
+                                }
+
+                                // Update regime.
+                                setRegime({
+                                    ...regime,
+                                    stateTree: updatedTree,
+                                });
+
+                                const newKey = newSnapshot.metadata.key!;
+
+                                // Update Molstar's snapshot.
+                                addNewSnapshotToManager(
+                                    newKey,
+                                    newSnapshot.metadata.title!,
+                                    newSnapshot.metadata.description,
+                                    newSnapshot.metadata.description_format!,
+                                    false,
+                                );
+
+                                // Move to newly copied view.
+                                await applySnapshotByIndex(viewItems.length);
+
+                                if (
+                                    props.isBuilderOpen &&
+                                    props.onOpenBuilder
+                                ) {
+                                    props.onOpenBuilder(newKey);
+                                }
                             }}
                             onCameraSave={(referenceCamera, thumbnail) => {
                                 // Ignore other non-viewing regime.
@@ -174,7 +232,7 @@ export function Views(props: ViewsProps) {
                                     return;
                                 }
 
-                                // Create updated source tree.
+                                // Create updated tree.
                                 const updatedTree = {
                                     ...regime.stateTree,
                                     snapshots: regime.stateTree.snapshots.map(
@@ -215,7 +273,7 @@ export function Views(props: ViewsProps) {
                                     return;
                                 }
 
-                                // Create updated source tree.
+                                // Create updated tree.
                                 const updatedTree = {
                                     ...regime.stateTree,
                                     snapshots: regime.stateTree.snapshots.map(
@@ -236,7 +294,7 @@ export function Views(props: ViewsProps) {
                                     ),
                                 };
 
-                                // Update state tree.
+                                // Update regime.
                                 setRegime({
                                     ...regime,
                                     stateTree: updatedTree,
@@ -248,7 +306,7 @@ export function Views(props: ViewsProps) {
                                     return;
                                 }
 
-                                // Create updated source tree.
+                                // Create updated tree.
                                 const updatedTree = {
                                     ...regime.stateTree,
                                     snapshots: regime.stateTree.snapshots.map(
@@ -269,7 +327,7 @@ export function Views(props: ViewsProps) {
                                     ),
                                 };
 
-                                // Update state tree.
+                                // Update regime.
                                 setRegime({
                                     ...regime,
                                     stateTree: updatedTree,
@@ -313,7 +371,7 @@ export function Views(props: ViewsProps) {
                                     result.captureScreenshot,
                                 );
 
-                                // Create updated source tree.
+                                // Create updated tree.
                                 let updatedTree = {
                                     ...regime.stateTree,
                                     snapshots: regime.stateTree.snapshots.map(
@@ -358,7 +416,7 @@ export function Views(props: ViewsProps) {
                                     ),
                                 };
 
-                                // Update state tree.
+                                // Update regime.
                                 setRegime({
                                     ...regime,
                                     stateTree: updatedTree,

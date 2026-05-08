@@ -976,6 +976,40 @@ export function applyChangesToNode(
     return nodeCopy;
 }
 
+/**
+ * Creates copy if the given snapshot in the state tree.
+ * @param stateTree state tree
+ * @param index index of the snapshot to copy, the copy will be pushed to the array as last elemenet
+ * @returns if index is out of range, it returns original state tree and undefined instead of new copy, otherwise it returns updated state tree and the copy of snapshot itself
+ */
+export function createCopyOfSnapshot(stateTree: MVSData_States, index: number) {
+    if (index >= stateTree.snapshots.length || index < 0) {
+        return { updatedTree: stateTree, newSnapshot: undefined };
+    }
+
+    const copyRoot = copyNode(stateTree.snapshots[index].root);
+
+    const newSnapshot: Snapshot = {
+        root: copyRoot,
+        animation: stateTree.snapshots[index].animation
+            ? { ...stateTree.snapshots[index].animation }
+            : undefined,
+        metadata: {
+            ...stateTree.snapshots[index].metadata,
+            title: `Copy of ${stateTree.snapshots[index].metadata.title}`,
+            key: crypto.randomUUID(),
+        },
+    };
+
+    return {
+        updatedTree: {
+            ...stateTree,
+            snapshots: [...stateTree.snapshots, newSnapshot],
+        },
+        newSnapshot: newSnapshot,
+    };
+}
+
 export function applyBackgroundColorToNode(
     node: MVSTree,
     backgroundColor?: HexColor,
@@ -1250,7 +1284,7 @@ export async function applySnapshotByIndex(
         };
     }
 
-    const entry = entries.get(index) as any;
+    const entry = entries.get(index);
     if (!entry || !entry.snapshot) {
         return {
             success: false,

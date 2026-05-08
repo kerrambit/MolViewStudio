@@ -27,6 +27,7 @@ export interface ViewCardProps {
     onClick?: () => void;
     onOpenBuilder?: (key: string) => void;
     onOpenOptions?: (key: string) => void;
+    onCopy?: () => void;
     onTitleChange?: (title: string | undefined) => void;
     onBackgrounColorChange?: (color: HexColor) => void;
     onCameraSave?: (
@@ -286,11 +287,7 @@ export function ViewCard(props: ViewCardProps) {
                             label="Copy"
                             tooltip="Create a copy of this view."
                             variant="secondary"
-                            onClick={() => {
-                                pushWarningNotification(
-                                    `Copy of node is not implemented yet!`,
-                                );
-                            }}
+                            onClick={props.onCopy}
                         ></Button>
                     </div>
                 </div>
