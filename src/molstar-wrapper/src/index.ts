@@ -9,7 +9,6 @@ import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {
     GlobalMetadata,
     MVSData,
-    type MVSData_State,
     type MVSData_States,
     type SnapshotMetadata,
     type Snapshot,
@@ -27,6 +26,17 @@ import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
+import { UUID } from "molstar/lib/mol-util"; // Import Mol*'s UUID utility if needed
+
+// TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
+interface ManagedAsset {
+    id: string;
+    asset: Asset.Url;
+    relativePath: string;
+    tag: "local" | "remote";
+    name: string;
+    useCount: number;
+}
 
 /**
  * Instance of `PluginUIContext`.
@@ -237,13 +247,30 @@ export function disposeMolstar() {
 }
 
 /**
- * Clears the viewer.
+ * Clears the viewer, clears the snapshots and file assets.
  */
 export async function clearViewer() {
     if (!molstar) throw new Error("Molstar is not initialized!");
     clearAllSnapshotsFromManager();
     clearMVSXFileAssets();
     await molstar.clear();
+}
+
+/**
+ * Clears only the viewer content.
+ */
+export async function clearViewerContent() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    await molstar.clear();
+}
+
+/**
+ * Retrieves all file assets from Molstar repository.
+ * @returns file assets from Molstar repository
+ */
+export function getAllFileAssetsFromMolstar() {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    return molstar.managers.asset.assets;
 }
 
 /**
@@ -528,6 +555,7 @@ export function setBackgroundColor(color: HexColor) {
 export interface SerializedAssets {
     entries: Array<{
         asset: Asset;
+        isStatic?: boolean;
         data: Uint8Array;
     }>;
 }
@@ -544,12 +572,12 @@ export async function serializeMVSXAssets(): Promise<SerializedAssets> {
     const entries: SerializedAssets["entries"] = [];
 
     for (const entry of molstar.managers.asset.assets) {
-        if (entry.tag !== "mvsx-file") continue;
         if (!Asset.isUrl(entry.asset)) continue;
 
         const data = new Uint8Array(await entry.file.arrayBuffer());
         entries.push({
             asset: { kind: "url", id: entry.asset.id, url: entry.asset.url },
+            isStatic: entry.isStatic,
             data,
         });
     }
@@ -569,7 +597,10 @@ function restoreMVSXAssets(serialized: SerializedAssets) {
     for (const entry of serialized.entries) {
         const file = new File([entry.data.buffer as ArrayBuffer], "raw-data");
         // Re-use the exact same asset id and url so the snapshot's arcp:// references resolve to these entries.
-        molstar.managers.asset.set(entry.asset, file, { tag: "mvsx-file" });
+        molstar.managers.asset.set(entry.asset, file, {
+            tag: "mvsx-file",
+            isStatic: entry.isStatic,
+        });
     }
 }
 
@@ -596,8 +627,7 @@ async function restoreSessionState(
  */
 type DownloadAsset = {
     relativeUrl: string;
-    format: "mmcif" | "bcif";
-    content: string | Uint8Array<ArrayBuffer>;
+    content: Uint8Array<ArrayBuffer>;
 };
 
 /**
@@ -624,33 +654,18 @@ async function buildMVSSnapshot(
     for (let i = 0; i < urls.length; ++i) {
         const downloadAsset = urls[i];
         // TODO: this logic below might be needed to seperate, and made more general
-        if (downloadAsset.format === "mmcif") {
-            builder
-                .download({
-                    url: downloadAsset.relativeUrl,
-                })
-                .parse({ format: "mmcif" })
-                .volume()
-                .representation({
-                    type: "isosurface",
-                    relative_isovalue: 1.0,
-                    show_wireframe: false,
-                    show_faces: true,
-                });
-        } else if (downloadAsset.format === "bcif") {
-            builder
-                .download({
-                    url: downloadAsset.relativeUrl,
-                })
-                .parse({ format: "bcif" })
-                .volume({ channel_id: "1" })
-                .representation({
-                    type: "isosurface",
-                    relative_isovalue: 1.0,
-                    show_wireframe: false,
-                    show_faces: true,
-                });
-        }
+        builder
+            .download({
+                url: downloadAsset.relativeUrl,
+            })
+            .parse({ format: "bcif" }) // TODO: or "mmcif"?
+            .volume({ channel_id: "1" })
+            .representation({
+                type: "isosurface",
+                relative_isovalue: 1.0,
+                show_wireframe: false,
+                show_faces: true,
+            });
     }
 
     // Include camera and thumbnail.
@@ -729,9 +744,8 @@ function transformFileDataIntoDownloadAssets(
         const filenameWithExtension = asset.name;
         const relativeUrl = `${cleanPrefix}${filenameWithExtension}`;
         return {
-            format: asset.extension === "cif" ? "mmcif" : "bcif",
             relativeUrl: relativeUrl,
-            content: asset.content,
+            content: fileContentToUint8Array(asset.content),
         };
     });
 }
@@ -818,16 +832,13 @@ async function createArchive(
  */
 async function transfromStateTree(
     stateTree: MVSData,
-    assets: FileData[],
+    assets: DownloadAsset[],
 ): Promise<MVSData | Uint8Array<ArrayBuffer>> {
     if (assets.length === 0) {
         return stateTree;
     }
 
-    return await createArchive(
-        stateTree,
-        transformFileDataIntoDownloadAssets(assets),
-    );
+    return await createArchive(stateTree, assets);
 }
 
 /**
@@ -835,20 +846,62 @@ async function transfromStateTree(
  * Opens a file explorer for user to choose file location.
  * @param stateTree state tree to export
  * @param assets assets
+ * @return Error if there is an internal error in Molstar asset cache, othewise it returns true
  */
 export async function exportStateTree(
     stateTree: MVSData,
-    assets: FileData[],
-): Promise<void> {
+    localAssets: ManagedAsset[],
+): Promise<Result<boolean>> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const internalCache = molstar.managers.asset.assets;
+    const localFiles: DownloadAsset[] = [];
+
+    // Find data (binary) for local assets (managed assets hold only virtual references to local assets which are actually stored inside Molstar' asset manager).
+    for (const managedAsset of localAssets) {
+        if (managedAsset.tag === "local") {
+            const targetUrl = managedAsset.asset.url;
+            let foundData: Uint8Array | undefined;
+            for (const wrapper of internalCache.values()) {
+                if (
+                    wrapper.asset.kind == "url" &&
+                    wrapper.asset.url === targetUrl &&
+                    wrapper.isStatic
+                ) {
+                    foundData = new Uint8Array(
+                        await wrapper.file.arrayBuffer(),
+                    );
+                    break;
+                }
+            }
+
+            if (foundData) {
+                localFiles.push({
+                    relativeUrl: managedAsset.relativePath,
+                    content: foundData as Uint8Array<ArrayBuffer>,
+                });
+            } else {
+                return {
+                    success: false,
+                    error: new Error(
+                        `Internal error: failed to find ${targetUrl} inside Molstar's cache! Please, consider reporting this bug.`,
+                    ),
+                };
+            }
+        }
+    }
+
     // Prepare state tree (either MVSData if .mvsj, otherwise Uint8Array<ArrayBuffer>> for .mvsx).
-    const data = await transfromStateTree(stateTree, assets);
+    const data = await transfromStateTree(stateTree, localFiles);
 
     // Create data blob out of MVSStory.
     const blob = createMVSBlob(data);
 
-    // Let user download the story.
+    // Let the user to download the story.
     const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
+
+    return { success: true, value: true };
 }
 
 /**
@@ -868,25 +921,18 @@ function copyNode(node: MVSTree) {
  */
 export function applyChangesToNode(
     node: MVSTree,
-    changes: {
-        referenceCamera?: CameraState | undefined;
-        thumbnail?: Base64Png;
-        backgroundColor?: HexColor;
-    },
+    referenceCamera?: CameraState | undefined,
+    thumbnail?: Base64Png,
 ): MVSTree {
-    // Copy of original node.
     const nodeCopy = copyNode(node);
 
-    // Only apply changes if we have reference camera data.
-    if (changes.referenceCamera) {
-        const { position, target, up } = changes.referenceCamera;
+    if (referenceCamera) {
+        const { position, target, up } = referenceCamera;
 
-        // Find existing camera node.
         let cameraNode = nodeCopy.children?.find(
             (child) => child.kind === "camera",
         );
 
-        // Update existing camera node.
         if (cameraNode) {
             cameraNode.params = {
                 position: Array.from(position) as [number, number, number],
@@ -894,28 +940,32 @@ export function applyChangesToNode(
                 up: Array.from(up) as [number, number, number],
             };
 
-            // Update or add thumbnail in custom.
-            if (changes.thumbnail) {
+            if (thumbnail) {
                 cameraNode.custom = {
                     ...(cameraNode.custom || {}),
-                    thumbnail: changes.thumbnail,
+                    thumbnail: thumbnail,
                 };
+            } else if (cameraNode.custom) {
+                delete cameraNode.custom.thumbnail;
+
+                if (Object.keys(cameraNode.custom).length === 0) {
+                    delete cameraNode.custom;
+                }
             }
         } else {
-            // Create new camera node.
-            const newCameraNode = {
+            const newCameraNode: any = {
                 kind: "camera" as const,
                 params: {
                     position: Array.from(position) as [number, number, number],
                     target: Array.from(target) as [number, number, number],
                     up: Array.from(up) as [number, number, number],
                 },
-                custom: changes.thumbnail
-                    ? { thumbnail: changes.thumbnail }
-                    : undefined,
             };
 
-            // Add camera node as first child.
+            if (thumbnail) {
+                newCameraNode.custom = { thumbnail: thumbnail };
+            }
+
             if (!nodeCopy.children) {
                 nodeCopy.children = [];
             }
@@ -923,32 +973,104 @@ export function applyChangesToNode(
         }
     }
 
-    // Only apply changes if we have reference background color data.
-    if (changes.backgroundColor) {
-        // Find existing canvas node.
+    return nodeCopy;
+}
+
+/**
+ * Creates copy if the given snapshot in the state tree.
+ * @param stateTree state tree
+ * @param index index of the snapshot to copy, the copy will be pushed to the array as last elemenet
+ * @returns if index is out of range, it returns original state tree and undefined instead of new copy, otherwise it returns updated state tree and the copy of snapshot itself
+ */
+export function createCopyOfSnapshot(stateTree: MVSData_States, index: number) {
+    if (index >= stateTree.snapshots.length || index < 0) {
+        return { updatedTree: stateTree, newSnapshot: undefined };
+    }
+
+    const copyRoot = copyNode(stateTree.snapshots[index].root);
+
+    const newSnapshot: Snapshot = {
+        root: copyRoot,
+        animation: stateTree.snapshots[index].animation
+            ? { ...stateTree.snapshots[index].animation }
+            : undefined,
+        metadata: {
+            ...stateTree.snapshots[index].metadata,
+            title: `Copy of ${stateTree.snapshots[index].metadata.title}`,
+            key: crypto.randomUUID(),
+        },
+    };
+
+    return {
+        updatedTree: {
+            ...stateTree,
+            snapshots: [...stateTree.snapshots, newSnapshot],
+        },
+        newSnapshot: newSnapshot,
+    };
+}
+
+/**
+ * Removes a snapshot at the specified index from the MVS state tree.
+ * Returns both the new React-safe state tree and the removed snapshot.
+ */
+export function removeSnapshotFromTree(
+    stateTree: MVSData_States,
+    index: number,
+) {
+    if (index < 0 || index >= stateTree.snapshots.length) {
+        return {
+            updatedTree: stateTree,
+            removedSnapshot: undefined,
+        };
+    }
+
+    const removedSnapshot = stateTree.snapshots[index];
+
+    const updatedTree: MVSData_States = {
+        ...stateTree,
+        snapshots: stateTree.snapshots.filter((_, i) => i !== index),
+    };
+
+    return {
+        updatedTree,
+        removedSnapshot,
+    };
+}
+
+export function applyBackgroundColorToNode(
+    node: MVSTree,
+    backgroundColor?: HexColor,
+): MVSTree {
+    const nodeCopy = copyNode(node);
+
+    if (backgroundColor) {
         let canvasNode = nodeCopy.children?.find(
             (child) => child.kind === "canvas",
         );
 
-        // Update existing camera node.
         if (canvasNode) {
             canvasNode.params = {
-                background_color: changes.backgroundColor as ColorT,
+                background_color: backgroundColor as ColorT,
             };
         } else {
-            // Create new canvas node.
             const newCanvasNode = {
                 kind: "canvas" as const,
                 params: {
-                    background_color: changes.backgroundColor as ColorT,
+                    background_color: backgroundColor as ColorT,
                 },
             };
 
-            // Add canvas node to the end.
             if (!nodeCopy.children) {
                 nodeCopy.children = [];
             }
             nodeCopy.children.push(newCanvasNode);
+        }
+    } else {
+        if (nodeCopy.children) {
+            nodeCopy.children = nodeCopy.children.filter(
+                (child) => child.kind !== "canvas",
+            );
         }
     }
 
@@ -969,17 +1091,25 @@ export function clearAllSnapshotsFromManager() {
  * @param title title of the snapshot
  * @param description description of the snapshot
  * @param descriptionFormat format of description of the snapshot
+ * @param emptySnapshot decides if the snapshot to add should be empty
  */
 export function addNewSnapshotToManager(
     key: string,
     title: string,
     description: string = "",
     descriptionFormat: "markdown" | "plaintext",
+    emptySnapshot: boolean = false,
 ) {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    // Capture current plugin state.
-    const currentState = molstar.state.getSnapshot();
+    let currentState: PluginState.Snapshot;
+    if (emptySnapshot) {
+        currentState = {
+            id: UUID.create22(),
+        };
+    } else {
+        currentState = molstar.state.getSnapshot();
+    }
 
     // Add to the snapshot manager.
     molstar.managers.snapshot.add({
@@ -992,17 +1122,104 @@ export function addNewSnapshotToManager(
     });
 }
 
+export function updateSnapshotBackgroundColorInManager(
+    index: number,
+    backgroundColor: HexColor | undefined,
+): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    if (
+        entry.snapshot.canvas3d?.props?.renderer.backgroundColor &&
+        backgroundColor
+    ) {
+        const cleanHex = backgroundColor.replace("#", "");
+        const numericColor = parseInt(cleanHex, 16) as Color;
+        entry.snapshot.canvas3d.props.renderer.backgroundColor = numericColor;
+    }
+
+    molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, entry);
+
+    return { success: true, value: null };
+}
+
+export function removeSnapshotInManager(index: number): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    molstar.managers.snapshot.remove(entry.snapshot.id);
+
+    return { success: true, value: null };
+}
+
+export function updateLiveBackgroundColor(
+    backgroundColor: HexColor | undefined,
+): void {
+    if (!molstar || !molstar.canvas3d) return;
+
+    if (backgroundColor) {
+        const cleanHex = backgroundColor.replace("#", "");
+        const numericColor = parseInt(cleanHex, 16) as Color;
+
+        molstar.canvas3d.setProps({
+            renderer: { backgroundColor: numericColor },
+        });
+    } else {
+        molstar.canvas3d.setProps({
+            renderer: { backgroundColor: 0xffffff as Color },
+        });
+    }
+
+    molstar.canvas3d.requestDraw();
+}
+
 /**
  * Update existing snapshot in the Molstar's snapshot manager.
  * @param index index of the snapshot to update
- * @param title nwe title
  * @param description new description
  * @param descriptionFormat new description format
  * @returns if there is error, result with `Error` is returned, otherise null
  */
-export function updateSnapshotInManager(
+export function updateSnapshotDescriptionInManager(
     index: number,
-    title: string,
     description: string = "",
     descriptionFormat: "markdown" | "plaintext",
 ): Result<null> {
@@ -1027,12 +1244,75 @@ export function updateSnapshotInManager(
             error: new Error(`Given entry on index <${index}> was not found!`),
         };
     }
-    const snapshot = molstar.state.getSnapshot();
-    molstar.managers.snapshot.replace(entry.snapshot.id, snapshot, {
-        key: entry.key,
-        name: title,
+
+    molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, {
+        ...entry,
         description: description,
         descriptionFormat: descriptionFormat,
+    });
+
+    return { success: true, value: null };
+}
+
+export function updateSnapshotTitleInManager(
+    index: number,
+    title: string,
+): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    molstar.managers.snapshot.replace(entry.snapshot.id, entry.snapshot, {
+        ...entry,
+        name: title,
+    });
+
+    return { success: true, value: null };
+}
+
+export function updateSnapshotCameraInManager(index: number): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(
+                `Index <${index}> is out of bounds in the entries list!`,
+            ),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+    const snapshot = molstar.state.getSnapshot();
+    molstar.managers.snapshot.replace(entry.snapshot.id, snapshot, {
+        ...entry,
     });
 
     return { success: true, value: null };
@@ -1060,7 +1340,7 @@ export async function applySnapshotByIndex(
         };
     }
 
-    const entry = entries.get(index) as any;
+    const entry = entries.get(index);
     if (!entry || !entry.snapshot) {
         return {
             success: false,
@@ -1079,22 +1359,24 @@ export async function applySnapshotByIndex(
 /**
  * Converts `multiple` kind to `single` kind by adding new `view`.
  * @param stateTree `single` state tree to convert
- * @param view view which will be added as the default one
  * @returns `multiple` state tree with one view (snapshot)
  */
 export function convertStateTreeFromSingleToMultipleKind(
-    stateTree: MVSData_State,
-    view: View,
+    stateTree: MVSData,
 ): MVSData_States {
+    if (stateTree.kind === "multiple") {
+        return stateTree;
+    }
+
     const snaphot: Snapshot = {
-        root: view.node,
+        root: stateTree.root,
         metadata: {
-            title: view.metadata?.title,
-            description: view.metadata?.description,
-            description_format: view.metadata?.description_format,
-            key: view.metadata?.key,
-            linger_duration_ms: view.metadata?.linger_duration_ms || 5000,
-            transition_duration_ms: view.metadata?.transition_duration_ms,
+            title: undefined,
+            description: undefined,
+            description_format: undefined,
+            key: undefined,
+            linger_duration_ms: 5000,
+            transition_duration_ms: undefined,
         },
     };
 
@@ -1112,6 +1394,31 @@ export function convertStateTreeFromSingleToMultipleKind(
     };
 
     return multipleMVS;
+}
+
+/**
+ * Checks all snapshots in the MVS tree. If any are missing a `key` in their metadata,
+ * it creates a new immutable tree with stable UUIDs assigned to those snapshots.
+ *
+ * @param stateTree state tree to fix
+ * @returns new fixed state tree
+ */
+export function ensureAllSnapshotsHaveKeys(
+    stateTree: MVSData_States,
+): MVSData_States {
+    const needsFixing = stateTree.snapshots.some((snap) => !snap.metadata.key);
+    if (!needsFixing) return stateTree;
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snap) => ({
+            ...snap,
+            metadata: {
+                ...snap.metadata,
+                key: snap.metadata.key || crypto.randomUUID(),
+            },
+        })),
+    };
 }
 
 /**
@@ -1270,7 +1577,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
         const canvasParams = canvasNode?.params as CanvasParams | undefined;
 
         const view: ViewMetadata = {
-            id: crypto.randomUUID(),
+            id: metadata.key ?? crypto.randomUUID(),
             key: metadata.key,
             description: metadata.description,
             description_format: metadata.description_format,
@@ -1297,6 +1604,605 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
 }
 
 /**
+ * Removed download node from the state tree.
+ * @param rootNode root node
+ * @param assetIdToRemove managed asset id in download node which will be removed
+ * @returns modified node
+ */
+export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
+    return {
+        ...rootNode,
+        children: rootNode.children?.filter((child: any) => {
+            if (
+                child.kind === "download" &&
+                child.params?.url === assetIdToRemove
+            ) {
+                return false;
+            }
+            return true;
+        }),
+    };
+}
+
+/**
+ * Add new asset to the download node with default values.
+ * @param rootNode root node
+ * @param assetIdToAdd managed asset id
+ * @param extension extension of the data (supported are `bcif` and `cif`)
+ * @returns modified node
+ */
+export function addAssetToRoot(
+    rootNode: any,
+    assetIdToAdd: string,
+    extension: string | undefined,
+) {
+    // TODO: let the user to select this
+    let format: string = "bcif";
+    if (extension === "bcif") {
+        format = "bcif";
+    } else if (extension === "cif") {
+        format = "mmcif";
+    }
+
+    const newDownloadBranch = {
+        kind: "download",
+        params: { url: assetIdToAdd },
+        children: [
+            {
+                kind: "parse",
+                params: { format: format },
+                children: [
+                    {
+                        kind: "volume",
+                        params: { channel_id: "0" },
+                        children: [
+                            {
+                                kind: "volume_representation",
+                                params: {
+                                    type: "isosurface",
+                                    relative_isovalue: 1,
+                                },
+                                children: [],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    };
+
+    return {
+        ...rootNode,
+        children: [...(rootNode.children || []), newDownloadBranch],
+    };
+}
+
+/**
+ * Retrieves all download urls from snapshot.
+ * @param snapshot snapshot
+ * @returns list of urls
+ */
+export function getAllDownloadUrlsFromSnapshot(snapshot: Snapshot): string[] {
+    const urls: string[] = [];
+    if (!snapshot || !snapshot.root || !snapshot.root.children) return urls;
+
+    snapshot.root.children.forEach((child: any) => {
+        if (child.kind === "download" && child.params?.url) {
+            urls.push(child.params.url);
+        }
+    });
+    return urls;
+}
+
+/**
+ * Recursively updates a parameter inside a specific node kind, but only for the branch belonging to the target asset id.
+ *
+ * @param node node to update, start with root
+ * @param targetAssetId node which is updated has to have this id as download url
+ * @param targetNodeKind node type to update, e.g. "volume_representation" or "color"
+ * @param paramKey parameter to update, e.g. "relative_isovalue"
+ * @param paramValue value which will used to update
+ * @param inTargetBranch recursive helper paramter
+ * @returns updated node
+ */
+export function updateNodeParamInAssetBranch(
+    node: any,
+    targetAssetId: string,
+    targetNodeKind: string,
+    paramKey: string,
+    paramValue: any,
+    inTargetBranch: boolean = false,
+): any {
+    let isCurrentlyInTargetBranch = inTargetBranch;
+    if (node.kind === "download" && node.params?.url === targetAssetId) {
+        isCurrentlyInTargetBranch = true;
+    }
+
+    let newParams = node.params;
+
+    if (isCurrentlyInTargetBranch && node.kind === targetNodeKind) {
+        newParams = {
+            ...newParams,
+            [paramKey]: paramValue,
+        };
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            updateNodeParamInAssetBranch(
+                child,
+                targetAssetId,
+                targetNodeKind,
+                paramKey,
+                paramValue,
+                isCurrentlyInTargetBranch,
+            ),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Retrieves current parameters of sepcific download node branch.
+ *
+ * @param rootNode root node
+ * @param assetId asset id, see ManagedAsset
+ * @returns extracted information
+ */
+export function getVolumeParamsForAsset(rootNode: any, assetId: string) {
+    // Some default values.
+    const params = {
+        type: "isosurface",
+        relative_isovalue: 1.0,
+        show_wireframe: false,
+        show_faces: true,
+        color: "#00805c",
+    };
+
+    function traverse(node: any, inBranch: boolean) {
+        let currentInBranch = inBranch;
+
+        if (node.kind === "download" && node.params?.url === assetId) {
+            currentInBranch = true;
+        }
+
+        if (currentInBranch) {
+            if (node.kind === "volume_representation" && node.params) {
+                if (node.params.type !== undefined)
+                    params.type = node.params.type;
+                if (node.params.relative_isovalue !== undefined)
+                    params.relative_isovalue = node.params.relative_isovalue;
+                if (node.params.show_wireframe !== undefined)
+                    params.show_wireframe = node.params.show_wireframe;
+                if (node.params.show_faces !== undefined)
+                    params.show_faces = node.params.show_faces;
+            }
+            if (node.kind === "color" && node.params?.color) {
+                params.color = node.params.color;
+            }
+        }
+
+        if (Array.isArray(node.children)) {
+            for (const child of node.children) {
+                traverse(child, currentInBranch);
+            }
+        }
+    }
+
+    traverse(rootNode, false);
+    return params;
+}
+
+/**
+ * Replace asset IDs in node with arcp protocol url value.
+ * @param node node
+ * @param assets list of assets
+ * @returns modified node
+ */
+function replaceNodeIdsWithMolstarUrls(node: any, assets: ManagedAsset[]): any {
+    let newParams = node.params;
+
+    if (newParams && typeof newParams.url === "string") {
+        const currentId = newParams.url;
+        const matchedAsset = assets.find((a) => a.id === currentId);
+
+        if (matchedAsset) {
+            const internalUrl =
+                typeof matchedAsset.asset === "string"
+                    ? matchedAsset.asset
+                    : matchedAsset.asset.url;
+
+            newParams = {
+                ...newParams,
+                url: internalUrl,
+            };
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            replaceNodeIdsWithMolstarUrls(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Builds state tree with urls in arcp format.
+ * @param stateTree state tree (urls are IDs of managed assets)
+ * @param assets assets
+ * @returns modified state tree
+ */
+export function buildRenderTreeForMolstar(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) return stateTree;
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: replaceNodeIdsWithMolstarUrls(snapshot.root, assets),
+        })),
+    };
+}
+
+export function extractUrlsFromMVS(mvsData: any): Set<string> {
+    let snapshots: any[] = [];
+
+    if (mvsData.kind !== "multiple") {
+        snapshots.push({ root: mvsData.root, metadata: mvsData.metadata });
+    } else {
+        snapshots = mvsData.snapshots;
+    }
+
+    const remoteUrls = new Set<string>();
+    const normalizePath = (path: string) =>
+        path.startsWith("./") ? path.slice(2) : path;
+
+    const traverseNode = (node: any) => {
+        if (node.params) {
+            if (typeof node.params.url === "string") {
+                remoteUrls.add(normalizePath(node.params.url));
+            }
+            if (typeof node.params.uri === "string") {
+                remoteUrls.add(normalizePath(node.params.uri));
+            }
+        }
+
+        if (node.children && Array.isArray(node.children)) {
+            for (const child of node.children) {
+                traverseNode(child);
+            }
+        }
+    };
+
+    snapshots.forEach((snapshot) => {
+        if (snapshot.root) {
+            traverseNode(snapshot.root);
+        }
+    });
+
+    return remoteUrls;
+}
+
+/**
+ * Traverses an MVS node and its children immutably.
+ * Replaces any `url` parameters with the corresponding `ManagedAsset.id`.
+ */
+function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
+    let newParams = node.params;
+
+    if (newParams && typeof newParams.url === "string") {
+        const currentUrl = newParams.url;
+        const normalizedCurrentUrl = currentUrl.startsWith("./")
+            ? currentUrl.slice(2)
+            : currentUrl;
+
+        const matchedAsset = assets.find((a) => {
+            const assetUrl =
+                typeof a.asset === "string" ? a.asset : a.asset?.url;
+
+            return (
+                assetUrl === currentUrl ||
+                a.relativePath === normalizedCurrentUrl
+            );
+        });
+        if (matchedAsset) {
+            newParams = {
+                ...newParams,
+                url: matchedAsset.id,
+            };
+        }
+    } else if (newParams && typeof newParams.uri === "string") {
+        const currentUri = newParams.uri;
+        const normalizedCurrentUrl = currentUri.startsWith("./")
+            ? currentUri.slice(2)
+            : currentUri;
+
+        const matchedAsset = assets.find((a) => {
+            const assetUrl =
+                typeof a.asset === "string" ? a.asset : a.asset?.url;
+
+            return (
+                assetUrl === currentUri ||
+                a.relativePath === normalizedCurrentUrl
+            );
+        });
+
+        if (matchedAsset) {
+            newParams = {
+                ...newParams,
+                url: matchedAsset.id,
+            };
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            replaceNodeUrlsWithIds(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Replaces local/remote asset paths in the MVS tree with their internal ManagedAsset IDs.
+ * Handles both `single` and `multiple` MVSData kinds safely.
+ *
+ * @param stateTree The current MVS source tree
+ * @param assets Array of currently managed assets
+ * @returns A new, immutable MVSData tree
+ */
+export function injectAssetIdsIntoTree(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) {
+        return stateTree;
+    }
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: replaceNodeUrlsWithIds(snapshot.root, assets),
+        })),
+    };
+}
+
+/**
+ * Traverses an MVS node and its children immutably.
+ * Replaces any `url` or `uri` parameters matching an Asset ID back to its relative path.
+ */
+function replaceNodeIdsWithRelativePaths(
+    node: any,
+    assets: ManagedAsset[],
+): any {
+    let newParams = node.params;
+
+    if (newParams) {
+        if (typeof newParams.url === "string") {
+            const currentId = newParams.url;
+            const matchedAsset = assets.find((a) => a.id === currentId);
+
+            if (matchedAsset) {
+                let newPath = matchedAsset.relativePath;
+                if (matchedAsset.tag === "local" && !newPath.startsWith("./")) {
+                    newPath = `./${newPath}`;
+                }
+                newParams = {
+                    ...newParams,
+                    url: newPath,
+                };
+            }
+        } else if (typeof newParams.uri === "string") {
+            const currentId = newParams.uri;
+            const matchedAsset = assets.find((a) => a.id === currentId);
+
+            if (matchedAsset) {
+                let newPath = matchedAsset.relativePath;
+                if (matchedAsset.tag === "local" && !newPath.startsWith("./")) {
+                    newPath = `./${newPath}`;
+                }
+                newParams = {
+                    ...newParams,
+                    uri: newPath,
+                };
+            }
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            replaceNodeIdsWithRelativePaths(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+export async function reloadMolstarAndRestoreIndex(
+    viewKey: string,
+    assets: ManagedAsset[],
+    updatedTree: MVSData_States,
+) {
+    // Build and load the tree.
+    const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
+    const result = await loadMVSIntoMolstar(renderTree);
+
+    if (!result.success) {
+        return result.error;
+    }
+
+    // Find the index of the view we are currently editing.
+    const currentIndex = updatedTree.snapshots.findIndex(
+        (snap) => snap.metadata.key === viewKey,
+    );
+
+    // Immediately force Molstar back to that index.
+    if (currentIndex !== -1) {
+        await applySnapshotByIndex(currentIndex);
+    }
+}
+
+/**
+ * Replaces internal ManagedAsset IDs in the MVS tree back to their relative/remote paths.
+ * Useful before exporting or saving the MVS file.
+ *
+ * @param stateTree The current MVS source tree (with IDs)
+ * @param assets Array of currently managed assets
+ * @returns A new, immutable MVSData tree (with paths)
+ */
+export function injectRelativePathsBasedOnAssetIdsIntoTree(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) {
+        return stateTree;
+    }
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: replaceNodeIdsWithRelativePaths(snapshot.root, assets),
+        })),
+    };
+}
+
+function fileContentToUint8Array(
+    content: string | Uint8Array<ArrayBuffer>,
+): Uint8Array<ArrayBuffer> {
+    if (typeof content === "string") {
+        return new TextEncoder().encode(content) as Uint8Array<ArrayBuffer>;
+    }
+    return content;
+}
+
+// session archive ID — generated once, stored somewhere stable
+let sessionArchiveId: string | null = null;
+
+export function generateArchiveID(): string {
+    if (!sessionArchiveId) {
+        sessionArchiveId = `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(
+            new TextEncoder().encode(`session-${Date.now()}`),
+            42,
+        )}${Date.now()}`;
+    }
+    return sessionArchiveId;
+}
+
+export function resetSessionArchiveId() {
+    sessionArchiveId = null;
+}
+
+/**
+ * Add new local asset into Molstar asset manager.
+ * @param file file
+ * @param relativePath e.g. "volumes/seg/"
+ * @returns `undefined` if there is already asset present
+ */
+export function addLocalAssetIntoMolstar(file: FileData, relativePath: string) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const fullPath = relativePath
+        ? `${relativePath.replace(/\/+$/, "")}/${file.name}`
+        : file.name;
+
+    const url = arcpUri(generateArchiveID(), fullPath);
+    const asset = Asset.getUrlAsset(molstar.managers.asset, url);
+
+    if (molstar.managers.asset.has(asset)) {
+        return undefined;
+    }
+
+    const browserFile = new File([file.content], file.name, {
+        type: file.binary ? "application/octet-stream" : "text/plain",
+    });
+
+    molstar.managers.asset.set(asset, browserFile, {
+        isStatic: true,
+        tag: "mvsx-file",
+    });
+
+    return { asset, url };
+}
+
+export function addRemoteAssetIntoMolstar(url: string) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const asset = Asset.Url(url);
+    molstar.managers.asset.set(asset, new File([], url), {
+        isStatic: false,
+        tag: undefined,
+    });
+
+    return { asset };
+}
+
+export function removeAssetFromMolstar(asset: Asset) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entry = molstar.managers.asset.get(asset);
+    if (!entry) return;
+
+    molstar.managers.asset.delete(entry.asset);
+}
+
+export function replaceAssetRelativePathFromMolstar(
+    asset: Asset.Url,
+    newRelativeFilePath: string,
+) {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const entry = molstar.managers.asset.get(asset);
+    if (!entry) return undefined;
+
+    const file = entry.file as File;
+
+    molstar.managers.asset.release(asset);
+
+    const newUrl = arcpUri(generateArchiveID(), newRelativeFilePath);
+    const newAsset = Asset.getUrlAsset(molstar.managers.asset, newUrl);
+
+    if (molstar.managers.asset.has(newAsset)) {
+        return undefined;
+    }
+
+    molstar.managers.asset.set(newAsset, file, {
+        isStatic: true,
+        tag: "mvsx-file",
+    });
+
+    return { asset: newAsset, url: newUrl };
+}
+
+/**
  * Creates arcp URI.
  * @param archiveId id of the given archive
  * @param path path
@@ -1309,6 +2215,7 @@ function arcpUri(archiveId: string, path: string): string {
 /**
  * Ensures that a specific URL (typically an `arcp://` URI) is registered in the
  * Molstar AssetManager by pre-loading it with provided data.
+ *
  * @param manager Molstar AssetManager instance responsible for data lifecycle
  * @param url unique identifier for the asset
  * @param data raw file data as a Uint8Array
@@ -1330,6 +2237,8 @@ function ensureUrlAsset(
             options?.isFile ? { isStatic: true, tag: "mvsx-file" } : undefined,
         );
     }
+
+    return asset;
 }
 
 /**
@@ -1347,71 +2256,180 @@ function decodeUtf8(bytes: Uint8Array): string {
     return _decoder.decode(bytes);
 }
 
-// TODO: handle errors using result pattern
+interface LoadMVSXFileResult {
+    stateTree: MVSData;
+    views: ViewMetadata[]; // TODO: probably remove this
+    assets: ManagedAsset[];
+    sourceUrl: string;
+}
+
 /**
  * Internally loads given `.mvsx` archive file using given instance of `RuntimeContext`.
  * @param runtimeCtx `RuntimeContext` instance
  * @param data data of `.mvsx` in the form of bytes
  * @param indexFilePath name of the index file
- * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets
+ * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets if success, otherwise Error
  */
 async function _loadMVSXFile(
     runtimeCtx: RuntimeContext,
     data: Uint8Array<ArrayBuffer>,
     indexFilePath: string = "index.mvsj",
-): Promise<{
-    mvsData: MVSData;
-    sourceUrl: string;
-    views: ViewMetadata[];
-    assets: Record<string, Uint8Array<ArrayBuffer>>;
-}> {
+): Promise<Result<LoadMVSXFileResult>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    // Create an archive ID.
-    const archiveId = `ni,MurmurHash3_128;${murmurHash3_128_fromBytes(
-        data,
-        42,
-    )}${Date.now()}`;
-
-    // Unzipping MVSX archive into dictionary.
+    // Unzip archive.
     let files: { [path: string]: Uint8Array<ArrayBuffer> };
     try {
         files = (await unzip(runtimeCtx, data.buffer)) as typeof files;
-    } catch (err) {
-        console.log("Invalid MVSX file!");
-        throw err;
+    } catch (error) {
+        return {
+            success: false,
+            error: new Error(`Invalid .mvsx archive: "${error}"!`),
+        };
     }
 
-    // Register files into Molstar AsssetManager.
+    // Generate session archive ID.
+    const archiveId = generateArchiveID();
+
+    // Get .mvsj file.
+    const { [indexFilePath]: _ } = files;
+    const indexFile = files[indexFilePath];
+    if (!indexFile) {
+        return {
+            success: false,
+            error: new Error(
+                `File "${indexFilePath}" was not found in the .mvsx archive!`,
+            ),
+        };
+    }
+
+    // Decode .mvsj.
+    let mvsData: MVSData = createDefaultMVSData();
+    try {
+        mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
+    } catch (error) {
+        return {
+            success: false,
+            error: new Error(`Validation of .mvsj failed: "${error}"!`),
+        };
+    }
+
+    // Retrieve all URLs from MVS.
+    const urls = extractUrlsFromMVS(mvsData);
+
+    // Iterate through local files in archive.
+    const assets: ManagedAsset[] = [];
     for (const path in files) {
+        // If it is remote URL, skip it.
+        if (!urls.has(path)) {
+            continue;
+        }
+
+        urls.delete(path);
+
         const url = arcpUri(archiveId, path);
-        ensureUrlAsset(molstar.managers.asset, url, files[path], {
+        const asset = ensureUrlAsset(molstar.managers.asset, url, files[path], {
             isFile: true,
+        }); // TODO: use my own addLocalAssetIntoMolstar?
+
+        if (path === indexFilePath) continue;
+
+        assets.push({
+            id: crypto.randomUUID(),
+            asset: asset,
+            relativePath: path, // E.g. "volumes/volume_0_0.bcif".
+            tag: "local",
+            name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
+            useCount: 1,
         });
     }
 
-    // Deconstruct files into assets files and the index file (.mvsj).
-    const { [indexFilePath]: _, ...assets } = files;
-    const indexFile = files[indexFilePath];
-    if (!indexFile)
-        throw new Error(`File ${indexFile} not found in the MVSX archive`);
+    // Push remaining (remote) assets.
+    urls.forEach((remoteUrl) => {
+        assets.push({
+            id: crypto.randomUUID(),
+            asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+            relativePath: remoteUrl,
+            tag: "remote",
+            name: remoteUrl,
+            useCount: 1,
+        });
+    });
 
-    const mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
-    const sourceUrl = arcpUri(archiveId, indexFilePath);
+    // Extract views.
     const views = extractViewsFromMVS(mvsData);
 
-    return { mvsData, sourceUrl, views, assets };
+    return {
+        success: true,
+        value: {
+            stateTree: mvsData,
+            sourceUrl: arcpUri(archiveId, indexFilePath),
+            views,
+            assets,
+        },
+    };
+}
+
+/**
+ * Adds an empty, default snapshot to an existing MVS state tree.
+ * Safely converts `single` MVS data to `multiple` if needed.
+ *
+ * @param stateTree current MVSData tree
+ * @param initialTitle title for snapshot
+ * @returns new MVSData object with the appended snapshot
+ */
+export function addEmptySnapshotToTree(
+    stateTree: MVSData,
+    initialTitle: string,
+): {
+    newStateTree: MVSData_States;
+    createdNode: Snapshot;
+} {
+    const emptyNode: Snapshot = {
+        root: {
+            kind: "root" as const,
+            children: [],
+        },
+        metadata: {
+            key: crypto.randomUUID(),
+            title: initialTitle,
+            linger_duration_ms: 5000,
+            description_format: "markdown",
+        },
+    };
+
+    if (stateTree.kind !== "multiple") {
+        const data = createDefaultMVSData(stateTree.metadata);
+
+        data.snapshots.push({
+            root: stateTree.root,
+            metadata: { linger_duration_ms: 5000 },
+        });
+        data.snapshots.push(emptyNode);
+
+        return { newStateTree: data, createdNode: emptyNode };
+    }
+
+    return {
+        newStateTree: {
+            ...stateTree,
+            snapshots: [...stateTree.snapshots, emptyNode],
+        },
+        createdNode: emptyNode,
+    };
 }
 
 /**
  * Creates default MVS of `multiple` kind.
- * @returns MVS
+ *
+ * @param metadata if provided, this object is used as global metadata
+ * @returns default MVS
  */
-function createDefaultMVSData() {
+function createDefaultMVSData(metadata?: GlobalMetadata) {
     const snapshots: Snapshot[] = [];
     const initialStateTree: MVSData = {
         kind: "multiple",
-        metadata: {
+        metadata: metadata ?? {
             title: undefined,
             timestamp: new Date(0).toISOString(),
             version: `${MVSData.SupportedVersion}`,
@@ -1421,117 +2439,182 @@ function createDefaultMVSData() {
     return initialStateTree;
 }
 
-// TODO: handle errors using result pattern
 /**
  * Loads given `MVSX` archive.
  * @param rawData data of `.mvsx` archive as bytes
- * @returns views and assets of the given MVSX file
+ * @returns loaded MVS, source URL (`arcp` path to `indexFilePath`), array of views, and map of assets if success, otherwise Error
  */
-async function loadMVSXFile(rawData: Uint8Array<ArrayBuffer>) {
+async function loadMVSXFile(
+    rawData: Uint8Array<ArrayBuffer>,
+): Promise<Result<LoadMVSXFileResult>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    let viewsToReturn: ViewMetadata[] = [];
-    let assetsToReturn: Record<string, Uint8Array<ArrayBuffer>> = {};
-    let stateTree: MVSData = createDefaultMVSData();
-    let sourceUrl: string = "";
-
-    await molstar.runTask(
+    const taskResult = await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
-            const parsed = await _loadMVSXFile(ctx, rawData);
-            viewsToReturn = parsed.views;
-            assetsToReturn = parsed.assets;
-            stateTree = parsed.mvsData;
-            sourceUrl = parsed.sourceUrl;
-
             if (!molstar) throw new Error("Molstar is not initialized!");
-            await loadMVS(molstar, parsed.mvsData, {
+
+            const parsed = await _loadMVSXFile(ctx, rawData);
+
+            if (!parsed.success) {
+                return parsed;
+            }
+
+            await loadMVS(molstar, parsed.value.stateTree, {
                 sanityChecks: true,
-                sourceUrl: parsed.sourceUrl,
+                sourceUrl: parsed.value.sourceUrl,
                 extensions: [],
                 appendSnapshots: false,
                 keepCamera: false,
                 keepCameraOrientation: false,
             });
+
+            return parsed;
         }),
     );
 
-    return {
-        views: viewsToReturn,
-        localAssets: assetsToReturn,
-        stateTree: stateTree,
-        sourceUrl: sourceUrl,
-    };
+    return taskResult;
 }
 
-// TODO: handle errors using result pattern
+export async function loadMVSIntoMolstar(
+    stateTree: MVSData_States,
+): Promise<Result<MVSData_States>> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+    try {
+        await loadMVS(molstar, stateTree, {
+            appendSnapshots: false,
+            keepCamera: true,
+            keepCameraOrientation: true,
+            extensions: [],
+            sanityChecks: true,
+        });
+        return { success: true, value: stateTree };
+    } catch (err) {
+        return {
+            success: false,
+            error: new Error(
+                `Error occured when loading MVS! Details: "${err}"."`,
+            ),
+        };
+    }
+}
+
 /**
  * Loads MVSJ file.
- * @param rawData data of `.mvsj` file.
- * @returns views
+ * @param rawData data of `.mvsj` file
+ * @returns views and remote assets if success, else Error
  */
-async function loadMVSJFile(index: string) {
+async function loadMVSJFile(index: string): Promise<
+    Result<{
+        assets: ManagedAsset[];
+        views: ViewMetadata[];
+        stateTree: MVSData;
+    }>
+> {
     if (!molstar) throw new Error("Molstar is not initialized!");
 
-    const mvsData: MVSData = MVSData.fromMVSJ(index);
-    if (!MVSData.isValid(mvsData)) {
-        throw new Error(
-            `Error when parsing MVSJ: ${MVSData.validationIssues(mvsData)}`,
-        );
+    try {
+        // Parse MVSJ format to MVSData object.
+        const mvsData: MVSData = MVSData.fromMVSJ(index);
+
+        // Retrieve all remote URLs from MVS.
+        const remoteUrls = extractUrlsFromMVS(mvsData);
+
+        // Extract all remote assets and store them.
+        const assets: ManagedAsset[] = [];
+        remoteUrls.forEach((remoteUrl) => {
+            assets.push({
+                id: crypto.randomUUID(),
+                asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+                relativePath: remoteUrl,
+                tag: "remote",
+                name: remoteUrl,
+                useCount: 1,
+            });
+        });
+
+        // Load MVS into viewer.
+        await loadMVS(molstar, mvsData, {
+            appendSnapshots: false,
+            keepCamera: false,
+            keepCameraOrientation: false,
+            extensions: [],
+            sanityChecks: true,
+        });
+
+        return {
+            success: true,
+            value: {
+                assets,
+                views: extractViewsFromMVS(mvsData),
+                stateTree: mvsData,
+            },
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: new Error(`Validation of .mvsj failed: "${error}"!`),
+        };
     }
-
-    await loadMVS(molstar, mvsData, {
-        appendSnapshots: false,
-        keepCamera: false,
-        keepCameraOrientation: false,
-        extensions: [],
-        sanityChecks: true,
-    });
-
-    return { views: extractViewsFromMVS(mvsData), stateTree: mvsData };
 }
 
 /**
  * Result of `loadFromFile` function.
  */
 interface LoadFromFileResult {
-    stateTree: MVSData;
-    views: ViewMetadata[];
-    localAssets: Record<string, Uint8Array<ArrayBuffer>>;
+    stateTree: MVSData_States;
+    views: ViewMetadata[]; // TODO: probably remove this
+    assets: ManagedAsset[];
     sourceUrl: string;
 }
 
 /**
  * Loads data into viewer from the file.
  * @param fileData data to load
- * @returns views and possible assets from the loaded file, or null, if any problem occurs
+ * @returns assets, views, state tree and source url if success, undefined if file is not MVSX or MVSJ; Error otherwise
  */
 export async function loadFromFile(
-    fileData: FileData | null,
-): Promise<LoadFromFileResult | undefined | null> {
-    // TODO: handle errors based on some result pattern so we can progate error message above
+    fileData: FileData,
+): Promise<LoadFromFileResult | undefined | Error> {
     if (!molstar) throw new Error("Molstar is not initialized!");
-
-    if (!fileData) return null;
 
     await clearViewer();
 
     if (fileData.extension === "mvsj") {
-        return {
-            ...(await loadMVSJFile(fileData.content as string)),
-            localAssets: {},
-            sourceUrl: "",
-        };
-    }
-
-    if (fileData.extension === "mvsx") {
-        return await loadMVSXFile(fileData.content as Uint8Array<ArrayBuffer>);
-    }
-
-    if (fileData.extension === "bcif") {
+        const result = await loadMVSJFile(fileData.content as string);
+        if (result.success) {
+            return {
+                stateTree: ensureAllSnapshotsHaveKeys(
+                    convertStateTreeFromSingleToMultipleKind(
+                        result.value.stateTree,
+                    ),
+                ),
+                views: result.value.views,
+                assets: result.value.assets,
+                sourceUrl: "",
+            };
+        }
+        return result.error;
+    } else if (fileData.extension === "mvsx") {
+        const result = await loadMVSXFile(
+            fileData.content as Uint8Array<ArrayBuffer>,
+        );
+        if (result.success) {
+            return {
+                stateTree: ensureAllSnapshotsHaveKeys(
+                    convertStateTreeFromSingleToMultipleKind(
+                        result.value.stateTree,
+                    ),
+                ),
+                views: result.value.views,
+                assets: result.value.assets,
+                sourceUrl: result.value.sourceUrl,
+            };
+        }
+        return result.error;
+    } else if (fileData.extension === "bcif") {
         fileData.extension = "mmcif";
     }
 
-    // TODO: solve how to handle other files, not to return null
     const file = new File([fileData.content], fileData.name);
     const assetFile = Asset.File(file);
 
@@ -1551,12 +2634,9 @@ export async function loadFromFile(
             "default",
         );
     } catch (error) {
-        console.log(
-            "Error occured when loading data from file: <",
-            error,
-            ">.",
+        return new Error(
+            `Error occured when loading data from file "${fileData.path}! Details: "${error}"."`,
         );
-        return null;
     }
 
     return undefined;

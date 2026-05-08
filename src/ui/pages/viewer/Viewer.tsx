@@ -10,9 +10,10 @@ import {
     createMVSBlob,
     getFullScreenSubscription,
     exportStateTree,
-    convertStateTreeFromSingleToMultipleKind,
     serializeMVSXAssets,
     getSnapshotManagerState,
+    injectAssetIdsIntoTree,
+    injectRelativePathsBasedOnAssetIdsIntoTree,
 } from "../../../molstar-wrapper/src";
 
 import "./Viewer.css";
@@ -53,6 +54,10 @@ import {
     createProcessFileMenuItem,
 } from "../../features/menu/systemMenuItems";
 import { useFileManagement } from "../../hooks/useFileManagement";
+import {
+    useManagedAssets,
+    type ManagedAsset,
+} from "../../services/ManagedAssetsProvider";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -69,6 +74,10 @@ export function Viewer() {
 
     // Use file management.
     const { loadAndHandleFile } = useFileManagement();
+
+    // Use assets.
+    const { getAllAssets, getAllLocalAssets, addAsset, clearAssets } =
+        useManagedAssets();
 
     // TODO: temporary states
     const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
@@ -93,7 +102,15 @@ export function Viewer() {
     // Update menu for Viewer page.
     useEffect(() => {
         // Create Viewer-specific root menu item.
-        const edit = createEditRootMenuItem(t, regime, setRegime, showDialogue);
+        const edit = createEditRootMenuItem(
+            t,
+            regime,
+            setRegime,
+            showDialogue,
+            getAllLocalAssets,
+            getAllAssets,
+            clearAssets,
+        );
         addRootMenuItem(edit);
 
         // Create custom menu items for existing menu items.
@@ -121,7 +138,7 @@ export function Viewer() {
             restoreMenuItem("open-file-in-viewer");
             restoreMenuItem("process-file");
         };
-    }, [t, regime]);
+    }, [t, regime, setRegime, showDialogue, getAllLocalAssets, clearAssets]);
 
     // Controls if Molstar is still in the initialization process.
     const [molstarLoading, setMolstarLoading] = useState(true);
@@ -211,52 +228,47 @@ export function Viewer() {
                 return;
             }
 
+            pushInfoNotification("Import started.");
+
             // Load the file.
             const result = await loadFromFile(regime.fileToView);
-            if (result === null) {
+            if (result instanceof Error) {
                 pushErrorNotification(
-                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer!`,
+                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
                 );
                 loggerUi.error(
-                    `Error when loading file "${regime.fileToView.path} into the Molstar viewer!"`,
+                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
                 );
                 return;
             } else if (result === undefined) {
+                clearAssets();
                 pushInfoNotification(
                     "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
                 );
                 return;
             }
 
-            // Create an array with local assets (if there are some).
-            const assetsArray: FileData[] = Object.entries(
-                result.localAssets,
-            ).map(([path, data]) => ({
-                path: path,
-                name: path.split("/").pop() || "",
-                content: data,
-                extension: (path.split("/").pop() || "").split(".").pop() || "",
-                binary: true,
-            }));
+            // Clears all managed assets and then register local assets in ManagedAssetsProvider.
+            clearAssets();
+            result.assets.forEach((a) => {
+                addAsset(a);
+            });
+
+            // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
+            const stateTree = injectAssetIdsIntoTree(
+                result.stateTree,
+                result.assets,
+            );
 
             // Set the regime with new assets and state tree.
             setRegime({
                 ...regime,
                 kind: "viewing",
-                deconstructedFile: { assets: assetsArray },
-                views: result.views,
-                stateTree:
-                    result.stateTree.kind === "multiple"
-                        ? result.stateTree
-                        : convertStateTreeFromSingleToMultipleKind(
-                              result.stateTree,
-                              {
-                                  node: result.stateTree.root,
-                                  metadata: result.views[0],
-                              },
-                          ),
+                stateTree: stateTree,
                 sourceUrl: result.sourceUrl,
             });
+
+            pushSuccessNotification("Import ended!");
         };
 
         deconstruct();
@@ -360,7 +372,7 @@ export function Viewer() {
                         fileToView: {
                             path: path,
                             extension: defaultMVSData.extension,
-                            name: "tmp",
+                            name: `export.${defaultMVSData.extension}`,
                             binary: defaultMVSData.isBinary,
                             content: defaultMVSData.data,
                         },
@@ -489,6 +501,9 @@ function createEditRootMenuItem(
     showDialogue: <T = void>(
         options: DialogueProps<T>,
     ) => Promise<T | undefined>,
+    getAllLocalAssets: () => ManagedAsset[],
+    getAllAssets: () => ManagedAsset[],
+    clearAssets: () => void,
 ) {
     const clearViewerItem: MenuItem = {
         id: "clear-viewer",
@@ -509,7 +524,8 @@ function createEditRootMenuItem(
                 });
 
                 if (confirmed === true) {
-                    clearViewer();
+                    clearAssets();
+                    await clearViewer();
                     setRegime({
                         kind: "idling",
                     });
@@ -526,15 +542,24 @@ function createEditRootMenuItem(
         task: {
             action: async () => {
                 if (regime.kind === "viewing") {
-                    pushInfoNotification(`Export started.`);
-                    await exportStateTree(
-                        regime.stateTree,
-                        regime.deconstructedFile.assets,
+                    pushInfoNotification(`Preparing files for export...`);
+
+                    const result = await exportStateTree(
+                        injectRelativePathsBasedOnAssetIdsIntoTree(
+                            regime.stateTree,
+                            getAllAssets(),
+                        ),
+                        getAllLocalAssets(),
                     );
-                    pushSuccessNotification(`Export finished!`);
+
+                    if (result.success) {
+                        pushSuccessNotification(`Export ready!`);
+                    } else {
+                        pushErrorNotification(result.error.message);
+                    }
                 } else {
                     pushWarningNotification(
-                        `Export is not possible now! You are probably still processing data or you are viewing non-MVS file.`,
+                        `Export is currently unavailable! This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
                     );
                 }
             },

@@ -3,13 +3,16 @@
     flex-direction: column;
     width: 100%;
     align-items: center;
-    border: 1px solid var(--color-grey-dark);
+    border: 1px solid var(--color-grey-light);
     border-radius: 6px;
-    background-color: var(--color-grey);
+    background-color: var(--mantine-color-white);
+    transition: all 0.2s ease-in-out;
 }
 
 .viewCard--active {
-    border-width: 0.2em;
+    border-width: 0.095em;
     transform: scale(1.03);
     border-color: var(--mantine-primary-color-7);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+    transform: translateY(-2px) scale(1.01);
 }

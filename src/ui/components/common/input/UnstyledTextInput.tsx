@@ -30,6 +30,11 @@ interface UnstyledTextInputProps {
     maxLength?: number;
 
     /**
+     * Optional flag indicating if the value in controlled mode can be empty string. Default is 'false'.
+     */
+    canBeEmpty?: boolean;
+
+    /**
      * Placeholder text shown when the input is empty.
      */
     placeholder?: string;
@@ -45,6 +50,16 @@ interface UnstyledTextInputProps {
     enabled?: boolean;
 
     /**
+     * Whether the input field text should be in bold. Default is `false`.
+     */
+    bold?: boolean;
+
+    /**
+     * Whether the input field text should have background to differentiate from other UI components. Default is `false`.
+     */
+    permanentInputFieldBackground?: boolean;
+
+    /**
      * Callback fired whenever the input value changes due to user input. Called on each keystroke with the raw (untrimmed) value.
      */
     onValueChange?: (value: string | undefined) => void;
@@ -53,6 +68,11 @@ interface UnstyledTextInputProps {
      * Callback fired when the input loses focus or when the Enter key is pressed. The value passed to this callback is trimmed.
      */
     onBlur?: (value: string | undefined) => void;
+
+    /**
+     * Callback fired when the input has error.
+     */
+    onErrorChange?: (hasError: boolean) => void;
 
     /**
      * Optional inline styles applied to the root container.
@@ -65,17 +85,25 @@ export function UnstyledTextInput({
     value: controlledValue,
     defaultValue = "",
     maxLength = 80,
+    canBeEmpty = false,
     placeholder = "Enter value...",
     tooltip = "",
     enabled = true,
+    bold = false,
+    permanentInputFieldBackground = false,
     onValueChange,
     onBlur,
+    onErrorChange,
     style,
 }: UnstyledTextInputProps) {
     const [internalValue, setInternalValue] = useState(defaultValue);
     const isControlled = controlledValue !== undefined;
     const value = isControlled ? controlledValue : internalValue;
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        onErrorChange?.(error !== null);
+    }, [error]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.currentTarget.value;
@@ -96,7 +124,7 @@ export function UnstyledTextInput({
 
     const handleBlur = () => {
         const trimmedValue = value.trim();
-        if (!trimmedValue) {
+        if (!trimmedValue && !canBeEmpty) {
             setError("Value cannot be empty!");
         } else {
             setError(null);
@@ -125,9 +153,10 @@ export function UnstyledTextInput({
                     onChange={handleChange}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyPressed}
+                    // TODO: when permanent background is applied, we should get also darker hover and focus
                     className={`unstyledTextInput__input-field ${
                         error ? "unstyledTextInput__input-error" : ""
-                    }`}
+                    } ${bold ? "unstyledTextInput__input-field--bold" : ""} ${permanentInputFieldBackground ? "unstyledTextInput__input-field--permanentBackground" : ""}`}
                 />
             </div>
             {error && (

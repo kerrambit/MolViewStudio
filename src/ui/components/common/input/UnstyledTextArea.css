@@ -1,0 +1,30 @@
+.unstyledTextArea {
+  font-size: 0.91em;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+  width: 100%;
+}
+
+.unstyledTextArea:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.unstyledTextArea:focus {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.unstyledTextArea::placeholder {
+  color: var(--color-grey-lighter-dark);
+  font-weight: bold;
+}
+
+.unstyledTextArea::-webkit-input-placeholder {
+  color: var(--color-grey-lighter-dark);
+  font-weight: bold;
+}
+.unstyledTextArea::-moz-placeholder {
+  color: var(--color-grey-lighter-dark);
+  font-weight: bold;
+}

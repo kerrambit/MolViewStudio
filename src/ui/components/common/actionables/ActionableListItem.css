@@ -1,0 +1,12 @@
+.actionableListItem {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+}
+
+.actionableListItem:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}

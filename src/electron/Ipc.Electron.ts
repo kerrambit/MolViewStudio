@@ -69,8 +69,6 @@ export class Ipc {
  * TODO: For more complex validation, new solution might be needed to develope.
  */
 export function validateEventFrame(frame: WebFrameMain | null) {
-    console.log(frame?.url);
-
     // Frame has either navigated or been destroyed.
     if (frame === null) {
         return;
