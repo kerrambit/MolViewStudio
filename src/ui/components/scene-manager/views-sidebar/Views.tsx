@@ -61,13 +61,16 @@ export function Views(props: ViewsProps) {
     const latestDataRef = useRef({
         isBuilderOpen: props.isBuilderOpen,
         viewItems,
+        activeViewCardIndex,
     });
+
     useEffect(() => {
         latestDataRef.current = {
             isBuilderOpen: props.isBuilderOpen,
             viewItems,
+            activeViewCardIndex,
         };
-    }, [props.isBuilderOpen, viewItems]);
+    }, [props.isBuilderOpen, viewItems, activeViewCardIndex]);
 
     // Callback for snapshot selected changed from Molstar UI.
     useEffect(() => {
@@ -77,14 +80,21 @@ export function Views(props: ViewsProps) {
             setActiveViewCardIndex(getCurrentSnapshotIndex());
 
             sub = getSnapshotChangeSubscription((index, _) => {
+                const {
+                    activeViewCardIndex: currentActiveIndex,
+                    isBuilderOpen,
+                    viewItems,
+                } = latestDataRef.current;
+
+                // If the current active index has changed, we should clear the viewer.
+                if (currentActiveIndex !== index) {
+                    clearViewerContent();
+                }
+
                 // Set view card with given index as active.
                 setActiveViewCardIndex(index);
 
-                // Clear viewer's content.
-                clearViewerContent();
-
                 // Remember to update View Builder if it has been previously opened and the view card index changes.
-                const { isBuilderOpen, viewItems } = latestDataRef.current;
                 if (isBuilderOpen && props.onOpenBuilder) {
                     const newView = viewItems[index];
                     if (newView) {
