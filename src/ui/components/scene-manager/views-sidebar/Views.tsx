@@ -77,7 +77,13 @@ export function Views(props: ViewsProps) {
             setActiveViewCardIndex(getCurrentSnapshotIndex());
 
             sub = getSnapshotChangeSubscription((index, _) => {
+                // Set view card with given index as active.
                 setActiveViewCardIndex(index);
+
+                // Clear viewer's content.
+                clearViewerContent();
+
+                // Remember to update View Builder if it has been previously opened and the view card index changes.
                 const { isBuilderOpen, viewItems } = latestDataRef.current;
                 if (isBuilderOpen && props.onOpenBuilder) {
                     const newView = viewItems[index];
