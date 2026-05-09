@@ -6,18 +6,18 @@
         "to": ".",
         "filter": "MolStarAppServer*"
       }],
-  "icon": "./desktopIcon.ico",
+  "icon": "./src/assets/desktopIcon.ico",
   "mac": {
     "target": "dmg"
   },
   "linux": {
     "target": "AppImage",
     "category": "Science",
-    "icon": "./desktopIcon.png"
+    "icon": "./src/assets/desktopIcon.png"
   },
   "win": {
     "target": ["msi"],
-    "icon": "./desktopIcon.ico"
+    "icon": "./src/assets/desktopIcon.ico"
   },
   "msi": {
     "oneClick": false,

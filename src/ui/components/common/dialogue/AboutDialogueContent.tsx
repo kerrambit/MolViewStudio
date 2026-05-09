@@ -3,6 +3,7 @@ import { Button } from "../button/Button";
 import { Badge } from "@mantine/core";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 import { useAppearance } from "../../../services/AppearanceProvider";
+import desktopIcon from "../../../../assets/desktopIcon.png";
 
 interface AboutDialogueContentProps {
     close: () => void;
@@ -125,7 +126,7 @@ export function AboutDialogueContent({ close }: AboutDialogueContentProps) {
                     }}
                 >
                     <img
-                        src="/desktopIcon.png"
+                        src={desktopIcon}
                         title={`${info.app} ${info.appVersion}`}
                         alt={info.app}
                         style={{
