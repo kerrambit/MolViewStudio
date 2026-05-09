@@ -62,11 +62,17 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     requestUserSettings: () => Ipc.Ui.invoke("requestUserSettings"),
 
+    requestBuildInformation: () => Ipc.Ui.invokeSync("requestBuildInformation"),
+
     requestApplicationExit: () => Ipc.Ui.invoke("requestApplicationExit"),
 
     requestToOpenDevTools: () => Ipc.Ui.invoke("requestToOpenDevTools"),
 
     requestEnvironment: () => Ipc.Ui.invokeSync("requestEnvironment"),
+
+    requestToOpenExternal: (url: string) => {
+        return Ipc.Ui.send("requestToOpenExternal", url);
+    },
 
     openFileExplorer: (multiSelections: boolean, filters: FileFilter[]) =>
         Ipc.Ui.invokeTwoWay("openFileExplorer", {

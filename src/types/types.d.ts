@@ -5,8 +5,10 @@
 type EventPayloadMapping = {
     data: string;
     requestUserSettings: UserSettings;
+    requestBuildInformation: BuildInformation;
     requestApplicationExit: void;
     requestToOpenDevTools: void;
+    requestToOpenExternal: string;
     openFileExplorer: FileData[] | Error;
     saveData: void | Error;
     saveTemporaryData: void | Error;
@@ -25,9 +27,13 @@ interface Window {
 
         requestUserSettings: () => Promise<UserSettings>;
 
+        requestBuildInformation: () => BuildInformation;
+
         requestApplicationExit: () => Promise<void>;
 
         requestToOpenDevTools: () => Promise<void>;
+
+        requestToOpenExternal: (url: string) => void;
 
         requestEnvironment: () => Environment;
 
@@ -110,3 +116,18 @@ type UserSettings = {
 };
 
 type TranslateFunction = TFunction<"translation", undefined>;
+
+interface BuildInformation {
+    app: string;
+    appVersion: string;
+    commit: string;
+    buildDate: string;
+    electron: string;
+    chrome: string;
+    node: string;
+    platform: string;
+    arch: string;
+    osRelease: string;
+    molstarVersion: string;
+    volsegtoolsVersion: string;
+}
