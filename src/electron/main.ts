@@ -1,26 +1,28 @@
-import { app, BrowserWindow, dialog, Menu } from "electron";
-import { isDev } from "./utils/util.js";
+import { app, BrowserWindow, dialog, Menu, shell } from "electron";
+import path from "path";
+import os from "os";
+import http from "http";
+import { ChildProcess, spawn } from "child_process";
+import { existsSync } from "fs";
+import { writeFile, mkdir } from "fs/promises";
 import {
     getAssetsPath,
     getPreloadPath,
     getServerPath,
     getUiPath,
 } from "./pathResolver.js";
-import { pollData } from "./logicMocker.js";
-import { Ipc } from "./Ipc.Electron.js";
-import http from "http";
-import { createTray } from "./tray.js";
-import path from "path";
 import {
     loadUserSettings,
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
-import { ChildProcess, spawn } from "child_process";
-import { existsSync } from "fs";
-import { writeFile, mkdir } from "fs/promises";
+import { isDev } from "./utils/util.js";
+import { pollData } from "./logicMocker.js";
+import { Ipc } from "./Ipc.Electron.js";
+import { createTray } from "./tray.js";
 import { logger } from "./utils/logger.js";
 import { readFiles } from "./utils/fileDataUtils.js";
 import { SplashScreen } from "./utils/splashScreen.js";
+import { BUILD_INFO } from "./build-info.js";
 
 app.on("ready", () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -70,23 +72,48 @@ app.on("ready", () => {
     );
     logger.info(`User settings has been loaded from <${userSettingsFile}>.`);
 
-    // If UI requests user settings, send it.
+    // A requests from UI to retrieve user settings.
     Ipc.Electron.handle("requestUserSettings", () => {
         return userSettings;
     });
 
-    // If UI requests to quit the application, exit procedure is executed.
+    // A requests from UI to retrieve build information.
+    Ipc.Electron.handleSync("requestBuildInformation", (): BuildInformation => {
+        return {
+            app: app.getName(),
+            appVersion: app.getVersion(),
+            commit: BUILD_INFO.commit,
+            buildDate: BUILD_INFO.buildDate,
+            electron: process.versions.electron,
+            chrome: process.versions.chrome,
+            node: process.versions.node,
+            platform: process.platform,
+            arch: process.arch,
+            osRelease: os.release(),
+            molstarVersion: BUILD_INFO.molstarVersion,
+            volsegtoolsVersion: BUILD_INFO.volsegtoolsVersion,
+        };
+    });
+
+    // A request from UI to quit the application, exit procedure is executed.
     Ipc.Electron.handle("requestApplicationExit", () => {
         app.quit();
     });
 
-    // If UI requests to open DevTools, and the application is in dev mode, allow it.
+    // A request from UI to open DevTools: if the application is in dev mode, allow it.
     Ipc.Electron.handle("requestToOpenDevTools", () => {
         if (isDev()) {
             mainWindow.webContents.openDevTools();
         }
     });
 
+    // A request from UI to open external URL.
+    Ipc.Electron.on("requestToOpenExternal", (url: string) => {
+        shell.openExternal(url);
+        logger.info(`External URL <${url}> was requested to be opened.`);
+    });
+
+    // A request from UI to load file data from given array of paths.
     Ipc.Electron.handleTwoWay("getFileData", (paths: string[]) => {
         return readFiles(paths);
     });

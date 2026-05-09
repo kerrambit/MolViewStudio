@@ -9,19 +9,29 @@ import React, {
 import "../i18n";
 import { type Icon, type IconProps } from "@tabler/icons-react";
 import {
+    createAboutMenuItem,
+    createAboutSection,
+    createCheckForUpdatesMenuItem,
+    createCheckForUpdatesSection,
     createExitMenuItem,
     createExitSection,
     createFileRootMenuItem,
     createGeneralFileSection,
+    createGeneralHelpSection,
     createHelpRootMenuItem,
+    createMolstarAppMenuItem,
+    createMolstarMenuItem,
     createOnlyDevSection,
     createOpenDevToolsMenuItem,
     createOpenFileInViewerMenuItem,
     createProcessFileMenuItem,
+    createReportIssueMenuItem,
     createSettingsRootMenuItem,
 } from "../features/menu/systemMenuItems";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { useFileManagement } from "../hooks/useFileManagement";
+import { AboutDialogueContent } from "../components/common/dialogue/AboutDialogueContent";
+import { useDialogue, type DialogueProps } from "./DialogueProvider";
 
 /**
  * The action can be either:
@@ -136,9 +146,12 @@ export function MenuProvider({ children }: MenuProviderProps) {
     // Use file management.
     const { loadAndHandleFile } = useFileManagement();
 
+    // Use dialogue.
+    const { showDialogue } = useDialogue();
+
     // Menu state in the initial state.
     const [menu, setMenu] = useState<Menu>(() =>
-        createInitialMenu(navigate, loadAndHandleFile),
+        createInitialMenu(navigate, showDialogue, loadAndHandleFile),
     );
 
     // For replace/restore functionality. Keeps original `MenuItem` to be restored.
@@ -384,6 +397,9 @@ export function MenuProvider({ children }: MenuProviderProps) {
 
 function createInitialMenu(
     navigate: NavigateFunction,
+    showDialogue: <T = void>(
+        options: DialogueProps<T>,
+    ) => Promise<T | undefined>,
     loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
 ): Menu {
     return [
@@ -402,6 +418,24 @@ function createInitialMenu(
             createExitSection([createExitMenuItem()]),
         ]),
         createSettingsRootMenuItem(navigate),
-        createHelpRootMenuItem([]),
+        createHelpRootMenuItem([
+            createGeneralHelpSection([
+                createMolstarAppMenuItem(),
+                createMolstarMenuItem(),
+                createReportIssueMenuItem(),
+            ]),
+            createCheckForUpdatesSection([createCheckForUpdatesMenuItem()]),
+            createAboutSection([
+                createAboutMenuItem(async () => {
+                    await showDialogue({
+                        title: "About",
+                        showCloseButton: true,
+                        content: (close) => (
+                            <AboutDialogueContent close={close} />
+                        ),
+                    });
+                }),
+            ]),
+        ]),
     ];
 }
