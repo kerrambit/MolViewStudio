@@ -21,6 +21,7 @@ tmp
 __pycache__
 src/molstar-wrapper/build
 volsegtools_tmp
+src/electron/build-info.ts
 
 # Editor directories and files
 .vscode/*
