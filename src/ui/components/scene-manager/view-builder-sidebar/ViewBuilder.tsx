@@ -292,7 +292,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 )}
                             </div>
 
-                            <Collapse in={isExpanded}>
+                            <Collapse expanded={isExpanded}>
                                 <div
                                     style={{
                                         padding: "1em",
