@@ -322,7 +322,7 @@ export function Views(props: ViewsProps) {
                                                     root: applyChangesToNode(
                                                         snap.root,
                                                         referenceCamera,
-                                                        UiLocalStorageService.getPendingScreenshot(
+                                                        UiLocalStorageService.ViewOptions.getPending(
                                                             view.key!,
                                                         )
                                                             ? thumbnail
@@ -443,7 +443,7 @@ export function Views(props: ViewsProps) {
                                 }
 
                                 // Saves the screenshot preference for the specific view.
-                                UiLocalStorageService.setPendingScreenshot(
+                                UiLocalStorageService.ViewOptions.setPending(
                                     view.key!,
                                     result.captureScreenshot,
                                 );
