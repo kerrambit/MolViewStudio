@@ -25,7 +25,7 @@ export function SceneManager(props: SceneManagerProps) {
 
     // Builder sidebar state.
     const [isBuilderOpen, setIsBuilderOpen] = useState<string | undefined>(
-        UiLocalStorageService.SceneManager.getBuilder(),
+        UiLocalStorageService.SceneManager.getBuilderSidebar(),
     );
 
     // Render component.
@@ -67,7 +67,9 @@ export function SceneManager(props: SceneManagerProps) {
                         isMolstarLoading={props.isMolstarLoading}
                         onOpenBuilder={(key) => {
                             setIsBuilderOpen(key);
-                            UiLocalStorageService.SceneManager.setBuilder(key);
+                            UiLocalStorageService.SceneManager.setBuilderSidebar(
+                                key,
+                            );
                         }}
                         isBuilderOpen={!!isBuilderOpen}
                     ></Views>
@@ -81,7 +83,7 @@ export function SceneManager(props: SceneManagerProps) {
                         viewKey={isBuilderOpen}
                         onClose={() => {
                             setIsBuilderOpen(undefined);
-                            UiLocalStorageService.SceneManager.setBuilder(
+                            UiLocalStorageService.SceneManager.setBuilderSidebar(
                                 undefined,
                             );
                         }}

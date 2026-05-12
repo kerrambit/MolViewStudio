@@ -1,7 +1,7 @@
 const PREFIX = {
     PENDING_SCREENSHOT: "view-options-wants-screenshot-",
     SCENE_MANAGER_TAB: "scene-manager-tab-",
-    SCENE_MANAGER_BUILDER: "scene-manager-builder-",
+    SCENE_MANAGER_BUILDER_SIDEBAR: "scene-manager-builder-sidebar",
     VIEW_BUILDER_ASSET: "view-builder-expanded-asset-",
     VIEW_BUILDER_TAB: "view-builder-tab-",
 };
@@ -46,21 +46,23 @@ export const UiLocalStorageService = {
             );
         },
 
-        getBuilder: (): string | undefined => {
+        getBuilderSidebar: (): string | undefined => {
             const value = localStorage.getItem(
-                `${PREFIX.SCENE_MANAGER_BUILDER}`,
+                `${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`,
             );
             return value || undefined;
         },
 
-        setBuilder: (viewKey: string | undefined): void => {
+        setBuilderSidebar: (viewKey: string | undefined): void => {
             if (viewKey) {
                 localStorage.setItem(
-                    `${PREFIX.SCENE_MANAGER_BUILDER}`,
+                    `${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`,
                     viewKey,
                 );
             } else {
-                localStorage.removeItem(`${PREFIX.SCENE_MANAGER_BUILDER}`);
+                localStorage.removeItem(
+                    `${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`,
+                );
             }
         },
     },
