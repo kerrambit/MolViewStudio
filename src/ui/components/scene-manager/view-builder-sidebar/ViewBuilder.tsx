@@ -25,6 +25,7 @@ import {
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { pushWarningNotification } from "../../../services/NotificationService";
 import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
+import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 
 /**
  * Properties for ViewBuilder.
@@ -58,11 +59,15 @@ export function ViewBuilder(props: ViewBuilderProps) {
     );
 
     // State to keep track which asset in the list is expanded.
-    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
+    const [expandedAssetId, setExpandedAssetId] = useState<string | null>(
+        UiLocalStorageService.ViewBuilder.getExpandedAssetId(props.viewKey),
+    );
 
     // State to keep track which tab is opened in the expanded asset.
     type TabType = "representation" | "volume";
-    const [activeTab, setActiveTab] = useState<TabType>("representation");
+    const [activeTab, setActiveTab] = useState<TabType>(
+        UiLocalStorageService.ViewBuilder.getTab(),
+    );
 
     // Memoized list of all managed assets in the application.
     const assetsInView = useMemo(() => {
@@ -254,6 +259,10 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                     setExpandedAssetId(
                                         isExpanded ? null : asset.id,
                                     );
+                                    UiLocalStorageService.ViewBuilder.setExpandedAssetId(
+                                        props.viewKey,
+                                        isExpanded ? null : asset.id,
+                                    );
                                 }}
                             >
                                 <div
@@ -303,7 +312,12 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 >
                                     <SegmentedController<TabType>
                                         value={activeTab}
-                                        onChange={setActiveTab}
+                                        onChange={(tab) => {
+                                            setActiveTab(tab);
+                                            UiLocalStorageService.ViewBuilder.setTab(
+                                                tab,
+                                            );
+                                        }}
                                         data={[
                                             {
                                                 label: "Representation",

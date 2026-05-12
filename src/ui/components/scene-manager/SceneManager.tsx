@@ -6,6 +6,7 @@ import { StoryOptions } from "./story-options/StoryOptions";
 import { Assets } from "./assets-sidebar/Assets";
 import { Views } from "./views-sidebar/Views";
 import { ViewBuilder } from "./view-builder-sidebar/ViewBuilder";
+import { UiLocalStorageService } from "../../services/UiLocalStorageService";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -17,12 +18,14 @@ export function SceneManager(props: SceneManagerProps) {
     const { regime } = useRegime();
 
     // Main sidebar state.
-    type SidebarType = "storyOptions" | "assets" | "views";
-    const [sidebar, setSidebar] = useState<SidebarType>("storyOptions");
+    type TabType = "storyOptions" | "assets" | "views";
+    const [tab, setTab] = useState<TabType>(
+        UiLocalStorageService.SceneManager.getTab(),
+    );
 
     // Builder sidebar state.
     const [isBuilderOpen, setIsBuilderOpen] = useState<string | undefined>(
-        undefined,
+        UiLocalStorageService.SceneManager.getBuilder(),
     );
 
     // Render component.
@@ -36,9 +39,12 @@ export function SceneManager(props: SceneManagerProps) {
             >
                 {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
                 {!props.isMolstarExpanded && (
-                    <SegmentedController<SidebarType>
-                        value={sidebar}
-                        onChange={setSidebar}
+                    <SegmentedController<TabType>
+                        value={tab}
+                        onChange={(tab) => {
+                            setTab(tab);
+                            UiLocalStorageService.SceneManager.setTab(tab);
+                        }}
                         data={[
                             { label: "Story Options", value: "storyOptions" },
                             { label: "Assets", value: "assets" },
@@ -48,34 +54,40 @@ export function SceneManager(props: SceneManagerProps) {
                     />
                 )}
 
-                {sidebar === "storyOptions" && regime.kind === "viewing" && (
+                {tab === "storyOptions" && regime.kind === "viewing" && (
                     <StoryOptions></StoryOptions>
                 )}
 
-                {sidebar === "assets" && regime.kind === "viewing" && (
+                {tab === "assets" && regime.kind === "viewing" && (
                     <Assets></Assets>
                 )}
 
-                {sidebar === "views" && regime.kind === "viewing" && (
+                {tab === "views" && regime.kind === "viewing" && (
                     <Views
                         isMolstarLoading={props.isMolstarLoading}
-                        onOpenBuilder={(key) => setIsBuilderOpen(key)}
+                        onOpenBuilder={(key) => {
+                            setIsBuilderOpen(key);
+                            UiLocalStorageService.SceneManager.setBuilder(key);
+                        }}
                         isBuilderOpen={!!isBuilderOpen}
                     ></Views>
                 )}
             </Sidebar>
 
-            {regime.kind === "viewing" &&
-                sidebar === "views" &&
-                isBuilderOpen && (
-                    <Sidebar>
-                        <ViewBuilder
-                            key={isBuilderOpen}
-                            viewKey={isBuilderOpen}
-                            onClose={() => setIsBuilderOpen(undefined)}
-                        ></ViewBuilder>
-                    </Sidebar>
-                )}
+            {regime.kind === "viewing" && tab === "views" && isBuilderOpen && (
+                <Sidebar>
+                    <ViewBuilder
+                        key={isBuilderOpen}
+                        viewKey={isBuilderOpen}
+                        onClose={() => {
+                            setIsBuilderOpen(undefined);
+                            UiLocalStorageService.SceneManager.setBuilder(
+                                undefined,
+                            );
+                        }}
+                    ></ViewBuilder>
+                </Sidebar>
+            )}
         </>
     );
 }
