@@ -4,7 +4,6 @@ import os from "os";
 import http from "http";
 import { ChildProcess, spawn } from "child_process";
 import { existsSync } from "fs";
-import { writeFile, mkdir } from "fs/promises";
 import {
     getAssetsPath,
     getPreloadPath,
@@ -20,7 +19,7 @@ import { pollData } from "./logicMocker.js";
 import { Ipc } from "./Ipc.Electron.js";
 import { createTray } from "./tray.js";
 import { logger } from "./utils/logger.js";
-import { readFiles } from "./utils/fileDataUtils.js";
+import { readFiles, saveFile } from "./utils/fileUtils.js";
 import { SplashScreen } from "./utils/splashScreen.js";
 import { BUILD_INFO } from "./build-info.js";
 
@@ -319,35 +318,5 @@ function quitServerProcess(serverProcess: ChildProcess | null) {
         } else {
             serverProcess.kill();
         }
-    }
-}
-
-async function saveFile(fullFilePath: string, data: ArrayBuffer) {
-    const directoryPath = path.dirname(fullFilePath);
-
-    logger.info(`Received data for saving to path <${fullFilePath}>.`);
-
-    try {
-        await mkdir(directoryPath, { recursive: true });
-
-        const arrayBuffer = data;
-        const buffer = Buffer.from(arrayBuffer);
-
-        await writeFile(fullFilePath, buffer);
-
-        logger.info(`Successfully saved file to <${fullFilePath}>.`);
-        return;
-    } catch (error) {
-        logger.error(
-            `Failed to save file <${fullFilePath}>! Details: <${
-                (error as Error).message
-            }>.`,
-            error,
-        );
-        return new Error(
-            `Failed to save file <${fullFilePath}>! Details: <${
-                (error as Error).message
-            }>.`,
-        );
     }
 }
