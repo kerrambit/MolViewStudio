@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { loggerUi } from "../utils/loggerUi";
-import { getDomain } from "../../api/domain";
+import { useDomain } from "../../api/useDomain";
 import { API } from "../../api/endpoints";
 
 interface ProcessVolumeArgs {
@@ -9,9 +9,11 @@ interface ProcessVolumeArgs {
 }
 
 export function useProcessVolume() {
+    const domain = useDomain();
+
     return useMutation({
         mutationFn: async (args: ProcessVolumeArgs) => {
-            const endpoint = getDomain() + API.processVolume();
+            const endpoint = domain + API.processVolume();
 
             loggerUi.info(`API Request: POST ${API.processVolume()}`);
             loggerUi.info(`  - filepath: ${args.filepath}`);

@@ -5,16 +5,20 @@ import { IconSettingsFilled } from "@tabler/icons-react";
 
 interface BaseSettingsProps {
     children?: ReactNode;
+    autoSavedPage?: boolean;
 }
 
-export function BaseSettings(props: BaseSettingsProps) {
+export function BaseSettings({
+    children,
+    autoSavedPage = true,
+}: BaseSettingsProps) {
     return (
         <div className="settings">
             <Watermark icon={IconSettingsFilled} />
             <div style={{ paddingBottom: "2em" }}>
-                <SettingsRouterBreadcrumbs autoSavedPage={true} />
+                <SettingsRouterBreadcrumbs autoSavedPage={autoSavedPage} />
             </div>
-            {props.children}
+            {children}
         </div>
     );
 }

@@ -7,6 +7,7 @@ export function loadUserSettings(
 ): UserSettings {
     const defaultSettings: UserSettings = {
         lang: "en",
+        preferredServerPort: 41050,
         serverPort: 41050,
         colorTheme: "charcoal",
         colorScheme: "light",
@@ -45,9 +46,13 @@ export function saveUserSettings(
         if (!existsSync(userDataPath)) {
             mkdirSync(userDataPath, { recursive: true });
         }
+
+        // We do not store (actual) server port, only preferred server port.
+        const { serverPort, ...settingsToSave } = settings;
+
         writeFileSync(
             userSettingsFile,
-            JSON.stringify(settings, null, 2),
+            JSON.stringify(settingsToSave, null, 2),
             "utf-8",
         );
     } catch (err) {

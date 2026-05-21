@@ -98,6 +98,7 @@ type Language = "en" | "de";
 
 type UserSettings = {
     lang: Language;
+    preferredServerPort: number;
     serverPort: number;
     colorScheme: "light" | "dark";
     colorTheme:

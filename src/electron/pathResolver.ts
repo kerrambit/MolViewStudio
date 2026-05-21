@@ -1,12 +1,12 @@
 import { app } from "electron";
 import path from "path";
-import { isDev } from "./utils/util.js";
+import { isDev } from "./utils/devUtils.js";
 
 export function getPreloadPath(): string {
     return path.join(
         app.getAppPath(),
         isDev() ? "." : "..",
-        "/dist-electron/preload.cjs"
+        "/dist-electron/preload.cjs",
     );
 }
 
