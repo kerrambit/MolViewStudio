@@ -20,10 +20,11 @@ import { Ipc } from "./Ipc.Electron.js";
 import { createTray } from "./tray.js";
 import { logger } from "./utils/logger.js";
 import { readFiles, saveFile } from "./utils/fileUtils.js";
+import { getAvailablePort } from "./utils/serverUtils.js";
 import { SplashScreen } from "./utils/splashScreen.js";
 import { BUILD_INFO } from "./build-info.js";
 
-app.on("ready", () => {
+app.on("ready", async () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
     const mainWindow = new BrowserWindow({
         width: 1280,
@@ -71,9 +72,36 @@ app.on("ready", () => {
     );
     logger.info(`User settings has been loaded from <${userSettingsFile}>.`);
 
+    // Check if the prefered port from user settings is free.
+    const serverPort = await getAvailablePort(userSettings.serverPort);
+    logger.info(`Resolved server port to use: <${serverPort}>.`);
+
+    // Inject valid CSP.
+    mainWindow.webContents.session.webRequest.onHeadersReceived(
+        (details, callback) => {
+            // Choose script restrictions depending on environment: Vite development server requires 'unsafe-inline' to run the dev script tags.
+            const scriptSourceDirective = isDev()
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval';"
+                : "script-src 'self';";
+
+            callback({
+                responseHeaders: {
+                    ...details.responseHeaders,
+                    "Content-Security-Policy": [
+                        `default-src 'self' https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
+                            `connect-src 'self' http://localhost:${serverPort} http://localhost:5123 ws://localhost:5123 https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
+                            `img-src 'self' data: blob: https:; ` +
+                            `style-src 'self' 'unsafe-inline'; ` +
+                            `${scriptSourceDirective}`, // Inject the conditional rules safely here.
+                    ],
+                },
+            });
+        },
+    );
+
     // A requests from UI to retrieve user settings.
     Ipc.Electron.handle("requestUserSettings", () => {
-        return userSettings;
+        return { ...userSettings, serverPort: serverPort };
     });
 
     // A requests from UI to retrieve build information.
@@ -177,13 +205,13 @@ app.on("ready", () => {
     // Start the server and show splash screen for at least 1.5 seconds (splash screen will be displayed as long as server is starting).
     // We also handle close events here: mainly stopping the server when app is being stopped.
     Promise.all([
-        runServer(userSettings.serverPort),
+        runServer(serverPort),
         new Promise((resolve) => setTimeout(resolve, 1500)),
     ])
         .then((results) => {
             const serverProcess = results[0];
             logger.info(
-                `Server with PID: <${serverProcess.pid}> is running on <localhost:${userSettings.serverPort}>.`,
+                `Server with PID: <${serverProcess.pid}> is running on <localhost:${serverPort}>.`,
             );
             splash.close();
             mainWindow.show();
