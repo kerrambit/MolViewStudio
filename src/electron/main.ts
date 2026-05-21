@@ -73,7 +73,7 @@ app.on("ready", async () => {
     logger.info(`User settings has been loaded from <${userSettingsFile}>.`);
 
     // Check if the prefered port from user settings is free.
-    const serverPort = await getAvailablePort(userSettings.serverPort);
+    const serverPort = await getAvailablePort(userSettings.preferredServerPort);
     logger.info(`Resolved server port to use: <${serverPort}>.`);
 
     // Inject valid CSP.
