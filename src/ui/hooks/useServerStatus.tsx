@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { loggerUi } from "../utils/loggerUi";
-import { getDomain } from "../../api/domain";
+import { useDomain } from "../../api/useDomain";
 import { API } from "../../api/endpoints";
 
 export function useServerStatus() {
+    const domain = useDomain();
+
     return useQuery({
         queryKey: ["serverStatus"],
         queryFn: async () => {
-            const response = await fetch(getDomain() + API.health());
+            const response = await fetch(domain + API.health());
 
             if (!response.ok) {
                 loggerUi.error(
