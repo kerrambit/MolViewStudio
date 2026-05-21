@@ -14,7 +14,7 @@ import {
     loadUserSettings,
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
-import { isDev } from "./utils/util.js";
+import { isDev } from "./utils/devUtils.js";
 import { pollData } from "./logicMocker.js";
 import { Ipc } from "./Ipc.Electron.js";
 import { createTray } from "./tray.js";

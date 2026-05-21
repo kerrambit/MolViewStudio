@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, WebFrameMain } from "electron";
 import { getUiPath } from "./pathResolver.js";
-import { isDev } from "./utils/util.js";
+import { isDev } from "./utils/devUtils.js";
 import { pathToFileURL } from "url";
 import { logger } from "./utils/logger.js";
 
