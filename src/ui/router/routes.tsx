@@ -6,6 +6,7 @@ import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
 import { UiSettings } from "../pages/settings/UiSettings.tsx";
 import { LanguageSettings } from "../pages/settings/LanguageSettings.tsx";
 import { MainLayout } from "../layouts/MainLayout.tsx";
+import { ServerSettings } from "../pages/settings/ServerSettings.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -42,8 +43,8 @@ const routes: RouteObject[] = [
             },
             {
                 path: "server",
-                Component: Settings,
-                children: [{ index: true, Component: Settings }],
+                Component: ServerSettings,
+                children: [{ index: true, Component: ServerSettings }],
             },
             {
                 path: "account",
