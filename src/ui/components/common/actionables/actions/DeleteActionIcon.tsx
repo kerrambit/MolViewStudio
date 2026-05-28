@@ -16,7 +16,7 @@ export function DeleteActionIcon(props: DeleteActionIconProps) {
             onClick={props.onClick}
             title={props.tooltip}
         >
-            <IconTrash size={18} />
+            <IconTrash size={18} color="red" />
         </ActionIcon>
     );
 }

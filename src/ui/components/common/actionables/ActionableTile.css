@@ -8,9 +8,19 @@
     border-radius: 6px;
 }
 
+[data-mantine-color-scheme="dark"] .actionableTile {
+    background-color: var(--color-dark-ui-component-mantine);
+    border: 1px solid var(--color-grey-dark);
+}
+
 .actionableTile:hover {
     background-color: rgba(0, 0, 0, 0.08);
 }
+
+[data-mantine-color-scheme="dark"] .actionableTile:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
 
 .actionableTile .mantine-ActionIcon-root {
     background-color: transparent !important;

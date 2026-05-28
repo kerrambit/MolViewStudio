@@ -1,5 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
+import { useAppearance } from "../../../../services/AppearanceProvider";
 
 interface ChevronDownActionIconProps {
     tooltip?: string;
@@ -8,15 +9,19 @@ interface ChevronDownActionIconProps {
 }
 
 export function ChevronDownActionIcon(props: ChevronDownActionIconProps) {
+    const { colorScheme } = useAppearance();
+
     return (
         <ActionIcon
             disabled={props.enabled ?? false}
             variant="subtle"
-            color="black"
             onClick={props.onClick}
             title={props.tooltip}
         >
-            <IconChevronDown size={23} />
+            <IconChevronDown
+                size={23}
+                color={colorScheme === "dark" ? "white" : "black"}
+            />
         </ActionIcon>
     );
 }

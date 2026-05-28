@@ -1,63 +1,76 @@
-import { useEffect, createRef, useState, useRef } from "react";
+import { createRef, useEffect, useRef, useState } from "react";
+
+import { LoadingOverlay } from "@mantine/core";
+import {
+    IconBinaryTreeFilled,
+    IconPackageExport,
+    IconWorldDownload,
+} from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import type { Subscription } from "rxjs";
+
 import {
     clearViewer,
-    initMolstar,
-    disposeMolstar,
-    loadFromFile,
-    getSnapshot,
     createDefaultMVSFromLocalFiles,
     createMVSBlob,
-    getFullScreenSubscription,
+    disposeMolstar,
     exportStateTree,
-    serializeMVSXAssets,
+    getFullScreenSubscription,
+    getSnapshot,
     getSnapshotManagerState,
+    initMolstar,
     injectAssetIdsIntoTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
+    loadFromFile,
+    serializeMVSXAssets,
 } from "../../../molstar-wrapper/src";
 
-import "./Viewer.css";
-import "molstar/lib/mol-plugin-ui/skin/light.scss";
-import { LoadingOverlay } from "@mantine/core";
+import {
+    useDialogue,
+    type DialogueProps,
+} from "../../services/DialogueProvider";
+import {
+    useManagedAssets,
+    type ManagedAsset,
+} from "../../services/ManagedAssetsProvider";
 import {
     useMenu,
     type MenuItem,
     type RootMenuItem,
     type Section,
 } from "../../services/MenuProvider";
-import { useRegime, type Regime } from "../../services/RegimeProvider";
-import { BroomIcon } from "../../components/icons/BroomIcon";
-import { Sidebar } from "../../components/common/sidebar/Sidebar";
-import { IconPackageExport, IconWorldDownload } from "@tabler/icons-react";
-import { useProcessVolume } from "../../hooks/useProcessVolume";
-import { getFieldFromResponse } from "../../utils/responseUtils";
-import type { Subscription } from "rxjs";
-import { SceneManager } from "../../components/scene-manager/SceneManager";
-import { useEnvironment } from "../../hooks/useEnvironment";
-import { Button } from "../../components/common/button/Button";
-import { loggerUi } from "../../utils/loggerUi";
 import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
     pushWarningNotification,
 } from "../../services/NotificationService";
-import {
-    useDialogue,
-    type DialogueProps,
-} from "../../services/DialogueProvider";
-import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
+import { useRegime, type Regime } from "../../services/RegimeProvider";
+
+import { useEnvironment } from "../../hooks/useEnvironment";
+import { useFileManagement } from "../../hooks/useFileManagement";
+import { useProcessVolume } from "../../hooks/useProcessVolume";
+
 import {
     createExitMenuItem,
     createOnlyDevSection,
     createOpenFileInViewerMenuItem,
     createProcessFileMenuItem,
 } from "../../features/menu/systemMenuItems";
-import { useFileManagement } from "../../hooks/useFileManagement";
-import {
-    useManagedAssets,
-    type ManagedAsset,
-} from "../../services/ManagedAssetsProvider";
+
+import { Button } from "../../components/common/button/Button";
+import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
+import { Sidebar } from "../../components/common/sidebar/Sidebar";
+import { BroomIcon } from "../../components/icons/BroomIcon";
+import { SceneManager } from "../../components/scene-manager/SceneManager";
+
+import { loggerUi } from "../../utils/loggerUi";
+import { getFieldFromResponse } from "../../utils/responseUtils";
+
+import { ShowMVSTreeDialogueContent } from "./ShowMVSTreeDialogueContent";
+
+import "molstar/lib/mol-plugin-ui/skin/light.scss";
+import "./Viewer.css";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -567,6 +580,32 @@ function createEditRootMenuItem(
         },
     };
 
+    const showRawMVSTreeItem: MenuItem = {
+        id: "showRawMVSTree",
+        title: "Show raw MVS tree",
+        icon: { icon: IconBinaryTreeFilled, position: "left" },
+        task: {
+            action: async () => {
+                if (regime.kind === "viewing") {
+                    await showDialogue({
+                        title: "MVS Tree",
+                        showCloseButton: true,
+                        width: "1000px",
+                        maxWidth: "1400px",
+                        content: (close) => (
+                            <ShowMVSTreeDialogueContent close={close} />
+                        ),
+                    });
+                } else {
+                    pushWarningNotification(
+                        `No current state tree is available. This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
+                    );
+                }
+            },
+            type: "direct",
+        },
+    };
+
     const loadDefaultPDBItem: MenuItem = {
         id: "load-default-pdb",
         icon: { icon: IconWorldDownload, position: "left" },
@@ -605,7 +644,7 @@ function createEditRootMenuItem(
 
     const section: Section = {
         id: "edit-general",
-        items: [clearViewerItem, exportViewerItem],
+        items: [clearViewerItem, exportViewerItem, showRawMVSTreeItem],
     };
     const edit: RootMenuItem = {
         id: "edit",
