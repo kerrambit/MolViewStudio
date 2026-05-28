@@ -35,7 +35,7 @@ export function Assets() {
         <div>
             <div>
                 <Text size="xl" mb="sm">
-                    Local:
+                    Local
                 </Text>
 
                 <div
@@ -151,7 +151,7 @@ export function Assets() {
 
             <div>
                 <Text size="xl" mb="sm">
-                    Remote:
+                    Remote
                 </Text>
                 <div
                     style={{
