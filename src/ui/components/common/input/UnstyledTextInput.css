@@ -16,6 +16,10 @@
   color: black;
 }
 
+[data-mantine-color-scheme="dark"] .unstyledTextInput__prefix {
+  color: white;
+}
+
 .unstyledTextInput__input-field {
   border: none;
   background: transparent;
@@ -48,9 +52,17 @@
   border-radius: 6px;
 }
 
+[data-mantine-color-scheme="dark"] .unstyledTextInput__input-field:hover {
+  background-color: rgba(0, 0, 0, 0.24);
+}
+
 .unstyledTextInput__input-field:focus {
   background-color: rgba(0, 0, 0, 0.08);
   border-radius: 6px;
+}
+
+[data-mantine-color-scheme="dark"] .unstyledTextInput__input-field:focus {
+  background-color: rgba(0, 0, 0, 0.24);
 }
 
 .unstyledTextInput__input-error {
