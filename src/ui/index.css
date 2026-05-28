@@ -13,6 +13,8 @@
 
   /* Varibles served mainly for a top menu color pallete. */
   --color-dark: #242424;
+  --color-dark-ui-component-mantine: #2e2e2e;
+  --color-light-ui-component-mantine: #ffff;
   --color-grey-dark: #333;
   --color-grey-dark-hover: #474646;
   --color-light: #faf7f7;
