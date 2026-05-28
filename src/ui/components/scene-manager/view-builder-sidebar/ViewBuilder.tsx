@@ -26,6 +26,7 @@ import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { pushWarningNotification } from "../../../services/NotificationService";
 import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
+import { useAppearance } from "../../../services/AppearanceProvider";
 
 /**
  * Properties for ViewBuilder.
@@ -39,6 +40,12 @@ interface ViewBuilderProps {
  * View Builder component.
  */
 export function ViewBuilder(props: ViewBuilderProps) {
+    // Use appearance.
+    const { colorScheme } = useAppearance();
+
+    // Variable holding if dark scheme is applied.
+    const isDark = colorScheme === "dark";
+
     // Use regime.
     const { regime, setRegime } = useRegime();
 
@@ -237,9 +244,13 @@ export function ViewBuilder(props: ViewBuilderProps) {
                         <div
                             key={asset.id}
                             style={{
-                                border: "1px solid var(--mantine-color-gray-3)",
+                                border: isDark
+                                    ? "1px solid var(--mantine-color-dark-4)"
+                                    : "1px solid var(--mantine-color-gray-3)",
                                 borderRadius: "6px",
-                                backgroundColor: "var(--mantine-color-white)",
+                                backgroundColor: isDark
+                                    ? "var(--mantine-color-dark-7)"
+                                    : "var(--mantine-color-white)",
                                 overflow: "hidden",
                             }}
                         >
@@ -248,10 +259,13 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                     display: "flex",
                                     alignItems: "center",
                                     padding: "0.75em 1em",
-                                    backgroundColor:
-                                        "var(--mantine-color-gray-0)",
+                                    backgroundColor: isDark
+                                        ? "var(--mantine-color-dark-6)"
+                                        : "var(--mantine-color-gray-0)",
                                     borderBottom: isExpanded
-                                        ? "1px solid var(--mantine-color-gray-2)"
+                                        ? isDark
+                                            ? "1px solid var(--mantine-color-dark-4)"
+                                            : "1px solid var(--mantine-color-gray-2)"
                                         : "none",
                                     cursor: "pointer",
                                 }}
