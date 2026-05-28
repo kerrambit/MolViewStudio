@@ -19,6 +19,10 @@
     color: var(--color-grey-dark);
 }
 
+[data-mantine-color-scheme="dark"] .createViewCard:hover {
+    background-color: var(--color-grey-dark);
+    color: var(--color-white);
+}
 .createViewCard span {
     font-size: 0.93em;
     font-weight: 500;

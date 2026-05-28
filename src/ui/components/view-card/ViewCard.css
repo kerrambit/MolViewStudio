@@ -16,3 +16,12 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
     transform: translateY(-2px) scale(1.01);
 }
+
+[data-mantine-color-scheme="dark"] .viewCard {
+    border: 1px solid var(--color-grey-dark);
+    background-color: var(--color-grey-dark-hover);
+}
+
+[data-mantine-color-scheme="dark"] .viewCard--active {
+    border-color: var(--mantine-primary-color-7);
+}
