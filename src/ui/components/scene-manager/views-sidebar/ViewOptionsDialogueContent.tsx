@@ -13,6 +13,7 @@ import { Button } from "../../common/button/Button";
 import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
 import { useRegime } from "../../../services/RegimeProvider";
 import type { HexColor } from "../../../../molstar-wrapper/src";
+import { useAppearance } from "../../../services/AppearanceProvider";
 
 export interface ViewOptionsDialogueContentReturnType {
     lingerDuration: number;
@@ -38,6 +39,8 @@ export function ViewOptionsDialogueContent({
 }: ViewOptionsDialogueContentProps) {
     // Use regime.
     const { regime } = useRegime();
+
+    const { colorScheme } = useAppearance();
 
     // Memoized view.
     const view = useMemo(() => {
@@ -216,7 +219,11 @@ export function ViewOptionsDialogueContent({
                             wrapper: { height: "100%" },
                             input: {
                                 height: "100%",
-                                backgroundColor: "var(--mantine-color-gray-2)",
+                                backgroundColor:
+                                    colorScheme === "dark"
+                                        ? "var(--color-dark-ui-component-mantine)"
+                                        : "var(--color-light-ui-component-mantine)",
+                                color: "var(--input-color)",
                                 border: "none",
                             },
                         }}
@@ -227,7 +234,11 @@ export function ViewOptionsDialogueContent({
                 <div
                     style={{
                         flex: 1,
-                        backgroundColor: "var(--mantine-color-gray-2)",
+                        backgroundColor:
+                            colorScheme === "dark"
+                                ? "var(--color-dark-ui-component-mantine)"
+                                : "var(--color-light-ui-component-mantine)",
+                        color: "var(--input-color)",
                         borderRadius: "6px",
                         padding: "0.75em",
                         overflowY: "auto",
