@@ -1,0 +1,18 @@
+.show-mvs-tree-dialogue-content__source-code {
+  background-color: var(--color-white);
+  color: var(--color-dark);
+  padding: 1.5em;
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 600px;
+  font-size: 13px;
+  text-align: left;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+[data-mantine-color-scheme="dark"] .show-mvs-tree-dialogue-content__source-code{
+  background-color: var(--color-grey-dark);
+  color: var(--color-light);
+}

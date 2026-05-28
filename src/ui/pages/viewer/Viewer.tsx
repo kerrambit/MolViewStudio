@@ -28,7 +28,11 @@ import {
 import { useRegime, type Regime } from "../../services/RegimeProvider";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
-import { IconPackageExport, IconWorldDownload } from "@tabler/icons-react";
+import {
+    IconBinaryTreeFilled,
+    IconPackageExport,
+    IconWorldDownload,
+} from "@tabler/icons-react";
 import { useProcessVolume } from "../../hooks/useProcessVolume";
 import { getFieldFromResponse } from "../../utils/responseUtils";
 import type { Subscription } from "rxjs";
@@ -47,6 +51,7 @@ import {
     type DialogueProps,
 } from "../../services/DialogueProvider";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
+import { ShowMVSTreeDialogueContent } from "./ShowMVSTreeDialogueContent";
 import {
     createExitMenuItem,
     createOnlyDevSection,
@@ -567,6 +572,32 @@ function createEditRootMenuItem(
         },
     };
 
+    const showRawMVSTreeItem: MenuItem = {
+        id: "showRawMVSTree",
+        title: "Show raw MVS tree",
+        icon: { icon: IconBinaryTreeFilled, position: "left" },
+        task: {
+            action: async () => {
+                if (regime.kind === "viewing") {
+                    await showDialogue({
+                        title: "MVS Tree",
+                        showCloseButton: true,
+                        width: "1000px",
+                        maxWidth: "1400px",
+                        content: (close) => (
+                            <ShowMVSTreeDialogueContent close={close} />
+                        ),
+                    });
+                } else {
+                    pushWarningNotification(
+                        `No current state tree is available. This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
+                    );
+                }
+            },
+            type: "direct",
+        },
+    };
+
     const loadDefaultPDBItem: MenuItem = {
         id: "load-default-pdb",
         icon: { icon: IconWorldDownload, position: "left" },
@@ -605,7 +636,7 @@ function createEditRootMenuItem(
 
     const section: Section = {
         id: "edit-general",
-        items: [clearViewerItem, exportViewerItem],
+        items: [clearViewerItem, exportViewerItem, showRawMVSTreeItem],
     };
     const edit: RootMenuItem = {
         id: "edit",
