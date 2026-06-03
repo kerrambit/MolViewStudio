@@ -11,8 +11,6 @@ import type { Subscription } from "rxjs";
 
 import {
     clearViewer,
-    createDefaultMVSFromLocalFiles,
-    createMVSBlob,
     disposeMolstar,
     exportStateTree,
     getFullScreenSubscription,
@@ -47,9 +45,8 @@ import {
 } from "../../services/NotificationService";
 import { useRegime, type Regime } from "../../services/RegimeProvider";
 
-import { useEnvironment } from "../../hooks/useEnvironment";
 import { useFileManagement } from "../../hooks/useFileManagement";
-import { useProcessVolume } from "../../hooks/useProcessVolume";
+import { useProcessing } from "../../services/ProcessingProvider";
 
 import {
     createExitMenuItem,
@@ -65,7 +62,6 @@ import { BroomIcon } from "../../components/icons/BroomIcon";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 
 import { loggerUi } from "../../utils/loggerUi";
-import { getFieldFromResponse } from "../../utils/responseUtils";
 
 import { ShowMVSTreeDialogueContent } from "./ShowMVSTreeDialogueContent";
 
@@ -79,9 +75,6 @@ export function Viewer() {
     // Use localization.
     const { t } = useTranslation();
 
-    // Use environment.
-    const env = useEnvironment();
-
     // Use dialogue.
     const { showDialogue } = useDialogue();
 
@@ -92,12 +85,12 @@ export function Viewer() {
     const { getAllAssets, getAllLocalAssets, addAsset, clearAssets } =
         useManagedAssets();
 
-    // TODO: temporary states
-    const [volumeSidebarVisible, setVolumeSidebarVisible] = useState(false);
-    const [volumes, setVolumes] = useState<string[]>([]);
+    // Use processing.
+    const { jobs, clearJob } = useProcessing();
 
-    // Imports hook for volseg server communication.
-    const processVolume = useProcessVolume();
+    // Variables for processing sidebar.
+    const jobsList = Object.values(jobs);
+    const volumeSidebarVisible = jobsList.length > 0;
 
     // Use regime to control the current regime of the application.
     const { regime, setRegime } = useRegime();
@@ -287,122 +280,6 @@ export function Viewer() {
         deconstruct();
     }, [regime, setRegime, molstarLoading]);
 
-    // Start processing of volumetric data.
-    useEffect(() => {
-        if (regime.kind !== "processing" || !regime.fileToProcess) {
-            return;
-        }
-
-        setVolumeSidebarVisible(true);
-
-        // Define temporary directory for processing of volumetric data.
-        const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
-        const temporaryDirectory = `${env.userDataPath}/Processing/${processingID}/RawData`;
-
-        // Call API endpoint.
-        processVolume.mutate(
-            {
-                filepath: regime.fileToProcess.path,
-                temporaryDirectory: temporaryDirectory,
-            },
-            {
-                onSuccess: async (response) => {
-                    // Parse string array containing absolute paths.
-                    let absolutePaths: string[] = [];
-                    try {
-                        absolutePaths = await getFieldFromResponse<string[]>(
-                            response,
-                            "output_files",
-                            "object",
-                        );
-                    } catch (error) {
-                        pushErrorNotification(
-                            `An internal error occurred! For more information, see the logs or open an issue at https://github.com/kerrambit/MolStarApp.`,
-                        );
-                        loggerUi.error(
-                            `Internal error. Unable to parse the response: <${error}>!`,
-                        );
-                        return;
-                    }
-
-                    loggerUi.info(
-                        `Processing outputted these raw files: [${absolutePaths}].`,
-                    );
-
-                    setVolumes(absolutePaths);
-
-                    // Read assets from processed volume file.
-                    const assets =
-                        await window.electron.getFileData(absolutePaths);
-
-                    if (assets instanceof Error) {
-                        pushErrorNotification(
-                            `Application was not able to read processed assets! For more information, see the logs.`,
-                        );
-                        loggerUi.error(
-                            `Unable to read these assets [${absolutePaths}] from processed volume! Details: <${assets.message}>.`,
-                        );
-                        return;
-                    }
-
-                    // Create MVS bundle from assets, containing just default view.
-                    const defaultMVSData = await createDefaultMVSFromLocalFiles(
-                        assets,
-                        `Processed file <${regime.fileToProcess.name}>`,
-                    );
-
-                    // Path for temporary MVS processed file.
-                    const path = `${`Processing/${processingID}/MVS/export`}.${
-                        defaultMVSData.extension
-                    }`;
-
-                    // Create raw array buffer of MVS.
-                    const arrayBuffer = await createMVSBlob(
-                        defaultMVSData.data,
-                    ).arrayBuffer();
-
-                    // Save MVS into file.
-                    const saveDataResult =
-                        await window.electron.saveTemporaryData(
-                            arrayBuffer,
-                            path,
-                        );
-
-                    if (saveDataResult instanceof Error) {
-                        loggerUi.error(
-                            `Default MVS could not be saved! Details: <${saveDataResult.message}>.`,
-                        );
-                        return;
-                    }
-
-                    pushSuccessNotification(
-                        `File "${regime.fileToProcess.path}" was successfully processed.`,
-                    );
-
-                    // Sets regime to "staging".
-                    setRegime({
-                        kind: "staging",
-                        fileToView: {
-                            path: path,
-                            extension: defaultMVSData.extension,
-                            name: `export.${defaultMVSData.extension}`,
-                            binary: defaultMVSData.isBinary,
-                            content: defaultMVSData.data,
-                        },
-                    });
-                },
-                onError: (err) => {
-                    pushErrorNotification(
-                        `Processing of file "${regime.fileToProcess.path}" failed! For more information, see the logs. You might need to restart the application and try processing once more.`,
-                    );
-                    loggerUi.error(
-                        `Processing of file "${regime.fileToProcess.path}" failed! See details: <${err.message}>.`,
-                    );
-                },
-            },
-        );
-    }, [regime, setRegime, setVolumes]);
-
     return (
         <div className="viewer">
             <div className="viewer-content">
@@ -417,21 +294,63 @@ export function Viewer() {
                         style={{
                             gap: ".5em",
                             padding: ".5em",
+                            display: "flex",
+                            flexDirection: "column",
                         }}
                     >
-                        {processVolume.isPending && "Processing..."}
-                        {processVolume.isSuccess &&
-                            `Processing finished${volumes.length === 0 ? " with error!" : " succefully: "}${volumes}`}
-                        {
-                            <Button
-                                size="small"
-                                onClick={() => {
-                                    setVolumeSidebarVisible(false);
+                        <h4 style={{ margin: "0 0 10px 0" }}>
+                            Processing Jobs
+                        </h4>
+
+                        {jobsList.map((job) => (
+                            <div
+                                key={job.jobId}
+                                style={{
+                                    border: "1px solid #ccc",
+                                    padding: "0.5em",
+                                    borderRadius: "6px",
+                                    marginBottom: "0.5em",
                                 }}
                             >
-                                Close
-                            </Button>
-                        }
+                                {/* File Name */}
+                                <strong>
+                                    {job.file?.name || "Processing File..."}
+                                </strong>
+
+                                {/* Status Handling */}
+                                <div
+                                    style={{
+                                        margin: "5px 0",
+                                        fontSize: "0.9em",
+                                    }}
+                                >
+                                    {job.status === "running" &&
+                                        `Processing... ${job.progress}%`}
+
+                                    {job.status === "success" && (
+                                        <span style={{ color: "green" }}>
+                                            Finished!
+                                        </span>
+                                    )}
+
+                                    {job.status === "error" && (
+                                        <span style={{ color: "red" }}>
+                                            Error: {job.errorMessage}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Close/Clear Button */}
+                                <Button
+                                    size="small"
+                                    onClick={() => clearJob(job.jobId)}
+                                >
+                                    {job.status === "running"
+                                        ? "Hide Job"
+                                        : "Close"}
+                                </Button>
+                            </div>
+                        ))}
                     </Sidebar>
                 )}
                 <SceneManager
