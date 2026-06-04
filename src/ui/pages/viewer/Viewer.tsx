@@ -18,9 +18,7 @@ import {
     getSnapshot,
     getSnapshotManagerState,
     initMolstar,
-    injectAssetIdsIntoTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
-    loadFromFile,
     serializeMVSXAssets,
 } from "../../../molstar-wrapper/src";
 
@@ -62,8 +60,6 @@ import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 
-import { loggerUi } from "../../utils/loggerUi";
-
 import { ShowMVSTreeDialogueContent } from "./ShowMVSTreeDialogueContent";
 
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
@@ -80,11 +76,10 @@ export function Viewer() {
     const { showDialogue } = useDialogue();
 
     // Use file management.
-    const { loadAndHandleFile } = useFileManagement();
+    const { loadAndHandleFile, deconstructFile } = useFileManagement();
 
     // Use assets.
-    const { getAllAssets, getAllLocalAssets, addAsset, clearAssets } =
-        useManagedAssets();
+    const { getAllAssets, getAllLocalAssets, clearAssets } = useManagedAssets();
 
     // Use processing.
     const { jobs, clearJob } = useProcessing();
@@ -235,52 +230,13 @@ export function Viewer() {
                 return;
             }
 
-            pushInfoNotification("Import started.");
-
-            // Load the file.
-            const result = await loadFromFile(regime.fileToView);
-            if (result instanceof Error) {
-                pushErrorNotification(
-                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
-                );
-                loggerUi.error(
-                    `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
-                );
-                return;
-            } else if (result === undefined) {
-                clearAssets();
-                pushInfoNotification(
-                    "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
-                );
-                return;
-            }
-
-            // Clears all managed assets and then register local assets in ManagedAssetsProvider.
-            clearAssets();
-            result.assets.forEach((a) => {
-                addAsset(a);
-            });
-
-            // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
-            const stateTree = injectAssetIdsIntoTree(
-                result.stateTree,
-                result.assets,
-            );
-
-            // Set the regime with new assets and state tree.
-            setRegime({
-                ...regime,
-                kind: "viewing",
-                stateTree: stateTree,
-                sourceUrl: result.sourceUrl,
-            });
-
-            pushSuccessNotification("Import ended!");
+            await deconstructFile();
         };
 
         deconstruct();
-    }, [regime, setRegime, molstarLoading]);
+    }, [regime, molstarLoading]);
 
+    // Render.
     return (
         <div className="viewer">
             <div className="viewer-content">

@@ -8,6 +8,7 @@ import {
 import { loggerUi } from "../utils/loggerUi";
 import {
     pushErrorNotification,
+    pushInfoNotification,
     pushSuccessNotification,
 } from "../services/NotificationService";
 import { useProcessing } from "../services/ProcessingProvider";
@@ -17,16 +18,78 @@ import { getFieldFromResponse } from "../utils/responseUtils";
 import {
     createDefaultMVSFromLocalFiles,
     createMVSBlob,
+    injectAssetIdsIntoTree,
+    loadFromFile,
 } from "../../molstar-wrapper/src";
+import { useManagedAssets } from "../services/ManagedAssetsProvider";
 
 export function useFileManagement() {
+    // Use navigate,
     const navigate = useNavigate();
-    const { setRegime } = useRegime();
+
+    // Use regime.
+    const { regime, setRegime } = useRegime();
+
     // Use environment.
     const env = useEnvironment();
+
+    // Use assets.
+    const { addAsset, clearAssets } = useManagedAssets();
+
+    // Use processing.
     const { startJob, completeJob, failJob } = useProcessing();
     const processVolume = useProcessVolume();
 
+    // Function to use to move regime from `staging` into `viewing`.
+    const deconstructFile = async () => {
+        if (regime.kind !== "staging") {
+            return;
+        }
+
+        pushInfoNotification("Import started.");
+
+        // Load the file.
+        const result = await loadFromFile(regime.fileToView);
+        if (result instanceof Error) {
+            pushErrorNotification(
+                `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+            );
+            loggerUi.error(
+                `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+            );
+            return;
+        } else if (result === undefined) {
+            clearAssets();
+            pushInfoNotification(
+                "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
+            );
+            return;
+        }
+
+        // Clears all managed assets and then register local assets in ManagedAssetsProvider.
+        clearAssets();
+        result.assets.forEach((a) => {
+            addAsset(a);
+        });
+
+        // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
+        const stateTree = injectAssetIdsIntoTree(
+            result.stateTree,
+            result.assets,
+        );
+
+        // Set the regime with new assets and state tree.
+        setRegime({
+            ...regime,
+            kind: "viewing",
+            stateTree: stateTree,
+            sourceUrl: result.sourceUrl,
+        });
+
+        pushSuccessNotification("Import ended!");
+    };
+
+    // Function which loads file via file explorer and then handle it.
     const loadAndHandleFile = async (
         handleFileAs: "processing" | "viewing",
     ) => {
@@ -46,6 +109,8 @@ export function useFileManagement() {
             });
     };
 
+    // Handler function which, in case of processing, calls appropriate API call on server to start processing and then moves regime to viewing when data are processed.
+    // If user wants to handle file as viewing only, we begin its deconstructom and mvoe regime to viewing.
     const handleFile = async (
         handleFileAs: "processing" | "viewing",
         fileData: FileData[] | Error,
@@ -192,5 +257,5 @@ export function useFileManagement() {
         }
     };
 
-    return { loadAndHandleFile, handleFile };
+    return { loadAndHandleFile, handleFile, deconstructFile };
 }
