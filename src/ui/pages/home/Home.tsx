@@ -1,5 +1,5 @@
 import { Button } from "../../components/common/button/Button";
-import type { FileRejection, FileWithPath } from "@mantine/dropzone";
+import type { FileRejection } from "@mantine/dropzone";
 import { loggerUi } from "../../utils/loggerUi";
 import { Dropzone } from "../../components/common/dropzone/Dropzone.tsx";
 import {
@@ -20,7 +20,18 @@ export default function Home() {
     return (
         <div className="home">
             <Dropzone
-                onDrop={async (files: FileWithPath[]) => {
+                getFilesFromEvent={(event: any) => {
+                    if (event.dataTransfer && event.dataTransfer.files) {
+                        return Promise.resolve(
+                            Array.from(event.dataTransfer.files),
+                        );
+                    }
+                    if (event.target && event.target.files) {
+                        return Promise.resolve(Array.from(event.target.files));
+                    }
+                    return Promise.resolve([]);
+                }}
+                onDrop={async (files: File[]) => {
                     await onDropHandler(files, handleFile);
                 }}
                 onReject={(rejections: FileRejection[]) => {
@@ -35,9 +46,12 @@ export default function Home() {
     );
 }
 
-// TODO: problem is that this is not unifed with electron/fileDataUtils.ts, see https://github.com/kerrambit/MolStarApp/issues/84
+interface ElectronFile extends File {
+    path: string;
+}
+
 async function onDropHandler(
-    files: FileWithPath[],
+    files: File[],
     handleFile: (
         handleFileAs: "processing" | "viewing",
         fileData: FileData[] | Error,
@@ -50,7 +64,8 @@ async function onDropHandler(
             (file) => `<${file.name}>`,
         )}. Only the first file will be handled!`,
     );
-    const file = files[0];
+
+    const file = files[0] as ElectronFile;
     pushInfoNotification(`[DEV]: <${file.path}>`);
 
     if (file.path) {
@@ -63,10 +78,7 @@ function onRejectHandler(rejections: FileRejection[]) {
     loggerUi.warn(
         `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
     );
-    pushWarningNotification(
-        `Dropzone rejected these files: <${JSON.stringify(rejections)}>.`,
-    );
-    pushWarningNotification(`Dropzone is not implemented at the moment yet!`);
+    pushWarningNotification(`File was rejected!`);
 }
 
 function renderDropzoneButtonsArea(
