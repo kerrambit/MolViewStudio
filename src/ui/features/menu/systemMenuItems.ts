@@ -2,6 +2,7 @@ import {
     IconBrandGithub,
     IconCircleDashedX,
     IconFlag,
+    IconFolderCog,
     IconFolderOpen,
     IconInfoOctagon,
     IconProgressCheck,
@@ -115,6 +116,20 @@ export function createProcessFileMenuItem(
         id: "process-file",
         title: "Process file",
         icon: { icon: IconFolderOpen, position: "left" },
+        task: {
+            action: action,
+            type: "secondary",
+        },
+    };
+}
+
+export function createOpenUserDataFolderMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "open-user-data-folder",
+        title: "Open user data folder",
+        icon: { icon: IconFolderCog, position: "left" },
         task: {
             action: action,
             type: "secondary",

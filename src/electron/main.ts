@@ -140,6 +140,17 @@ app.on("ready", async () => {
         logger.info(`External URL <${url}> was requested to be opened.`);
     });
 
+    // A requests from UI to open user data folder.
+    Ipc.Electron.handle("requestToOpenUserDataFolder", async () => {
+        const errorMessage = await shell.openPath(app.getPath("userData"));
+
+        if (errorMessage) {
+            logger.error(`Failed to open folder: <${errorMessage}>!`);
+            return new Error(errorMessage);
+        }
+        return;
+    });
+
     // A request from UI to load file data from given array of paths.
     Ipc.Electron.handleTwoWay("getFileData", (paths: string[]) => {
         return readFiles(paths);

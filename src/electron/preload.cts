@@ -74,6 +74,9 @@ electron.contextBridge.exposeInMainWorld("electron", {
         return Ipc.Ui.send("requestToOpenExternal", url);
     },
 
+    requestToOpenUserDataFolder: () =>
+        Ipc.Ui.invoke("requestToOpenUserDataFolder"),
+
     openFileExplorer: (multiSelections: boolean, filters: FileFilter[]) =>
         Ipc.Ui.invokeTwoWay("openFileExplorer", {
             multiSelections,
