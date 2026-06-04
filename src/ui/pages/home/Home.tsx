@@ -66,6 +66,12 @@ async function onDropHandler(
     );
 
     const file = files[0] as ElectronFile;
+
+    loggerUi.info("RAW FILE OBJECT:", file);
+
+    // 2. Let's see if the property is hiding under a different web standard name
+    loggerUi.info("WEBKIT RELATIVE PATH:", file.webkitRelativePath);
+
     pushInfoNotification(`[DEV]: <${file.path}>`);
 
     if (file.path) {
