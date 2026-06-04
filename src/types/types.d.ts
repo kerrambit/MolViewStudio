@@ -9,6 +9,7 @@ type EventPayloadMapping = {
     requestApplicationExit: void;
     requestToOpenDevTools: void;
     requestToOpenExternal: string;
+    requestToOpenUserDataFolder: void | Error;
     openFileExplorer: FileData[] | Error;
     saveData: void | Error;
     saveTemporaryData: void | Error;
@@ -34,6 +35,8 @@ interface Window {
         requestToOpenDevTools: () => Promise<void>;
 
         requestToOpenExternal: (url: string) => void;
+
+        requestToOpenUserDataFolder: () => Promise<void | Error>;
 
         requestEnvironment: () => Environment;
 

@@ -24,6 +24,7 @@ import {
     createOnlyDevSection,
     createOpenDevToolsMenuItem,
     createOpenFileInViewerMenuItem,
+    createOpenUserDataFolderMenuItem,
     createProcessFileMenuItem,
     createReportIssueMenuItem,
     createSettingsRootMenuItem,
@@ -32,6 +33,7 @@ import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { useFileManagement } from "../hooks/useFileManagement";
 import { AboutDialogueContent } from "../components/common/dialogue/AboutDialogueContent";
 import { useDialogue, type DialogueProps } from "./DialogueProvider";
+import { pushErrorNotification } from "./NotificationService";
 
 /**
  * The action can be either:
@@ -411,6 +413,15 @@ function createInitialMenu(
                 createProcessFileMenuItem(() =>
                     loadAndHandleFile("processing"),
                 ),
+                createOpenUserDataFolderMenuItem(async () => {
+                    const result =
+                        await window.electron.requestToOpenUserDataFolder();
+                    if (result instanceof Error) {
+                        pushErrorNotification(
+                            `Not able to open user data folder! Details: <${result.message}>.`,
+                        );
+                    }
+                }),
             ]),
             createOnlyDevSection("file-dev", "For developers", [
                 createOpenDevToolsMenuItem(),

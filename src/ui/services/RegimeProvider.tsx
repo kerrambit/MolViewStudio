@@ -4,9 +4,8 @@ import type { SerializedAssets } from "../../molstar-wrapper/src";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
-export type ProcessingRegime = {
-    kind: "processing";
-    fileToProcess: FileData;
+export type IdlingRegime = {
+    kind: "idling";
 };
 
 export type StagingRegime = {
@@ -31,16 +30,11 @@ export type RestoringRegime = {
     arcpAssets: SerializedAssets; // TODO: this will be probably in my ManagedAssetsProvider
 };
 
-export type IdlingRegime = {
-    kind: "idling";
-};
-
 export type Regime =
-    | ProcessingRegime
+    | IdlingRegime
     | StagingRegime
     | ViewingRegime
-    | RestoringRegime
-    | IdlingRegime;
+    | RestoringRegime;
 
 export type RegimeContextType = {
     regime: Regime;
