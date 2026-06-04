@@ -1,5 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconPencil } from "@tabler/icons-react";
+import { useAppearance } from "../../../../services/AppearanceProvider";
 
 interface EditActionIconProps {
     tooltip?: string;
@@ -7,10 +8,17 @@ interface EditActionIconProps {
 }
 
 export function EditActionIcon(props: EditActionIconProps) {
+    // Use apperance.
+    const { colorScheme } = useAppearance();
+
+    // Choose optimal color based on color scheme.
+    const optimalColor =
+        colorScheme === "dark" ? "var(--color-light)" : "var(--color-dark)";
+
     return (
         <ActionIcon
             variant="subtle"
-            color="gray"
+            color={optimalColor}
             onClick={props.onClick}
             title={props.tooltip}
         >
