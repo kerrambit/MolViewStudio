@@ -33,6 +33,7 @@ import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../utils/loggerUi";
 import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
+import { DeleteViewDialogueContent } from "./DeleteViewDialogueContent";
 
 /**
  * Properties for Views component.
@@ -190,6 +191,23 @@ export function Views(props: ViewsProps) {
                             onDelete={async () => {
                                 // Ignore other non-viewing regime.
                                 if (regime.kind !== "viewing") {
+                                    return;
+                                }
+
+                                // Show confirmation dialogue.
+                                const result = await showDialogue<boolean>({
+                                    title: "Delete Confirmation",
+                                    width: "550px",
+                                    showCloseButton: true,
+                                    content: (close) => (
+                                        <DeleteViewDialogueContent
+                                            viewName={view.title ?? view.id}
+                                            close={close}
+                                        />
+                                    ),
+                                });
+
+                                if (!result) {
                                     return;
                                 }
 
