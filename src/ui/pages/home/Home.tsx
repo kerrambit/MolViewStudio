@@ -21,15 +21,22 @@ export default function Home() {
         <div className="home">
             <Dropzone
                 getFilesFromEvent={(event: any) => {
+                    let rawFiles: any[] = [];
+
                     if (event.dataTransfer && event.dataTransfer.files) {
-                        return Promise.resolve(
-                            Array.from(event.dataTransfer.files),
-                        );
+                        rawFiles = Array.from(event.dataTransfer.files);
+                    } else if (event.target && event.target.files) {
+                        rawFiles = Array.from(event.target.files);
                     }
-                    if (event.target && event.target.files) {
-                        return Promise.resolve(Array.from(event.target.files));
-                    }
-                    return Promise.resolve([]);
+
+                    rawFiles.forEach((file) => {
+                        Object.defineProperty(file, "realPath", {
+                            value: file.path,
+                            writable: false,
+                        });
+                    });
+
+                    return Promise.resolve(rawFiles);
                 }}
                 onDrop={async (files: File[]) => {
                     await onDropHandler(files, handleFile);
@@ -47,7 +54,7 @@ export default function Home() {
 }
 
 interface ElectronFile extends File {
-    path: string;
+    realPath: string;
 }
 
 async function onDropHandler(
@@ -70,12 +77,12 @@ async function onDropHandler(
     loggerUi.info("RAW FILE OBJECT:", file);
 
     // 2. Let's see if the property is hiding under a different web standard name
-    loggerUi.info("WEBKIT RELATIVE PATH:", file.webkitRelativePath);
+    loggerUi.info("WEBKIT RELATIVE PATH:", file.realPath);
 
-    pushInfoNotification(`[DEV]: <${file.path}>`);
+    pushInfoNotification(`[DEV]: <${file.realPath}>`);
 
-    if (file.path) {
-        const result = await window.electron.getFileData([file.path]);
+    if (file.realPath) {
+        const result = await window.electron.getFileData([file.realPath]);
         handleFile("processing", result);
     }
 }
