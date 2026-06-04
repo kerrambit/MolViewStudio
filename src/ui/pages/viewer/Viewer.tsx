@@ -1,6 +1,7 @@
 import { createRef, useEffect, useRef, useState } from "react";
 
 import { LoadingOverlay } from "@mantine/core";
+import { Text } from "@mantine/core";
 import {
     IconBinaryTreeFilled,
     IconPackageExport,
@@ -298,26 +299,24 @@ export function Viewer() {
                             flexDirection: "column",
                         }}
                     >
-                        <h4 style={{ margin: "0 0 10px 0" }}>
+                        <Text size="xl" fw={520}>
                             Processing Jobs
-                        </h4>
+                        </Text>
 
                         {jobsList.map((job) => (
                             <div
                                 key={job.jobId}
                                 style={{
-                                    border: "1px solid #ccc",
+                                    border: "1px solid var(--color-grey-light)",
                                     padding: "0.5em",
                                     borderRadius: "6px",
                                     marginBottom: "0.5em",
                                 }}
                             >
-                                {/* File Name */}
                                 <strong>
                                     {job.file?.name || "Processing File..."}
                                 </strong>
 
-                                {/* Status Handling */}
                                 <div
                                     style={{
                                         margin: "5px 0",
@@ -340,7 +339,6 @@ export function Viewer() {
                                     )}
                                 </div>
 
-                                {/* Close/Clear Button */}
                                 <Button
                                     size="small"
                                     onClick={() => clearJob(job.jobId)}
