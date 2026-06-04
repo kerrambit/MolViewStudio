@@ -132,7 +132,7 @@ export function createOpenUserDataFolderMenuItem(
         icon: { icon: IconFolderCog, position: "left" },
         task: {
             action: action,
-            type: "secondary",
+            type: "direct",
         },
     };
 }
