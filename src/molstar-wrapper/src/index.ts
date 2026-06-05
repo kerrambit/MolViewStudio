@@ -2054,7 +2054,6 @@ export async function reloadMolstarAndRestoreIndex(
     // Build and load the tree.
     const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
     const result = await loadMVSIntoMolstar(renderTree);
-
     if (!result.success) {
         return result.error;
     }
@@ -2479,6 +2478,7 @@ export async function loadMVSIntoMolstar(
     stateTree: MVSData_States,
 ): Promise<Result<MVSData_States>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
+
     try {
         await loadMVS(molstar, stateTree, {
             appendSnapshots: false,
@@ -2487,13 +2487,26 @@ export async function loadMVSIntoMolstar(
             extensions: [],
             sanityChecks: true,
         });
+
+        const cells = Array.from(molstar.state.data.cells.values());
+        const failedCell = cells.find((cell) => cell.status === "error");
+
+        if (failedCell) {
+            const errorMessage =
+                failedCell.errorText || "Unknown Molstar parsing error";
+            return {
+                success: false,
+                error: new Error(
+                    `Molstar failed to parse the data! Details: <${errorMessage}>.`,
+                ),
+            };
+        }
+
         return { success: true, value: stateTree };
     } catch (err) {
         return {
             success: false,
-            error: new Error(
-                `Error occured when loading MVS! Details: "${err}"."`,
-            ),
+            error: new Error(`Critical runtime error! Details: <${err}>.`),
         };
     }
 }

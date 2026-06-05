@@ -23,10 +23,14 @@ import {
     reloadMolstarAndRestoreIndex,
 } from "../../../../molstar-wrapper/src";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import { pushWarningNotification } from "../../../services/NotificationService";
+import {
+    pushErrorNotification,
+    pushWarningNotification,
+} from "../../../services/NotificationService";
 import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { useAppearance } from "../../../services/AppearanceProvider";
+import { loggerUi } from "../../../utils/loggerUi";
 
 /**
  * Properties for ViewBuilder.
@@ -111,6 +115,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
         setSelectedAssetIds(newSelectedIds);
 
         // Create updated state tree.
+        const originalStateTree = regime.stateTree;
         const updatedTree: MVSData_States = {
             ...regime.stateTree,
             snapshots: regime.stateTree.snapshots.map((snap) => {
@@ -141,11 +146,34 @@ export function ViewBuilder(props: ViewBuilderProps) {
         });
 
         // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
-        await reloadMolstarAndRestoreIndex(
+        const result = await reloadMolstarAndRestoreIndex(
             props.viewKey,
             allAssets,
             updatedTree,
         );
+
+        if (result instanceof Error) {
+            pushErrorNotification(
+                `Failed to apply changes! It is possible that given asset cannot be used in the MVS. For more information, check the logs.`,
+            );
+            loggerUi.error(result.message);
+
+            // TODO: implement a global Undo stack, you would just call `undo()` here instead of manually reverting
+            if (a) {
+                if (isChecked) {
+                    decrementAssetUseCount(a.asset.url);
+                } else {
+                    incrementAssetUseCount(a.asset.url);
+                }
+            }
+
+            setSelectedAssetIds(selectedAssetIds);
+
+            setRegime({
+                ...regime,
+                stateTree: originalStateTree,
+            });
+        }
     };
 
     const handleNodeParamChange = async (
@@ -157,6 +185,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
         if (regime.kind !== "viewing") return;
 
         // Create updated state tree.
+        const originalStateTree = regime.stateTree;
         const updatedTree: MVSData_States = {
             ...regime.stateTree,
             snapshots: regime.stateTree.snapshots.map((snap) => {
@@ -183,11 +212,24 @@ export function ViewBuilder(props: ViewBuilderProps) {
         });
 
         // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
-        await reloadMolstarAndRestoreIndex(
+        const result = await reloadMolstarAndRestoreIndex(
             props.viewKey,
             getAllAssets(),
             updatedTree,
         );
+
+        if (result instanceof Error) {
+            pushErrorNotification(
+                `Failed to apply changes! For more information, check the logs.`,
+            );
+            loggerUi.error(result.message);
+
+            // TODO: implement a global Undo stack, you would just call `undo()` here instead of manually reverting
+            setRegime({
+                ...regime,
+                stateTree: originalStateTree,
+            });
+        }
     };
 
     return (
