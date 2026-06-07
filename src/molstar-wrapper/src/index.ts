@@ -1628,21 +1628,18 @@ export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
  * Add new asset to the download node with default values.
  * @param rootNode root node
  * @param assetIdToAdd managed asset id
- * @param extension extension of the data (supported are `bcif` and `cif`)
+ * @param extension extension of the data
+ * @param extensionParserRecord recod of mapped extension and its parser type
  * @returns modified node
  */
 export function addAssetToRoot(
     rootNode: any,
     assetIdToAdd: string,
-    extension: string | undefined,
+    extension: string,
+    extensionParserRecord: Record<string, string>,
 ) {
-    // TODO: let the user to select this
-    let format: string = "bcif";
-    if (extension === "bcif") {
-        format = "bcif";
-    } else if (extension === "cif") {
-        format = "mmcif";
-    }
+    // Default format (parser) is "bcif". If it does not match to data, Molstar will throw an error when reloading this view anyway.
+    const format: string = extensionParserRecord[extension] ?? "bcif";
 
     const newDownloadBranch = {
         kind: "download",

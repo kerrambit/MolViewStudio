@@ -31,6 +31,12 @@ import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { useAppearance } from "../../../services/AppearanceProvider";
 import { loggerUi } from "../../../utils/loggerUi";
+import {
+    getAllParserTypes,
+    getAllSupportedAssetsParsers,
+    getAssetConfig,
+    isAssetSupported,
+} from "../../../domain/assetsConfig";
 
 /**
  * Properties for ViewBuilder.
@@ -129,8 +135,9 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                   getExtensionFromFileName(
                                       getAllAssets().find(
                                           (a) => a.id === toggledAssetId,
-                                      )?.name,
-                                  ),
+                                      )?.name || "",
+                                  ) || "",
+                                  getAllSupportedAssetsParsers(),
                               )
                             : removeAssetFromRoot(snap.root, toggledAssetId),
                     };
@@ -413,6 +420,17 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                                 marginTop: "0.5em",
                                             }}
                                         >
+                                            <Select
+                                                label="Format"
+                                                disabled={true}
+                                                data={getAllParserTypes()}
+                                                value={
+                                                    getAssetConfig(asset.name)
+                                                        ?.parser || null
+                                                }
+                                                placeholder="N/A"
+                                                size="xs"
+                                            />
                                             <Select
                                                 label="Type"
                                                 data={[
