@@ -34,7 +34,7 @@ export function useFileManagement() {
     const env = useEnvironment();
 
     // Use assets.
-    const { addAsset, clearAssets } = useManagedAssets();
+    const { addAsset, addLocalAsset, clearAssets } = useManagedAssets();
 
     // Use processing.
     const { startJob, completeJob, failJob } = useProcessing();
@@ -46,6 +46,7 @@ export function useFileManagement() {
             return;
         }
 
+        // Import started.
         pushInfoNotification("Import started.");
 
         // Load the file.
@@ -86,13 +87,15 @@ export function useFileManagement() {
             sourceUrl: result.sourceUrl,
         });
 
+        // Import ended.
         pushSuccessNotification("Import ended!");
     };
 
-    // Function which loads file via file explorer and then handle it.
+    // Function to use to load a file via file explorer and then handle it (as file to process or file to view).
     const loadAndHandleFile = async (
         handleFileAs: "processing" | "viewing",
     ) => {
+        // Opends file explorer and let user to choose the file.
         window.electron
             .openFileExplorer(
                 false,
@@ -101,6 +104,7 @@ export function useFileManagement() {
                     : [MVSFilters, StructuralFilters],
             )
             .then((fileData) => {
+                // Handle file.
                 handleFile(handleFileAs, fileData);
             })
             .catch((error) => {
@@ -109,8 +113,96 @@ export function useFileManagement() {
             });
     };
 
+    // Function to use to process a file and save it as asset to given relative path. Does not change regime.
+    const handleFileAsProcessingOfIndependentAsset = async (
+        fileToProcess: FileData,
+        newRelativePath: string,
+    ) => {
+        // Start processing job.
+        const jobId = startJob(fileToProcess);
+
+        // Define temporary directory for processing of volumetric data.
+        const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
+        const temporaryDirectory = `${env.userDataPath}/Processing/${processingID}/RawData`;
+
+        // Call async API endpoint.
+        processVolume.mutate(
+            {
+                filepath: fileToProcess.path,
+                temporaryDirectory: temporaryDirectory,
+            },
+            {
+                onSuccess: async (response) => {
+                    // Parse string array containing absolute paths.
+                    let absolutePaths: string[] = [];
+                    try {
+                        absolutePaths = await getFieldFromResponse<string[]>(
+                            response,
+                            "output_files",
+                            "object",
+                        );
+                    } catch (error) {
+                        pushErrorNotification(
+                            `An internal error occurred! For more information, see the logs or open an issue at https://github.com/kerrambit/MolStarApp.`,
+                        );
+                        loggerUi.error(
+                            `Internal error. Unable to parse the response: <${error}>!`,
+                        );
+                        return;
+                    }
+
+                    loggerUi.info(
+                        `Processing outputted these raw files: [${absolutePaths}].`,
+                    );
+
+                    // Job is completed.
+                    completeJob(jobId, absolutePaths);
+
+                    // Read assets from processed volume file.
+                    const assets =
+                        await window.electron.getFileData(absolutePaths);
+
+                    if (assets instanceof Error) {
+                        pushErrorNotification(
+                            `Application was not able to read processed assets! For more information, see the logs.`,
+                        );
+                        loggerUi.error(
+                            `Unable to read these assets [${absolutePaths}] from processed volume! Details: <${assets.message}>.`,
+                        );
+                        return;
+                    }
+
+                    // Adds local asset into asset manager.
+                    const wasSuccessful = addLocalAsset(
+                        assets[0],
+                        newRelativePath,
+                    );
+
+                    if (!wasSuccessful) {
+                        pushErrorNotification(
+                            `Asset "${newRelativePath}${assets[0].name}" already exists!`,
+                        );
+                    } else {
+                        pushSuccessNotification(
+                            `File "${fileToProcess.path}" was successfully processed and new asset "${newRelativePath}${assets[0].name}" added.`,
+                        );
+                    }
+                },
+                onError: (err) => {
+                    failJob(jobId, err.message);
+                    pushErrorNotification(
+                        `Processing of file "${fileToProcess.path}" failed! For more information, see the logs. You might need to restart the application and try processing once more.`,
+                    );
+                    loggerUi.error(
+                        `Processing of file "${fileToProcess.path}" failed! See details: <${err.message}>.`,
+                    );
+                },
+            },
+        );
+    };
+
     // Handler function which, in case of processing, calls appropriate API call on server to start processing and then moves regime to viewing when data are processed.
-    // If user wants to handle file as viewing only, we begin its deconstructom and mvoe regime to viewing.
+    // If user wants to handle file as viewing only, we begin its deconstruction and move regime to viewing.
     const handleFile = async (
         handleFileAs: "processing" | "viewing",
         fileData: FileData[] | Error,
@@ -257,5 +349,10 @@ export function useFileManagement() {
         }
     };
 
-    return { loadAndHandleFile, handleFile, deconstructFile };
+    return {
+        loadAndHandleFile,
+        handleFile,
+        deconstructFile,
+        handleFileAsProcessingOfIndependentAsset,
+    };
 }
