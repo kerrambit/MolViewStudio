@@ -341,6 +341,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 </div>
                                 <Checkbox
                                     checked={isSelected}
+                                    disabled={!isAssetSupported(asset.name)}
                                     onChange={(e) => {
                                         handleAssetToggle(
                                             asset.id,
@@ -357,7 +358,11 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 )}
                             </div>
 
-                            <Collapse expanded={isExpanded}>
+                            <Collapse
+                                expanded={
+                                    isExpanded && isAssetSupported(asset.name)
+                                }
+                            >
                                 <div
                                     style={{
                                         padding: "1em",
