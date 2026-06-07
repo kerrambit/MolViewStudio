@@ -16,6 +16,7 @@ import {
     type EditAssetDialogueReturnType,
 } from "./EditAssetDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
+import { useFileManagement } from "../../../hooks/useFileManagement";
 
 export function Assets() {
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
@@ -30,6 +31,8 @@ export function Assets() {
         removeAsset,
         editRelativePathOfLocalAsset,
     } = useManagedAssets();
+
+    const { handleFileAsProcessingOfIndependentAsset } = useFileManagement();
 
     return (
         <div>
@@ -131,13 +134,20 @@ export function Assets() {
                                 });
 
                             if (result) {
-                                const wasSuccessful = addLocalAsset(
-                                    result.file,
-                                    result.relativePath,
-                                );
-                                if (!wasSuccessful) {
-                                    pushErrorNotification(
-                                        `Asset "${result.relativePath}${result.file.name}" already exists!`,
+                                if (!result.processAsset) {
+                                    const wasSuccessful = addLocalAsset(
+                                        result.file,
+                                        result.relativePath,
+                                    );
+                                    if (!wasSuccessful) {
+                                        pushErrorNotification(
+                                            `Asset "${result.relativePath}${result.file.name}" already exists!`,
+                                        );
+                                    }
+                                } else {
+                                    handleFileAsProcessingOfIndependentAsset(
+                                        result.file,
+                                        result.relativePath,
                                     );
                                 }
                             }
