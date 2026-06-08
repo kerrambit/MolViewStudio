@@ -287,8 +287,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
         }
 
         // Inform managed asset manager this given asset count was increased/decreased.
-        const allAssets = getAllAssets();
-        const a = allAssets.find((a) => a.id === toggledAssetId);
+        const a = getAsset(toggledAssetId);
         if (a) {
             if (isChecked) {
                 incrementAssetUseCount(a.asset.url);
@@ -317,8 +316,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                             snap.root,
                             toggledAssetId,
                             getExtensionFromFileName(
-                                allAssets.find((a) => a.id === toggledAssetId)
-                                    ?.name || "",
+                                getAsset(toggledAssetId)?.name || "",
                             ) || "",
                             getAllSupportedAssetsParsers(),
                             draftedParams,
@@ -354,7 +352,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
         // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
             props.viewKey,
-            allAssets,
+            getAllAssets(),
             updatedTree,
         );
 

@@ -55,7 +55,7 @@ export function Views(props: ViewsProps) {
     const { showDialogue } = useDialogue();
 
     // Use assets.
-    const { getAllAssets, decrementAssetUseCount } = useManagedAssets();
+    const { getAsset, decrementAssetUseCount } = useManagedAssets();
 
     // Memoize views extracted from state tree.
     const viewItems = useMemo(() => {
@@ -230,15 +230,12 @@ export function Views(props: ViewsProps) {
                                 }
 
                                 // Decrease count for deleted assets.
-                                const allAssets = getAllAssets();
                                 const assetsIdsInDeletedSnapshot =
                                     getAllDownloadUrlsFromSnapshot(
                                         removedSnapshot,
                                     );
                                 assetsIdsInDeletedSnapshot.forEach((id) => {
-                                    const a = allAssets.find(
-                                        (a) => a.id === id,
-                                    );
+                                    const a = getAsset(id);
                                     if (a) {
                                         decrementAssetUseCount(a.asset.url);
                                     }
