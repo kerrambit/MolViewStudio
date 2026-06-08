@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { Text } from "@mantine/core";
+import { Checkbox, Collapse, Text } from "@mantine/core";
 import { AllFiles } from "../../../../types/fileFilters";
 import { Button } from "../../common/button/Button";
 import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
+import {
+    checkOffersProcessing,
+    checkRequiresProcessing,
+} from "../../../domain/assetsConfig";
+import { pushWarningNotification } from "../../../services/NotificationService";
 
 export interface AddAssetDialogueReturnType {
     file: FileData;
     relativePath: string;
+    processAsset: boolean;
 }
 
 interface AddAssetDialogueContentProps {
@@ -24,6 +30,8 @@ export function AddAssetDialogueContent({
         false,
     ]);
 
+    const [processAsset, setProcessAsset] = useState<boolean>(false);
+
     const handleSegmentChange = (
         index: number,
         newValue: string | undefined,
@@ -38,6 +46,12 @@ export function AddAssetDialogueContent({
         const folderPath = validFolders.join("/");
         return folderPath ? `${folderPath}/` : "";
     };
+
+    const requiresProcessing = file
+        ? checkRequiresProcessing(file.name)
+        : false;
+    const offersProcessing = file ? checkOffersProcessing(file.name) : false;
+    const showProcessingUi = requiresProcessing || offersProcessing;
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1em" }}>
@@ -57,9 +71,18 @@ export function AddAssetDialogueContent({
                         );
 
                         if (!(result instanceof Error)) {
-                            setFile(result[0]);
+                            const selectedFile = result[0];
+                            setFile(selectedFile);
+
+                            if (checkRequiresProcessing(selectedFile.name)) {
+                                setProcessAsset(true);
+                            } else {
+                                setProcessAsset(false);
+                            }
                         } else {
-                            // TODO: show error dialogue
+                            pushWarningNotification(
+                                `Unable to open file explorer! Details: <${result.message}>.`,
+                            );
                         }
                     }}
                     tooltip="Choose file."
@@ -79,6 +102,33 @@ export function AddAssetDialogueContent({
                     style={{ flexGrow: 1 }}
                 />
             </div>
+
+            <Collapse expanded={showProcessingUi}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1em",
+                    }}
+                >
+                    <Text size="sm" style={{ minWidth: "9em" }}>
+                        Processing:
+                    </Text>
+                    <Checkbox
+                        label={
+                            requiresProcessing
+                                ? "Must be processed (Required)"
+                                : "Will be processed"
+                        }
+                        size="xs"
+                        checked={processAsset}
+                        disabled={requiresProcessing}
+                        onChange={(e) =>
+                            setProcessAsset(e.currentTarget.checked)
+                        }
+                    />
+                </div>
+            </Collapse>
 
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
                 <Text size="sm" style={{ minWidth: "9em" }}>
@@ -142,7 +192,11 @@ export function AddAssetDialogueContent({
                 <Button
                     disabled={!file || segmentErrors.some((hasErr) => hasErr)}
                     onClick={() =>
-                        close({ file: file!, relativePath: compileFinalPath() })
+                        close({
+                            file: file!,
+                            relativePath: compileFinalPath(),
+                            processAsset,
+                        })
                     }
                     tooltip="Save local asset."
                 >

@@ -26,7 +26,7 @@ import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
-import { UUID } from "molstar/lib/mol-util"; // Import Mol*'s UUID utility if needed
+import { UUID } from "molstar/lib/mol-util";
 
 // TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
 interface ManagedAsset {
@@ -1353,6 +1353,14 @@ export async function applySnapshotByIndex(
         id: snapshotId,
     });
 
+    const result = checkMolstarAfterLoading();
+    if (!result.success) {
+        return {
+            success: false,
+            error: result.error,
+        };
+    }
+
     return { success: true, value: null };
 }
 
@@ -1626,23 +1634,36 @@ export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
 
 /**
  * Add new asset to the download node with default values.
+ *
  * @param rootNode root node
  * @param assetIdToAdd managed asset id
- * @param extension extension of the data (supported are `bcif` and `cif`)
+ * @param extension extension of the file
+ * @param extensionParserRecord recod of mapped extension and its parser type
+ * @param params optional drafted parameters from the UI to use instead of defaults
  * @returns modified node
  */
 export function addAssetToRoot(
     rootNode: any,
     assetIdToAdd: string,
-    extension: string | undefined,
+    extension: string,
+    extensionParserRecord: Record<string, string>,
+    params: {
+        type: string;
+        relative_isovalue: number;
+        show_wireframe: boolean;
+        show_faces: boolean;
+        color: string;
+    },
 ) {
-    // TODO: let the user to select this
-    let format: string = "bcif";
-    if (extension === "bcif") {
-        format = "bcif";
-    } else if (extension === "cif") {
-        format = "mmcif";
-    }
+    // Default format (parser) is "bcif". If it does not match to data, Molstar will throw an error when reloading this view anyway.
+    const format: string = extensionParserRecord[extension] ?? "bcif";
+
+    // Use provided params from the UI, or fallback to the standard Mol* defaults
+    const type = params.type;
+    const relative_isovalue = params.relative_isovalue;
+    const show_wireframe = params.show_wireframe;
+    const show_faces = params.show_faces;
+    const color = params.color;
 
     const newDownloadBranch = {
         kind: "download",
@@ -1659,10 +1680,17 @@ export function addAssetToRoot(
                             {
                                 kind: "volume_representation",
                                 params: {
-                                    type: "isosurface",
-                                    relative_isovalue: 1,
+                                    type: type,
+                                    relative_isovalue: relative_isovalue,
+                                    show_wireframe: show_wireframe,
+                                    show_faces: show_faces,
                                 },
-                                children: [],
+                                children: [
+                                    {
+                                        kind: "color",
+                                        params: { color: color },
+                                    },
+                                ],
                             },
                         ],
                     },
@@ -1755,15 +1783,20 @@ export function updateNodeParamInAssetBranch(
  * @param assetId asset id, see ManagedAsset
  * @returns extracted information
  */
-export function getVolumeParamsForAsset(rootNode: any, assetId: string) {
+export function getVolumeParamsForAsset(
+    rootNode: any,
+    assetId: string,
+    defaultValues: {
+        format: string;
+        type: string;
+        relative_isovalue: number;
+        show_wireframe: boolean;
+        show_faces: boolean;
+        color: string;
+    },
+) {
     // Some default values.
-    const params = {
-        type: "isosurface",
-        relative_isovalue: 1.0,
-        show_wireframe: false,
-        show_faces: true,
-        color: "#00805c",
-    };
+    const params = { ...defaultValues };
 
     function traverse(node: any, inBranch: boolean) {
         let currentInBranch = inBranch;
@@ -1773,6 +1806,10 @@ export function getVolumeParamsForAsset(rootNode: any, assetId: string) {
         }
 
         if (currentInBranch) {
+            if (node.kind === "parse" && node.params?.format !== undefined) {
+                params.format = node.params.format;
+            }
+
             if (node.kind === "volume_representation" && node.params) {
                 if (node.params.type !== undefined)
                     params.type = node.params.type;
@@ -2054,7 +2091,6 @@ export async function reloadMolstarAndRestoreIndex(
     // Build and load the tree.
     const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
     const result = await loadMVSIntoMolstar(renderTree);
-
     if (!result.success) {
         return result.error;
     }
@@ -2066,7 +2102,10 @@ export async function reloadMolstarAndRestoreIndex(
 
     // Immediately force Molstar back to that index.
     if (currentIndex !== -1) {
-        await applySnapshotByIndex(currentIndex);
+        const result = await applySnapshotByIndex(currentIndex);
+        if (!result.success) {
+            return result.error;
+        }
     }
 }
 
@@ -2475,10 +2514,44 @@ async function loadMVSXFile(
     return taskResult;
 }
 
+/**
+ * Checks if Molstar contains any error after loading/reloading of data.
+ * @returns result contains Error object, otherwise result contains only null if no error was found
+ */
+function checkMolstarAfterLoading(): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const erroredCells = Array.from(molstar.state.data.cells.values()).filter(
+        (cell) => cell.status === "error",
+    );
+
+    if (erroredCells.length > 0) {
+        const errorDetails = erroredCells
+            .map(
+                (c) =>
+                    `[${c.obj?.label || c.transform.transformer.id}]: ${c.errorText}`,
+            )
+            .join(", ");
+
+        return {
+            success: false,
+            error: new Error(
+                `Molstar failed to parse the data! Details: <${errorDetails}>.`,
+            ),
+        };
+    }
+
+    return {
+        success: true,
+        value: null,
+    };
+}
+
 export async function loadMVSIntoMolstar(
     stateTree: MVSData_States,
 ): Promise<Result<MVSData_States>> {
     if (!molstar) throw new Error("Molstar is not initialized!");
+
     try {
         await loadMVS(molstar, stateTree, {
             appendSnapshots: false,
@@ -2487,13 +2560,17 @@ export async function loadMVSIntoMolstar(
             extensions: [],
             sanityChecks: true,
         });
+
+        const result = checkMolstarAfterLoading();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
         return { success: true, value: stateTree };
     } catch (err) {
         return {
             success: false,
-            error: new Error(
-                `Error occured when loading MVS! Details: "${err}"."`,
-            ),
+            error: new Error(`Critical runtime error! Details: <${err}>.`),
         };
     }
 }

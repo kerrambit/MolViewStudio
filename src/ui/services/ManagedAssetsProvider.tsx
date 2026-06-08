@@ -135,6 +135,12 @@ type ManagedAssetsContextType = {
      * @returns `ManagedAsset` objects from the map as an array
      */
     getAllAssets: () => ManagedAsset[];
+
+    /**
+     * Returns `ManagedAsset` object with given ID.
+     * @returns `ManagedAsset` object or undefined if asset with ID is not found
+     */
+    getAsset: (assetId: string) => ManagedAsset | undefined;
 };
 
 export const ManagedAssetsContext =
@@ -322,6 +328,18 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         return Array.from(assets.values());
     }, [assets]);
 
+    const getAsset = useCallback(
+        (assetId: string): ManagedAsset | undefined => {
+            for (const asset of assets.values()) {
+                if (asset.id === assetId) {
+                    return asset;
+                }
+            }
+            return undefined;
+        },
+        [assets],
+    );
+
     return (
         <ManagedAssetsContext.Provider
             value={{
@@ -337,6 +355,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 getAllLocalAssets,
                 getAllRemoteAssets,
                 getAllAssets,
+                getAsset,
             }}
         >
             {children}
