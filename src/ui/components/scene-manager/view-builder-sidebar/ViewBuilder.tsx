@@ -42,6 +42,7 @@ import {
  * The unified View-Model for volume parameters.
  */
 interface VolumeViewModel {
+    format: string;
     type: string;
     relative_isovalue: number;
     show_wireframe: boolean;
@@ -75,6 +76,13 @@ function applyViewModelToBranch(
     viewModel: VolumeViewModel,
 ) {
     let newRoot = root;
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "parse",
+        "format",
+        viewModel.format,
+    );
     newRoot = updateNodeParamInAssetBranch(
         newRoot,
         assetId,
@@ -135,8 +143,12 @@ export function ViewBuilder(props: ViewBuilderProps) {
     const { regime, setRegime } = useRegime();
 
     // Use assets.
-    const { getAllAssets, incrementAssetUseCount, decrementAssetUseCount } =
-        useManagedAssets();
+    const {
+        getAllAssets,
+        getAsset,
+        incrementAssetUseCount,
+        decrementAssetUseCount,
+    } = useManagedAssets();
 
     // Render nothing if regime is not "viewing", or if no view was found with given key.
     if (regime.kind !== "viewing") return <></>;
@@ -171,16 +183,30 @@ export function ViewBuilder(props: ViewBuilderProps) {
         Record<string, VolumeViewModel>
     >({});
 
-    // Initialize View-Models from Molstar on first load or when new assets appear
+    // Function which returns safe view model based on asset ID.
+    const getViewModel = (assetId: string): VolumeViewModel => {
+        return (
+            viewModels[assetId] || {
+                ...DEFAULT_VOLUME_VIEW_MODEL,
+                format:
+                    getAssetConfig(getAsset(assetId)?.name || "")?.parser ||
+                    "N/A",
+            }
+        );
+    };
+
+    // Initialize View-Models from Molstar on first load or when new assets appear.
     useEffect(() => {
         const initialModels: Record<string, VolumeViewModel> = {};
         assetsInView.forEach((asset) => {
             if (!viewModels[asset.id]) {
-                // Populate our View-Model using your existing fetcher function
                 initialModels[asset.id] = getVolumeParamsForAsset(
                     view.root,
                     asset.id,
-                    DEFAULT_VOLUME_VIEW_MODEL,
+                    {
+                        ...DEFAULT_VOLUME_VIEW_MODEL,
+                        format: getAssetConfig(asset.name)?.parser || "N/A",
+                    },
                 ) as VolumeViewModel;
             }
         });
@@ -284,9 +310,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
                     if (isChecked) {
                         // Get changes from our view model.
-                        const draftedParams =
-                            viewModels[toggledAssetId] ||
-                            DEFAULT_VOLUME_VIEW_MODEL;
+                        const draftedParams = getViewModel(toggledAssetId);
 
                         // New root.
                         newRoot = addAssetToRoot(
@@ -403,13 +427,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                     const isExpanded = expandedAssetId === asset.id;
                     const isSelected = selectedAssetIds.includes(asset.id);
 
-                    const viewModel =
-                        viewModels[asset.id] ||
-                        getVolumeParamsForAsset(
-                            view.root,
-                            asset.id,
-                            DEFAULT_VOLUME_VIEW_MODEL,
-                        );
+                    const viewModel = getViewModel(asset.id);
 
                     return (
                         <div
@@ -546,10 +564,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                                 label="Format"
                                                 disabled={true}
                                                 data={getAllParserTypes()}
-                                                value={
-                                                    getAssetConfig(asset.name)
-                                                        ?.parser || null
-                                                }
+                                                value={viewModel.format}
                                                 placeholder="N/A"
                                                 size="xs"
                                             />
