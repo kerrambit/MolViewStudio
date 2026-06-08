@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRegime } from "../../../services/RegimeProvider";
 import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
 import {
@@ -37,6 +37,81 @@ import {
     getAssetConfig,
     isAssetSupported,
 } from "../../../domain/assetsConfig";
+
+/**
+ * The unified View-Model for volume parameters.
+ */
+interface VolumeViewModel {
+    type: string;
+    relative_isovalue: number;
+    show_wireframe: boolean;
+    show_faces: boolean;
+    color: string;
+}
+
+/**
+ * Default volume view model.
+ */
+const DEFAULT_VOLUME_VIEW_MODEL = {
+    format: "N/A",
+    type: "isosurface",
+    relative_isovalue: 1.0,
+    show_wireframe: false,
+    show_faces: true,
+    color: "#36bd97",
+};
+
+/**
+ * Applies entire View-Model to a Molstar source tree.
+ *
+ * @param root root of source tree
+ * @param assetId asset id of given branch
+ * @param viewModel view model
+ * @returns modified root
+ */
+function applyViewModelToBranch(
+    root: any,
+    assetId: string,
+    viewModel: VolumeViewModel,
+) {
+    let newRoot = root;
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "volume_representation",
+        "type",
+        viewModel.type,
+    );
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "volume_representation",
+        "relative_isovalue",
+        viewModel.relative_isovalue,
+    );
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "volume_representation",
+        "show_wireframe",
+        viewModel.show_wireframe,
+    );
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "volume_representation",
+        "show_faces",
+        viewModel.show_faces,
+    );
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "color",
+        "color",
+        viewModel.color,
+    );
+    return newRoot;
+}
 
 /**
  * Properties for ViewBuilder.
@@ -91,6 +166,85 @@ export function ViewBuilder(props: ViewBuilderProps) {
         return getAllAssets();
     }, [getAllAssets]);
 
+    // Current record of volume view models for each asset.
+    const [viewModels, setViewModels] = useState<
+        Record<string, VolumeViewModel>
+    >({});
+
+    // Initialize View-Models from Molstar on first load or when new assets appear
+    useEffect(() => {
+        const initialModels: Record<string, VolumeViewModel> = {};
+        assetsInView.forEach((asset) => {
+            if (!viewModels[asset.id]) {
+                // Populate our View-Model using your existing fetcher function
+                initialModels[asset.id] = getVolumeParamsForAsset(
+                    view.root,
+                    asset.id,
+                    DEFAULT_VOLUME_VIEW_MODEL,
+                ) as VolumeViewModel;
+            }
+        });
+        if (Object.keys(initialModels).length > 0) {
+            setViewModels((prev) => ({ ...prev, ...initialModels }));
+        }
+    }, [assetsInView, view.root]);
+
+    // Function which updates view model and optionally sync it to Molstar.
+    const updateViewModel = async (
+        assetId: string,
+        paramKey: keyof VolumeViewModel,
+        val: any,
+        syncToMolstar: boolean,
+    ) => {
+        const updatedVm = { ...viewModels[assetId], [paramKey]: val };
+
+        // Update UI instantly.
+        setViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+
+        // Sync to Molstar only if requested and the asset is checked.
+        if (syncToMolstar && selectedAssetIds.includes(assetId)) {
+            // Keep copy of original state tree.
+            const originalStateTree = regime.stateTree;
+
+            // Update source tree.
+            const updatedTree: MVSData_States = {
+                ...regime.stateTree,
+                snapshots: regime.stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === props.viewKey) {
+                        return {
+                            ...snap,
+                            root: applyViewModelToBranch(
+                                snap.root,
+                                assetId,
+                                updatedVm,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
+            };
+
+            // Update regime.
+            setRegime({ ...regime, stateTree: updatedTree });
+
+            // Try to reload Molstar viewer.
+            const result = await reloadMolstarAndRestoreIndex(
+                props.viewKey,
+                getAllAssets(),
+                updatedTree,
+            );
+            if (result instanceof Error) {
+                pushErrorNotification(
+                    `Failed to apply changes! For more information, check the logs.`,
+                );
+                loggerUi.error(result.message);
+
+                // TODO: implement a global Undo stack, you would just call `undo()` here instead of manually reverting
+                setRegime({ ...regime, stateTree: originalStateTree });
+            }
+        }
+    };
+
     // Handler when asset is toggled.
     const handleAssetToggle = async (
         toggledAssetId: string,
@@ -126,21 +280,42 @@ export function ViewBuilder(props: ViewBuilderProps) {
             ...regime.stateTree,
             snapshots: regime.stateTree.snapshots.map((snap) => {
                 if (snap.metadata.key === props.viewKey) {
-                    return {
-                        ...snap,
-                        root: isChecked
-                            ? addAssetToRoot(
-                                  snap.root,
-                                  toggledAssetId,
-                                  getExtensionFromFileName(
-                                      getAllAssets().find(
-                                          (a) => a.id === toggledAssetId,
-                                      )?.name || "",
-                                  ) || "",
-                                  getAllSupportedAssetsParsers(),
-                              )
-                            : removeAssetFromRoot(snap.root, toggledAssetId),
-                    };
+                    let newRoot = snap.root;
+
+                    if (isChecked) {
+                        // Get changes from our view model.
+                        const draftedParams =
+                            viewModels[toggledAssetId] ||
+                            DEFAULT_VOLUME_VIEW_MODEL;
+
+                        // New root.
+                        newRoot = addAssetToRoot(
+                            snap.root,
+                            toggledAssetId,
+                            getExtensionFromFileName(
+                                allAssets.find((a) => a.id === toggledAssetId)
+                                    ?.name || "",
+                            ) || "",
+                            getAllSupportedAssetsParsers(),
+                            draftedParams,
+                        );
+
+                        // Cleanly apply the current view model state to the newly created branch.
+                        if (viewModels[toggledAssetId]) {
+                            newRoot = applyViewModelToBranch(
+                                newRoot,
+                                toggledAssetId,
+                                viewModels[toggledAssetId],
+                            );
+                        }
+                    } else {
+                        newRoot = removeAssetFromRoot(
+                            snap.root,
+                            toggledAssetId,
+                        );
+                    }
+
+                    return { ...snap, root: newRoot };
                 }
                 return snap;
             }),
@@ -152,7 +327,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
             stateTree: updatedTree,
         });
 
-        // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
+        // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
             props.viewKey,
             allAssets,
@@ -176,62 +351,6 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
             setSelectedAssetIds(selectedAssetIds);
 
-            setRegime({
-                ...regime,
-                stateTree: originalStateTree,
-            });
-        }
-    };
-
-    const handleNodeParamChange = async (
-        assetId: string,
-        nodeKind: string,
-        paramKey: string,
-        newValue: any,
-    ) => {
-        if (regime.kind !== "viewing") return;
-
-        // Create updated state tree.
-        const originalStateTree = regime.stateTree;
-        const updatedTree: MVSData_States = {
-            ...regime.stateTree,
-            snapshots: regime.stateTree.snapshots.map((snap) => {
-                if (snap.metadata.key === props.viewKey) {
-                    return {
-                        ...snap,
-                        root: updateNodeParamInAssetBranch(
-                            snap.root,
-                            assetId,
-                            nodeKind,
-                            paramKey,
-                            newValue,
-                        ),
-                    };
-                }
-                return snap;
-            }),
-        };
-
-        // Update regime.
-        setRegime({
-            ...regime,
-            stateTree: updatedTree,
-        });
-
-        // Now we need only to rerender the tree in Molstar viewer. We need to replace managed assets IDs with their acrp url counterparts.
-        const result = await reloadMolstarAndRestoreIndex(
-            props.viewKey,
-            getAllAssets(),
-            updatedTree,
-        );
-
-        if (result instanceof Error) {
-            pushErrorNotification(
-                `Failed to apply changes! For more information, check the logs.`,
-            );
-            loggerUi.error(result.message);
-
-            // TODO: implement a global Undo stack, you would just call `undo()` here instead of manually reverting
             setRegime({
                 ...regime,
                 stateTree: originalStateTree,
@@ -284,10 +403,13 @@ export function ViewBuilder(props: ViewBuilderProps) {
                     const isExpanded = expandedAssetId === asset.id;
                     const isSelected = selectedAssetIds.includes(asset.id);
 
-                    const currentParams = getVolumeParamsForAsset(
-                        view.root,
-                        asset.id,
-                    );
+                    const viewModel =
+                        viewModels[asset.id] ||
+                        getVolumeParamsForAsset(
+                            view.root,
+                            asset.id,
+                            DEFAULT_VOLUME_VIEW_MODEL,
+                        );
 
                     return (
                         <div
@@ -437,18 +559,18 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                                     "isosurface",
                                                     "grid_slice",
                                                 ]}
-                                                value={currentParams.type}
+                                                value={viewModel.type}
                                                 onChange={(val) => {
                                                     if (val === "grid_slice") {
                                                         pushWarningNotification(
                                                             "The volume type of 'grid_slice' is not supported at the moment!",
                                                         );
                                                     } else if (val) {
-                                                        handleNodeParamChange(
+                                                        updateViewModel(
                                                             asset.id,
-                                                            "volume_representation",
                                                             "type",
                                                             val,
+                                                            true,
                                                         );
                                                     }
                                                 }}
@@ -456,36 +578,37 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                             />
                                             <NumberInput
                                                 label="Relative isosurface"
-                                                defaultValue={
-                                                    currentParams.relative_isovalue
+                                                value={
+                                                    viewModel.relative_isovalue
                                                 }
-                                                onBlur={(e) => {
-                                                    const val = parseFloat(
-                                                        e.currentTarget.value,
-                                                    );
-                                                    if (!isNaN(val)) {
-                                                        handleNodeParamChange(
+                                                onChange={(val) => {
+                                                    if (
+                                                        typeof val === "number"
+                                                    ) {
+                                                        updateViewModel(
                                                             asset.id,
-                                                            "volume_representation",
                                                             "relative_isovalue",
                                                             val,
+                                                            false,
                                                         );
                                                     }
                                                 }}
+                                                onBlur={() =>
+                                                    updateViewModel(
+                                                        asset.id,
+                                                        "relative_isovalue",
+                                                        viewModel.relative_isovalue,
+                                                        true,
+                                                    )
+                                                }
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
-                                                        const val = parseFloat(
-                                                            e.currentTarget
-                                                                .value,
+                                                        updateViewModel(
+                                                            asset.id,
+                                                            "relative_isovalue",
+                                                            viewModel.relative_isovalue,
+                                                            true,
                                                         );
-                                                        if (!isNaN(val)) {
-                                                            handleNodeParamChange(
-                                                                asset.id,
-                                                                "volume_representation",
-                                                                "relative_isovalue",
-                                                                val,
-                                                            );
-                                                        }
                                                         e.currentTarget.blur();
                                                     }
                                                 }}
@@ -497,50 +620,56 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                                     label="Show wireframe"
                                                     size="xs"
                                                     checked={
-                                                        currentParams.show_wireframe
+                                                        viewModel.show_wireframe
                                                     }
-                                                    onChange={(e) => {
-                                                        handleNodeParamChange(
+                                                    onChange={(e) =>
+                                                        updateViewModel(
                                                             asset.id,
-                                                            "volume_representation",
                                                             "show_wireframe",
                                                             e.currentTarget
                                                                 .checked,
-                                                        );
-                                                    }}
+                                                            true,
+                                                        )
+                                                    }
                                                 />
                                                 <Checkbox
                                                     label="Show faces"
                                                     size="xs"
                                                     checked={
-                                                        currentParams.show_faces
+                                                        viewModel.show_faces
                                                     }
-                                                    onChange={(e) => {
-                                                        handleNodeParamChange(
+                                                    onChange={(e) =>
+                                                        updateViewModel(
                                                             asset.id,
-                                                            "volume_representation",
                                                             "show_faces",
                                                             e.currentTarget
                                                                 .checked,
-                                                        );
-                                                    }}
+                                                            true,
+                                                        )
+                                                    }
                                                 />
                                             </Group>
                                             <ColorInput
                                                 label="Color"
-                                                defaultValue={
-                                                    currentParams.color
+                                                value={viewModel.color}
+                                                onChange={(val) =>
+                                                    updateViewModel(
+                                                        asset.id,
+                                                        "color",
+                                                        val,
+                                                        false,
+                                                    )
+                                                }
+                                                onChangeEnd={(val) =>
+                                                    updateViewModel(
+                                                        asset.id,
+                                                        "color",
+                                                        val,
+                                                        true,
+                                                    )
                                                 }
                                                 size="xs"
                                                 format="hex"
-                                                onChangeEnd={(val) => {
-                                                    handleNodeParamChange(
-                                                        asset.id,
-                                                        "color",
-                                                        "color",
-                                                        val,
-                                                    );
-                                                }}
                                             />
                                         </div>
                                     )}

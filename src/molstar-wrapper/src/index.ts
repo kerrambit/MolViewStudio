@@ -1626,10 +1626,12 @@ export function removeAssetFromRoot(rootNode: any, assetIdToRemove: string) {
 
 /**
  * Add new asset to the download node with default values.
+ *
  * @param rootNode root node
  * @param assetIdToAdd managed asset id
- * @param extension extension of the data
+ * @param extension extension of the file
  * @param extensionParserRecord recod of mapped extension and its parser type
+ * @param params optional drafted parameters from the UI to use instead of defaults
  * @returns modified node
  */
 export function addAssetToRoot(
@@ -1637,9 +1639,23 @@ export function addAssetToRoot(
     assetIdToAdd: string,
     extension: string,
     extensionParserRecord: Record<string, string>,
+    params: {
+        type: string;
+        relative_isovalue: number;
+        show_wireframe: boolean;
+        show_faces: boolean;
+        color: string;
+    },
 ) {
     // Default format (parser) is "bcif". If it does not match to data, Molstar will throw an error when reloading this view anyway.
     const format: string = extensionParserRecord[extension] ?? "bcif";
+
+    // Use provided params from the UI, or fallback to the standard Mol* defaults
+    const type = params.type;
+    const relative_isovalue = params.relative_isovalue;
+    const show_wireframe = params.show_wireframe;
+    const show_faces = params.show_faces;
+    const color = params.color;
 
     const newDownloadBranch = {
         kind: "download",
@@ -1656,10 +1672,17 @@ export function addAssetToRoot(
                             {
                                 kind: "volume_representation",
                                 params: {
-                                    type: "isosurface",
-                                    relative_isovalue: 1,
+                                    type: type,
+                                    relative_isovalue: relative_isovalue,
+                                    show_wireframe: show_wireframe,
+                                    show_faces: show_faces,
                                 },
-                                children: [],
+                                children: [
+                                    {
+                                        kind: "color",
+                                        params: { color: color },
+                                    },
+                                ],
                             },
                         ],
                     },
@@ -1752,15 +1775,20 @@ export function updateNodeParamInAssetBranch(
  * @param assetId asset id, see ManagedAsset
  * @returns extracted information
  */
-export function getVolumeParamsForAsset(rootNode: any, assetId: string) {
+export function getVolumeParamsForAsset(
+    rootNode: any,
+    assetId: string,
+    defaultValues: {
+        format: string;
+        type: string;
+        relative_isovalue: number;
+        show_wireframe: boolean;
+        show_faces: boolean;
+        color: string;
+    },
+) {
     // Some default values.
-    const params = {
-        type: "isosurface",
-        relative_isovalue: 1.0,
-        show_wireframe: false,
-        show_faces: true,
-        color: "#00805c",
-    };
+    const params = { ...defaultValues };
 
     function traverse(node: any, inBranch: boolean) {
         let currentInBranch = inBranch;
@@ -1770,6 +1798,10 @@ export function getVolumeParamsForAsset(rootNode: any, assetId: string) {
         }
 
         if (currentInBranch) {
+            if (node.kind === "parse" && node.params?.format !== undefined) {
+                params.format = node.params.format;
+            }
+
             if (node.kind === "volume_representation" && node.params) {
                 if (node.params.type !== undefined)
                     params.type = node.params.type;
