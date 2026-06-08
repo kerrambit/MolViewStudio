@@ -26,7 +26,7 @@ import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
-import { UUID } from "molstar/lib/mol-util"; // Import Mol*'s UUID utility if needed
+import { UUID } from "molstar/lib/mol-util";
 
 // TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
 interface ManagedAsset {
@@ -1353,6 +1353,14 @@ export async function applySnapshotByIndex(
         id: snapshotId,
     });
 
+    const result = checkMolstarAfterLoading();
+    if (!result.success) {
+        return {
+            success: false,
+            error: result.error,
+        };
+    }
+
     return { success: true, value: null };
 }
 
@@ -2094,7 +2102,10 @@ export async function reloadMolstarAndRestoreIndex(
 
     // Immediately force Molstar back to that index.
     if (currentIndex !== -1) {
-        await applySnapshotByIndex(currentIndex);
+        const result = await applySnapshotByIndex(currentIndex);
+        if (!result.success) {
+            return result.error;
+        }
     }
 }
 
@@ -2503,6 +2514,39 @@ async function loadMVSXFile(
     return taskResult;
 }
 
+/**
+ * Checks if Molstar contains any error after loading/reloading of data.
+ * @returns result contains Error object, otherwise result contains only null if no error was found
+ */
+function checkMolstarAfterLoading(): Result<null> {
+    if (!molstar) throw new Error("Molstar is not initialized!");
+
+    const erroredCells = Array.from(molstar.state.data.cells.values()).filter(
+        (cell) => cell.status === "error",
+    );
+
+    if (erroredCells.length > 0) {
+        const errorDetails = erroredCells
+            .map(
+                (c) =>
+                    `[${c.obj?.label || c.transform.transformer.id}]: ${c.errorText}`,
+            )
+            .join(", ");
+
+        return {
+            success: false,
+            error: new Error(
+                `Molstar failed to parse the data! Details: <${errorDetails}>.`,
+            ),
+        };
+    }
+
+    return {
+        success: true,
+        value: null,
+    };
+}
+
 export async function loadMVSIntoMolstar(
     stateTree: MVSData_States,
 ): Promise<Result<MVSData_States>> {
@@ -2517,18 +2561,9 @@ export async function loadMVSIntoMolstar(
             sanityChecks: true,
         });
 
-        const cells = Array.from(molstar.state.data.cells.values());
-        const failedCell = cells.find((cell) => cell.status === "error");
-
-        if (failedCell) {
-            const errorMessage =
-                failedCell.errorText || "Unknown Molstar parsing error";
-            return {
-                success: false,
-                error: new Error(
-                    `Molstar failed to parse the data! Details: <${errorMessage}>.`,
-                ),
-            };
+        const result = checkMolstarAfterLoading();
+        if (!result.success) {
+            return { success: false, error: result.error };
         }
 
         return { success: true, value: stateTree };
