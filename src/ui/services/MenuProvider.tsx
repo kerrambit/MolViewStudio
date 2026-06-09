@@ -13,10 +13,11 @@ import {
     createAboutSection,
     createCheckForUpdatesMenuItem,
     createCheckForUpdatesSection,
+    createCreateNewProjectMenuItem,
     createExitMenuItem,
     createExitSection,
+    createFileImportSection,
     createFileRootMenuItem,
-    createGeneralFileSection,
     createGeneralHelpSection,
     createHelpRootMenuItem,
     createMolstarAppMenuItem,
@@ -26,8 +27,10 @@ import {
     createOpenFileInViewerMenuItem,
     createOpenUserDataFolderMenuItem,
     createProcessFileMenuItem,
+    createProjectActionsSection,
     createReportIssueMenuItem,
     createSettingsRootMenuItem,
+    createUtilitiesSection,
 } from "../features/menu/systemMenuItems";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { useFileManagement } from "../hooks/useFileManagement";
@@ -146,14 +149,19 @@ export function MenuProvider({ children }: MenuProviderProps) {
     const navigate = useNavigate();
 
     // Use file management.
-    const { loadAndHandleFile } = useFileManagement();
+    const { loadAndHandleFile, handleBlankProject } = useFileManagement();
 
     // Use dialogue.
     const { showDialogue } = useDialogue();
 
     // Menu state in the initial state.
     const [menu, setMenu] = useState<Menu>(() =>
-        createInitialMenu(navigate, showDialogue, loadAndHandleFile),
+        createInitialMenu(
+            navigate,
+            showDialogue,
+            loadAndHandleFile,
+            handleBlankProject,
+        ),
     );
 
     // For replace/restore functionality. Keeps original `MenuItem` to be restored.
@@ -403,16 +411,24 @@ function createInitialMenu(
         options: DialogueProps<T>,
     ) => Promise<T | undefined>,
     loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
+    handleBlankProject: () => void,
 ): Menu {
     return [
         createFileRootMenuItem([
-            createGeneralFileSection([
+            createProjectActionsSection([
+                createCreateNewProjectMenuItem(() => {
+                    handleBlankProject();
+                }),
+            ]),
+            createFileImportSection([
                 createOpenFileInViewerMenuItem(() =>
                     loadAndHandleFile("viewing"),
                 ),
                 createProcessFileMenuItem(() =>
                     loadAndHandleFile("processing"),
                 ),
+            ]),
+            createUtilitiesSection([
                 createOpenUserDataFolderMenuItem(async () => {
                     const result =
                         await window.electron.requestToOpenUserDataFolder();
