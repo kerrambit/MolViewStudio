@@ -16,6 +16,7 @@ import { useProcessVolume } from "./useProcessVolume";
 import { useEnvironment } from "./useEnvironment";
 import { getFieldFromResponse } from "../utils/responseUtils";
 import {
+    createBlankMVSDataAsString,
     createDefaultMVSFromLocalFiles,
     createMVSBlob,
     injectAssetIdsIntoTree,
@@ -201,6 +202,28 @@ export function useFileManagement() {
         );
     };
 
+    const handleBlankProject = () => {
+        const fileContentString = createBlankMVSDataAsString();
+
+        const fileData: FileData = {
+            path: "",
+            extension: "mvsj",
+            name: "NewProject.mvsj",
+            binary: false,
+            content: fileContentString,
+        };
+
+        const regime: Regime = {
+            kind: "staging",
+            fileToView: fileData,
+        };
+
+        setRegime(regime);
+
+        // Navigate to viewer page.
+        navigate("/viewer");
+    };
+
     // Handler function which, in case of processing, calls appropriate API call on server to start processing and then moves regime to viewing when data are processed.
     // If user wants to handle file as viewing only, we begin its deconstruction and move regime to viewing.
     const handleFile = async (
@@ -351,6 +374,7 @@ export function useFileManagement() {
 
     return {
         loadAndHandleFile,
+        handleBlankProject,
         handleFile,
         deconstructFile,
         handleFileAsProcessingOfIndependentAsset,
