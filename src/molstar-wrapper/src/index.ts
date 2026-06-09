@@ -2478,6 +2478,27 @@ function createDefaultMVSData(metadata?: GlobalMetadata) {
     return initialStateTree;
 }
 
+const BLANK_MVS: MVSData = {
+    kind: "multiple",
+    metadata: {
+        title: undefined,
+        timestamp: new Date().toISOString(),
+        version: `${MVSData.SupportedVersion}`,
+    },
+    snapshots: [] as Snapshot[],
+};
+
+const BLANK_MVS_AS_STRING = JSON.stringify(BLANK_MVS, null, 2);
+
+/**
+ * Creates blank MVS of `multiple` kind.
+ *
+ * @returns blank MVS as string
+ */
+export function createBlankMVSDataAsString() {
+    return BLANK_MVS_AS_STRING;
+}
+
 /**
  * Loads given `MVSX` archive.
  * @param rawData data of `.mvsx` archive as bytes
