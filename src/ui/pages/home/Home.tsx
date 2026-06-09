@@ -11,7 +11,8 @@ import "@mantine/dropzone/styles.css";
 
 export default function Home() {
     // Hook for loading and handling file.
-    const { loadAndHandleFile, handleFile } = useFileManagement();
+    const { loadAndHandleFile, handleFile, handleBlankProject } =
+        useFileManagement();
 
     // Render.
     return (
@@ -26,7 +27,10 @@ export default function Home() {
                 enableMultipleInputFiles={false}
                 allowedExtensions={[]} // TODO: disabled all files until https://github.com/kerrambit/MolStarApp/issues/84 is solved
             >
-                {renderDropzoneButtonsArea(loadAndHandleFile)}
+                {renderDropzoneButtonsArea(
+                    loadAndHandleFile,
+                    handleBlankProject,
+                )}
             </Dropzone>
         </div>
     );
@@ -65,6 +69,7 @@ function renderDropzoneButtonsArea(
     loadAndHandleFile: (
         handleFileAs: "viewing" | "processing",
     ) => Promise<void>,
+    handleBlankProject: () => void,
 ) {
     return (
         <div className="home__buttonsArea">
@@ -72,39 +77,24 @@ function renderDropzoneButtonsArea(
                 <Button
                     variant="ghost"
                     onClick={() => {
-                        dropzoneButtonHandler({
-                            label: "Open file in viewer...",
-                            handleFileAs: "viewing",
-                            loadAndHandleFile,
-                        });
+                        loggerUi.info(`Create new project`);
+                        handleBlankProject();
                     }}
                 >
-                    Open file in viewer...
+                    Create new project
                 </Button>
             </div>
             <div style={{ pointerEvents: "auto" }}>
                 <Button
                     variant="ghost"
                     onClick={() => {
-                        dropzoneButtonHandler({
-                            label: "Process file...",
-                            handleFileAs: "processing",
-                            loadAndHandleFile,
-                        });
+                        loggerUi.info("Open file in viewer...");
+                        loadAndHandleFile("viewing");
                     }}
                 >
-                    Process file...
+                    Open file in viewer...
                 </Button>
             </div>
         </div>
     );
-}
-
-function dropzoneButtonHandler(config: {
-    label: string;
-    handleFileAs: "processing" | "viewing";
-    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>;
-}) {
-    loggerUi.info(config.label);
-    config.loadAndHandleFile(config.handleFileAs);
 }
