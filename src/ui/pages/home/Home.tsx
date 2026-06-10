@@ -75,25 +75,25 @@ function renderDropzoneButtonsArea(
         <div className="home__buttonsArea">
             <div style={{ pointerEvents: "auto" }}>
                 <Button
+                    label="Create new project"
+                    tooltip="Creates new blank project."
                     variant="ghost"
                     onClick={() => {
                         loggerUi.info(`Create new project`);
                         handleBlankProject();
                     }}
-                >
-                    Create new project
-                </Button>
+                />
             </div>
             <div style={{ pointerEvents: "auto" }}>
                 <Button
+                    label="Open file in viewer..."
+                    tooltip="Shows file explorer and opens given file in viewer."
                     variant="ghost"
                     onClick={() => {
                         loggerUi.info("Open file in viewer...");
                         loadAndHandleFile("viewing");
                     }}
-                >
-                    Open file in viewer...
-                </Button>
+                />
             </div>
         </div>
     );
