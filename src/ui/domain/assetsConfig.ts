@@ -39,6 +39,15 @@ const SUPPORTED_ASSETS: Record<string, AssetDefinition> = {
         requiresProcessing: false,
         offersProcessing: false,
     },
+    ccp4: {
+        extension: "ccp4",
+        renderStrategy: "volume",
+        parser: "map",
+        isBinary: true,
+        description: "Electron Density File",
+        requiresProcessing: false,
+        offersProcessing: false,
+    },
 };
 
 export function getAllSupportedAssets() {
