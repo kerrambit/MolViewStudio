@@ -1,6 +1,7 @@
 import {
     IconBrandGithub,
     IconCircleDashedX,
+    IconFilePlus,
     IconFlag,
     IconFolderCog,
     IconFolderOpen,
@@ -76,9 +77,26 @@ export function createExitMenuItem(action?: () => void): MenuItem {
 
 // --------------------------------------------------------------------------------------
 
-export function createGeneralFileSection(items: MenuItem[]): Section {
+export function createProjectActionsSection(items: MenuItem[]): Section {
     return {
-        id: "file-general",
+        id: "project-actions",
+        title: "Creation",
+        items: items,
+    };
+}
+
+export function createFileImportSection(items: MenuItem[]): Section {
+    return {
+        id: "file-import",
+        title: "File Import",
+        items: items,
+    };
+}
+
+export function createUtilitiesSection(items: MenuItem[]): Section {
+    return {
+        id: "utilities",
+        title: "Utilities",
         items: items,
     };
 }
@@ -105,6 +123,18 @@ export function createOpenFileInViewerMenuItem(
         task: {
             action: action,
             type: "secondary",
+        },
+    };
+}
+
+export function createCreateNewProjectMenuItem(action: () => void): MenuItem {
+    return {
+        id: "create-new-project",
+        title: "Create new project",
+        icon: { icon: IconFilePlus, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
         },
     };
 }

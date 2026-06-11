@@ -48,6 +48,7 @@ import { useFileManagement } from "../../hooks/useFileManagement";
 import { useProcessing } from "../../services/ProcessingProvider";
 
 import {
+    createCreateNewProjectMenuItem,
     createExitMenuItem,
     createOnlyDevSection,
     createOpenFileInViewerMenuItem,
@@ -76,7 +77,8 @@ export function Viewer() {
     const { showDialogue } = useDialogue();
 
     // Use file management.
-    const { loadAndHandleFile, deconstructFile } = useFileManagement();
+    const { loadAndHandleFile, deconstructFile, handleBlankProject } =
+        useFileManagement();
 
     // Use assets.
     const { getAllAssets, getAllLocalAssets, clearAssets } = useManagedAssets();
@@ -118,12 +120,21 @@ export function Viewer() {
         // Create custom menu items for existing menu items.
         const {
             customExitAction,
+            customCreateNewProjectAction,
             customOpenFileInViewerAction,
             customProcessFileAction,
-        } = createCustomMenuItems(showDialogue, loadAndHandleFile);
+        } = createCustomMenuItems(
+            showDialogue,
+            loadAndHandleFile,
+            handleBlankProject,
+        );
 
         // Replace original menu items with custom ones.
         replaceMenuItem("exit", createExitMenuItem(customExitAction));
+        replaceMenuItem(
+            "create-new-project",
+            createCreateNewProjectMenuItem(customCreateNewProjectAction),
+        );
         replaceMenuItem(
             "open-file-in-viewer",
             createOpenFileInViewerMenuItem(customOpenFileInViewerAction),
@@ -330,6 +341,7 @@ function createCustomMenuItems(
         options: DialogueProps<T>,
     ) => Promise<T | undefined>,
     loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
+    handleBlankProject: () => void,
 ) {
     const customExitAction = async () => {
         const confirmed = await showDialogue<boolean>({
@@ -343,6 +355,20 @@ function createCustomMenuItems(
             ),
         });
         if (confirmed) window.electron.requestApplicationExit();
+    };
+
+    const customCreateNewProjectAction = async () => {
+        const confirmed = await showDialogue<boolean>({
+            title: "Confirmation",
+            showCloseButton: false,
+            content: (close) => (
+                <ConfirmationDialogueContent
+                    close={close}
+                    doYouReallyWantToQuestion="Do you really want to create new project?"
+                />
+            ),
+        });
+        if (confirmed) handleBlankProject();
     };
 
     const customOpenFileInViewerAction = async () => {
@@ -375,6 +401,7 @@ function createCustomMenuItems(
 
     return {
         customExitAction,
+        customCreateNewProjectAction,
         customOpenFileInViewerAction,
         customProcessFileAction,
     };
