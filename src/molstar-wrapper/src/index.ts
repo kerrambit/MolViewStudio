@@ -1897,7 +1897,7 @@ export function buildRenderTreeForMolstar(
     };
 }
 
-export function extractUrlsFromMVS(mvsData: any): Set<string> {
+export function extractUrlsFromMVS(mvsData: MVSData): Set<string> {
     let snapshots: any[] = [];
 
     if (mvsData.kind !== "multiple") {
