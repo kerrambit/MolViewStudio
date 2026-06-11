@@ -1983,7 +1983,7 @@ function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
         if (matchedAsset) {
             newParams = {
                 ...newParams,
-                url: matchedAsset.id,
+                uri: matchedAsset.id,
             };
         }
     }
