@@ -1675,7 +1675,7 @@ export function addAssetToRoot(
                 children: [
                     {
                         kind: "volume",
-                        params: { channel_id: "0" },
+
                         children: [
                             {
                                 kind: "volume_representation",
@@ -1897,7 +1897,7 @@ export function buildRenderTreeForMolstar(
     };
 }
 
-export function extractUrlsFromMVS(mvsData: any): Set<string> {
+export function extractUrlsFromMVS(mvsData: MVSData): Set<string> {
     let snapshots: any[] = [];
 
     if (mvsData.kind !== "multiple") {
@@ -1983,7 +1983,7 @@ function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
         if (matchedAsset) {
             newParams = {
                 ...newParams,
-                url: matchedAsset.id,
+                uri: matchedAsset.id,
             };
         }
     }
@@ -2359,9 +2359,14 @@ async function _loadMVSXFile(
     // Iterate through local files in archive.
     const assets: ManagedAsset[] = [];
     for (const path in files) {
-        // If it is remote URL, skip it.
-        if (!urls.has(path)) {
+        if (path === indexFilePath) {
             continue;
+        }
+
+        // We check if the path is referenced somewhere in index file, if not, we still register it.
+        let usedInAnyView = true;
+        if (!urls.has(path)) {
+            usedInAnyView = false;
         }
 
         urls.delete(path);
@@ -2379,7 +2384,7 @@ async function _loadMVSXFile(
             relativePath: path, // E.g. "volumes/volume_0_0.bcif".
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
-            useCount: 1,
+            useCount: usedInAnyView ? 1 : 0,
         });
     }
 
