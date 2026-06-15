@@ -1675,7 +1675,7 @@ export function addAssetToRoot(
                 children: [
                     {
                         kind: "volume",
-                        params: { channel_id: "0" },
+
                         children: [
                             {
                                 kind: "volume_representation",
