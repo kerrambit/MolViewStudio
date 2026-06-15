@@ -28,16 +28,6 @@ import { type Result } from "../../types/Result";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 import { UUID } from "molstar/lib/mol-util";
 
-// TODO: problem is this is defined on two places, here and in ManagedAssetsProvider
-interface ManagedAsset {
-    id: string;
-    asset: Asset.Url;
-    relativePath: string;
-    tag: "local" | "remote";
-    name: string;
-    useCount: number;
-}
-
 /**
  * Instance of `PluginUIContext`.
  */

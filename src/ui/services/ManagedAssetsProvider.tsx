@@ -12,45 +12,6 @@ import {
     removeAssetFromMolstar,
     replaceAssetRelativePathFromMolstar,
 } from "../../molstar-wrapper/src";
-import { Asset } from "molstar/lib/mol-util/assets";
-
-/**
- * Object mirroring Assets as managed by Molstar Asset Manager.
- */
-export interface ManagedAsset {
-    /**
-     * Id of the managed assset, which does not change through the app lifetime.
-     */
-    id: string;
-
-    /**
-     * All managed assets are of type `Url`, that is because remotes are URL always,
-     * and local files are converted into assets in the form of `arcp` protocol and thus available via URL, too.
-     */
-    asset: Asset.Url;
-
-    /**
-     * Relative path inside MVSX archive. E.g. "volume.bcif" or "volumes/volume.bcif".
-     * For `remote` ManagedAsset it is same as `asset.url`.
-     */
-    relativePath: string;
-
-    /**
-     * Mirrors Molstar Asset Manager function `set()` and its parameter `isStatic` (true value is "local").
-     */
-    tag: "local" | "remote";
-
-    /**
-     * Only the name of the file with its extension.
-     * For `remote` ManagedAsset it is same as `asset.url`.
-     */
-    name: string;
-
-    /**
-     * Number of times this asset is referenced across all views.
-     */
-    useCount: number;
-}
 
 type ManagedAssetsContextType = {
     /**
