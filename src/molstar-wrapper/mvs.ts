@@ -10,7 +10,7 @@ import {
     type ViewMetadata,
 } from "./types";
 import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
-import { type Result } from "../../types/Result";
+import { type Result } from "../types/Result";
 import { getMolstar } from "./instance";
 import { download } from "molstar/lib/mol-util/download";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";

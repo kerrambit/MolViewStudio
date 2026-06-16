@@ -33,7 +33,7 @@ import {
     updateSnapshotCameraInManager,
     updateSnapshotDescriptionInManager,
     updateSnapshotTitleInManager,
-} from "../../../../molstar-wrapper/src";
+} from "../../../../molstar-wrapper";
 
 /**
  * Properties for Views component.

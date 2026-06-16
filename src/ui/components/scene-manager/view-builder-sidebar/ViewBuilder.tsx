@@ -36,7 +36,7 @@ import {
     reloadMolstarAndRestoreIndex,
     removeDownloadNodeFromRoot,
     updateNodeParamInAssetBranch,
-} from "../../../../molstar-wrapper/src";
+} from "../../../../molstar-wrapper";
 
 /**
  * The unified View-Model for volume parameters.

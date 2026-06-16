@@ -3,12 +3,12 @@ import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {
     GlobalMetadata,
     MVSData,
-    MVSData_States,
-    SnapshotMetadata,
+    type MVSData_States,
+    type SnapshotMetadata,
 } from "molstar/lib/extensions/mvs/mvs-data";
-import { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { PluginState } from "molstar/lib/mol-plugin/state";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
+import type { MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 
 /**
  * Type definition for color in hexadecimal format.
@@ -45,7 +45,7 @@ export type CameraState = {
 /**
  * Download asset used in MVS.
  */
-type DownloadAsset = {
+export type DownloadAsset = {
     relativeUrl: string;
     content: Uint8Array<ArrayBuffer>;
 };
@@ -91,19 +91,19 @@ export type Session = {
 /**
  * Result of `loadMVSXFile` function.
  */
-interface LoadMVSXFileResult {
+export type LoadMVSXFileResult = {
     stateTree: MVSData;
     views: ViewMetadata[]; // TODO: probably remove this
     assets: ManagedAsset[];
     sourceUrl: string;
-}
+};
 
 /**
  * Result of `loadFromFile` function.
  */
-interface LoadFromFileResult {
+export type LoadFromFileResult = {
     stateTree: MVSData_States;
     views: ViewMetadata[]; // TODO: probably remove this
     assets: ManagedAsset[];
     sourceUrl: string;
-}
+};

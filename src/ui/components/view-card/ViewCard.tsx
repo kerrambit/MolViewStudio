@@ -23,7 +23,7 @@ import {
     type CameraState,
     type HexColor,
     type ViewMetadata,
-} from "../../../molstar-wrapper/src";
+} from "../../../molstar-wrapper";
 
 import "./ViewCard.css";
 
