@@ -14,14 +14,6 @@ import {
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { CloseActionIcon } from "../../common/actionables/actions/CloseActionIcon";
 import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
-import {
-    getAllDownloadUrlsFromSnapshot,
-    removeAssetFromRoot,
-    addAssetToRoot,
-    updateNodeParamInAssetBranch,
-    getVolumeParamsForAsset,
-    reloadMolstarAndRestoreIndex,
-} from "../../../../molstar-wrapper/src";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import {
     pushErrorNotification,
@@ -37,6 +29,14 @@ import {
     getAssetConfig,
     isAssetSupported,
 } from "../../../domain/assetsConfig";
+import {
+    addDownloadNodeToRoot,
+    getAllDownloadUrlsFromSnapshot,
+    getVolumeParamsForAsset,
+    reloadMolstarAndRestoreIndex,
+    removeDownloadNodeFromRoot,
+    updateNodeParamInAssetBranch,
+} from "../../../../molstar-wrapper/src";
 
 /**
  * The unified View-Model for volume parameters.
@@ -312,7 +312,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                         const draftedParams = getViewModel(toggledAssetId);
 
                         // New root.
-                        newRoot = addAssetToRoot(
+                        newRoot = addDownloadNodeToRoot(
                             snap.root,
                             toggledAssetId,
                             getExtensionFromFileName(
@@ -331,7 +331,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                             );
                         }
                     } else {
-                        newRoot = removeAssetFromRoot(
+                        newRoot = removeDownloadNodeFromRoot(
                             snap.root,
                             toggledAssetId,
                         );

@@ -1,10 +1,10 @@
-import type { CameraState } from "../../../../molstar-wrapper/src";
 import { UnstyledTextInput } from "./UnstyledTextInput";
 import { CopyActionIcon } from "../actionables/actions/CopyActionIcon";
 import {
     pushInfoNotification,
     pushWarningNotification,
 } from "../../../services/NotificationService";
+import type { CameraState } from "../../../../molstar-wrapper/src";
 
 interface CameraTextInputGroupProps {
     cameraState: CameraState | undefined;

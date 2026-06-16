@@ -1,26 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRegime } from "../../../services/RegimeProvider";
 import { ViewCard } from "../../view-card/ViewCard";
-import {
-    addEmptySnapshotToTree,
-    addNewSnapshotToManager,
-    applyBackgroundColorToNode,
-    applyChangesToNode,
-    applySnapshotByIndex,
-    clearViewerContent,
-    createCopyOfSnapshot,
-    extractViewsFromMVS,
-    getAllDownloadUrlsFromSnapshot,
-    getCurrentSnapshotIndex,
-    getSnapshotChangeSubscription,
-    removeSnapshotFromTree,
-    removeSnapshotInManager,
-    updateLiveBackgroundColor,
-    updateSnapshotBackgroundColorInManager,
-    updateSnapshotCameraInManager,
-    updateSnapshotDescriptionInManager,
-    updateSnapshotTitleInManager,
-} from "../../../../molstar-wrapper/src";
 import type { Subscription } from "rxjs";
 import { InactiveViewCard } from "../../view-card/InactiveViewCard";
 import { CreateViewCard } from "../../view-card/CreateViewCard";
@@ -34,6 +14,26 @@ import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../utils/loggerUi";
 import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
 import { DeleteViewDialogueContent } from "./DeleteViewDialogueContent";
+import {
+    addEmptySnapshotToTree,
+    addNewSnapshotToManager,
+    applyBackgroundColorToNode,
+    applyCameraToNode,
+    applySnapshotByIndex,
+    clearViewerContent,
+    createCopyOfSnapshotInTree,
+    extractViewsFromMVS,
+    getAllDownloadUrlsFromSnapshot,
+    getCurrentSnapshotIndex,
+    getSnapshotChangeSubscription,
+    removeSnapshotFromTree,
+    removeSnapshotInManager,
+    updateLiveBackgroundColor,
+    updateSnapshotBackgroundColorInManager,
+    updateSnapshotCameraInManager,
+    updateSnapshotDescriptionInManager,
+    updateSnapshotTitleInManager,
+} from "../../../../molstar-wrapper/src";
 
 /**
  * Properties for Views component.
@@ -275,7 +275,7 @@ export function Views(props: ViewsProps) {
 
                                 // Create updated tree.
                                 const { updatedTree, newSnapshot } =
-                                    createCopyOfSnapshot(
+                                    createCopyOfSnapshotInTree(
                                         regime.stateTree,
                                         index,
                                     );
@@ -334,7 +334,7 @@ export function Views(props: ViewsProps) {
                                             ) {
                                                 return {
                                                     ...snap,
-                                                    root: applyChangesToNode(
+                                                    root: applyCameraToNode(
                                                         snap.root,
                                                         referenceCamera,
                                                         UiLocalStorageService.ViewOptions.getPending(
@@ -528,7 +528,7 @@ export function Views(props: ViewsProps) {
                                 );
 
                                 // Update live renderer with new background color.
-                                updateLiveBackgroundColor(result.canvasColor);
+                                updateLiveBackgroundColor(result.canvasColor); // TODO: setBackgroundColor vs updateLiveBackgroundColor
                             }}
                         />
                     ) : (

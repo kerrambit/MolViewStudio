@@ -15,8 +15,8 @@ import {
     disposeMolstar,
     exportStateTree,
     getFullScreenSubscription,
-    getSnapshot,
-    getSnapshotManagerState,
+    getMolstarStateSnapshot,
+    getSnapshotManagerStateSnapshot,
     initMolstar,
     injectRelativePathsBasedOnAssetIdsIntoTree,
     serializeMVSXAssets,
@@ -26,10 +26,7 @@ import {
     useDialogue,
     type DialogueProps,
 } from "../../services/DialogueProvider";
-import {
-    useManagedAssets,
-    type ManagedAsset,
-} from "../../services/ManagedAssetsProvider";
+import { useManagedAssets } from "../../services/ManagedAssetsProvider";
 import {
     useMenu,
     type MenuItem,
@@ -174,13 +171,12 @@ export function Viewer() {
             },
             // If the regime is in "restoring" state, we will supply the initializator the snapshots, assets to fully restore the session.
             regimeReference.current.kind === "restoring"
-                ? regimeReference.current.snapshot
-                : null,
-            regimeReference.current.kind === "restoring"
-                ? regimeReference.current.arcpAssets
-                : null,
-            regimeReference.current.kind === "restoring"
-                ? regimeReference.current.snapshotManagerState
+                ? {
+                      snapshot: regimeReference.current.snapshot,
+                      assets: regimeReference.current.arcpAssets,
+                      snapshotManagerState:
+                          regimeReference.current.snapshotManagerState,
+                  }
                 : null,
         ).then(async () => {
             // Molstar is fully initialized.
@@ -199,9 +195,10 @@ export function Viewer() {
                     setRegime({
                         ...regimeReference.current,
                         kind: "restoring",
-                        snapshot: getSnapshot(),
+                        snapshot: getMolstarStateSnapshot(),
                         arcpAssets: await serializeMVSXAssets(),
-                        snapshotManagerState: await getSnapshotManagerState(),
+                        snapshotManagerState:
+                            await getSnapshotManagerStateSnapshot(),
                     });
                 }
 
