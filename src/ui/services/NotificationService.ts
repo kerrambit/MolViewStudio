@@ -1,8 +1,8 @@
 import { notifications, type NotificationData } from "@mantine/notifications";
-import { ErrorNotification } from "../components/notifications/ErrorNotification";
-import { InfoNotification } from "../components/notifications/InfoNotification";
-import { SuccessNotification } from "../components/notifications/SuccessNotification";
-import { WarningNotification } from "../components/notifications/WarningNotification";
+import { ErrorNotification } from "../features/notifications/components/ErrorNotification";
+import { InfoNotification } from "../features/notifications/components/InfoNotification";
+import { SuccessNotification } from "../features/notifications/components/SuccessNotification";
+import { WarningNotification } from "../features/notifications/components/WarningNotification";
 
 export function pushNotification(notification: NotificationData) {
     notifications.show(notification);
