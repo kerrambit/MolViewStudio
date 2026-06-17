@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Button } from "../button/Button";
+import { Button } from "../../../components/common/button/Button";
 import { Badge } from "@mantine/core";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 import { useAppearance } from "../../../providers/AppearanceProvider";

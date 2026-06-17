@@ -34,7 +34,7 @@ import {
 } from "../config/systemMenuItems";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { useFileManagement } from "../features/workspace/hooks/useFileManagement";
-import { AboutDialogueContent } from "../components/common/dialogue/AboutDialogueContent";
+import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
 import { useDialogue, type DialogueProps } from "./DialogueProvider";
 import { pushErrorNotification } from "../services/NotificationService";
 
