@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { Button } from "../button/Button";
 import { Badge } from "@mantine/core";
 import { useEnvironment } from "../../../hooks/useEnvironment";
-import { useAppearance } from "../../../services/AppearanceProvider";
+import { useAppearance } from "../../../providers/AppearanceProvider";
 import desktopIcon from "../../../../assets/desktopIcon.png";
 
 interface AboutDialogueContentProps {

@@ -1,6 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconArrowBack } from "@tabler/icons-react";
-import { useAppearance } from "../../../../services/AppearanceProvider";
+import { useAppearance } from "../../../../providers/AppearanceProvider";
 
 interface RevertIconProps {
     tooltip?: string;

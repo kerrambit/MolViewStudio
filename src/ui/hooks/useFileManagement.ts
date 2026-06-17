@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useRegime, type Regime } from "../services/RegimeProvider";
+import { useRegime, type Regime } from "../providers/RegimeProvider";
 import {
     MVSFilters,
     StructuralFilters,
@@ -11,7 +11,7 @@ import {
     pushInfoNotification,
     pushSuccessNotification,
 } from "../services/NotificationService";
-import { useProcessing } from "../services/ProcessingProvider";
+import { useProcessing } from "../providers/ProcessingProvider";
 import { useProcessVolume } from "./useProcessVolume";
 import { useEnvironment } from "./useEnvironment";
 import { getFieldFromResponse } from "../utils/responseUtils";
@@ -22,7 +22,7 @@ import {
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../molstar-wrapper";
-import { useManagedAssets } from "../services/ManagedAssetsProvider";
+import { useManagedAssets } from "../providers/ManagedAssetsProvider";
 
 export function useFileManagement() {
     // Use navigate,

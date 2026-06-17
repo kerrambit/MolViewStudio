@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Button } from "../../components/common/button/Button";
-import { useRegime } from "../../services/RegimeProvider";
+import { useRegime } from "../../providers/RegimeProvider";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { pushWarningNotification } from "../../services/NotificationService";
 

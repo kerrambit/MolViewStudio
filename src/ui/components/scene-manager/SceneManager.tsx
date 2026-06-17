@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SegmentedController } from "../common/segmented-controller/SegmentedController";
 import { Sidebar } from "../common/sidebar/Sidebar";
-import { useRegime } from "../../services/RegimeProvider";
+import { useRegime } from "../../providers/RegimeProvider";
 import { StoryOptions } from "./story-options/StoryOptions";
 import { Assets } from "./assets-sidebar/Assets";
 import { Views } from "./views-sidebar/Views";

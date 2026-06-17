@@ -17,7 +17,7 @@ import type {
     Priority,
     RootMenuItem,
     Section,
-} from "../../services/MenuProvider";
+} from "../../providers/MenuProvider";
 import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../../services/NotificationService";
 

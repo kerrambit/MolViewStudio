@@ -1,4 +1,4 @@
-import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
+import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { Button } from "../../common/button/Button";
 import { Text } from "@mantine/core";
 import { useState } from "react";
@@ -6,7 +6,7 @@ import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
 import { EditActionIcon } from "../../common/actionables/actions/EditActionIcon";
 import { DeleteActionIcon } from "../../common/actionables/actions/DeleteActionIcon";
 import { ActionableListItem } from "../../common/actionables/ActionableListItem";
-import { useDialogue } from "../../../services/DialogueProvider";
+import { useDialogue } from "../../../providers/DialogueProvider";
 import {
     AddAssetDialogueContent,
     type AddAssetDialogueReturnType,

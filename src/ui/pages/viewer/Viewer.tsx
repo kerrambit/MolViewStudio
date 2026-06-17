@@ -25,24 +25,24 @@ import {
 import {
     useDialogue,
     type DialogueProps,
-} from "../../services/DialogueProvider";
-import { useManagedAssets } from "../../services/ManagedAssetsProvider";
+} from "../../providers/DialogueProvider";
+import { useManagedAssets } from "../../providers/ManagedAssetsProvider";
 import {
     useMenu,
     type MenuItem,
     type RootMenuItem,
     type Section,
-} from "../../services/MenuProvider";
+} from "../../providers/MenuProvider";
 import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
     pushWarningNotification,
 } from "../../services/NotificationService";
-import { useRegime, type Regime } from "../../services/RegimeProvider";
+import { useRegime, type Regime } from "../../providers/RegimeProvider";
 
 import { useFileManagement } from "../../hooks/useFileManagement";
-import { useProcessing } from "../../services/ProcessingProvider";
+import { useProcessing } from "../../providers/ProcessingProvider";
 
 import {
     createCreateNewProjectMenuItem,

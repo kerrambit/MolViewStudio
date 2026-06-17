@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "../../components/common/button/Button";
 import { BaseSettings } from "./BaseSettings";
-import { useUserSettings } from "../../services/UserSettingsProvider";
+import { useUserSettings } from "../../providers/UserSettingsProvider";
 
 export function LanguageSettings() {
     const { t, i18n } = useTranslation();

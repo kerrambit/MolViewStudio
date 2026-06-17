@@ -11,9 +11,9 @@ import {
 import ReactMarkdown from "react-markdown";
 import { Button } from "../../common/button/Button";
 import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
-import { useRegime } from "../../../services/RegimeProvider";
+import { useRegime } from "../../../providers/RegimeProvider";
 import type { HexColor } from "../../../../molstar-wrapper";
-import { useAppearance } from "../../../services/AppearanceProvider";
+import { useAppearance } from "../../../providers/AppearanceProvider";
 
 export interface ViewOptionsDialogueContentReturnType {
     lingerDuration: number;

@@ -1,5 +1,5 @@
 import { Group, Stack } from "@mantine/core";
-import { useAppearance } from "../../services/AppearanceProvider";
+import { useAppearance } from "../../providers/AppearanceProvider";
 import { Button } from "../common/button/Button";
 import { useTranslation } from "react-i18next";
 

@@ -1,7 +1,7 @@
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { Button } from "../common/button/Button";
 import { useTranslation } from "react-i18next";
-import { useAppearance } from "../../services/AppearanceProvider";
+import { useAppearance } from "../../providers/AppearanceProvider";
 
 export function SchemeSelector() {
     const { t } = useTranslation();

@@ -1,6 +1,6 @@
 import React from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
-import { useAppearance } from "../../../services/AppearanceProvider";
+import { useAppearance } from "../../../providers/AppearanceProvider";
 import {
     useMenu,
     type Action,
@@ -9,7 +9,7 @@ import {
     type MenuItem,
     type RootMenuItem,
     type Section,
-} from "../../../services/MenuProvider";
+} from "../../../providers/MenuProvider";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 
 import "./Menu.css";

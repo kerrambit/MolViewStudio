@@ -1,5 +1,5 @@
 import { Avatar as MantineAvatar } from "@mantine/core";
-import { useAppearance } from "../../../services/AppearanceProvider";
+import { useAppearance } from "../../../providers/AppearanceProvider";
 
 import "./Avatar.css";
 

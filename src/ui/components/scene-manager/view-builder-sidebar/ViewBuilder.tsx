@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useRegime } from "../../../services/RegimeProvider";
+import { useRegime } from "../../../providers/RegimeProvider";
 import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
 import {
     Text,
@@ -13,7 +13,7 @@ import {
 } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { CloseActionIcon } from "../../common/actionables/actions/CloseActionIcon";
-import { useManagedAssets } from "../../../services/ManagedAssetsProvider";
+import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import {
     pushErrorNotification,
@@ -21,7 +21,7 @@ import {
 } from "../../../services/NotificationService";
 import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
-import { useAppearance } from "../../../services/AppearanceProvider";
+import { useAppearance } from "../../../providers/AppearanceProvider";
 import { loggerUi } from "../../../utils/loggerUi";
 import {
     getAllParserTypes,

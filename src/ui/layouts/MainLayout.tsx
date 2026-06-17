@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Footer } from "../components/footer/Footer";
 import { Header } from "../components/header/Header";
-import { MenuProvider } from "../services/MenuProvider";
+import { MenuProvider } from "../providers/MenuProvider";
 
 import "./MainLayout.css";
 

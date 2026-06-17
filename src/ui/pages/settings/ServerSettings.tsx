@@ -1,5 +1,5 @@
 import { BaseSettings } from "./BaseSettings";
-import { useUserSettings } from "../../services/UserSettingsProvider";
+import { useUserSettings } from "../../providers/UserSettingsProvider";
 import { Stack, Paper, Group, Badge, Divider, Alert } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { ServerStatus } from "../../components/server-status/ServerStatus";
