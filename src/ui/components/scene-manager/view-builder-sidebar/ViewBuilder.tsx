@@ -28,7 +28,7 @@ import {
     getAllSupportedAssetsParsers,
     getAssetConfig,
     isAssetSupported,
-} from "../../../domain/assetsConfig";
+} from "../../../config/assetsDefinitions";
 import {
     addDownloadNodeToRoot,
     getAllDownloadUrlsFromSnapshot,

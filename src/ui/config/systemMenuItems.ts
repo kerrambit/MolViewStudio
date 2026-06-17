@@ -17,9 +17,9 @@ import type {
     Priority,
     RootMenuItem,
     Section,
-} from "../../providers/MenuProvider";
+} from "../providers/MenuProvider";
 import { type NavigateFunction } from "react-router-dom";
-import { pushInfoNotification } from "../../services/NotificationService";
+import { pushInfoNotification } from "../services/NotificationService";
 
 export function createOnlyDevSection(
     id: string,

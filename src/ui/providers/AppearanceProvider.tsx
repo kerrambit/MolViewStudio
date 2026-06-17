@@ -5,7 +5,7 @@ import {
     type ReactNode,
     useContext,
 } from "react";
-import { themes, type ThemeType } from "../misc/themes";
+import { themes, type ThemeType } from "../config/themes";
 import {
     MantineProvider,
     useComputedColorScheme,

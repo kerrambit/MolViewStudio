@@ -31,7 +31,7 @@ import {
     createReportIssueMenuItem,
     createSettingsRootMenuItem,
     createUtilitiesSection,
-} from "../features/menu/systemMenuItems";
+} from "../config/systemMenuItems";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { useFileManagement } from "../hooks/useFileManagement";
 import { AboutDialogueContent } from "../components/common/dialogue/AboutDialogueContent";

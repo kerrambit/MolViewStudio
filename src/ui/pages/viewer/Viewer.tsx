@@ -50,7 +50,7 @@ import {
     createOnlyDevSection,
     createOpenFileInViewerMenuItem,
     createProcessFileMenuItem,
-} from "../../features/menu/systemMenuItems";
+} from "../../config/systemMenuItems";
 
 import { Button } from "../../components/common/button/Button";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";

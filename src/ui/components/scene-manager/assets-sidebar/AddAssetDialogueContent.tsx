@@ -6,7 +6,7 @@ import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
 import {
     checkOffersProcessing,
     checkRequiresProcessing,
-} from "../../../domain/assetsConfig";
+} from "../../../config/assetsDefinitions";
 import { pushWarningNotification } from "../../../services/NotificationService";
 
 export interface AddAssetDialogueReturnType {
