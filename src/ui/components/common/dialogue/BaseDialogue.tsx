@@ -77,6 +77,7 @@ export function BaseDialogue({
                                 className="base-dialogue__close-button"
                                 onClick={onClose}
                                 aria-label="Close dialogue"
+                                title="Closes the dialogue window."
                             >
                                 ×
                             </button>
