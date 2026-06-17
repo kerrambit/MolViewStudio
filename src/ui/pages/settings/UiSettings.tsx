@@ -3,7 +3,7 @@ import { SchemeSelector } from "../../components/settings/SchemeSelector";
 import { ThemeSelector } from "../../components/settings/ThemeSelector";
 import { pushInfoNotification } from "../../services/NotificationService";
 import { UiLocalStorageService } from "../../services/UiLocalStorageService";
-import { BaseSettings } from "./BaseSettings";
+import { BaseSettings } from "../../features/settings/components/BaseSettings";
 
 export function UiSettings() {
     return (

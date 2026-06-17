@@ -3,6 +3,6 @@ import WorkspaceLanding from "../../features/workspace/components/WorkspaceLandi
 import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
 
-export function HomePage() {
+export default function HomePage() {
     return <WorkspaceLanding />;
 }

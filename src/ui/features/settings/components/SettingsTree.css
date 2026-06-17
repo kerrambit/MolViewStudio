@@ -1,10 +1,3 @@
-.settings {
-    width: 100%;
-    height: 100%;
-    margin-left: 3em;
-    margin-right: 3em;
-}
-
 .settings__tree,
 .settings__tree ul {
   list-style: none;

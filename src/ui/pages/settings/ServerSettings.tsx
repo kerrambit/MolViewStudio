@@ -1,4 +1,4 @@
-import { BaseSettings } from "./BaseSettings";
+import { BaseSettings } from "../../features/settings/components/BaseSettings";
 import { useUserSettings } from "../../providers/UserSettingsProvider";
 import { Stack, Paper, Group, Badge, Divider, Alert } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";

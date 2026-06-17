@@ -1,25 +1,34 @@
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { IconSettingsFilled } from "@tabler/icons-react";
-import Watermark from "../../components/common/watermark/Watermark";
+import Watermark from "../../../components/common/watermark/Watermark";
 
-import "./Settings.css";
+import "./SettingsTree.css";
 
-export default function Settings() {
+export function SettingsTree() {
+    // Use navigation.
     const navigate = useNavigate();
 
+    // Render the component.
     return (
-        <div className="settings">
+        <main
+            style={{
+                width: "100%",
+                height: "100%",
+                marginLeft: "3em",
+                marginRight: "3em",
+            }}
+        >
             <h1>Settings</h1>
             <Watermark icon={IconSettingsFilled} />
             {renderTree(navigate)}
-        </div>
+        </main>
     );
 }
 
 function renderTreeLink(
     navigate: NavigateFunction,
     name: string,
-    path: string
+    path: string,
 ) {
     return (
         <li
@@ -46,7 +55,7 @@ function renderTree(navigate: NavigateFunction) {
                     {renderTreeLink(
                         navigate,
                         "Notifications",
-                        "general/notifications"
+                        "general/notifications",
                     )}
                     <br></br>
                     {renderTreeLink(navigate, "Help", "general/help")}
@@ -74,7 +83,7 @@ function renderTree(navigate: NavigateFunction) {
                     {renderTreeLink(
                         navigate,
                         "Per Format",
-                        "processing/per-format"
+                        "processing/per-format",
                     )}
                 </ul>
             </li>
