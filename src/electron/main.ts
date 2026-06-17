@@ -15,7 +15,6 @@ import {
     saveUserSettings,
 } from "./utils/localUserSettingsUtils.js";
 import { isDev } from "./utils/devUtils.js";
-import { pollData } from "./logicMocker.js";
 import { Ipc } from "./Ipc.Electron.js";
 import { createTray } from "./tray.js";
 import { logger } from "./utils/logger.js";
@@ -57,9 +56,6 @@ app.on("ready", async () => {
     logger.info("Application has started.");
 
     // ------------------------------------------------------------- //
-
-    // Electron can send information in certain interval to UI component.
-    pollData(mainWindow);
 
     // Create user data path and filepah.
     const userDataPath = app.getPath("userData");
