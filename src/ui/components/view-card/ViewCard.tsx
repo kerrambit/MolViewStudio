@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "../common/button/Button";
 import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../utils/cssClassBuilder";
-import { CameraTextInputGroup } from "../common/input/CameraTextInputGroup";
+import { CameraTextInputGroup } from "../../features/viewer/components/CameraTextInputGroup";
 import { DeleteActionIcon } from "../common/actionables/actions-icons/DeleteActionIcon";
 import { ChevronUpActionIcon } from "../common/actionables/actions-icons/ChevronUpActionIcon";
 import { ChevronDownActionIcon } from "../common/actionables/actions-icons/ChevronDownActionIcon";
