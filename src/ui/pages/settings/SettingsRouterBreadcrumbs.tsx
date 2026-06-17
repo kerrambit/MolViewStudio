@@ -1,18 +1,16 @@
-import { RouterBreadcrumbs } from "../../components/common/router-breadcrumbs/RouterBreadcrumbs";
+import { RouterLocationBreadcrumbs } from "../../components/common/router-location-breadcrumbs/RouterLocationBreadcrumbs";
 
 interface SettingsRouterBreadcrumbsProps {
     autoSavedPage: boolean;
 }
 
 export function SettingsRouterBreadcrumbs(
-    props: SettingsRouterBreadcrumbsProps
+    props: SettingsRouterBreadcrumbsProps,
 ) {
-    const wordsToFix = {
-        words: [{ word: "ui", fixed: "UI" }],
-    };
+    const wordsToFix = [{ location: "ui", synonym: "UI" }];
     return (
         <div>
-            <RouterBreadcrumbs wordsToFix={wordsToFix} />
+            <RouterLocationBreadcrumbs locationSynonyms={wordsToFix} />
             {props.autoSavedPage && (
                 <div
                     title="Auto-save means that when you make any change in the page, the change is automatically registered and set."
