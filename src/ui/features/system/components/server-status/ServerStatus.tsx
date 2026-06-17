@@ -1,4 +1,4 @@
-import { useServerStatus } from "../../api/hooks/useServerStatus";
+import { useServerStatus } from "../../../../api/hooks/useServerStatus";
 import { useTranslation } from "react-i18next";
 
 import "./ServerStatus.css";
