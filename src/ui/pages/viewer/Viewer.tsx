@@ -41,7 +41,7 @@ import {
 } from "../../services/NotificationService";
 import { useRegime, type Regime } from "../../providers/RegimeProvider";
 
-import { useFileManagement } from "../../hooks/useFileManagement";
+import { useFileManagement } from "../../features/workspace/hooks/useFileManagement";
 import { useProcessing } from "../../providers/ProcessingProvider";
 
 import {

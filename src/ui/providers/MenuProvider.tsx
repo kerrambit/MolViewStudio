@@ -33,7 +33,7 @@ import {
     createUtilitiesSection,
 } from "../config/systemMenuItems";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
-import { useFileManagement } from "../hooks/useFileManagement";
+import { useFileManagement } from "../features/workspace/hooks/useFileManagement";
 import { AboutDialogueContent } from "../components/common/dialogue/AboutDialogueContent";
 import { useDialogue, type DialogueProps } from "./DialogueProvider";
 import { pushErrorNotification } from "../services/NotificationService";

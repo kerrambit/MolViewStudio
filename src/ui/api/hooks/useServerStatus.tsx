@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { loggerUi } from "../services/UiLoggingService";
-import { useDomain } from "../api/hooks/useDomain";
-import { API } from "../api/endpoints";
+import { loggerUi } from "../../services/UiLoggingService";
+import { useDomain } from "./useDomain";
+import { API } from "../endpoints";
 
 export function useServerStatus() {
     const domain = useDomain();
@@ -15,7 +15,7 @@ export function useServerStatus() {
                 loggerUi.error(
                     `When fetching <${API.health()}>, an error occured! Server returned: <${response.json}>.`,
                 );
-                throw new Error(`Server returned ${response.status}`);
+                throw new Error(`Server returned: <${response.status}>!`);
             }
 
             return true;

@@ -1,28 +1,28 @@
 import { useNavigate } from "react-router-dom";
-import { useRegime, type Regime } from "../providers/RegimeProvider";
+import { useRegime, type Regime } from "../../../providers/RegimeProvider";
 import {
     MVSFilters,
     StructuralFilters,
     VolumeFilters,
-} from "../../types/fileFilters";
-import { loggerUi } from "../services/UiLoggingService";
+} from "../../../../types/fileFilters";
+import { loggerUi } from "../../../services/UiLoggingService";
 import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
-} from "../services/NotificationService";
-import { useProcessing } from "../providers/ProcessingProvider";
-import { useProcessVolume } from "./useProcessVolume";
-import { useEnvironment } from "./useEnvironment";
-import { getFieldFromResponse } from "../api/utils/apiParser";
+} from "../../../services/NotificationService";
+import { useProcessing } from "../../../providers/ProcessingProvider";
+import { useProcessVolume } from "../../../api/hooks/useProcessVolume";
+import { useEnvironment } from "../../../hooks/useEnvironment";
+import { getFieldFromResponse } from "../../../api/utils/apiParser";
 import {
     createBlankMVSDataAsString,
     createDefaultMVSFromLocalFiles,
     createMVSBlob,
     injectAssetIdsIntoTree,
     loadFromFile,
-} from "../lib/molstar";
-import { useManagedAssets } from "../providers/ManagedAssetsProvider";
+} from "../../../lib/molstar";
+import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 
 export function useFileManagement() {
     // Use navigate,

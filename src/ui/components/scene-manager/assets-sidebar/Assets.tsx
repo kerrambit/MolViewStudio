@@ -16,7 +16,7 @@ import {
     type EditAssetDialogueReturnType,
 } from "./EditAssetDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
-import { useFileManagement } from "../../../hooks/useFileManagement";
+import { useFileManagement } from "../../../features/workspace/hooks/useFileManagement";
 
 export function Assets() {
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);

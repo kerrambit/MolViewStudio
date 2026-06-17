@@ -1,4 +1,4 @@
-import { useServerStatus } from "../../hooks/useServerStatus";
+import { useServerStatus } from "../../api/hooks/useServerStatus";
 import { useTranslation } from "react-i18next";
 
 import "./ServerStatus.css";
@@ -25,9 +25,9 @@ export function ServerStatus() {
         return (
             <div
                 title={`${t(
-                    "global.ServerStatus.Server has ended with an error"
+                    "global.ServerStatus.Server has ended with an error",
                 )}: <${error.message}>! ${t(
-                    "global.ServerStatus.Go to Settings for more information."
+                    "global.ServerStatus.Go to Settings for more information.",
                 )}`}
                 className="serverStatus"
             >

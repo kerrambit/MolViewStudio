@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { loggerUi } from "../services/UiLoggingService";
-import { useDomain } from "../api/hooks/useDomain";
-import { API } from "../api/endpoints";
+import { loggerUi } from "../../services/UiLoggingService";
+import { useDomain } from "./useDomain";
+import { API } from "../endpoints";
 
 interface ProcessVolumeArgs {
     filepath: string;

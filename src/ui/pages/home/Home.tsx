@@ -3,7 +3,7 @@ import type { FileRejection } from "@mantine/dropzone";
 import { loggerUi } from "../../services/UiLoggingService.ts";
 import { Dropzone } from "../../components/common/dropzone/Dropzone.tsx";
 import { pushWarningNotification } from "../../services/NotificationService.ts";
-import { useFileManagement } from "../../hooks/useFileManagement.ts";
+import { useFileManagement } from "../../features/workspace/hooks/useFileManagement.ts";
 
 import "./Home.css";
 import "@mantine/core/styles.css";
