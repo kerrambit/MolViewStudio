@@ -6,7 +6,7 @@ import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
 import UiSettingsPage from "../pages/settings/UiSettingsPage.tsx";
 import LanguageSettingsPage from "../pages/settings/LanguageSettingsPage.tsx";
 import { MainLayout } from "../layouts/MainLayout.tsx";
-import { ServerSettings } from "../pages/settings/ServerSettings.tsx";
+import ServerSettingsPage from "../pages/settings/ServerSettingsPage.tsx";
 import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
 
 const routes: RouteObject[] = [
@@ -46,8 +46,8 @@ const routes: RouteObject[] = [
             },
             {
                 path: "server",
-                Component: ServerSettings,
-                children: [{ index: true, Component: ServerSettings }],
+                Component: ServerSettingsPage,
+                children: [{ index: true, Component: ServerSettingsPage }],
             },
             {
                 path: "account",
