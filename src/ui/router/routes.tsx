@@ -7,7 +7,7 @@ import { UiSettings } from "../pages/settings/UiSettings.tsx";
 import { LanguageSettings } from "../pages/settings/LanguageSettings.tsx";
 import { MainLayout } from "../layouts/MainLayout.tsx";
 import { ServerSettings } from "../pages/settings/ServerSettings.tsx";
-import { ErrorBoundary } from "../components/error-boundary/ErrorBoundary.tsx";
+import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -17,7 +17,7 @@ const routes: RouteObject[] = [
     {
         path: "/",
         Component: MainLayout,
-        errorElement: <ErrorBoundary />,
+        errorElement: <ErrorPage />,
         children: [
             { path: "home", Component: Home },
             { path: "viewer", Component: Viewer },
@@ -27,7 +27,7 @@ const routes: RouteObject[] = [
     {
         path: "/settings",
         Component: BackNavigationLayout,
-        errorElement: <ErrorBoundary />,
+        errorElement: <ErrorPage />,
         children: [
             { index: true, Component: Settings },
             {

@@ -1,9 +1,9 @@
 import { useRouteError, isRouteErrorResponse } from "react-router-dom";
 import { loggerUi } from "../../services/UiLoggingService";
-import { Button } from "../common/button/Button";
+import { Button } from "../../components/common/button/Button";
 import { IconAlertHexagonFilled } from "@tabler/icons-react";
 
-export const ErrorBoundary = () => {
+export const ErrorPage = () => {
     // Use route error hook.
     const error = useRouteError();
 
