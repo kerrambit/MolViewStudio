@@ -9,7 +9,7 @@ import { convertColorToHexString, convertHexStringToColor } from "./utils";
 import { type Base64Png, type HexColor, type Session } from "./types";
 import { clearAllSnapshotsFromSnapshotManager } from "./molstarSnapshotService";
 import { Color } from "molstar/lib/mol-util/color";
-import { type Result } from "../types/Result";
+import { type Result } from "../../../types/Result";
 
 /**
  * Properties for `initMolstar` function.

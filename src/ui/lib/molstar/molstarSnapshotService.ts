@@ -2,7 +2,7 @@ import { PluginState } from "molstar/lib/mol-plugin/state";
 import { getMolstar, getMolstarDontThrow } from "./instance";
 import { UUID } from "molstar/lib/mol-util";
 import { type HexColor } from "./types";
-import { type Result } from "../types/Result";
+import { type Result } from "../../../types/Result";
 import { convertHexStringToColor } from "./utils";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { checkMolstarAfterLoading } from "./core";

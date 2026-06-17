@@ -4,7 +4,7 @@ import {
     pushInfoNotification,
     pushWarningNotification,
 } from "../../../services/NotificationService";
-import type { CameraState } from "../../../../molstar-wrapper";
+import type { CameraState } from "../../../lib/molstar";
 
 interface CameraTextInputGroupProps {
     cameraState: CameraState | undefined;

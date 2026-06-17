@@ -12,7 +12,7 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "../../common/button/Button";
 import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
 import { useRegime } from "../../../providers/RegimeProvider";
-import type { HexColor } from "../../../../molstar-wrapper";
+import type { HexColor } from "../../../lib/molstar";
 import { useAppearance } from "../../../providers/AppearanceProvider";
 
 export interface ViewOptionsDialogueContentReturnType {

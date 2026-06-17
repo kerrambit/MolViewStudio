@@ -21,7 +21,7 @@ import {
     createMVSBlob,
     injectAssetIdsIntoTree,
     loadFromFile,
-} from "../../molstar-wrapper";
+} from "../lib/molstar";
 import { useManagedAssets } from "../providers/ManagedAssetsProvider";
 
 export function useFileManagement() {

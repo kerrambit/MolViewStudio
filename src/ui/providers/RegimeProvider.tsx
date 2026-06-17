@@ -1,6 +1,6 @@
 import { createContext, useState, type ReactNode, useContext } from "react";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import type { SerializedAssets } from "../../molstar-wrapper";
+import type { SerializedAssets } from "../lib/molstar";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 

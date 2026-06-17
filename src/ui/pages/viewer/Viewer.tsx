@@ -20,7 +20,7 @@ import {
     initMolstar,
     injectRelativePathsBasedOnAssetIdsIntoTree,
     serializeMVSXAssets,
-} from "../../../molstar-wrapper";
+} from "../../lib/molstar";
 
 import {
     useDialogue,

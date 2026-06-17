@@ -11,7 +11,7 @@ import {
     addRemoteAssetIntoMolstar,
     removeAssetFromMolstar,
     replaceAssetRelativePathFromMolstar,
-} from "../../molstar-wrapper";
+} from "../lib/molstar";
 
 type ManagedAssetsContextType = {
     /**
