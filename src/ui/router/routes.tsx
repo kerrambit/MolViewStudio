@@ -2,10 +2,10 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import Home from "../pages/home/Home.tsx";
 import Settings from "../pages/settings/Settings.tsx";
 import { Viewer } from "../pages/viewer/Viewer.tsx";
-import { BackNavigationLayout } from "../components/layouts/BackNavigationLayout.tsx";
+import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
 import { UiSettings } from "../pages/settings/UiSettings.tsx";
 import { LanguageSettings } from "../pages/settings/LanguageSettings.tsx";
-import { MainLayout } from "../components/layouts/MainLayout.tsx";
+import { MainLayout } from "../layouts/MainLayout.tsx";
 import { ServerSettings } from "../pages/settings/ServerSettings.tsx";
 import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
 
