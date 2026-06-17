@@ -33,7 +33,7 @@ import {
     createUtilitiesSection,
 } from "../config/systemMenuItems";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
-import { useFileManagement } from "../features/workspace/hooks/useFileManagement";
+import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
 import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
 import { useDialogue, type DialogueProps } from "./DialogueProvider";
 import { pushErrorNotification } from "../services/NotificationService";
@@ -149,7 +149,7 @@ export function MenuProvider({ children }: MenuProviderProps) {
     const navigate = useNavigate();
 
     // Use file management.
-    const { loadAndHandleFile, handleBlankProject } = useFileManagement();
+    const { loadAndHandleFile, handleBlankProject } = useWorkspaceManagement();
 
     // Use dialogue.
     const { showDialogue } = useDialogue();

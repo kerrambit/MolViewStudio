@@ -16,7 +16,7 @@ import {
     type EditAssetDialogueReturnType,
 } from "./EditAssetDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
-import { useFileManagement } from "../../../features/workspace/hooks/useFileManagement";
+import { useWorkspaceManagement } from "../../../features/workspace/hooks/useWorkspaceManagement";
 import { ActionableList } from "../../common/actionables/ActionableList";
 
 export function Assets() {
@@ -33,7 +33,8 @@ export function Assets() {
         editRelativePathOfLocalAsset,
     } = useManagedAssets();
 
-    const { handleFileAsProcessingOfIndependentAsset } = useFileManagement();
+    const { handleFileAsProcessingOfIndependentAsset } =
+        useWorkspaceManagement();
 
     return (
         <div>

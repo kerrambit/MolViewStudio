@@ -41,7 +41,7 @@ import {
 } from "../../services/NotificationService";
 import { useRegime, type Regime } from "../../providers/RegimeProvider";
 
-import { useFileManagement } from "../../features/workspace/hooks/useFileManagement";
+import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
 import { useProcessing } from "../../providers/ProcessingProvider";
 
 import {
@@ -75,7 +75,7 @@ export function Viewer() {
 
     // Use file management.
     const { loadAndHandleFile, deconstructFile, handleBlankProject } =
-        useFileManagement();
+        useWorkspaceManagement();
 
     // Use assets.
     const { getAllAssets, getAllLocalAssets, clearAssets } = useManagedAssets();

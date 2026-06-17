@@ -24,7 +24,7 @@ import {
 } from "../../../lib/molstar";
 import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 
-export function useFileManagement() {
+export function useWorkspaceManagement() {
     // Use navigate,
     const navigate = useNavigate();
 
