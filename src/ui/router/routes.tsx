@@ -1,5 +1,5 @@
 import { Navigate, type RouteObject } from "react-router-dom";
-import Home from "../pages/home/Home.tsx";
+import { HomePage } from "../pages/home-page/HomePage.tsx";
 import Settings from "../pages/settings/Settings.tsx";
 import { Viewer } from "../pages/viewer/Viewer.tsx";
 import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
@@ -19,7 +19,7 @@ const routes: RouteObject[] = [
         Component: MainLayout,
         errorElement: <ErrorPage />,
         children: [
-            { path: "home", Component: Home },
+            { path: "home", Component: HomePage },
             { path: "viewer", Component: Viewer },
         ],
     },

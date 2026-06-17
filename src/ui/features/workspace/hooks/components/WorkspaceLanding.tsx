@@ -1,22 +1,25 @@
-import { Button } from "../../components/common/button/Button";
 import type { FileRejection } from "@mantine/dropzone";
-import { loggerUi } from "../../services/UiLoggingService.ts";
-import { Dropzone } from "../../components/common/dropzone/Dropzone.tsx";
-import { pushWarningNotification } from "../../services/NotificationService.ts";
-import { useFileManagement } from "../../features/workspace/hooks/useFileManagement.ts";
+import { Dropzone } from "../../../../components/common/dropzone/Dropzone.tsx";
+import { useFileManagement } from "../useFileManagement.ts";
+import { loggerUi } from "../../../../services/UiLoggingService.ts";
+import { pushWarningNotification } from "../../../../services/NotificationService.ts";
+import { Button } from "../../../../components/common/button/Button.tsx";
 
-import "./Home.css";
-import "@mantine/core/styles.css";
-import "@mantine/dropzone/styles.css";
-
-export default function Home() {
+export default function WorkspaceLanding() {
     // Hook for loading and handling file.
     const { loadAndHandleFile, handleFile, handleBlankProject } =
         useFileManagement();
 
-    // Render.
+    // Render the component.
     return (
-        <div className="home">
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                height: " 100%",
+            }}
+        >
             <Dropzone
                 onDrop={async (files: File[]) => {
                     await onDropHandler(files, handleFile);
@@ -72,7 +75,14 @@ function renderDropzoneButtonsArea(
     handleBlankProject: () => void,
 ) {
     return (
-        <div className="home__buttonsArea">
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "1em",
+            }}
+        >
             <div style={{ pointerEvents: "auto" }}>
                 <Button
                     label="Create new project"
