@@ -1,9 +1,9 @@
 import type { FileRejection } from "@mantine/dropzone";
-import { Dropzone } from "../../../../components/common/dropzone/Dropzone.tsx";
-import { useFileManagement } from "../useFileManagement.ts";
-import { loggerUi } from "../../../../services/UiLoggingService.ts";
-import { pushWarningNotification } from "../../../../services/NotificationService.ts";
-import { Button } from "../../../../components/common/button/Button.tsx";
+import { Dropzone } from "../../../components/common/dropzone/Dropzone.tsx";
+import { useFileManagement } from "../hooks/useFileManagement.ts";
+import { loggerUi } from "../../../services/UiLoggingService.ts";
+import { pushWarningNotification } from "../../../services/NotificationService.ts";
+import { Button } from "../../../components/common/button/Button.tsx";
 
 export default function WorkspaceLanding() {
     // Hook for loading and handling file.
