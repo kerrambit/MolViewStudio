@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { TopBar } from "../components/common/topbar/TopBar";
-import { MenuProvider } from "../providers/MenuProvider";
+import { TopBar } from "../common/topbar/TopBar";
+import { MenuProvider } from "../../providers/MenuProvider";
 
 import "./BackNavigationLayout.css";
 

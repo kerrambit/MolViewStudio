@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
-import { useAppearance } from "../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../../providers/AppearanceProvider";
 import {
     useMenu,
     type Action,
@@ -9,8 +9,8 @@ import {
     type MenuItem,
     type RootMenuItem,
     type Section,
-} from "../../../providers/MenuProvider";
-import { useEnvironment } from "../../../hooks/useEnvironment";
+} from "../../../../providers/MenuProvider";
+import { useEnvironment } from "../../../../hooks/useEnvironment";
 
 import "./Menu.css";
 
@@ -19,14 +19,27 @@ interface MenuProps {
 }
 
 export function Menu({ className = "" }: MenuProps) {
+    // Use apperance.
     const { colorTheme } = useAppearance();
+
+    // Use menu,
     const { menu } = useMenu();
 
+    // Use environment.
     const { isDev } = useEnvironment();
 
+    // Use build information.
+    const [info] = useState<BuildInformation>(() =>
+        window.electron.requestBuildInformation(),
+    );
+
+    // Render the component.
     return (
         <div className={className}>
-            <span title="Mol* App (Version 0.0.1)" className="menu__title">
+            <span
+                title={`Mol* App (Version ${info.appVersion})`}
+                className="menu__title"
+            >
                 Mol* App{" "}
                 {isDev ? (
                     <Badge

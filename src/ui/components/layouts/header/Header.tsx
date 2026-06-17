@@ -1,6 +1,6 @@
 import { Menu } from "./menu/Menu";
 import { NotificationBell } from "./notification-bell/NotificationBell";
-import { TopBar } from "../common/topbar/TopBar";
+import { TopBar } from "../../common/topbar/TopBar";
 
 import "./Header.css";
 
