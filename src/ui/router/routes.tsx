@@ -3,7 +3,7 @@ import HomePage from "../pages/home-page/HomePage.tsx";
 import SettingsPage from "../pages/settings/SettingsPage.tsx";
 import { Viewer } from "../pages/viewer/Viewer.tsx";
 import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
-import { UiSettings } from "../pages/settings/UiSettings.tsx";
+import UiSettingsPage from "../pages/settings/UiSettingsPage.tsx";
 import LanguageSettingsPage from "../pages/settings/LanguageSettingsPage.tsx";
 import { MainLayout } from "../layouts/MainLayout.tsx";
 import { ServerSettings } from "../pages/settings/ServerSettings.tsx";
@@ -34,7 +34,7 @@ const routes: RouteObject[] = [
                 path: "general",
                 children: [
                     { path: "language", Component: LanguageSettingsPage },
-                    { path: "ui", Component: UiSettings },
+                    { path: "ui", Component: UiSettingsPage },
                     { path: "notifications", Component: SettingsPage },
                     { path: "help", Component: SettingsPage },
                 ],
