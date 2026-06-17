@@ -4,5 +4,5 @@
 }
 
 .notificationBell:active:not(:disabled) {
-  transform: translateY(2px);
+  transform: translateY(1.5px);
 }

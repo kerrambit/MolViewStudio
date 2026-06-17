@@ -20,6 +20,13 @@ export function NotificationBell() {
                 offset={7}
                 color="yellow"
                 disabled={!anyUnreadNotifications}
+                styles={{
+                    root: {
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    },
+                }}
             >
                 <IconBell size={28} />
             </Indicator>
