@@ -3,8 +3,8 @@ import { Button } from "../../common/button/Button";
 import { Text } from "@mantine/core";
 import { useState } from "react";
 import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
-import { EditActionIcon } from "../../common/actionables/actions/EditActionIcon";
-import { DeleteActionIcon } from "../../common/actionables/actions/DeleteActionIcon";
+import { EditActionIcon } from "../../common/actionables/actions-icons/EditActionIcon";
+import { DeleteActionIcon } from "../../common/actionables/actions-icons/DeleteActionIcon";
 import { ActionableListItem } from "../../common/actionables/ActionableListItem";
 import { useDialogue } from "../../../providers/DialogueProvider";
 import {
@@ -17,6 +17,7 @@ import {
 } from "./EditAssetDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { useFileManagement } from "../../../features/workspace/hooks/useFileManagement";
+import { ActionableList } from "../../common/actionables/ActionableList";
 
 export function Assets() {
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
@@ -41,13 +42,7 @@ export function Assets() {
                     Local
                 </Text>
 
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: ".25em",
-                    }}
-                >
+                <ActionableList>
                     {getAllLocalAssets().map((asset) => (
                         <ActionableListItem
                             key={asset.asset.id}
@@ -107,7 +102,7 @@ export function Assets() {
                             </div>
                         </ActionableListItem>
                     ))}
-                </div>
+                </ActionableList>
 
                 <div
                     style={{
@@ -163,13 +158,7 @@ export function Assets() {
                 <Text size="xl" mb="sm">
                     Remote
                 </Text>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: ".25em",
-                    }}
-                >
+                <ActionableList>
                     {getAllRemoteAssets().map((asset) => (
                         <ActionableListItem
                             key={asset.asset.id}
@@ -188,7 +177,7 @@ export function Assets() {
                             ></DeleteActionIcon>
                         </ActionableListItem>
                     ))}
-                </div>
+                </ActionableList>
 
                 <div
                     style={{

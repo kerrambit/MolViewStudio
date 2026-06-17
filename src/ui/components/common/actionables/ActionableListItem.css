@@ -3,10 +3,18 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: rgba(0, 0, 0, 0.065);
     border-radius: 6px;
 }
 
 .actionableListItem:hover {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-mantine-color-scheme="dark"] .actionableListItem {
+    background-color: var(--color-grey-dark);
+}
+
+[data-mantine-color-scheme="dark"] .actionableListItem:hover {
+    background-color: var(--color-grey-dark-hover);
 }

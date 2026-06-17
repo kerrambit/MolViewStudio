@@ -12,7 +12,7 @@ import {
     Group,
 } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import { CloseActionIcon } from "../../common/actionables/actions/CloseActionIcon";
+import { CloseActionIcon } from "../../common/actionables/actions-icons/CloseActionIcon";
 import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import {

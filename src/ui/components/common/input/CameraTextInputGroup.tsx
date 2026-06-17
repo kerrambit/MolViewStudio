@@ -1,5 +1,5 @@
 import { UnstyledTextInput } from "./UnstyledTextInput";
-import { CopyActionIcon } from "../actionables/actions/CopyActionIcon";
+import { CopyActionIcon } from "../actionables/actions-icons/CopyActionIcon";
 import {
     pushInfoNotification,
     pushWarningNotification,
