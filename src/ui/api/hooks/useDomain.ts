@@ -1,4 +1,4 @@
-import { useUserSettings } from "../ui/providers/UserSettingsProvider";
+import { useUserSettings } from "../../providers/UserSettingsProvider";
 
 export function useDomain() {
     const userSettings = useUserSettings();

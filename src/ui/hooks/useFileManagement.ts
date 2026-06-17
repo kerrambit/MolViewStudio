@@ -14,7 +14,7 @@ import {
 import { useProcessing } from "../providers/ProcessingProvider";
 import { useProcessVolume } from "./useProcessVolume";
 import { useEnvironment } from "./useEnvironment";
-import { getFieldFromResponse } from "../utils/responseUtils";
+import { getFieldFromResponse } from "../api/utils/apiParser";
 import {
     createBlankMVSDataAsString,
     createDefaultMVSFromLocalFiles,

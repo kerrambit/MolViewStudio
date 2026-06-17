@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { loggerUi } from "../services/UiLoggingService";
-import { useDomain } from "../../api/useDomain";
-import { API } from "../../api/endpoints";
+import { useDomain } from "../api/hooks/useDomain";
+import { API } from "../api/endpoints";
 
 export function useServerStatus() {
     const domain = useDomain();
