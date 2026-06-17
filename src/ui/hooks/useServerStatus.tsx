@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { loggerUi } from "../utils/loggerUi";
+import { loggerUi } from "../services/UiLoggingService";
 import { useDomain } from "../../api/useDomain";
 import { API } from "../../api/endpoints";
 

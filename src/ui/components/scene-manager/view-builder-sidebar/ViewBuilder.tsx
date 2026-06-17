@@ -22,7 +22,7 @@ import {
 import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { useAppearance } from "../../../providers/AppearanceProvider";
-import { loggerUi } from "../../../utils/loggerUi";
+import { loggerUi } from "../../../services/UiLoggingService";
 import {
     getAllParserTypes,
     getAllSupportedAssetsParsers,

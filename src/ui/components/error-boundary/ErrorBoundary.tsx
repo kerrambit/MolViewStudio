@@ -1,5 +1,5 @@
 import { useRouteError, isRouteErrorResponse } from "react-router-dom";
-import { loggerUi } from "../../utils/loggerUi";
+import { loggerUi } from "../../services/UiLoggingService";
 import { Button } from "../common/button/Button";
 import { IconAlertHexagonFilled } from "@tabler/icons-react";
 

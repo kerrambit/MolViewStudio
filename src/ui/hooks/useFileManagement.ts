@@ -5,7 +5,7 @@ import {
     StructuralFilters,
     VolumeFilters,
 } from "../../types/fileFilters";
-import { loggerUi } from "../utils/loggerUi";
+import { loggerUi } from "../services/UiLoggingService";
 import {
     pushErrorNotification,
     pushInfoNotification,

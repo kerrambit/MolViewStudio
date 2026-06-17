@@ -11,7 +11,7 @@ import {
 } from "./ViewOptionsDialogueContent";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
-import { loggerUi } from "../../../utils/loggerUi";
+import { loggerUi } from "../../../services/UiLoggingService";
 import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { DeleteViewDialogueContent } from "./DeleteViewDialogueContent";
 import {
