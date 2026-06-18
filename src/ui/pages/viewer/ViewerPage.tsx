@@ -1,7 +1,6 @@
 import { createRef, useEffect, useRef, useState } from "react";
 
 import { LoadingOverlay } from "@mantine/core";
-import { Text } from "@mantine/core";
 import {
     IconBinaryTreeFilled,
     IconPackageExport,
@@ -25,6 +24,7 @@ import {
 import {
     useDialogue,
     type DialogueProps,
+    type ShowDialogueType,
 } from "../../providers/DialogueProvider";
 import { useManagedAssets } from "../../providers/ManagedAssetsProvider";
 import {
@@ -42,7 +42,6 @@ import {
 import { useRegime, type Regime } from "../../providers/RegimeProvider";
 
 import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
-import { useProcessing } from "../../providers/ProcessingProvider";
 
 import {
     createCreateNewProjectMenuItem,
@@ -52,9 +51,7 @@ import {
     createProcessFileMenuItem,
 } from "../../config/systemMenuItems";
 
-import { Button } from "../../components/common/button/Button";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
-import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { SceneManager } from "../../features/viewer/components/scene-manager/SceneManager";
 
@@ -238,7 +235,7 @@ export default function ViewerPage() {
         deconstruct();
     }, [regime, molstarLoading]);
 
-    // Render.
+    // Render the component.
     return (
         <div className="viewer">
             <div className="viewer-content">
@@ -253,7 +250,7 @@ export default function ViewerPage() {
                     isMolstarExpanded={molstarExpanded}
                     isMolstarLoading={molstarLoading}
                 />
-                <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
+                <main style={{ flex: 1, padding: "0.5em" }}>
                     <div
                         ref={parentRef}
                         style={{
@@ -268,9 +265,7 @@ export default function ViewerPage() {
 }
 
 function createCustomMenuItems(
-    showDialogue: <T = void>(
-        options: DialogueProps<T>,
-    ) => Promise<T | undefined>,
+    showDialogue: ShowDialogueType,
     loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
     handleBlankProject: () => void,
 ) {
@@ -493,6 +488,7 @@ function createEditRootMenuItem(
 
     return edit;
 }
+
 async function loadDefaultMVSJFile(setRegime: (regime: Regime) => void) {
     const response = await fetch(
         "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",

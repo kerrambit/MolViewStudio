@@ -23,10 +23,12 @@ interface StackedDialogue {
     resolve: (value?: any) => void;
 }
 
+export type ShowDialogueType = <T = void>(
+    options: DialogueProps<T>,
+) => Promise<T | undefined>;
+
 export type DialogueContextType = {
-    showDialogue: <T = void>(
-        options: DialogueProps<T>,
-    ) => Promise<T | undefined>;
+    showDialogue: ShowDialogueType;
     closeDialogue: (id: string) => void;
 };
 
