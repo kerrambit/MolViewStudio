@@ -61,12 +61,12 @@ import { SceneManager } from "../../components/scene-manager/SceneManager";
 import { ShowMVSTreeDialogueContent } from "./ShowMVSTreeDialogueContent";
 
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
-import "./Viewer.css";
+import "./ViewerPage.css";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
 
-export function Viewer() {
+export default function ViewerPage() {
     // Use localization.
     const { t } = useTranslation();
 
