@@ -28,7 +28,7 @@ export function SceneManager(props: SceneManagerProps) {
         UiLocalStorageService.SceneManager.getBuilderSidebar(),
     );
 
-    // Render component.
+    // Render the component.
     return (
         <>
             <Sidebar

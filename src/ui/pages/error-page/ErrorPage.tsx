@@ -20,7 +20,7 @@ export const ErrorPage = () => {
         `UI error was caught! The <RouteErrorScreen> component will be shown. Details: <${errorMessage}>.`,
     );
 
-    // Render component.
+    // Render the component.
     return (
         <div
             style={{

@@ -105,7 +105,7 @@ export function AboutDialogueContent({ close }: AboutDialogueContentProps) {
         });
     }, [copyText]);
 
-    // Render component.
+    // Render the component.
     return (
         <div>
             {/* Header. */}
