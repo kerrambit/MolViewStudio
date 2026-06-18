@@ -1,4 +1,4 @@
-.show-mvs-tree-dialogue-content__source-code {
+.preformatted-text {
   background-color: var(--color-white);
   color: var(--color-dark);
   padding: 1.5em;
@@ -12,7 +12,7 @@
   word-break: break-all;
 }
 
-[data-mantine-color-scheme="dark"] .show-mvs-tree-dialogue-content__source-code{
+[data-mantine-color-scheme="dark"] .preformatted-text{
   background-color: var(--color-grey-dark);
   color: var(--color-light);
 }

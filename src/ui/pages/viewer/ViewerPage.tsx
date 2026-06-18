@@ -58,7 +58,7 @@ import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import { SceneManager } from "../../components/scene-manager/SceneManager";
 
-import { ShowMVSTreeDialogueContent } from "./ShowMVSTreeDialogueContent";
+import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import "./ViewerPage.css";

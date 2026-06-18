@@ -1,10 +1,9 @@
 import { useCallback, useState } from "react";
-import { Button } from "../../components/common/button/Button";
-import { useRegime } from "../../providers/RegimeProvider";
+import { Button } from "../../../components/common/button/Button";
+import { useRegime } from "../../../providers/RegimeProvider";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
-import { pushWarningNotification } from "../../services/NotificationService";
-
-import "./ShowMVSTreeDialogueContent.css";
+import { pushWarningNotification } from "../../../services/NotificationService";
+import { PreformattedText } from "../../../components/common/preformatted-text/PreformattedText";
 
 interface ShowMVSTreeDialogueContentProps {
     close: () => void;
@@ -38,26 +37,26 @@ export function ShowMVSTreeDialogueContent({
         return null;
     }
 
-    // Render component.
+    // Render the component.
     return (
         <div
             style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "16px",
+                gap: "1em",
             }}
         >
             {/* Preformatted text of MVS tree. */}
-            <pre className="show-mvs-tree-dialogue-content__source-code">
+            <PreformattedText>
                 {MVSData.toPrettyString(regime.stateTree)}
-            </pre>
+            </PreformattedText>
 
             {/* Buttons. */}
             <div
                 style={{
                     display: "flex",
                     justifyContent: "center",
-                    gap: "16px",
+                    gap: "2em",
                     paddingTop: "1em",
                 }}
             >
