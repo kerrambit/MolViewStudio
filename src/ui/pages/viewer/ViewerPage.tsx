@@ -56,12 +56,13 @@ import { Button } from "../../components/common/button/Button";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
 import { Sidebar } from "../../components/common/sidebar/Sidebar";
 import { BroomIcon } from "../../components/icons/BroomIcon";
-import { SceneManager } from "../../components/scene-manager/SceneManager";
+import { SceneManager } from "../../features/viewer/components/scene-manager/SceneManager";
 
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import "./ViewerPage.css";
+import { ProcessingJobs } from "../../features/viewer/components/processing-manager/ProcessingJobs";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -79,13 +80,6 @@ export default function ViewerPage() {
 
     // Use assets.
     const { getAllAssets, getAllLocalAssets, clearAssets } = useManagedAssets();
-
-    // Use processing.
-    const { jobs, clearJob } = useProcessing();
-
-    // Variables for processing sidebar.
-    const jobsList = Object.values(jobs);
-    const volumeSidebarVisible = jobsList.length > 0;
 
     // Use regime to control the current regime of the application.
     const { regime, setRegime } = useRegime();
@@ -254,71 +248,11 @@ export default function ViewerPage() {
                     overlayProps={{ radius: "sm", blur: 2 }}
                     loaderProps={{ type: "oval" }}
                 />
-                {volumeSidebarVisible && (
-                    <Sidebar
-                        style={{
-                            gap: ".5em",
-                            padding: ".5em",
-                            display: "flex",
-                            flexDirection: "column",
-                        }}
-                    >
-                        <Text size="xl" fw={520}>
-                            Processing Jobs
-                        </Text>
-
-                        {jobsList.map((job) => (
-                            <div
-                                key={job.jobId}
-                                style={{
-                                    border: "1px solid var(--color-grey-light)",
-                                    padding: "0.5em",
-                                    borderRadius: "6px",
-                                    marginBottom: "0.5em",
-                                }}
-                            >
-                                <strong>
-                                    {job.file?.name || "Processing File..."}
-                                </strong>
-
-                                <div
-                                    style={{
-                                        margin: "5px 0",
-                                        fontSize: "0.9em",
-                                    }}
-                                >
-                                    {job.status === "running" &&
-                                        `Processing... ${job.progress}%`}
-
-                                    {job.status === "success" && (
-                                        <span style={{ color: "green" }}>
-                                            Finished!
-                                        </span>
-                                    )}
-
-                                    {job.status === "error" && (
-                                        <span style={{ color: "red" }}>
-                                            Error: {job.errorMessage}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <Button
-                                    size="small"
-                                    onClick={() => clearJob(job.jobId)}
-                                >
-                                    {job.status === "running"
-                                        ? "Hide Job"
-                                        : "Close"}
-                                </Button>
-                            </div>
-                        ))}
-                    </Sidebar>
-                )}
+                <ProcessingJobs />
                 <SceneManager
                     isMolstarExpanded={molstarExpanded}
                     isMolstarLoading={molstarLoading}
-                ></SceneManager>
+                />
                 <main style={{ flex: 1, padding: "0.5em", minHeight: 0 }}>
                     <div
                         ref={parentRef}
