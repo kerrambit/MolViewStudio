@@ -39,6 +39,7 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
             <TextInput
                 label="Camera position"
                 value={cameraPositionString}
+                onChange={() => {}}
                 title="Camera position. Cannot edit this value!"
                 variant="filled"
                 rightSection={
@@ -68,6 +69,7 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
             <TextInput
                 label="Up"
                 value={cameraUpString}
+                onChange={() => {}}
                 title="Camera up vector. Cannot edit this value!"
                 variant="filled"
                 rightSection={
@@ -97,6 +99,7 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
             <TextInput
                 label="Target"
                 value={cameraTargetString}
+                onChange={() => {}}
                 title="Camera target. Cannot edit this value!"
                 variant="filled"
                 rightSection={
