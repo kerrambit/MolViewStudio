@@ -4,11 +4,14 @@ import { UnstyledTextArea } from "../../../../../components/common/input/Unstyle
 import { useRegime } from "../../../../../providers/RegimeProvider";
 
 export function StoryOptions() {
+    // Use regime.
     const { regime, setRegime } = useRegime();
 
+    // View metadata.
     const metadata =
         regime.kind === "viewing" ? regime.stateTree?.metadata : undefined;
 
+    // Handler for change of metadata from UI.
     const handleUpdateMetadata = (
         key: "title" | "description",
         value: string | undefined,
@@ -44,14 +47,15 @@ export function StoryOptions() {
         });
     };
 
+    // Render the component.
     return (
         <div>
             <Text size="xl">Title</Text>
             <UnstyledTextInput
                 value={metadata?.title}
                 placeholder="Enter title of your story..."
-                bold={true}
                 tooltip={metadata?.title}
+                bold={true}
                 onValueChange={(newTitle) =>
                     handleUpdateMetadata("title", newTitle)
                 }

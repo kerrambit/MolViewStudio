@@ -40,6 +40,7 @@ export function ViewOptionsDialogueContent({
     // Use regime.
     const { regime } = useRegime();
 
+    // Use apperance.
     const { colorScheme } = useAppearance();
 
     // Memoized view.
@@ -51,7 +52,6 @@ export function ViewOptionsDialogueContent({
     }, [regime, viewKey]);
 
     // All view properies in the View Option dialogue.
-
     const [lingerDuration, setLingerDuration] = useState<number>(
         view?.metadata.linger_duration_ms ?? 5000,
     );
@@ -78,7 +78,7 @@ export function ViewOptionsDialogueContent({
         view?.metadata.description,
     );
 
-    // Render.
+    // Render the component.
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1em" }}>
             <div

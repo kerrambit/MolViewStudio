@@ -121,7 +121,7 @@ export function ViewCard(props: ViewCardProps) {
         "viewCard--active",
     ]);
 
-    // Render compoment.
+    // Render the compoment.
     return (
         <div className={viewCardClasses} style={{ gap: "0.5em" }}>
             {/* Header. */}

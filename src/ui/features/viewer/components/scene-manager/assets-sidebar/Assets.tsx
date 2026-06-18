@@ -1,8 +1,7 @@
 import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
 import { Button } from "../../../../../components/common/button/Button";
-import { Text } from "@mantine/core";
+import { Text, TextInput } from "@mantine/core";
 import { useState } from "react";
-import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { EditActionIcon } from "../../../../../components/common/actionables/actions-icons/EditActionIcon";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
@@ -20,10 +19,13 @@ import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspace
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 
 export function Assets() {
+    // Storing current remote url in UI,
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
 
+    // Use dialogue.
     const { showDialogue } = useDialogue();
 
+    // Use managed assets.
     const {
         addLocalAsset,
         addRemoteAsset,
@@ -33,9 +35,11 @@ export function Assets() {
         editRelativePathOfLocalAsset,
     } = useManagedAssets();
 
+    // Use workspace management.
     const { handleFileAsProcessingOfIndependentAsset } =
         useWorkspaceManagement();
 
+    // Render the component.
     return (
         <div>
             <div>
@@ -189,16 +193,18 @@ export function Assets() {
                         gap: "0.5em",
                     }}
                 >
-                    <UnstyledTextInput
+                    <TextInput
                         value={remoteUrl}
+                        title="Add new remote asset."
+                        aria-label="Add new remote asset."
                         placeholder="https://example.com/file.bcif"
-                        onBlur={setRemoteUrl}
-                        onValueChange={setRemoteUrl}
-                        canBeEmpty={true}
+                        onChange={(event) =>
+                            setRemoteUrl(event.currentTarget.value)
+                        }
                         style={{
                             flexGrow: 1,
                         }}
-                    ></UnstyledTextInput>
+                    ></TextInput>
                     <Button
                         variant="primary"
                         size="small"
@@ -209,7 +215,7 @@ export function Assets() {
                                 setRemoteUrl("");
                             }
                         }}
-                        tooltip="Add new remote accet."
+                        tooltip="Add new remote asset."
                     >
                         Add
                     </Button>
