@@ -5,9 +5,9 @@ export interface InactiveViewCardProps {
     onClick?: () => void;
 }
 
-import { Button } from "../common/button/Button";
-import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
-import { Thumbnail } from "../common/thumbnail/Thumbnail";
+import { Button } from "../../../../../components/common/button/Button";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
 import "./ViewCard.css";
 
 export function InactiveViewCard(props: InactiveViewCardProps) {

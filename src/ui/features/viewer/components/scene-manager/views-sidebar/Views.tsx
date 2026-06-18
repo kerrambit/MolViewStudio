@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useRegime } from "../../../providers/RegimeProvider";
-import { ViewCard } from "../../view-card/ViewCard";
+import { useRegime } from "../../../../../providers/RegimeProvider";
+import { ViewCard } from "../view-card/ViewCard";
 import type { Subscription } from "rxjs";
-import { InactiveViewCard } from "../../view-card/InactiveViewCard";
-import { CreateViewCard } from "../../view-card/CreateViewCard";
-import { useDialogue } from "../../../providers/DialogueProvider";
+import { InactiveViewCard } from "../view-card/InactiveViewCard";
+import { CreateViewCard } from "../view-card/CreateViewCard";
+import { useDialogue } from "../../../../../providers/DialogueProvider";
 import {
     ViewOptionsDialogueContent,
     type ViewOptionsDialogueContentReturnType,
 } from "./ViewOptionsDialogueContent";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
-import { pushErrorNotification } from "../../../services/NotificationService";
-import { loggerUi } from "../../../services/UiLoggingService";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
+import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { pushErrorNotification } from "../../../../../services/NotificationService";
+import { loggerUi } from "../../../../../services/UiLoggingService";
+import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
 import { DeleteViewDialogueContent } from "./DeleteViewDialogueContent";
 import {
     addEmptySnapshotToTree,
@@ -33,7 +33,7 @@ import {
     updateSnapshotCameraInManager,
     updateSnapshotDescriptionInManager,
     updateSnapshotTitleInManager,
-} from "../../../lib/molstar";
+} from "../../../../../lib/molstar";
 
 /**
  * Properties for Views component.

@@ -9,11 +9,11 @@ import {
     Typography,
 } from "@mantine/core";
 import ReactMarkdown from "react-markdown";
-import { Button } from "../../common/button/Button";
-import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
-import { useRegime } from "../../../providers/RegimeProvider";
-import type { HexColor } from "../../../lib/molstar";
-import { useAppearance } from "../../../providers/AppearanceProvider";
+import { Button } from "../../../../../components/common/button/Button";
+import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
+import { useRegime } from "../../../../../providers/RegimeProvider";
+import type { HexColor } from "../../../../../lib/molstar";
+import { useAppearance } from "../../../../../providers/AppearanceProvider";
 
 export interface ViewOptionsDialogueContentReturnType {
     lingerDuration: number;

@@ -1,10 +1,10 @@
 import { TextInput } from "@mantine/core";
-import { CopyActionIcon } from "../../../components/common/actionables/actions-icons/CopyActionIcon";
+import type { CameraState } from "../../../../../lib/molstar";
+import { CopyActionIcon } from "../../../../../components/common/actionables/actions-icons/CopyActionIcon";
 import {
     pushInfoNotification,
     pushWarningNotification,
-} from "../../../services/NotificationService";
-import type { CameraState } from "../../../lib/molstar";
+} from "../../../../../services/NotificationService";
 
 interface CameraTextInputGroupProps {
     cameraState: CameraState | undefined;

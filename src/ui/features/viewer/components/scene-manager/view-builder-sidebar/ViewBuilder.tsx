@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { useRegime } from "../../../providers/RegimeProvider";
-import { SegmentedController } from "../../common/segmented-controller/SegmentedController";
+import { useRegime } from "../../../../../providers/RegimeProvider";
+import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import {
     Text,
     Checkbox,
@@ -12,23 +12,23 @@ import {
     Group,
 } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
-import { CloseActionIcon } from "../../common/actionables/actions-icons/CloseActionIcon";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
+import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
+import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import {
     pushErrorNotification,
     pushWarningNotification,
-} from "../../../services/NotificationService";
-import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
-import { useAppearance } from "../../../providers/AppearanceProvider";
-import { loggerUi } from "../../../services/UiLoggingService";
+} from "../../../../../services/NotificationService";
+import { getExtensionFromFileName } from "../../../../../utils/fileDataUtils";
+import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { useAppearance } from "../../../../../providers/AppearanceProvider";
+import { loggerUi } from "../../../../../services/UiLoggingService";
 import {
     getAllParserTypes,
     getAllSupportedAssetsParsers,
     getAssetConfig,
     isAssetSupported,
-} from "../../../config/assetsDefinitions";
+} from "../../../../../config/assetsDefinitions";
 import {
     addDownloadNodeToRoot,
     getAllDownloadUrlsFromSnapshot,
@@ -36,7 +36,7 @@ import {
     reloadMolstarAndRestoreIndex,
     removeDownloadNodeFromRoot,
     updateNodeParamInAssetBranch,
-} from "../../../lib/molstar";
+} from "../../../../../lib/molstar";
 
 /**
  * The unified View-Model for volume parameters.

@@ -1,7 +1,7 @@
 import { Text } from "@mantine/core";
-import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
-import { UnstyledTextArea } from "../../common/input/UnstyledTextArea";
-import { useRegime } from "../../../providers/RegimeProvider";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { UnstyledTextArea } from "../../../../../components/common/input/UnstyledTextArea";
+import { useRegime } from "../../../../../providers/RegimeProvider";
 
 export function StoryOptions() {
     const { regime, setRegime } = useRegime();

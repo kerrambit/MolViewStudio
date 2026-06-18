@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { SegmentedController } from "../common/segmented-controller/SegmentedController";
-import { Sidebar } from "../common/sidebar/Sidebar";
-import { useRegime } from "../../providers/RegimeProvider";
+import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
+import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
+import { useRegime } from "../../../../providers/RegimeProvider";
 import { StoryOptions } from "./story-options/StoryOptions";
 import { Assets } from "./assets-sidebar/Assets";
 import { Views } from "./views-sidebar/Views";
 import { ViewBuilder } from "./view-builder-sidebar/ViewBuilder";
-import { UiLocalStorageService } from "../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;

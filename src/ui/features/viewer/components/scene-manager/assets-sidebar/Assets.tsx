@@ -1,12 +1,12 @@
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
-import { Button } from "../../common/button/Button";
+import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
+import { Button } from "../../../../../components/common/button/Button";
 import { Text } from "@mantine/core";
 import { useState } from "react";
-import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
-import { EditActionIcon } from "../../common/actionables/actions-icons/EditActionIcon";
-import { DeleteActionIcon } from "../../common/actionables/actions-icons/DeleteActionIcon";
-import { ActionableListItem } from "../../common/actionables/ActionableListItem";
-import { useDialogue } from "../../../providers/DialogueProvider";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { EditActionIcon } from "../../../../../components/common/actionables/actions-icons/EditActionIcon";
+import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
+import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
+import { useDialogue } from "../../../../../providers/DialogueProvider";
 import {
     AddAssetDialogueContent,
     type AddAssetDialogueReturnType,
@@ -15,9 +15,9 @@ import {
     EditAssetDialogueContent,
     type EditAssetDialogueReturnType,
 } from "./EditAssetDialogueContent";
-import { pushErrorNotification } from "../../../services/NotificationService";
-import { useWorkspaceManagement } from "../../../features/workspace/hooks/useWorkspaceManagement";
-import { ActionableList } from "../../common/actionables/ActionableList";
+import { pushErrorNotification } from "../../../../../services/NotificationService";
+import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
+import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 
 export function Assets() {
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);

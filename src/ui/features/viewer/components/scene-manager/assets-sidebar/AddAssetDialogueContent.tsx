@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Checkbox, Collapse, Text } from "@mantine/core";
-import { AllFiles } from "../../../../types/fileFilters";
-import { Button } from "../../common/button/Button";
-import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
+import { AllFiles } from "../../../../../../types/fileFilters";
+import { Button } from "../../../../../components/common/button/Button";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import {
     checkOffersProcessing,
     checkRequiresProcessing,
-} from "../../../config/assetsDefinitions";
-import { pushWarningNotification } from "../../../services/NotificationService";
+} from "../../../../../config/assetsDefinitions";
+import { pushWarningNotification } from "../../../../../services/NotificationService";
 
 export interface AddAssetDialogueReturnType {
     file: FileData;

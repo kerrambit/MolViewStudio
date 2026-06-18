@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { Button } from "../common/button/Button";
-import { UnstyledTextInput } from "../common/input/UnstyledTextInput";
-import { buildCSSClassString } from "../../utils/cssClassBuilder";
-import { CameraTextInputGroup } from "../../features/viewer/components/CameraTextInputGroup";
-import { DeleteActionIcon } from "../common/actionables/actions-icons/DeleteActionIcon";
-import { ChevronUpActionIcon } from "../common/actionables/actions-icons/ChevronUpActionIcon";
-import { ChevronDownActionIcon } from "../common/actionables/actions-icons/ChevronDownActionIcon";
-import { RevertActionIcon } from "../common/actionables/actions-icons/RevertActionIcon";
-import { CopyActionIcon } from "../common/actionables/actions-icons/CopyActionIcon";
-import { ActionableTile } from "../common/actionables/ActionableTile";
-import { Thumbnail } from "../common/thumbnail/Thumbnail";
-import { pushWarningNotification } from "../../services/NotificationService";
+import { Button } from "../../../../../components/common/button/Button";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { buildCSSClassString } from "../../../../../utils/cssClassBuilder";
+import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
+import { ChevronUpActionIcon } from "../../../../../components/common/actionables/actions-icons/ChevronUpActionIcon";
+import { ChevronDownActionIcon } from "../../../../../components/common/actionables/actions-icons/ChevronDownActionIcon";
+import { RevertActionIcon } from "../../../../../components/common/actionables/actions-icons/RevertActionIcon";
+import { CopyActionIcon } from "../../../../../components/common/actionables/actions-icons/CopyActionIcon";
+import { ActionableTile } from "../../../../../components/common/actionables/ActionableTile";
+import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
+import { pushWarningNotification } from "../../../../../services/NotificationService";
 import { CameraStatus } from "./CameraStatus";
 import { Color } from "molstar/lib/mol-util/color";
 import {
@@ -23,9 +22,10 @@ import {
     type CameraState,
     type HexColor,
     type ViewMetadata,
-} from "../../lib/molstar";
+} from "../../../../../lib/molstar";
 
 import "./ViewCard.css";
+import { CameraTextInputGroup } from "./CameraTextInputGroup";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;

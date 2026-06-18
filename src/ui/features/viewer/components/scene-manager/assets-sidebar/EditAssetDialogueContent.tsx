@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Text } from "@mantine/core";
-import { UnstyledTextInput } from "../../common/input/UnstyledTextInput";
-import { Button } from "../../common/button/Button";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { Button } from "../../../../../components/common/button/Button";
 
 export interface EditAssetDialogueReturnType {
     relativePath: string;
