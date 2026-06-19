@@ -19,11 +19,11 @@ interface SegmentedControllerProps<T extends string = string> {
 }
 
 export function SegmentedController<T extends string = string>(
-    props: SegmentedControllerProps<T>
+    props: SegmentedControllerProps<T>,
 ) {
     const ref = useRef<HTMLDivElement>(null);
     const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
-        "horizontal"
+        "horizontal",
     );
 
     useEffect(() => {
@@ -71,26 +71,17 @@ export function SegmentedController<T extends string = string>(
                     root: {
                         display: "flex",
                         width: "100%",
-                        background:
+                        border: `1px solid ${
                             colorScheme === "dark"
-                                ? "var(--color-dark)"
-                                : "var(--mantine-primary-color-1)",
-                    },
-                    control: {
-                        justifyContent: "center",
-                        alignItems: "center",
+                                ? "var(--mantine-color-dark-4)"
+                                : "var(--mantine-color-gray-3)"
+                        }`,
                     },
                     indicator: {
                         background:
                             colorScheme === "dark"
-                                ? "var(--mantine-primary-color-6)"
-                                : "var(--mantine-primary-color-4)",
-                    },
-                    label: {
-                        color:
-                            colorScheme === "dark"
-                                ? "var(--color-light)"
-                                : "var(--color-dark)",
+                                ? "var(--mantine-primary-color-7)"
+                                : "var(--mantine-primary-color-3)",
                     },
                 }}
             />

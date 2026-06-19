@@ -1,13 +1,13 @@
 import { Navigate, type RouteObject } from "react-router-dom";
-import Home from "../pages/home/Home.tsx";
-import Settings from "../pages/settings/Settings.tsx";
-import { Viewer } from "../pages/viewer/Viewer.tsx";
+import HomePage from "../pages/home-page/HomePage.tsx";
+import SettingsPage from "../pages/settings/SettingsPage.tsx";
+import ViewerPage from "../pages/viewer/ViewerPage.tsx";
 import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
-import { UiSettings } from "../pages/settings/UiSettings.tsx";
-import { LanguageSettings } from "../pages/settings/LanguageSettings.tsx";
+import UiSettingsPage from "../pages/settings/UiSettingsPage.tsx";
+import LanguageSettingsPage from "../pages/settings/LanguageSettingsPage.tsx";
 import { MainLayout } from "../layouts/MainLayout.tsx";
-import { ServerSettings } from "../pages/settings/ServerSettings.tsx";
-import { ErrorBoundary } from "../components/error-boundary/ErrorBoundary.tsx";
+import ServerSettingsPage from "../pages/settings/ServerSettingsPage.tsx";
+import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -17,55 +17,55 @@ const routes: RouteObject[] = [
     {
         path: "/",
         Component: MainLayout,
-        errorElement: <ErrorBoundary />,
+        errorElement: <ErrorPage />,
         children: [
-            { path: "home", Component: Home },
-            { path: "viewer", Component: Viewer },
+            { path: "home", Component: HomePage },
+            { path: "viewer", Component: ViewerPage },
         ],
     },
 
     {
         path: "/settings",
         Component: BackNavigationLayout,
-        errorElement: <ErrorBoundary />,
+        errorElement: <ErrorPage />,
         children: [
-            { index: true, Component: Settings },
+            { index: true, Component: SettingsPage },
             {
                 path: "general",
                 children: [
-                    { path: "language", Component: LanguageSettings },
-                    { path: "ui", Component: UiSettings },
-                    { path: "notifications", Component: Settings },
-                    { path: "help", Component: Settings },
+                    { path: "language", Component: LanguageSettingsPage },
+                    { path: "ui", Component: UiSettingsPage },
+                    { path: "notifications", Component: SettingsPage },
+                    { path: "help", Component: SettingsPage },
                 ],
             },
             {
                 path: "account",
-                Component: Settings,
-                children: [{ index: true, Component: Settings }],
+                Component: SettingsPage,
+                children: [{ index: true, Component: SettingsPage }],
             },
             {
                 path: "server",
-                Component: ServerSettings,
-                children: [{ index: true, Component: ServerSettings }],
+                Component: ServerSettingsPage,
+                children: [{ index: true, Component: ServerSettingsPage }],
             },
             {
                 path: "account",
-                Component: Settings,
-                children: [{ index: true, Component: Settings }],
+                Component: SettingsPage,
+                children: [{ index: true, Component: SettingsPage }],
             },
             {
                 path: "formats",
                 children: [
-                    { path: "input", Component: Settings },
-                    { path: "export", Component: Settings },
+                    { path: "input", Component: SettingsPage },
+                    { path: "export", Component: SettingsPage },
                 ],
             },
             {
                 path: "processing",
                 children: [
-                    { path: "general", Component: Settings },
-                    { path: "per-format", Component: Settings },
+                    { path: "general", Component: SettingsPage },
+                    { path: "per-format", Component: SettingsPage },
                 ],
             },
         ],

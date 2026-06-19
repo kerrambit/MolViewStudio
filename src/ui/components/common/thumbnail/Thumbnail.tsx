@@ -18,7 +18,6 @@ export function Thumbnail(props: ThumbnailProps) {
             src={props.src}
             alt={props.alt}
             style={{
-                // Base styles
                 cursor: props.onClick ? "pointer" : "default",
                 maxWidth: "90%",
                 borderRadius: "6px",

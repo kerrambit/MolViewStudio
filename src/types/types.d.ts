@@ -135,3 +135,53 @@ interface BuildInformation {
     molstarVersion: string;
     volsegtoolsVersion: string;
 }
+
+/**
+ * Type Url based on Molstar's Asset.Url type.
+ */
+type Url = {
+    kind: "url";
+    id: UUID;
+    url: string;
+    title?: string;
+    body?: string;
+    headers?: Record<string, string>;
+};
+
+/**
+ * Object mirroring Assets as managed by Molstar Asset Manager.
+ */
+interface ManagedAsset {
+    /**
+     * Id of the managed assset, which does not change through the app lifetime.
+     */
+    id: string;
+
+    /**
+     * All managed assets are of type `Url`, that is because remotes are URL always,
+     * and local files are converted into assets in the form of `arcp` protocol and thus available via URL, too.
+     */
+    asset: Url;
+
+    /**
+     * Relative path inside MVSX archive. E.g. "volume.bcif" or "volumes/volume.bcif".
+     * For `remote` ManagedAsset it is same as `asset.url`.
+     */
+    relativePath: string;
+
+    /**
+     * Mirrors Molstar Asset Manager function `set()` and its parameter `isStatic` (true value is "local").
+     */
+    tag: "local" | "remote";
+
+    /**
+     * Only the name of the file with its extension.
+     * For `remote` ManagedAsset it is same as `asset.url`.
+     */
+    name: string;
+
+    /**
+     * Number of times this asset is referenced across all views.
+     */
+    useCount: number;
+}

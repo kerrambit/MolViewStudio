@@ -1,9 +1,0 @@
-.avatar {
-    /* border-style: dashed;
-    border-color: #1779bb; */
-    cursor: pointer !important;
-}
-
-.avatar:active:not(:disabled) {
-  transform: translateY(2px);
-}

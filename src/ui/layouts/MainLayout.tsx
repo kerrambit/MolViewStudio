@@ -1,7 +1,8 @@
 import { Outlet } from "react-router-dom";
-import { Footer } from "../components/footer/Footer";
-import { Header } from "../components/header/Header";
-import { MenuProvider } from "../services/MenuProvider";
+import { Footer } from "../components/common/footer/Footer";
+import { Header } from "./header/Header";
+import { MenuProvider } from "../providers/MenuProvider";
+import { ServerStatus } from "../features/system/components/server-status/ServerStatus";
 
 import "./MainLayout.css";
 
@@ -16,7 +17,9 @@ export function MainLayout() {
                     <Outlet />
                 </div>
                 <div className="layout__footer">
-                    <Footer />
+                    <Footer>
+                        <ServerStatus />
+                    </Footer>
                 </div>
             </div>
         </MenuProvider>

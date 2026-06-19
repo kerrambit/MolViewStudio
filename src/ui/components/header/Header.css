@@ -1,9 +1,0 @@
-.header__right-side {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    gap: 2em;
-    padding-right: 0.5em;
-    /* border-style: dashed; */
-    /* border-color: #177ccf; */
-}
