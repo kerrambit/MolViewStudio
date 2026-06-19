@@ -80,8 +80,8 @@ export function createMVSBlob(
 /**
  * Exports `stateTree` with possible local `assets` in the form of MVS.
  * Opens a file explorer for user to choose file location.
- * @param stateTree state tree to export
- * @param assets assets
+ * @param stateTree state tree to export (contains valid relative paths as assets)
+ * @param localAssets assets
  * @return Error if there is an internal error in Molstar asset cache, othewise it returns true
  */
 export async function exportStateTree(
@@ -540,6 +540,13 @@ export async function loadMVSJFile(index: string): Promise<
     }
 }
 
+/**
+ * Reloads Molstar with given `updated_tree` and restore index of view.
+ * @param viewKey key of the view which has been edited
+ * @param assets assets from `ManagedAssets` manager
+ * @param updatedTree updated tree
+ * @returns undefined or Error of any problem occurs
+ */
 export async function reloadMolstarAndRestoreIndex(
     viewKey: string,
     assets: ManagedAsset[],

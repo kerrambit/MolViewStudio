@@ -23,9 +23,7 @@ interface MolstarProps {
  * Initializes `PluginUIContext` targeted into `container`, based on singleton principle.
  * @param container HTML element into which the plugin is mounted
  * @param props configuration properties
- * @param snapshot optional state snapshot to restore a previous session
- * @param assets optional assets to restore a previous session
- * @param snapshotManagerState optional state of snapshot manager to restore previous session
+ * @param previousSession optional state of snapshot manager, assets and Molstar's snapshot to restore previous session
  * @returns initialized `PluginUIContext` instance
  */
 export async function initMolstar(

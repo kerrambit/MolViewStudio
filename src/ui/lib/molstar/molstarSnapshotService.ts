@@ -91,8 +91,6 @@ export function updateSnapshotBackgroundColorInManager(
         entry.snapshot.canvas3d?.props?.renderer.backgroundColor &&
         backgroundColor
     ) {
-        // const cleanHex = backgroundColor.replace("#", "");
-        // const numericColor = parseInt(cleanHex, 16) as Color;
         const numericColor = convertHexStringToColor(backgroundColor);
         entry.snapshot.canvas3d.props.renderer.backgroundColor = numericColor;
     }
