@@ -257,17 +257,17 @@ export function extractUrlsFromMVS(mvsData: MVSData): Set<string> {
         snapshots = mvsData.snapshots;
     }
 
-    const remoteUrls = new Set<string>();
+    const urls = new Set<string>();
     const normalizePath = (path: string) =>
         path.startsWith("./") ? path.slice(2) : path;
 
     const traverseNode = (node: any) => {
         if (node.params) {
             if (typeof node.params.url === "string") {
-                remoteUrls.add(normalizePath(node.params.url));
+                urls.add(normalizePath(node.params.url));
             }
             if (typeof node.params.uri === "string") {
-                remoteUrls.add(normalizePath(node.params.uri));
+                urls.add(normalizePath(node.params.uri));
             }
         }
 
@@ -284,7 +284,7 @@ export function extractUrlsFromMVS(mvsData: MVSData): Set<string> {
         }
     });
 
-    return remoteUrls;
+    return urls;
 }
 
 /**
