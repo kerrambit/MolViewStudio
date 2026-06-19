@@ -53,7 +53,7 @@ export function ThemeSelector() {
                         title={`Choose color theme "${niceColorThemeNames[theme] || theme}".`}
                         style={{
                             padding: "1em",
-                            borderRadius: "6px",
+                            borderRadius: "12px",
                             cursor: "pointer",
                             display: "flex",
                             justifyContent: "space-between",
