@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Text } from "@mantine/core";
 import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
 import { useRegime } from "../../../../providers/RegimeProvider";
@@ -37,6 +38,10 @@ export function SceneManager(props: SceneManagerProps) {
                     padding: ".5em",
                 }}
             >
+                <Text size="xl" fw={520}>
+                    Scene Manager
+                </Text>
+
                 {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
                 {!props.isMolstarExpanded && (
                     <SegmentedController<TabType>
