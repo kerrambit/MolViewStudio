@@ -93,7 +93,7 @@ export type Session = {
  */
 export type LoadMVSXFileResult = {
     stateTree: MVSData;
-    views: ViewMetadata[]; // TODO: probably remove this
+    views: ViewMetadata[];
     assets: ManagedAsset[];
     sourceUrl: string;
 };
@@ -103,7 +103,7 @@ export type LoadMVSXFileResult = {
  */
 export type LoadFromFileResult = {
     stateTree: MVSData_States;
-    views: ViewMetadata[]; // TODO: probably remove this
+    views: ViewMetadata[];
     assets: ManagedAsset[];
     sourceUrl: string;
 };

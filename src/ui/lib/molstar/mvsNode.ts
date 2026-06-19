@@ -155,7 +155,7 @@ export function removeDownloadNodeFromRoot(
  * @returns modified node
  */
 export function addDownloadNodeToRoot(
-    rootNode: any,
+    rootNode: MVSTree,
     assetIdToAdd: string,
     extension: string,
     extensionParserRecord: Record<string, string>,
@@ -279,7 +279,7 @@ export function updateNodeParamInAssetBranch(
  * @returns extracted information
  */
 export function getVolumeParamsForAsset(
-    rootNode: any,
+    rootNode: MVSTree,
     assetId: string,
     defaultValues: {
         format: string;
@@ -411,20 +411,33 @@ export function replaceNodeIdsWithMolstarUrls(
 ): any {
     let newParams = node.params;
 
-    if (newParams && typeof newParams.url === "string") {
-        const currentId = newParams.url;
-        const matchedAsset = assets.find((a) => a.id === currentId);
+    if (newParams) {
+        if (typeof newParams.url === "string") {
+            const currentId = newParams.url;
+            const matchedAsset = assets.find((a) => a.id === currentId);
 
-        if (matchedAsset) {
-            const internalUrl =
-                typeof matchedAsset.asset === "string"
-                    ? matchedAsset.asset
-                    : matchedAsset.asset.url;
+            if (matchedAsset) {
+                newParams = {
+                    ...newParams,
+                    url:
+                        typeof matchedAsset.asset === "string"
+                            ? matchedAsset.asset
+                            : matchedAsset.asset.url,
+                };
+            }
+        } else if (typeof newParams.uri === "string") {
+            const currentId = newParams.uri;
+            const matchedAsset = assets.find((a) => a.id === currentId);
 
-            newParams = {
-                ...newParams,
-                url: internalUrl,
-            };
+            if (matchedAsset) {
+                newParams = {
+                    ...newParams,
+                    uri:
+                        typeof matchedAsset.asset === "string"
+                            ? matchedAsset.asset
+                            : matchedAsset.asset.url,
+                };
+            }
         }
     }
 
