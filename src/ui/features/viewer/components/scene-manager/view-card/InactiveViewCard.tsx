@@ -1,3 +1,9 @@
+import { Button } from "../../../../../components/common/button/Button";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
+
+import "./ViewCard.css";
+
 export interface InactiveViewCardProps {
     title?: string;
     thumbnail?: Base64URLString;
@@ -5,12 +11,8 @@ export interface InactiveViewCardProps {
     onClick?: () => void;
 }
 
-import { Button } from "../../../../../components/common/button/Button";
-import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
-import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
-import "./ViewCard.css";
-
 export function InactiveViewCard(props: InactiveViewCardProps) {
+    // Render the component.
     return (
         <div className="viewCard">
             <div

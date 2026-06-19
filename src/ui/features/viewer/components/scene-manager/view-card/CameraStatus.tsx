@@ -19,6 +19,7 @@ export function CameraStatus(props: CameraStatusProps) {
         }
     }
 
+    // Render the component.
     return (
         <div
             title={statusText}

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Button } from "../../../../../components/common/button/Button";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../../../../utils/cssClassBuilder";
@@ -11,21 +10,16 @@ import { ActionableTile } from "../../../../../components/common/actionables/Act
 import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
 import { pushWarningNotification } from "../../../../../services/NotificationService";
 import { CameraStatus } from "./CameraStatus";
-import { Color } from "molstar/lib/mol-util/color";
-import {
-    areCameraStatesEqual,
-    getBackgroundColorChangeSubscription,
-    getCanvasScreenshot,
-    toMVSPosition,
-    useLiveCameraState,
-    type Base64Png,
-    type CameraState,
-    type HexColor,
-    type ViewMetadata,
+import { CameraTextInputGroup } from "./CameraTextInputGroup";
+import type {
+    ViewMetadata,
+    CameraState,
+    Base64Png,
+    HexColor,
 } from "../../../../../lib/molstar";
 
 import "./ViewCard.css";
-import { CameraTextInputGroup } from "./CameraTextInputGroup";
+import { useViewCard } from "../../../hooks/useViewCard";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -46,74 +40,14 @@ export interface ViewCardProps {
 }
 
 export function ViewCard(props: ViewCardProps) {
-    // State for the view title.
-    const [currentName, setCurrentName] = useState<string | undefined>(
-        props.metadata.title || "New view...",
-    );
-
-    // State for the view background color.
-    const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
-        HexColor | undefined
-    >(props.metadata.backgroundColor);
-
-    // Subscribe to the change of background color.
-    useEffect(() => {
-        const sub = getBackgroundColorChangeSubscription((color) => {
-            if (color) {
-                const hex = Color.toHexStyle(color);
-                setCurrentBackgroundColor((prev) =>
-                    prev === hex ? prev : hex,
-                );
-            }
-        });
-
-        return () => {
-            if (sub) sub.unsubscribe();
-        };
-    }, []);
-
-    // Propagate async change of color to the parent.
-    useEffect(() => {
-        if (
-            props.onBackgrounColorChange &&
-            currentBackgroundColor &&
-            currentBackgroundColor !== props.metadata.backgroundColor
-        ) {
-            props.onBackgrounColorChange(currentBackgroundColor);
-        }
-    }, [
-        currentBackgroundColor,
-        props.onBackgrounColorChange,
-        props.metadata.backgroundColor,
-    ]);
-
-    // Camera hook.
-    const cameraState = useLiveCameraState();
-
-    // Function to check if the camera has moved with respect to initial camera position.
-    const hasCameraMoved = () => {
-        if (!cameraState || !props.metadata.referenceCamera) {
-            return false;
-        }
-
-        const liveCameraReferenced = {
-            ...cameraState,
-            position: toMVSPosition({
-                position: cameraState.position as any,
-                target: cameraState.target as any,
-                fov: cameraState.fov,
-                mode: cameraState.mode,
-            }),
-        };
-
-        return !areCameraStatesEqual(
-            props.metadata.referenceCamera,
-            liveCameraReferenced,
-        );
-    };
-
-    // Boolean variable storing information if the camera has moved with respect to initial camera position.
-    const isCameraMoved = hasCameraMoved();
+    // Use view card.
+    const {
+        currentName,
+        cameraState,
+        isCameraMoved,
+        handleTitleUpdate,
+        handleCaptureCamera,
+    } = useViewCard(props);
 
     // CSS class builder depends on the active property of view card.
     const viewCardClasses = buildCSSClassString([
@@ -121,7 +55,7 @@ export function ViewCard(props: ViewCardProps) {
         "viewCard--active",
     ]);
 
-    // Render the compoment.
+    // Render the component.
     return (
         <div className={viewCardClasses} style={{ gap: "0.5em" }}>
             {/* Header. */}
@@ -134,25 +68,14 @@ export function ViewCard(props: ViewCardProps) {
                     borderBottom: "1px solid var(--color-grey-light)",
                 }}
             >
-                {/* Title of the view. */}
                 <UnstyledTextInput
                     prefix={`${props.index + 1}. view`}
                     value={currentName}
                     placeholder="Change name for this view."
                     tooltip={currentName}
                     enabled={true}
-                    onValueChange={(newName) => {
-                        setCurrentName(newName);
-                        if (props.onTitleChange) {
-                            props.onTitleChange(newName);
-                        }
-                    }}
-                    onBlur={(newName) => {
-                        setCurrentName(newName);
-                        if (props.onTitleChange) {
-                            props.onTitleChange(newName);
-                        }
-                    }}
+                    onValueChange={handleTitleUpdate}
+                    onBlur={handleTitleUpdate}
                     bold={true}
                 />
 
@@ -166,20 +89,24 @@ export function ViewCard(props: ViewCardProps) {
                 >
                     <ChevronDownActionIcon
                         tooltip="Move this view down."
-                        onClick={() => {}}
-                    ></ChevronDownActionIcon>
-
+                        onClick={() => {
+                            pushWarningNotification(
+                                "Change of order of views is not implemented yet!",
+                            );
+                        }}
+                    />
                     <ChevronUpActionIcon
                         tooltip="Move this view up."
-                        onClick={() => {}}
-                    ></ChevronUpActionIcon>
-
+                        onClick={() => {
+                            pushWarningNotification(
+                                "Change of order of views is not implemented yet!",
+                            );
+                        }}
+                    />
                     <DeleteActionIcon
                         tooltip="Delete this view."
-                        onClick={() => {
-                            if (props.onDelete) props.onDelete();
-                        }}
-                    ></DeleteActionIcon>
+                        onClick={() => props.onDelete?.()}
+                    />
                 </div>
             </div>
 
@@ -194,9 +121,7 @@ export function ViewCard(props: ViewCardProps) {
                     }}
                 >
                     <Thumbnail
-                        onClick={() => {
-                            if (props.onClick) props.onClick();
-                        }}
+                        onClick={() => props.onClick?.()}
                         title="Click to select this view."
                         src={props.metadata.thumbnail}
                         alt={`${props.metadata.title || `${props.index}. view`} - thumbnail`}
@@ -204,10 +129,8 @@ export function ViewCard(props: ViewCardProps) {
                 </div>
             )}
 
-            {/* Camera position. */}
+            {/* Camera position and status. */}
             <CameraTextInputGroup cameraState={cameraState} />
-
-            {/* Camera status. */}
             <CameraStatus
                 doesReferenceCameraExist={
                     props.metadata.referenceCamera !== undefined
@@ -240,34 +163,7 @@ export function ViewCard(props: ViewCardProps) {
                         tooltip="Captures current camera position and saves it."
                         size="small"
                         variant="secondary"
-                        onClick={async () => {
-                            if (props.onCameraSave && cameraState) {
-                                // Retrieve canvas screenshot.
-                                let img: Base64Png | undefined;
-                                try {
-                                    img = await getCanvasScreenshot();
-                                } catch {
-                                    pushWarningNotification(
-                                        "Application could not save the canvas screenshot! The current view will contain no screenshot.",
-                                    );
-                                    img = undefined;
-                                }
-
-                                props.onCameraSave(
-                                    {
-                                        ...cameraState,
-                                        position: toMVSPosition({
-                                            position:
-                                                cameraState.position as any,
-                                            target: cameraState.target as any,
-                                            fov: cameraState.fov,
-                                            mode: cameraState.mode,
-                                        }),
-                                    },
-                                    img,
-                                );
-                            }
-                        }}
+                        onClick={handleCaptureCamera}
                     />
 
                     {/* Revert action icon. */}
@@ -275,22 +171,20 @@ export function ViewCard(props: ViewCardProps) {
                         <ActionableTile>
                             <RevertActionIcon
                                 tooltip="Reverse changes."
-                                onClick={() => {
+                                onClick={() =>
                                     pushWarningNotification(
-                                        `Revert of changes is not implemented yet!`,
-                                    );
-                                }}
-                            ></RevertActionIcon>
+                                        "Revert of changes is not implemented yet!",
+                                    )
+                                }
+                            />
                         </ActionableTile>
 
                         {/* Copy action icon. */}
                         <ActionableTile>
                             <CopyActionIcon
                                 tooltip="Create copy of this view."
-                                onClick={() => {
-                                    if (props.onCopy) props.onCopy();
-                                }}
-                            ></CopyActionIcon>
+                                onClick={() => props.onCopy?.()}
+                            />
                         </ActionableTile>
                     </div>
                 </div>
@@ -309,24 +203,18 @@ export function ViewCard(props: ViewCardProps) {
                         tooltip="Open View Builder sidebar."
                         label="Builder"
                         variant="secondary"
-                        onClick={() => {
-                            if (props.onOpenBuilder) {
-                                props.onOpenBuilder(props.metadata.key!);
-                            }
-                        }}
+                        onClick={() =>
+                            props.onOpenBuilder?.(props.metadata.key!)
+                        }
                     />
-
-                    {/* View Options button. */}
                     <Button
                         size="small"
                         tooltip="Open View Options dialogue."
                         label="Options"
                         variant="secondary"
-                        onClick={() => {
-                            if (props.onOpenOptions) {
-                                props.onOpenOptions(props.metadata.key!);
-                            }
-                        }}
+                        onClick={() =>
+                            props.onOpenOptions?.(props.metadata.key!)
+                        }
                     />
                 </div>
             </div>
