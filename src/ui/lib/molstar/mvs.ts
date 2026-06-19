@@ -455,26 +455,32 @@ export async function loadMVSXFile(
 ): Promise<Result<LoadMVSXFileResult>> {
     const molstar = getMolstar();
 
-    const taskResult = await molstar.runTask(
+    const taskResult: Result<LoadMVSXFileResult> = await molstar.runTask(
         Task.create("Load MVSX file", async (ctx) => {
             if (!molstar) throw new Error("Molstar is not initialized!");
 
             const parsed = await _loadMVSXFile(ctx, rawData);
 
             if (!parsed.success) {
-                return parsed;
+                return { success: false, error: parsed.error };
             }
 
-            await loadMVS(molstar, parsed.value.stateTree, {
-                sanityChecks: true,
-                sourceUrl: parsed.value.sourceUrl,
-                extensions: [],
-                appendSnapshots: false,
-                keepCamera: false,
-                keepCameraOrientation: false,
-            });
+            // Load MVS into viewer.
+            const result = await loadMVSIntoMolstar(
+                parsed.value.stateTree,
+                parsed.value.sourceUrl,
+            );
+            if (!result.success) {
+                return {
+                    success: false,
+                    error: result.error,
+                };
+            }
 
-            return parsed;
+            return {
+                success: true,
+                value: parsed.value,
+            };
         }),
     );
 
@@ -516,22 +522,22 @@ export async function loadMVSJFile(index: string): Promise<
         });
 
         // Load MVS into viewer.
-        await loadMVS(molstar, mvsData, {
-            appendSnapshots: false,
-            keepCamera: false,
-            keepCameraOrientation: false,
-            extensions: [],
-            sanityChecks: true,
-        });
-
-        return {
-            success: true,
-            value: {
-                assets,
-                views: extractViewsFromMVS(mvsData),
-                stateTree: mvsData,
-            },
-        };
+        const result = await loadMVSIntoMolstar(mvsData);
+        if (result.success) {
+            return {
+                success: true,
+                value: {
+                    assets,
+                    views: extractViewsFromMVS(mvsData),
+                    stateTree: mvsData,
+                },
+            };
+        } else {
+            return {
+                success: false,
+                error: result.error,
+            };
+        }
     } catch (error) {
         return {
             success: false,
@@ -573,15 +579,23 @@ export async function reloadMolstarAndRestoreIndex(
     }
 }
 
+/**
+ * Loads MVS into Molstar and checks if the operation was successful.
+ * @param stateTree state tree to load
+ * @param sourceUrl optional sourceUrl (`Base for resolving relative URLs/URIs. May itself be a relative URL (relative to the window URL)`)
+ * @returns state tree or Error
+ */
 export async function loadMVSIntoMolstar(
-    stateTree: MVSData_States,
-): Promise<Result<MVSData_States>> {
+    stateTree: MVSData,
+    sourceUrl?: string,
+): Promise<Result<MVSData>> {
     const molstar = getMolstar();
 
     try {
         await loadMVS(molstar, stateTree, {
             appendSnapshots: false,
             keepCamera: true,
+            sourceUrl: sourceUrl,
             keepCameraOrientation: true,
             extensions: [],
             sanityChecks: true,
