@@ -155,7 +155,7 @@ export function removeDownloadNodeFromRoot(
  * @returns modified node
  */
 export function addDownloadNodeToRoot(
-    rootNode: MVSTree,
+    rootNode: any,
     assetIdToAdd: string,
     extension: string,
     extensionParserRecord: Record<string, string>,
