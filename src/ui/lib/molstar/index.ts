@@ -11,5 +11,3 @@ export * from "./mvsTree";
 export * from "./restoreSessionService";
 export * from "./utils";
 export type * from "./types";
-
-export * from "./__deprecatedMvs";

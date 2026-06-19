@@ -18,7 +18,6 @@ import {
     createExitMenuItem,
     createOnlyDevSection,
     createOpenFileInViewerMenuItem,
-    createProcessFileMenuItem,
 } from "../../../config/systemMenuItems";
 import { ConfirmationDialogueContent } from "../../../components/common/dialogue/ConfirmationDialogueContent";
 import { BroomIcon } from "../../../components/icons/BroomIcon";
@@ -88,7 +87,6 @@ export function useViewerMenu() {
             customExitAction,
             customCreateNewProjectAction,
             customOpenFileInViewerAction,
-            customProcessFileAction,
         } = createCustomMenuItems(
             showDialogue,
             loadAndHandleFile,
@@ -104,24 +102,19 @@ export function useViewerMenu() {
             "open-file-in-viewer",
             createOpenFileInViewerMenuItem(customOpenFileInViewerAction),
         );
-        replaceMenuItem(
-            "process-file",
-            createProcessFileMenuItem(customProcessFileAction),
-        );
 
         return () => {
             deleteRootMenuItem(editMenuItem.id);
             restoreMenuItem("exit");
             restoreMenuItem("create-new-project");
             restoreMenuItem("open-file-in-viewer");
-            restoreMenuItem("process-file");
         };
     }, [t, regime, setRegime, showDialogue, getAllLocalAssets, clearAssets]);
 }
 
 function createCustomMenuItems(
     showDialogue: ShowDialogueType,
-    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
+    loadAndHandleFile: () => Promise<void>,
     handleBlankProject: () => void,
 ) {
     const customExitAction = async () => {
@@ -163,28 +156,13 @@ function createCustomMenuItems(
                 />
             ),
         });
-        if (confirmed) loadAndHandleFile("viewing");
-    };
-
-    const customProcessFileAction = async () => {
-        const confirmed = await showDialogue<boolean>({
-            title: "Confirmation",
-            showCloseButton: false,
-            content: (close) => (
-                <ConfirmationDialogueContent
-                    close={close}
-                    doYouReallyWantToQuestion="Do you really want to process new file?"
-                />
-            ),
-        });
-        if (confirmed) loadAndHandleFile("processing");
+        if (confirmed) loadAndHandleFile();
     };
 
     return {
         customExitAction,
         customCreateNewProjectAction,
         customOpenFileInViewerAction,
-        customProcessFileAction,
     };
 }
 

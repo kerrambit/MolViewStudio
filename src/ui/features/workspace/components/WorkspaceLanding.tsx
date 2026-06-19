@@ -42,10 +42,7 @@ export default function WorkspaceLanding() {
 // TODO: issue https://github.com/kerrambit/MolStarApp/issues/84
 async function onDropHandler(
     files: File[],
-    handleFile: (
-        handleFileAs: "processing" | "viewing",
-        fileData: FileData[] | Error,
-    ) => Promise<void>,
+    handleFile: (fileData: FileData[] | Error) => Promise<void>,
 ) {
     if (files.length === 0) return;
 
@@ -57,7 +54,7 @@ async function onDropHandler(
 
     // TODO: here is the problem we do not have access to full path of `file`
     const result = await window.electron.getFileData([""]);
-    handleFile("processing", result);
+    handleFile(result);
 }
 
 // TODO: issue https://github.com/kerrambit/MolStarApp/issues/84
@@ -69,9 +66,7 @@ function onRejectHandler(rejections: FileRejection[]) {
 }
 
 function renderDropzoneButtonsArea(
-    loadAndHandleFile: (
-        handleFileAs: "viewing" | "processing",
-    ) => Promise<void>,
+    loadAndHandleFile: () => Promise<void>,
     handleBlankProject: () => void,
 ) {
     return (
@@ -101,7 +96,7 @@ function renderDropzoneButtonsArea(
                     variant="ghost"
                     onClick={() => {
                         loggerUi.info("Open file in viewer...");
-                        loadAndHandleFile("viewing");
+                        loadAndHandleFile();
                     }}
                 />
             </div>

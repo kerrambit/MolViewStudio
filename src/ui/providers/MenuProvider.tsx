@@ -26,7 +26,6 @@ import {
     createOpenDevToolsMenuItem,
     createOpenFileInViewerMenuItem,
     createOpenUserDataFolderMenuItem,
-    createProcessFileMenuItem,
     createProjectActionsSection,
     createReportIssueMenuItem,
     createSettingsRootMenuItem,
@@ -410,7 +409,7 @@ function createInitialMenu(
     showDialogue: <T = void>(
         options: DialogueProps<T>,
     ) => Promise<T | undefined>,
-    loadAndHandleFile: (regimeKind: "viewing" | "processing") => Promise<void>,
+    loadAndHandleFile: () => Promise<void>,
     handleBlankProject: () => void,
 ): Menu {
     return [
@@ -421,12 +420,7 @@ function createInitialMenu(
                 }),
             ]),
             createFileImportSection([
-                createOpenFileInViewerMenuItem(() =>
-                    loadAndHandleFile("viewing"),
-                ),
-                createProcessFileMenuItem(() =>
-                    loadAndHandleFile("processing"),
-                ),
+                createOpenFileInViewerMenuItem(() => loadAndHandleFile()),
             ]),
             createUtilitiesSection([
                 createOpenUserDataFolderMenuItem(async () => {
