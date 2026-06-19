@@ -8,6 +8,8 @@ import {
     checkRequiresProcessing,
 } from "../../../../../config/assetsDefinitions";
 import { pushWarningNotification } from "../../../../../services/NotificationService";
+import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
+import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
 
 export interface AddAssetDialogueReturnType {
     file: FileData;
@@ -19,40 +21,31 @@ interface AddAssetDialogueContentProps {
     close: (value?: AddAssetDialogueReturnType) => void;
 }
 
+const MAXIMUM_NUMBER_OF_PATH_SEGMENTS = 3; // TODO: define in Settings
+
 export function AddAssetDialogueContent({
     close,
 }: AddAssetDialogueContentProps) {
+    // State for the chosen file asset.
     const [file, setFile] = useState<FileData | undefined>(undefined);
-    const [pathSegments, setPathSegments] = useState<string[]>(["", "", ""]);
-    const [segmentErrors, setSegmentErrors] = useState<boolean[]>([
-        false,
-        false,
-        false,
-    ]);
 
+    // State for up path segments for a relative path of asset.
+    const [pathSegments, setPathSegments] = useState<string[]>([]);
+
+    // State if path is valid or not.
+    const [isPathInvalid, setIsPathInvalid] = useState(true);
+
+    // Boolean flag if the chosen file asset should be processed or not.
     const [processAsset, setProcessAsset] = useState<boolean>(false);
 
-    const handleSegmentChange = (
-        index: number,
-        newValue: string | undefined,
-    ) => {
-        const updatedSegments = [...pathSegments];
-        updatedSegments[index] = newValue || "";
-        setPathSegments(updatedSegments);
-    };
-
-    const compileFinalPath = () => {
-        const validFolders = pathSegments.filter((seg) => seg.trim() !== "");
-        const folderPath = validFolders.join("/");
-        return folderPath ? `${folderPath}/` : "";
-    };
-
+    // Each file asset type defines if it requires or offers processing.
     const requiresProcessing = file
         ? checkRequiresProcessing(file.name)
         : false;
     const offersProcessing = file ? checkOffersProcessing(file.name) : false;
     const showProcessingUi = requiresProcessing || offersProcessing;
 
+    // Render the component.
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1em" }}>
             <div
@@ -62,6 +55,7 @@ export function AddAssetDialogueContent({
                     marginBottom: "0.5em",
                 }}
             >
+                {/* Choose file asset button. */}
                 <Button
                     variant="ghost"
                     onClick={async () => {
@@ -91,6 +85,7 @@ export function AddAssetDialogueContent({
                 </Button>
             </div>
 
+            {/* Chosen file asset label. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
                 <Text size="sm" style={{ minWidth: "9em" }}>
                     Chosen filename:
@@ -103,6 +98,7 @@ export function AddAssetDialogueContent({
                 />
             </div>
 
+            {/* We might show processing checkbox if given asset type allows. */}
             <Collapse expanded={showProcessingUi}>
                 <div
                     style={{
@@ -130,58 +126,21 @@ export function AddAssetDialogueContent({
                 </div>
             </Collapse>
 
+            {/* Relative path builder. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
                 <Text size="sm" style={{ minWidth: "9em" }}>
                     Relative path:
                 </Text>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1em",
-                        flexGrow: 1,
+                <PathSegmentsBuilder
+                    count={MAXIMUM_NUMBER_OF_PATH_SEGMENTS}
+                    onChange={(segments, hasError) => {
+                        setPathSegments(segments);
+                        setIsPathInvalid(hasError);
                     }}
-                >
-                    {/* TODO: this deserves to be extracted as its own component */}
-                    {pathSegments.map((segment, index) => (
-                        <div
-                            key={index}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "1em",
-                            }}
-                        >
-                            <UnstyledTextInput
-                                value={segment}
-                                enabled={
-                                    index === 0 ||
-                                    pathSegments[index - 1].trim() !== ""
-                                }
-                                canBeEmpty={pathSegments
-                                    .slice(index + 1)
-                                    .every((seg) => seg.trim() === "")}
-                                onValueChange={(val) =>
-                                    handleSegmentChange(index, val)
-                                }
-                                onBlur={(val) =>
-                                    handleSegmentChange(index, val)
-                                }
-                                onErrorChange={(hasError) => {
-                                    setSegmentErrors((prev) => {
-                                        const newErrors = [...prev];
-                                        newErrors[index] = hasError;
-                                        return newErrors;
-                                    });
-                                }}
-                                style={{ width: "11em" }}
-                            />
-                            {index < pathSegments.length - 1 && <Text>/</Text>}
-                        </div>
-                    ))}
-                </div>
+                />
             </div>
 
+            {/* Save button. */}
             <div
                 style={{
                     display: "flex",
@@ -190,11 +149,11 @@ export function AddAssetDialogueContent({
                 }}
             >
                 <Button
-                    disabled={!file || segmentErrors.some((hasErr) => hasErr)}
+                    disabled={!file || isPathInvalid}
                     onClick={() =>
                         close({
                             file: file!,
-                            relativePath: compileFinalPath(),
+                            relativePath: compileFinalPath(pathSegments),
                             processAsset,
                         })
                     }

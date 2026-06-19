@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { Button } from "../../../../../components/common/button/Button";
+import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
+import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
 
 export interface EditAssetDialogueReturnType {
     relativePath: string;
@@ -13,31 +15,21 @@ interface EditAssetDialogueContentProps {
     close: (value?: EditAssetDialogueReturnType) => void;
 }
 
+const MAXIMUM_NUMBER_OF_PATH_SEGMENTS = 3; // TODO: define in Settings
+
 export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
+    // State for up path segments for a relative path of asset.
     const [pathSegments, setPathSegments] = useState<string[]>(
-        [...props.pathSegments, "", "", ""].slice(0, 3),
+        [...props.pathSegments, "", "", ""].slice(
+            0,
+            MAXIMUM_NUMBER_OF_PATH_SEGMENTS,
+        ),
     );
-    const [segmentErrors, setSegmentErrors] = useState<boolean[]>([
-        false,
-        false,
-        false,
-    ]);
 
-    const handleSegmentChange = (
-        index: number,
-        newValue: string | undefined,
-    ) => {
-        const updatedSegments = [...pathSegments];
-        updatedSegments[index] = newValue || "";
-        setPathSegments(updatedSegments);
-    };
+    // State if path is valid or not.
+    const [isPathInvalid, setIsPathInvalid] = useState(true);
 
-    const compileFinalPath = () => {
-        const validFolders = pathSegments.filter((seg) => seg.trim() !== "");
-        const folderPath = validFolders.join("/");
-        return folderPath ? `${folderPath}/` : "";
-    };
-
+    // Render the component.
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1em" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
@@ -56,52 +48,14 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
                 <Text size="sm" style={{ minWidth: "9em" }}>
                     Relative path:
                 </Text>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1em",
-                        flexGrow: 1,
+                <PathSegmentsBuilder
+                    count={3}
+                    inputPathSegments={pathSegments}
+                    onChange={(segments, hasError) => {
+                        setPathSegments(segments);
+                        setIsPathInvalid(hasError);
                     }}
-                >
-                    {/* TODO: this deserves to be extracted as its own component */}
-                    {pathSegments.map((segment, index) => (
-                        <div
-                            key={index}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "1em",
-                            }}
-                        >
-                            <UnstyledTextInput
-                                value={segment}
-                                enabled={
-                                    index === 0 ||
-                                    pathSegments[index - 1].trim() !== ""
-                                }
-                                canBeEmpty={pathSegments
-                                    .slice(index + 1)
-                                    .every((seg) => seg.trim() === "")}
-                                onValueChange={(val) =>
-                                    handleSegmentChange(index, val)
-                                }
-                                onBlur={(val) =>
-                                    handleSegmentChange(index, val)
-                                }
-                                onErrorChange={(hasError) => {
-                                    setSegmentErrors((prev) => {
-                                        const newErrors = [...prev];
-                                        newErrors[index] = hasError;
-                                        return newErrors;
-                                    });
-                                }}
-                                style={{ width: "11em" }}
-                            />
-                            {index < pathSegments.length - 1 && <Text>/</Text>}
-                        </div>
-                    ))}
-                </div>
+                />
             </div>
 
             <div
@@ -112,9 +66,11 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
                 }}
             >
                 <Button
-                    disabled={segmentErrors.some((hasErr) => hasErr)}
+                    disabled={isPathInvalid}
                     onClick={() =>
-                        props.close({ relativePath: compileFinalPath() })
+                        props.close({
+                            relativePath: compileFinalPath(pathSegments),
+                        })
                     }
                     tooltip="Save local asset."
                 >
