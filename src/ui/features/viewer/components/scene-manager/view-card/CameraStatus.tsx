@@ -1,3 +1,5 @@
+import { Text } from "@mantine/core";
+
 interface CameraStatusProps {
     doesReferenceCameraExist: boolean;
     isCameraMoved: boolean;
@@ -26,7 +28,6 @@ export function CameraStatus(props: CameraStatusProps) {
                 justifyContent: "center",
                 gap: "0.5em",
                 marginTop: "0.5em",
-                fontSize: "0.85em",
             }}
         >
             <div
@@ -37,7 +38,7 @@ export function CameraStatus(props: CameraStatusProps) {
                     backgroundColor: statusColor,
                 }}
             />
-            <span>{statusText}</span>
+            <Text size="sm">{statusText}</Text>
         </div>
     );
 }

@@ -9,6 +9,7 @@ export function DeleteViewDialogueContent({
     viewName,
     close,
 }: DeleteViewDialogueContentProps) {
+    // Render the component.
     return (
         <>
             <p style={{ marginBottom: "1rem" }}>

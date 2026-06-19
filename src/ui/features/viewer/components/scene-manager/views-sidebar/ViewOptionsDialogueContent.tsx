@@ -58,22 +58,18 @@ export function ViewOptionsDialogueContent({
     const [transitionDuration, setTransitionDuration] = useState<
         number | undefined
     >(view?.metadata.transition_duration_ms);
-
     const [canvasColor, setCanvasColor] = useState<HexColor | undefined>(
         backgroundColor as HexColor,
     );
-
     const [captureScreenshot, setCaptureScreenshot] = useState<boolean>(
         thumbnail !== undefined ? true : false,
     );
-
     const [descriptionFormat, setDescriptionFormat] = useState<
         "plaintext" | "markdown"
     >(
         (view?.metadata.description_format as "plaintext" | "markdown") ??
             "markdown",
     );
-
     const [description, setDescription] = useState<string | undefined>(
         view?.metadata.description,
     );
@@ -189,10 +185,12 @@ export function ViewOptionsDialogueContent({
                 </div>
             </div>
 
-            <Divider my="sm" color="gray.4" />
+            <Divider my="sm" />
 
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
-                <Text fw={700}>Description:</Text>
+                <Text size="md" fw={700}>
+                    Description:
+                </Text>
                 <SegmentedController<"plaintext" | "markdown">
                     value={descriptionFormat}
                     onChange={setDescriptionFormat}
