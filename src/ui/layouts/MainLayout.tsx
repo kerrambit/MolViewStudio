@@ -1,14 +1,14 @@
 import { Outlet } from "react-router-dom";
 import { Footer } from "../components/common/footer/Footer";
 import { Header } from "./header/Header";
-import { MenuProvider } from "../providers/MenuProvider";
+import { AppMenuBridge } from "../providers/AppMenuBridge";
 import { ServerStatus } from "../features/system/components/server-status/ServerStatus";
 
 import "./MainLayout.css";
 
 export function MainLayout() {
     return (
-        <MenuProvider>
+        <AppMenuBridge>
             <div className={"layout"}>
                 <div className="layout__header">
                     <Header />
@@ -22,7 +22,7 @@ export function MainLayout() {
                     </Footer>
                 </div>
             </div>
-        </MenuProvider>
+        </AppMenuBridge>
     );
 }
 

@@ -1,7 +1,9 @@
 import {
     IconBrandGithub,
     IconCircleDashedX,
+    IconFileFilled,
     IconFilePlus,
+    IconFileTime,
     IconFlag,
     IconFolderCog,
     IconFolderOpen,
@@ -13,6 +15,7 @@ import {
 import type {
     Action,
     Dropdown,
+    LiveMenuRenderProps,
     MenuItem,
     Priority,
     RootMenuItem,
@@ -20,6 +23,7 @@ import type {
 } from "../providers/MenuProvider";
 import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../services/NotificationService";
+import { useRecentFiles } from "../providers/RecentFilesProvider";
 
 export function createOnlyDevSection(
     id: string,
@@ -127,6 +131,42 @@ export function createOpenFileInViewerMenuItem(
     };
 }
 
+export function createOpenRecentFileInViewerMenuItem(
+    action: (path: string) => Promise<void>,
+): MenuItem {
+    return {
+        id: "recent-file-in-viewer",
+        icon: { icon: IconFileTime, position: "left" },
+        title: "Open recent file in viewer",
+        task: [] as Dropdown,
+
+        // We define our LiveTask here.
+        LiveTask: ({ render }: LiveMenuRenderProps) => {
+            // Use recent files.
+            const { recentFiles } = useRecentFiles();
+
+            if (recentFiles.length === 0) return null;
+
+            const liveDropdownTask: Dropdown = [
+                {
+                    id: "recent-files-sub-list",
+                    items: recentFiles.map((path) => ({
+                        id: `recent-file-${path}`,
+                        icon: { icon: IconFileFilled, position: "left" },
+                        title: path,
+                        task: {
+                            type: "direct",
+                            action: () => action(path),
+                        },
+                    })),
+                },
+            ];
+
+            return render(liveDropdownTask);
+        },
+    };
+}
+
 export function createCreateNewProjectMenuItem(action: () => void): MenuItem {
     return {
         id: "create-new-project",
@@ -135,20 +175,6 @@ export function createCreateNewProjectMenuItem(action: () => void): MenuItem {
         task: {
             action: action,
             type: "direct",
-        },
-    };
-}
-
-export function createProcessFileMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
-    return {
-        id: "process-file",
-        title: "Process file",
-        icon: { icon: IconFolderOpen, position: "left" },
-        task: {
-            action: action,
-            type: "secondary",
         },
     };
 }

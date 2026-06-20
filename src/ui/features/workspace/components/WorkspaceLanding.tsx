@@ -7,8 +7,11 @@ import { Button } from "../../../components/common/button/Button.tsx";
 
 export default function WorkspaceLanding() {
     // Hook for loading and handling file.
-    const { loadAndHandleFile, handleFile, handleBlankProject } =
-        useWorkspaceManagement();
+    const {
+        openFileExplorerAndLoadFileInApp,
+        loadFileInApp,
+        createNewProjectInApp,
+    } = useWorkspaceManagement();
 
     // Render the component.
     return (
@@ -22,7 +25,7 @@ export default function WorkspaceLanding() {
         >
             <Dropzone
                 onDrop={async (files: File[]) => {
-                    await onDropHandler(files, handleFile);
+                    await onDropHandler(files, loadFileInApp);
                 }}
                 onReject={(rejections: FileRejection[]) => {
                     onRejectHandler(rejections);
@@ -31,8 +34,8 @@ export default function WorkspaceLanding() {
                 allowedExtensions={[]} // TODO: disabled all files until https://github.com/kerrambit/MolStarApp/issues/84 is solved
             >
                 {renderDropzoneButtonsArea(
-                    loadAndHandleFile,
-                    handleBlankProject,
+                    openFileExplorerAndLoadFileInApp,
+                    createNewProjectInApp,
                 )}
             </Dropzone>
         </div>
@@ -42,7 +45,7 @@ export default function WorkspaceLanding() {
 // TODO: issue https://github.com/kerrambit/MolStarApp/issues/84
 async function onDropHandler(
     files: File[],
-    handleFile: (fileData: FileData[] | Error) => Promise<void>,
+    loadFileInApp: (fileData: FileData[] | Error) => Promise<void>,
 ) {
     if (files.length === 0) return;
 
@@ -54,7 +57,7 @@ async function onDropHandler(
 
     // TODO: here is the problem we do not have access to full path of `file`
     const result = await window.electron.getFileData([""]);
-    handleFile(result);
+    loadFileInApp(result);
 }
 
 // TODO: issue https://github.com/kerrambit/MolStarApp/issues/84
@@ -66,8 +69,8 @@ function onRejectHandler(rejections: FileRejection[]) {
 }
 
 function renderDropzoneButtonsArea(
-    loadAndHandleFile: () => Promise<void>,
-    handleBlankProject: () => void,
+    openFileExplorerAndLoadFileInApp: () => Promise<void>,
+    createNewProjectInApp: () => void,
 ) {
     return (
         <div
@@ -85,7 +88,7 @@ function renderDropzoneButtonsArea(
                     variant="ghost"
                     onClick={() => {
                         loggerUi.info(`Create new project`);
-                        handleBlankProject();
+                        createNewProjectInApp();
                     }}
                 />
             </div>
@@ -96,7 +99,7 @@ function renderDropzoneButtonsArea(
                     variant="ghost"
                     onClick={() => {
                         loggerUi.info("Open file in viewer...");
-                        loadAndHandleFile();
+                        openFileExplorerAndLoadFileInApp();
                     }}
                 />
             </div>

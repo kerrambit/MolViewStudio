@@ -8,34 +8,6 @@ import React, {
 } from "react";
 import "../i18n";
 import { type Icon, type IconProps } from "@tabler/icons-react";
-import {
-    createAboutMenuItem,
-    createAboutSection,
-    createCheckForUpdatesMenuItem,
-    createCheckForUpdatesSection,
-    createCreateNewProjectMenuItem,
-    createExitMenuItem,
-    createExitSection,
-    createFileImportSection,
-    createFileRootMenuItem,
-    createGeneralHelpSection,
-    createHelpRootMenuItem,
-    createMolstarAppMenuItem,
-    createMolstarMenuItem,
-    createOnlyDevSection,
-    createOpenDevToolsMenuItem,
-    createOpenFileInViewerMenuItem,
-    createOpenUserDataFolderMenuItem,
-    createProjectActionsSection,
-    createReportIssueMenuItem,
-    createSettingsRootMenuItem,
-    createUtilitiesSection,
-} from "../config/systemMenuItems";
-import { useNavigate, type NavigateFunction } from "react-router-dom";
-import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
-import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
-import { useDialogue, type DialogueProps } from "./DialogueProvider";
-import { pushErrorNotification } from "../services/NotificationService";
 
 /**
  * The action can be either:
@@ -83,6 +55,14 @@ export type Action = {
 };
 
 /**
+ * Context payload passed to items that implement dynamic re-renders.
+ */
+export type LiveMenuRenderProps = {
+    // Allows plugins to dynamically return an entirely fresh layout task array.
+    render: (liveDropdownTask: Dropdown) => React.ReactNode;
+};
+
+/**
  * Belongs to given `Section`. Can have tree-like structure, either leaf as `Action` or parent node as `Dropdown`, meaning another section can be opened in it.
  */
 export type MenuItem = {
@@ -90,6 +70,11 @@ export type MenuItem = {
     title: string;
     icon?: MenuIcon;
     task: Dropdown | Action;
+    /**
+     * Optional reactive hook layer. If provided, this functional component
+     * overrides normal processing, allowing internal usage of useEffect or hooks.
+     */
+    LiveTask?: React.ComponentType<LiveMenuRenderProps>;
 };
 
 /**
@@ -141,27 +126,12 @@ export function useMenu() {
 
 type MenuProviderProps = {
     children: React.ReactNode;
+    initialMenu: Menu | (() => Menu);
 };
 
-export function MenuProvider({ children }: MenuProviderProps) {
-    // Use navigation.
-    const navigate = useNavigate();
-
-    // Use file management.
-    const { loadAndHandleFile, handleBlankProject } = useWorkspaceManagement();
-
-    // Use dialogue.
-    const { showDialogue } = useDialogue();
-
+export function MenuProvider({ children, initialMenu }: MenuProviderProps) {
     // Menu state in the initial state.
-    const [menu, setMenu] = useState<Menu>(() =>
-        createInitialMenu(
-            navigate,
-            showDialogue,
-            loadAndHandleFile,
-            handleBlankProject,
-        ),
-    );
+    const [menu, setMenu] = useState<Menu>(initialMenu);
 
     // For replace/restore functionality. Keeps original `MenuItem` to be restored.
     const backups = useRef<Map<string, MenuItem>>(new Map());
@@ -402,61 +372,4 @@ export function MenuProvider({ children }: MenuProviderProps) {
             {children}
         </MenuContext.Provider>
     );
-}
-
-function createInitialMenu(
-    navigate: NavigateFunction,
-    showDialogue: <T = void>(
-        options: DialogueProps<T>,
-    ) => Promise<T | undefined>,
-    loadAndHandleFile: () => Promise<void>,
-    handleBlankProject: () => void,
-): Menu {
-    return [
-        createFileRootMenuItem([
-            createProjectActionsSection([
-                createCreateNewProjectMenuItem(() => {
-                    handleBlankProject();
-                }),
-            ]),
-            createFileImportSection([
-                createOpenFileInViewerMenuItem(() => loadAndHandleFile()),
-            ]),
-            createUtilitiesSection([
-                createOpenUserDataFolderMenuItem(async () => {
-                    const result =
-                        await window.electron.requestToOpenUserDataFolder();
-                    if (result instanceof Error) {
-                        pushErrorNotification(
-                            `Not able to open user data folder! Details: <${result.message}>.`,
-                        );
-                    }
-                }),
-            ]),
-            createOnlyDevSection("file-dev", "For developers", [
-                createOpenDevToolsMenuItem(),
-            ]),
-            createExitSection([createExitMenuItem()]),
-        ]),
-        createSettingsRootMenuItem(navigate),
-        createHelpRootMenuItem([
-            createGeneralHelpSection([
-                createMolstarAppMenuItem(),
-                createMolstarMenuItem(),
-                createReportIssueMenuItem(),
-            ]),
-            createCheckForUpdatesSection([createCheckForUpdatesMenuItem()]),
-            createAboutSection([
-                createAboutMenuItem(async () => {
-                    await showDialogue({
-                        title: "About",
-                        showCloseButton: true,
-                        content: (close) => (
-                            <AboutDialogueContent close={close} />
-                        ),
-                    });
-                }),
-            ]),
-        ]),
-    ];
 }

@@ -54,12 +54,6 @@ export class Ipc {
  * These methods can be used in the UI (React) components.
  */
 electron.contextBridge.exposeInMainWorld("electron", {
-    subscribeData: (callback: (data: string) => void) => {
-        return Ipc.Ui.on("data", (payload: string) => {
-            callback(payload);
-        });
-    },
-
     requestUserSettings: () => Ipc.Ui.invoke("requestUserSettings"),
 
     requestBuildInformation: () => Ipc.Ui.invokeSync("requestBuildInformation"),
@@ -104,5 +98,13 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);
+    },
+
+    getRecentFiles: () => {
+        return Ipc.Ui.invokeSync("getRecentFiles");
+    },
+
+    addRecentFile: (path: string) => {
+        return Ipc.Ui.send("addRecentFile", path);
     },
 } satisfies Window["electron"]);

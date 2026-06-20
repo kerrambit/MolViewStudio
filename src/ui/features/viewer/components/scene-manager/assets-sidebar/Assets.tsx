@@ -36,8 +36,7 @@ export function Assets() {
     } = useManagedAssets();
 
     // Use workspace management.
-    const { handleFileAsProcessingOfIndependentAsset } =
-        useWorkspaceManagement();
+    const { processFile } = useWorkspaceManagement();
 
     // Render the component.
     return (
@@ -145,7 +144,7 @@ export function Assets() {
                                         );
                                     }
                                 } else {
-                                    handleFileAsProcessingOfIndependentAsset(
+                                    processFile(
                                         result.file,
                                         result.relativePath,
                                     );

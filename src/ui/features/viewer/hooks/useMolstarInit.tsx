@@ -29,7 +29,7 @@ export function useMolstarInit() {
     const { regime, setRegime } = useRegime();
 
     // Use workspace management.
-    const { deconstructFile } = useWorkspaceManagement();
+    const { openFileInViewer } = useWorkspaceManagement();
 
     // Use regime to control the current regime of the application.
     const regimeReference = useRef(regime);
@@ -113,7 +113,7 @@ export function useMolstarInit() {
                 return;
             }
 
-            await deconstructFile();
+            await openFileInViewer();
         };
 
         deconstruct();

@@ -22,6 +22,7 @@ import { readFiles, saveFile } from "./utils/fileUtils.js";
 import { getAvailablePort } from "./utils/serverUtils.js";
 import { SplashScreen } from "./utils/splashScreen.js";
 import { BUILD_INFO } from "./build-info.js";
+import { loadRecentFiles, writeRecentFiles } from "./utils/recentFilesUtils.js";
 
 app.on("ready", async () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -57,16 +58,19 @@ app.on("ready", async () => {
 
     // ------------------------------------------------------------- //
 
-    // Create user data path and filepah.
+    // Create user data path and user settings & recent files filepaths.
     const userDataPath = app.getPath("userData");
-    const userSettingsFile = path.join(userDataPath, "userSettings.json");
+    const userSettingsFilePath = path.join(userDataPath, "userSettings.json");
+    const recentFilesFilePath = path.join(userDataPath, "recentFiles.json");
 
     // Load the settings.
     const userSettings: UserSettings = loadUserSettings(
         userDataPath,
-        userSettingsFile,
+        userSettingsFilePath,
     );
-    logger.info(`User settings has been loaded from <${userSettingsFile}>.`);
+    logger.info(
+        `User settings has been loaded from <${userSettingsFilePath}>.`,
+    );
 
     // Check if the prefered port from user settings is free.
     const serverPort = await getAvailablePort(userSettings.preferredServerPort);
@@ -168,7 +172,7 @@ app.on("ready", async () => {
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
-        saveUserSettings(userDataPath, userSettingsFile, settings);
+        saveUserSettings(userDataPath, userSettingsFilePath, settings);
         logger.info(`User settings has been saved.`);
     });
 
@@ -177,6 +181,7 @@ app.on("ready", async () => {
         return { isDev: isDev(), userDataPath: app.getPath("userData") };
     });
 
+    // UI request to open file explorer and get the chosen file data.
     Ipc.Electron.handleTwoWay(
         "openFileExplorer",
         async ({
@@ -203,6 +208,26 @@ app.on("ready", async () => {
             return readFiles(openDialogResult.filePaths);
         },
     );
+
+    // UI can request recent files paths.
+    Ipc.Electron.handleSync("getRecentFiles", () => {
+        const files = loadRecentFiles(userDataPath, recentFilesFilePath);
+        logger.info(
+            `Recent files has been loaded from <${recentFilesFilePath}>.`,
+        );
+        return files;
+    });
+
+    // If there is a new opened file coming from UI, we have to store the path.
+    Ipc.Electron.on("addRecentFile", (path: string) => {
+        const currentFiles = loadRecentFiles(userDataPath, recentFilesFilePath);
+        const updatedFiles = [
+            path,
+            ...currentFiles.filter((p) => p !== path),
+        ].slice(0, 10); // TODO: set the limit in Settings
+
+        writeRecentFiles(userDataPath, recentFilesFilePath, updatedFiles);
+    });
 
     // Create tray.
     createTray(mainWindow);

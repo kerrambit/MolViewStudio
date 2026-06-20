@@ -18,6 +18,7 @@ import {
     createExitMenuItem,
     createOnlyDevSection,
     createOpenFileInViewerMenuItem,
+    createOpenRecentFileInViewerMenuItem,
 } from "../../../config/systemMenuItems";
 import { ConfirmationDialogueContent } from "../../../components/common/dialogue/ConfirmationDialogueContent";
 import { BroomIcon } from "../../../components/icons/BroomIcon";
@@ -55,7 +56,11 @@ export function useViewerMenu() {
     const { regime, setRegime } = useRegime();
 
     // Use workspace management.
-    const { loadAndHandleFile, handleBlankProject } = useWorkspaceManagement();
+    const {
+        openFileExplorerAndLoadFileInApp,
+        createNewProjectInApp,
+        loadRecentFileInApp,
+    } = useWorkspaceManagement();
 
     // Use managed assets.
     const { getAllAssets, getAllLocalAssets, clearAssets } = useManagedAssets();
@@ -87,10 +92,12 @@ export function useViewerMenu() {
             customExitAction,
             customCreateNewProjectAction,
             customOpenFileInViewerAction,
+            customOpenRecentFileInViewerAction,
         } = createCustomMenuItems(
             showDialogue,
-            loadAndHandleFile,
-            handleBlankProject,
+            openFileExplorerAndLoadFileInApp,
+            createNewProjectInApp,
+            loadRecentFileInApp,
         );
 
         replaceMenuItem("exit", createExitMenuItem(customExitAction));
@@ -102,20 +109,28 @@ export function useViewerMenu() {
             "open-file-in-viewer",
             createOpenFileInViewerMenuItem(customOpenFileInViewerAction),
         );
+        replaceMenuItem(
+            "recent-file-in-viewer",
+            createOpenRecentFileInViewerMenuItem(
+                customOpenRecentFileInViewerAction,
+            ),
+        );
 
         return () => {
             deleteRootMenuItem(editMenuItem.id);
             restoreMenuItem("exit");
             restoreMenuItem("create-new-project");
             restoreMenuItem("open-file-in-viewer");
+            restoreMenuItem("recent-file-in-viewer");
         };
     }, [t, regime, setRegime, showDialogue, getAllLocalAssets, clearAssets]);
 }
 
 function createCustomMenuItems(
     showDialogue: ShowDialogueType,
-    loadAndHandleFile: () => Promise<void>,
-    handleBlankProject: () => void,
+    openFileExplorerAndLoadFileInApp: () => Promise<void>,
+    createNewProjectInApp: () => void,
+    loadRecentFileInApp: (path: string) => Promise<void>,
 ) {
     const customExitAction = async () => {
         const confirmed = await showDialogue<boolean>({
@@ -142,7 +157,7 @@ function createCustomMenuItems(
                 />
             ),
         });
-        if (confirmed) handleBlankProject();
+        if (confirmed) createNewProjectInApp();
     };
 
     const customOpenFileInViewerAction = async () => {
@@ -156,13 +171,30 @@ function createCustomMenuItems(
                 />
             ),
         });
-        if (confirmed) loadAndHandleFile();
+        if (confirmed) openFileExplorerAndLoadFileInApp();
+    };
+
+    const customOpenRecentFileInViewerAction = async (path: string) => {
+        const confirmed = await showDialogue<boolean>({
+            title: "Confirmation",
+            showCloseButton: false,
+            content: (close) => (
+                <ConfirmationDialogueContent
+                    close={close}
+                    doYouReallyWantToQuestion="Do you really want to open the recent file in viewer?"
+                />
+            ),
+        });
+        if (confirmed) {
+            await loadRecentFileInApp(path);
+        }
     };
 
     return {
         customExitAction,
         customCreateNewProjectAction,
         customOpenFileInViewerAction,
+        customOpenRecentFileInViewerAction,
     };
 }
 
