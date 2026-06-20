@@ -57,9 +57,9 @@ export function useViewerMenu() {
 
     // Use workspace management.
     const {
-        loadFileAsStaging,
-        openFileExplorerAndLoadFileAsStaging,
-        createBlankFileAsStaging,
+        openFileExplorerAndLoadFileInApp,
+        createNewProjectInApp,
+        loadRecentFileInApp,
     } = useWorkspaceManagement();
 
     // Use managed assets.
@@ -95,9 +95,9 @@ export function useViewerMenu() {
             customOpenRecentFileInViewerAction,
         } = createCustomMenuItems(
             showDialogue,
-            openFileExplorerAndLoadFileAsStaging,
-            createBlankFileAsStaging,
-            loadFileAsStaging,
+            openFileExplorerAndLoadFileInApp,
+            createNewProjectInApp,
+            loadRecentFileInApp,
         );
 
         replaceMenuItem("exit", createExitMenuItem(customExitAction));
@@ -128,9 +128,9 @@ export function useViewerMenu() {
 
 function createCustomMenuItems(
     showDialogue: ShowDialogueType,
-    openFileExplorerAndLoadFileAsStaging: () => Promise<void>,
-    createBlankFileAsStaging: () => void,
-    loadFileAsStaging: (fileData: Error | FileData[]) => Promise<void>,
+    openFileExplorerAndLoadFileInApp: () => Promise<void>,
+    createNewProjectInApp: () => void,
+    loadRecentFileInApp: (path: string) => Promise<void>,
 ) {
     const customExitAction = async () => {
         const confirmed = await showDialogue<boolean>({
@@ -157,7 +157,7 @@ function createCustomMenuItems(
                 />
             ),
         });
-        if (confirmed) createBlankFileAsStaging();
+        if (confirmed) createNewProjectInApp();
     };
 
     const customOpenFileInViewerAction = async () => {
@@ -171,7 +171,7 @@ function createCustomMenuItems(
                 />
             ),
         });
-        if (confirmed) openFileExplorerAndLoadFileAsStaging();
+        if (confirmed) openFileExplorerAndLoadFileInApp();
     };
 
     const customOpenRecentFileInViewerAction = async (path: string) => {
@@ -186,8 +186,7 @@ function createCustomMenuItems(
             ),
         });
         if (confirmed) {
-            const result = await window.electron.getFileData([path]);
-            loadFileAsStaging(result);
+            await loadRecentFileInApp(path);
         }
     };
 
