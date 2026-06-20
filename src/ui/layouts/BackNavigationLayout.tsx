@@ -8,7 +8,7 @@ export function BackNavigationLayout() {
     const navigate = useNavigate();
 
     return (
-        <MenuProvider>
+        <MenuProvider initialMenu={[]}>
             <div className="layout">
                 <div className="layout__header">
                     <TopBar>
