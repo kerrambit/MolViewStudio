@@ -139,20 +139,6 @@ export function createCreateNewProjectMenuItem(action: () => void): MenuItem {
     };
 }
 
-export function createProcessFileMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
-    return {
-        id: "process-file",
-        title: "Process file",
-        icon: { icon: IconFolderOpen, position: "left" },
-        task: {
-            action: action,
-            type: "secondary",
-        },
-    };
-}
-
 export function createOpenUserDataFolderMenuItem(
     action: () => Promise<void>,
 ): MenuItem {
