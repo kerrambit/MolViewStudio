@@ -63,26 +63,6 @@ export function Menu({ className = "" }: MenuProps) {
     );
 }
 
-function renderSection(section: Section, index: number) {
-    return (
-        <>
-            {(!section.visible || section.visible()) && (
-                <>
-                    {index !== 0 && <MantineMenu.Divider />}
-                    {section.title && (
-                        <MantineMenu.Label>{section.title}</MantineMenu.Label>
-                    )}
-                    {section.items.map((item) => (
-                        <React.Fragment key={item.id}>
-                            {renderMenuItem(item)}
-                        </React.Fragment>
-                    ))}
-                </>
-            )}
-        </>
-    );
-}
-
 function renderSubDropdown(dropdown: Dropdown) {
     return (
         <MantineMenu.Sub.Dropdown>
@@ -107,35 +87,80 @@ function renderDropdown(dropdown: Dropdown) {
     );
 }
 
+interface MenuListProcessorProps {
+    items: MenuItem[];
+    renderItem: (item: MenuItem) => React.ReactNode;
+}
+
+/**
+ * Iterates through items and safely handles executing individual item hooks
+ * without disrupting Mantine's element inspection layers.
+ */
+function MenuListProcessor({ items, renderItem }: MenuListProcessorProps) {
+    return (
+        <>
+            {items.map((item) => {
+                if (item.LiveTask) {
+                    const LiveTaskComponent = item.LiveTask;
+                    return (
+                        <LiveTaskComponent
+                            key={item.id}
+                            render={(dynamicTaskArray) =>
+                                renderItem({ ...item, task: dynamicTaskArray })
+                            }
+                        />
+                    );
+                }
+
+                return (
+                    <React.Fragment key={item.id}>
+                        {renderItem(item)}
+                    </React.Fragment>
+                );
+            })}
+        </>
+    );
+}
+
+function renderSection(section: Section, index: number) {
+    return (
+        <>
+            {(!section.visible || section.visible()) && (
+                <>
+                    {index !== 0 && <MantineMenu.Divider />}
+                    {section.title && (
+                        <MantineMenu.Label>{section.title}</MantineMenu.Label>
+                    )}
+                    <MenuListProcessor
+                        items={section.items}
+                        renderItem={(item) => renderMenuItem(item)}
+                    />
+                </>
+            )}
+        </>
+    );
+}
+
 function renderMenuItem(item: MenuItem) {
     if ("action" in item.task) {
         const task = item.task as Action;
         return (
-            <>
-                <MantineMenu.Item
-                    onClick={() => {
-                        task.action();
-                    }}
-                    {...renderIcon(item.icon)}
-                >
-                    {`${item.title}${task.type === "secondary" ? "..." : ""}`}
-                </MantineMenu.Item>
-            </>
+            <MantineMenu.Item onClick={task.action} {...renderIcon(item.icon)}>
+                {`${item.title}${task.type === "secondary" ? "..." : ""}`}
+            </MantineMenu.Item>
         );
     }
 
     const task = item.task as Dropdown;
     return (
-        <>
-            <MantineMenu.Sub>
-                <MantineMenu.Sub.Target>
-                    <MantineMenu.Sub.Item {...renderIcon(item.icon)}>
-                        {item.title}
-                    </MantineMenu.Sub.Item>
-                </MantineMenu.Sub.Target>
-                {renderSubDropdown(task)}
-            </MantineMenu.Sub>
-        </>
+        <MantineMenu.Sub>
+            <MantineMenu.Sub.Target>
+                <MantineMenu.Sub.Item {...renderIcon(item.icon)}>
+                    {item.title}
+                </MantineMenu.Sub.Item>
+            </MantineMenu.Sub.Target>
+            {renderSubDropdown(task)}
+        </MantineMenu.Sub>
     );
 }
 

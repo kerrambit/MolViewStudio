@@ -25,6 +25,7 @@ import {
     createOnlyDevSection,
     createOpenDevToolsMenuItem,
     createOpenFileInViewerMenuItem,
+    createOpenRecentFileInViewerMenuItem,
     createOpenUserDataFolderMenuItem,
     createProjectActionsSection,
     createReportIssueMenuItem,
@@ -34,7 +35,7 @@ import {
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
 import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
-import { useDialogue, type DialogueProps } from "./DialogueProvider";
+import { useDialogue, type ShowDialogueType } from "./DialogueProvider";
 import { pushErrorNotification } from "../services/NotificationService";
 
 /**
@@ -83,6 +84,14 @@ export type Action = {
 };
 
 /**
+ * Context payload passed to items that implement dynamic re-renders.
+ */
+export type LiveMenuRenderProps = {
+    // Allows plugins to dynamically return an entirely fresh layout task array.
+    render: (liveDropdownTask: Dropdown) => React.ReactNode;
+};
+
+/**
  * Belongs to given `Section`. Can have tree-like structure, either leaf as `Action` or parent node as `Dropdown`, meaning another section can be opened in it.
  */
 export type MenuItem = {
@@ -90,6 +99,11 @@ export type MenuItem = {
     title: string;
     icon?: MenuIcon;
     task: Dropdown | Action;
+    /**
+     * Optional reactive hook layer. If provided, this functional component
+     * overrides normal processing, allowing internal usage of useEffect or hooks.
+     */
+    LiveTask?: React.ComponentType<LiveMenuRenderProps>;
 };
 
 /**
@@ -406,9 +420,7 @@ export function MenuProvider({ children }: MenuProviderProps) {
 
 function createInitialMenu(
     navigate: NavigateFunction,
-    showDialogue: <T = void>(
-        options: DialogueProps<T>,
-    ) => Promise<T | undefined>,
+    showDialogue: ShowDialogueType,
     loadAndHandleFile: () => Promise<void>,
     handleBlankProject: () => void,
 ): Menu {
@@ -421,6 +433,7 @@ function createInitialMenu(
             ]),
             createFileImportSection([
                 createOpenFileInViewerMenuItem(() => loadAndHandleFile()),
+                createOpenRecentFileInViewerMenuItem(),
             ]),
             createUtilitiesSection([
                 createOpenUserDataFolderMenuItem(async () => {
