@@ -8,6 +8,7 @@ import { RegimeProvider } from "./providers/RegimeProvider.tsx";
 import { DialogueProvider } from "./providers/DialogueProvider.tsx";
 import { ManagedAssetsProvider } from "./providers/ManagedAssetsProvider.tsx";
 import { ProcessingProvider } from "./providers/ProcessingProvider.tsx";
+import { RecentFilesProvider } from "./providers/RecentFilesProvider.tsx";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
@@ -19,17 +20,19 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
         <UserSettingsProvider>
-            <AppearanceProvider>
-                <RegimeProvider>
-                    <ProcessingProvider>
-                        <DialogueProvider>
-                            <ManagedAssetsProvider>
-                                <RouterProvider router={router} />
-                            </ManagedAssetsProvider>
-                        </DialogueProvider>
-                    </ProcessingProvider>
-                </RegimeProvider>
-            </AppearanceProvider>
+            <RecentFilesProvider>
+                <AppearanceProvider>
+                    <RegimeProvider>
+                        <ProcessingProvider>
+                            <DialogueProvider>
+                                <ManagedAssetsProvider>
+                                    <RouterProvider router={router} />
+                                </ManagedAssetsProvider>
+                            </DialogueProvider>
+                        </ProcessingProvider>
+                    </RegimeProvider>
+                </AppearanceProvider>
+            </RecentFilesProvider>
         </UserSettingsProvider>
     </QueryClientProvider>,
 );
