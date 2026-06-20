@@ -7,8 +7,11 @@ import { Button } from "../../../components/common/button/Button.tsx";
 
 export default function WorkspaceLanding() {
     // Hook for loading and handling file.
-    const { loadAndHandleFile, handleFile, handleBlankProject } =
-        useWorkspaceManagement();
+    const {
+        openFileExplorerAndLoadFileAsStaging,
+        loadFileAsStaging,
+        createBlankFileAsStaging,
+    } = useWorkspaceManagement();
 
     // Render the component.
     return (
@@ -22,7 +25,7 @@ export default function WorkspaceLanding() {
         >
             <Dropzone
                 onDrop={async (files: File[]) => {
-                    await onDropHandler(files, handleFile);
+                    await onDropHandler(files, loadFileAsStaging);
                 }}
                 onReject={(rejections: FileRejection[]) => {
                     onRejectHandler(rejections);
@@ -31,8 +34,8 @@ export default function WorkspaceLanding() {
                 allowedExtensions={[]} // TODO: disabled all files until https://github.com/kerrambit/MolStarApp/issues/84 is solved
             >
                 {renderDropzoneButtonsArea(
-                    loadAndHandleFile,
-                    handleBlankProject,
+                    openFileExplorerAndLoadFileAsStaging,
+                    createBlankFileAsStaging,
                 )}
             </Dropzone>
         </div>

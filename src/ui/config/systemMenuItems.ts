@@ -24,7 +24,6 @@ import type {
 import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../services/NotificationService";
 import { useRecentFiles } from "../providers/RecentFilesProvider";
-import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
 
 export function createOnlyDevSection(
     id: string,
@@ -132,7 +131,9 @@ export function createOpenFileInViewerMenuItem(
     };
 }
 
-export function createOpenRecentFileInViewerMenuItem(): MenuItem {
+export function createOpenRecentFileInViewerMenuItem(
+    action: (path: string) => Promise<void>,
+): MenuItem {
     return {
         id: "recent-file-in-viewer",
         icon: { icon: IconFileTime, position: "left" },
@@ -143,9 +144,6 @@ export function createOpenRecentFileInViewerMenuItem(): MenuItem {
         LiveTask: ({ render }: LiveMenuRenderProps) => {
             // Use recent files.
             const { recentFiles } = useRecentFiles();
-
-            // Use workspace management.
-            const { handleFile } = useWorkspaceManagement();
 
             if (recentFiles.length === 0) return null;
 
@@ -158,11 +156,7 @@ export function createOpenRecentFileInViewerMenuItem(): MenuItem {
                         title: path,
                         task: {
                             type: "direct",
-                            action: async () => {
-                                const result =
-                                    await window.electron.getFileData([path]);
-                                handleFile(result);
-                            },
+                            action: () => action(path),
                         },
                     })),
                 },

@@ -40,7 +40,7 @@ export function useWorkspaceManagement() {
     const processVolume = useProcessVolume();
 
     // Function to use to move regime from `staging` into `viewing`.
-    const deconstructFile = async () => {
+    const moveFileFromStagingToViewing = async () => {
         if (regime.kind !== "staging") {
             return;
         }
@@ -91,7 +91,7 @@ export function useWorkspaceManagement() {
     };
 
     // Function to use to load a file via file explorer and then handle it (as file to process or file to view).
-    const loadAndHandleFile = async () => {
+    const openFileExplorerAndLoadFileAsStaging = async () => {
         // Opends file explorer and let user to choose the file.
         window.electron
             .openFileExplorer(
@@ -100,8 +100,7 @@ export function useWorkspaceManagement() {
                 [MVSFilters, StructuralFilters],
             )
             .then((fileData) => {
-                // Handle file.
-                handleFile(fileData);
+                loadFileAsStaging(fileData);
             })
             .catch((error) => {
                 pushErrorNotification(`Error occured! Details: {${error}}.`);
@@ -110,7 +109,7 @@ export function useWorkspaceManagement() {
     };
 
     // Function to use to process a file and save it as asset to given relative path. Does not change regime.
-    const handleFileAsProcessingOfIndependentAsset = async (
+    const processFile = async (
         fileToProcess: FileData,
         newRelativePath: string,
     ) => {
@@ -197,7 +196,7 @@ export function useWorkspaceManagement() {
         );
     };
 
-    const handleBlankProject = () => {
+    const createBlankFileAsStaging = () => {
         const fileContentString = createBlankMVSDataAsString();
 
         const fileData: FileData = {
@@ -221,7 +220,7 @@ export function useWorkspaceManagement() {
 
     // Handler function which, in case of processing, calls appropriate API call on server to start processing and then moves regime to viewing when data are processed.
     // If user wants to handle file as viewing only, we begin its deconstruction and move regime to viewing.
-    const handleFile = async (fileData: FileData[] | Error) => {
+    const loadFileAsStaging = async (fileData: FileData[] | Error) => {
         if (!(fileData instanceof Error)) {
             if (fileData.length > 0) {
                 // Add recent file.
@@ -247,10 +246,10 @@ export function useWorkspaceManagement() {
     };
 
     return {
-        loadAndHandleFile,
-        handleBlankProject,
-        handleFile,
-        deconstructFile,
-        handleFileAsProcessingOfIndependentAsset,
+        openFileExplorerAndLoadFileAsStaging,
+        loadFileAsStaging,
+        createBlankFileAsStaging,
+        moveFileFromStagingToViewing,
+        processFile,
     };
 }

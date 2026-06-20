@@ -162,7 +162,11 @@ export function MenuProvider({ children }: MenuProviderProps) {
     const navigate = useNavigate();
 
     // Use file management.
-    const { loadAndHandleFile, handleBlankProject } = useWorkspaceManagement();
+    const {
+        loadFileAsStaging,
+        openFileExplorerAndLoadFileAsStaging,
+        createBlankFileAsStaging,
+    } = useWorkspaceManagement();
 
     // Use dialogue.
     const { showDialogue } = useDialogue();
@@ -172,8 +176,9 @@ export function MenuProvider({ children }: MenuProviderProps) {
         createInitialMenu(
             navigate,
             showDialogue,
-            loadAndHandleFile,
-            handleBlankProject,
+            openFileExplorerAndLoadFileAsStaging,
+            loadFileAsStaging,
+            createBlankFileAsStaging,
         ),
     );
 
@@ -421,19 +426,25 @@ export function MenuProvider({ children }: MenuProviderProps) {
 function createInitialMenu(
     navigate: NavigateFunction,
     showDialogue: ShowDialogueType,
-    loadAndHandleFile: () => Promise<void>,
-    handleBlankProject: () => void,
+    openFileExplorerAndLoadFileAsStaging: () => Promise<void>,
+    loadFileAsStaging: (fileData: Error | FileData[]) => Promise<void>,
+    createBlankFileAsStaging: () => void,
 ): Menu {
     return [
         createFileRootMenuItem([
             createProjectActionsSection([
                 createCreateNewProjectMenuItem(() => {
-                    handleBlankProject();
+                    createBlankFileAsStaging();
                 }),
             ]),
             createFileImportSection([
-                createOpenFileInViewerMenuItem(() => loadAndHandleFile()),
-                createOpenRecentFileInViewerMenuItem(),
+                createOpenFileInViewerMenuItem(() =>
+                    openFileExplorerAndLoadFileAsStaging(),
+                ),
+                createOpenRecentFileInViewerMenuItem(async (path: string) => {
+                    const result = await window.electron.getFileData([path]);
+                    loadFileAsStaging(result);
+                }),
             ]),
             createUtilitiesSection([
                 createOpenUserDataFolderMenuItem(async () => {
