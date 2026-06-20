@@ -1,7 +1,9 @@
 import {
     IconBrandGithub,
     IconCircleDashedX,
+    IconFileFilled,
     IconFilePlus,
+    IconFileTime,
     IconFlag,
     IconFolderCog,
     IconFolderOpen,
@@ -13,6 +15,7 @@ import {
 import type {
     Action,
     Dropdown,
+    LiveMenuRenderProps,
     MenuItem,
     Priority,
     RootMenuItem,
@@ -20,6 +23,8 @@ import type {
 } from "../providers/MenuProvider";
 import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../services/NotificationService";
+import { useRecentFiles } from "../providers/RecentFilesProvider";
+import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
 
 export function createOnlyDevSection(
     id: string,
@@ -123,6 +128,47 @@ export function createOpenFileInViewerMenuItem(
         task: {
             action: action,
             type: "secondary",
+        },
+    };
+}
+
+export function createOpenRecentFileInViewerMenuItem(): MenuItem {
+    return {
+        id: "recent-file-in-viewer",
+        icon: { icon: IconFileTime, position: "left" },
+        title: "Open recent file in viewer",
+        task: [] as Dropdown,
+
+        // We define our LiveTask here.
+        LiveTask: ({ render }: LiveMenuRenderProps) => {
+            // Use recent files.
+            const { recentFiles } = useRecentFiles();
+
+            // Use workspace management.
+            const { handleFile } = useWorkspaceManagement();
+
+            if (recentFiles.length === 0) return null;
+
+            const liveDropdownTask: Dropdown = [
+                {
+                    id: "recent-files-sub-list",
+                    items: recentFiles.map((path) => ({
+                        id: `recent-file-${path}`,
+                        icon: { icon: IconFileFilled, position: "left" },
+                        title: path,
+                        task: {
+                            type: "direct",
+                            action: async () => {
+                                const result =
+                                    await window.electron.getFileData([path]);
+                                handleFile(result);
+                            },
+                        },
+                    })),
+                },
+            ];
+
+            return render(liveDropdownTask);
         },
     };
 }
