@@ -17,6 +17,7 @@ import {
     loadFromFile,
 } from "../../../lib/molstar";
 import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
+import { useRecentFiles } from "../../../providers/RecentFilesProvider";
 
 export function useWorkspaceManagement() {
     // Use navigate,
@@ -30,6 +31,9 @@ export function useWorkspaceManagement() {
 
     // Use assets.
     const { addAsset, addLocalAsset, clearAssets } = useManagedAssets();
+
+    // Use recent files.
+    const { addRecentFile } = useRecentFiles();
 
     // Use processing.
     const { startJob, completeJob, failJob } = useProcessing();
@@ -220,6 +224,9 @@ export function useWorkspaceManagement() {
     const handleFile = async (fileData: FileData[] | Error) => {
         if (!(fileData instanceof Error)) {
             if (fileData.length > 0) {
+                // Add recent file.
+                addRecentFile(fileData[0].path);
+
                 loggerUi.info(`File <${fileData[0].path}> was selected.`);
 
                 const regime: Regime = {
