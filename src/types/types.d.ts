@@ -3,7 +3,6 @@
  */
 
 type EventPayloadMapping = {
-    data: string;
     requestUserSettings: UserSettings;
     requestBuildInformation: BuildInformation;
     requestApplicationExit: void;
@@ -16,16 +15,14 @@ type EventPayloadMapping = {
     getFileData: FileData[] | Error;
     requestEnvironment: Environment;
     changeUserSettings: UserSettings;
+    getRecentFiles: string[];
+    addRecentFile: string;
 };
 
 type UnsubscribeFunction = () => void;
 
 interface Window {
     electron: {
-        subscribeData: (
-            callback: (data: string) => void,
-        ) => UnsubscribeFunction;
-
         requestUserSettings: () => Promise<UserSettings>;
 
         requestBuildInformation: () => BuildInformation;
@@ -55,6 +52,10 @@ interface Window {
         ) => Promise<void | Error>;
 
         changeUserSettings: (settings: UserSettings) => void;
+
+        getRecentFiles: () => string[];
+
+        addRecentFile: (path: string) => void;
     };
 }
 
