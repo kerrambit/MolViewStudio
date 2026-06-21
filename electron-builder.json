@@ -16,12 +16,12 @@
     "icon": "./src/assets/desktopIcon.png"
   },
   "win": {
-    "target": ["msi"],
-    "icon": "./src/assets/desktopIcon.ico"
+    "target": ["nsis"], 
+    "icon": "./src/assets/installerIcon.ico"
   },
-  "msi": {
+  "nsis": {
     "oneClick": false,
-    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
     "shortcutName": "MolStarApp",
     "createDesktopShortcut": false
   }
