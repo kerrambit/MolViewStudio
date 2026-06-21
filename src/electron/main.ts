@@ -100,7 +100,7 @@ app.on("ready", async () => {
     );
 
     // A requests from UI to retrieve user settings.
-    Ipc.Electron.handle("requestUserSettings", () => {
+    Ipc.Electron.handleSync("requestUserSettings", () => {
         return { ...userSettings, serverPort: serverPort };
     });
 
@@ -128,7 +128,7 @@ app.on("ready", async () => {
     });
 
     // A request from UI to open DevTools: if the application is in dev mode, allow it.
-    Ipc.Electron.handle("requestToOpenDevTools", () => {
+    Ipc.Electron.on("requestToOpenDevTools", () => {
         if (isDev()) {
             mainWindow.webContents.openDevTools();
         }
@@ -152,21 +152,24 @@ app.on("ready", async () => {
     });
 
     // A request from UI to load file data from given array of paths.
-    Ipc.Electron.handleTwoWay("getFileData", (paths: string[]) => {
+    Ipc.Electron.handle("getFileData", (paths: string[]) => {
         return readFiles(paths);
     });
 
     // A request from UI to save data into filesystem.
-    Ipc.Electron.handleTwoWay("saveData", async (pck: SaveDataPackage) => {
-        return await saveFile(pck.path, pck.data);
+    Ipc.Electron.handle("saveData", async (data: ArrayBuffer, path: string) => {
+        return await saveFile(path, data);
     });
 
     // A request from UI to save temporary data into filesystem.
-    Ipc.Electron.handleTwoWay(
+    Ipc.Electron.handle(
         "saveTemporaryData",
-        async (pck: SaveDataPackage) => {
-            const fullFilePath = path.join(app.getPath("userData"), pck.path);
-            return await saveFile(fullFilePath, pck.data);
+        async (data: ArrayBuffer, relativePath: string) => {
+            const fullFilePath = path.join(
+                app.getPath("userData"),
+                relativePath,
+            );
+            return await saveFile(fullFilePath, data);
         },
     );
 
@@ -182,15 +185,9 @@ app.on("ready", async () => {
     });
 
     // UI request to open file explorer and get the chosen file data.
-    Ipc.Electron.handleTwoWay(
+    Ipc.Electron.handle(
         "openFileExplorer",
-        async ({
-            multiSelections,
-            filters,
-        }: {
-            multiSelections: boolean;
-            filters: FileFilter[];
-        }) => {
+        async (multiSelections: boolean, filters: FileFilter[]) => {
             const openDialogResult = await dialog.showOpenDialog({
                 properties: multiSelections
                     ? ["openFile", "multiSelections"]

@@ -2,61 +2,99 @@
  * File with global types definitions.
  */
 
-type EventPayloadMapping = {
-    requestUserSettings: UserSettings;
-    requestBuildInformation: BuildInformation;
-    requestApplicationExit: void;
-    requestToOpenDevTools: void;
-    requestToOpenExternal: string;
-    requestToOpenUserDataFolder: void | Error;
-    openFileExplorer: FileData[] | Error;
-    saveData: void | Error;
-    saveTemporaryData: void | Error;
-    getFileData: FileData[] | Error;
-    requestEnvironment: Environment;
-    changeUserSettings: UserSettings;
-    getRecentFiles: string[];
-    addRecentFile: string;
-};
+/**
+ * Helper type to make payloads optional if they are typed as 'void'.
+ */
+type Args<T> = T extends void ? [] : [payload: T];
 
+/**
+ * Unsubscribe function.
+ */
 type UnsubscribeFunction = () => void;
 
-interface Window {
-    electron: {
-        requestUserSettings: () => Promise<UserSettings>;
+/**
+ * Unified single source of truth for all IPC channels.
+ * Defines the parameters, expected return values, and communication behavior.
+ */
+type IpcApiChannelMap = {
+    requestUserSettings: { args: []; reply: UserSettings; type: "sync" };
 
-        requestBuildInformation: () => BuildInformation;
-
-        requestApplicationExit: () => Promise<void>;
-
-        requestToOpenDevTools: () => Promise<void>;
-
-        requestToOpenExternal: (url: string) => void;
-
-        requestToOpenUserDataFolder: () => Promise<void | Error>;
-
-        requestEnvironment: () => Environment;
-
-        openFileExplorer: (
-            multiSelections: boolean,
-            filters: FileFilter[],
-        ) => Promise<FileData[] | Error>;
-
-        getFileData: (paths: string[]) => Promise<FileData[] | Error>;
-
-        saveData: (data: ArrayBuffer, path: string) => Promise<void | Error>;
-
-        saveTemporaryData: (
-            data: ArrayBuffer,
-            path: string,
-        ) => Promise<void | Error>;
-
-        changeUserSettings: (settings: UserSettings) => void;
-
-        getRecentFiles: () => string[];
-
-        addRecentFile: (path: string) => void;
+    requestBuildInformation: {
+        args: [];
+        reply: BuildInformation;
+        type: "sync";
     };
+
+    requestApplicationExit: { args: []; reply: void; type: "invoke" };
+
+    requestToOpenDevTools: { args: []; reply: void; type: "send" };
+
+    requestEnvironment: { args: []; reply: Environment; type: "sync" };
+
+    requestToOpenUserDataFolder: {
+        args: [];
+        reply: void | Error;
+        type: "invoke";
+    };
+
+    getRecentFiles: { args: []; reply: string[]; type: "sync" };
+
+    openFileExplorer: {
+        args: [multiSelections: boolean, filters: FileFilter[]];
+        reply: FileData[] | Error;
+        type: "invoke";
+    };
+
+    getFileData: {
+        args: [paths: string[]];
+        reply: FileData[] | Error;
+        type: "invoke";
+    };
+
+    saveData: {
+        args: [data: ArrayBuffer, path: string];
+        reply: void | Error;
+        type: "invoke";
+    };
+
+    saveTemporaryData: {
+        args: [data: ArrayBuffer, path: string];
+        reply: void | Error;
+        type: "invoke";
+    };
+
+    requestToOpenExternal: { args: [url: string]; reply: void; type: "send" };
+
+    changeUserSettings: {
+        args: [settings: UserSettings];
+        reply: void;
+        type: "send";
+    };
+
+    addRecentFile: { args: [path: string]; reply: void; type: "send" };
+};
+
+/**
+ * Automatically builds the Window["electron"] method signatures directly from `IpcApiChannelMap` configuration.
+ */
+type DeriveElectronApi<
+    T extends Record<
+        string,
+        { args: any[]; reply: any; type: "invoke" | "sync" | "send" }
+    >,
+> = {
+    [K in keyof T]: T[K]["type"] extends "invoke"
+        ? (...args: T[K]["args"]) => Promise<T[K]["reply"]>
+        : T[K]["type"] extends "sync"
+          ? (...args: T[K]["args"]) => T[K]["reply"]
+          : (...args: T[K]["args"]) => void;
+};
+
+/**
+ * Interface `Window`.
+ */
+interface Window {
+    electron: DeriveElectronApi<IpcApiChannelMap>;
 }
 
 type FileFilter = {
