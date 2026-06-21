@@ -8,7 +8,8 @@
       }],
   "icon": "./src/assets/desktopIcon.ico",
   "mac": {
-    "target": "dmg"
+    "target": "dmg",
+    "icon": "./src/assets/desktopIcon.icns"
   },
   "linux": {
     "target": "AppImage",
