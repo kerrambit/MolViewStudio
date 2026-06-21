@@ -1,29 +1,37 @@
 import { BrowserWindow, ipcMain, WebFrameMain } from "electron";
-import { getUiPath } from "./pathResolver.js";
+import { getUiPath } from "./utils/pathResolver.js";
 import { isDev } from "./utils/devUtils.js";
 import { pathToFileURL } from "url";
 import { logger } from "./utils/logger.js";
 
 /**
- * Using IPC adapters for Electron side.
+ * Class represents IPC adapters for electron process IPC communication.
  */
 export class Ipc {
     static Electron = class {
-        static handle<Key extends keyof EventPayloadMapping>(
+        /**
+         * Asynchronously handles a UI request and automatically forwards the return payload.
+         */
+        static handle<Key extends keyof IpcApiChannelMap>(
             key: Key,
-            handler: () =>
-                | Promise<EventPayloadMapping[Key]>
-                | EventPayloadMapping[Key],
+            handler: (
+                ...args: IpcApiChannelMap[Key]["args"]
+            ) =>
+                | Promise<IpcApiChannelMap[Key]["reply"]>
+                | IpcApiChannelMap[Key]["reply"],
         ) {
-            ipcMain.handle(key, (event) => {
+            ipcMain.handle(key, (event, ...args) => {
                 validateEventFrame(event.senderFrame);
-                return handler();
+                return handler(...(args as any));
             });
         }
 
-        static handleSync<Key extends keyof EventPayloadMapping>(
+        /**
+         * Synchronously handles a request, blocking the UI thread until returned.
+         */
+        static handleSync<Key extends keyof IpcApiChannelMap>(
             key: Key,
-            handler: () => EventPayloadMapping[Key],
+            handler: () => IpcApiChannelMap[Key]["reply"],
         ) {
             ipcMain.on(key, (event) => {
                 validateEventFrame(event.senderFrame);
@@ -31,55 +39,49 @@ export class Ipc {
             });
         }
 
-        // TODO: will be reworked
-        static handleTwoWay<Key extends keyof EventPayloadMapping>(
+        /**
+         * Listens to a fire-and-forget one-way notification from the UI.
+         */
+        static on<Key extends keyof IpcApiChannelMap>(
             key: Key,
-            handler: (
-                payload: any,
-            ) => Promise<EventPayloadMapping[Key]> | EventPayloadMapping[Key],
+            callback: (...args: IpcApiChannelMap[Key]["args"]) => void,
         ) {
-            ipcMain.handle(key, (event, payload) => {
+            ipcMain.on(key, (event, ...args) => {
                 validateEventFrame(event.senderFrame);
-                return handler(payload);
+                callback(...(args as any));
             });
         }
 
-        static send<Key extends keyof EventPayloadMapping>(
+        /**
+         * Pushes an unsolicited notification event from Electron down to a window container.
+         */
+        static send<Key extends keyof IpcApiChannelMap>(
             key: Key,
-            payload: EventPayloadMapping[Key],
             window: BrowserWindow,
+            ...args: IpcApiChannelMap[Key]["args"]
         ) {
-            window.webContents.send(key, payload);
-        }
-
-        static on<Key extends keyof EventPayloadMapping>(
-            key: Key,
-            callback: (payload: EventPayloadMapping[Key]) => void,
-        ) {
-            ipcMain.on(key, (event, payload) => {
-                validateEventFrame(event.senderFrame);
-                return callback(payload);
-            });
+            window.webContents.send(key, ...args);
         }
     };
 }
 
 /**
  * Simple validation method for checking if requests come from `dist-react/index.html` file (in production).
- * TODO: For more complex validation, new solution might be needed to develope.
  */
 export function validateEventFrame(frame: WebFrameMain | null) {
     // Frame has either navigated or been destroyed.
     if (frame === null) {
         return;
     }
+    // We check in development event comes from the vite server.
     if (isDev() && new URL(frame.url).host === "localhost:5123") {
         return;
     }
+    // Otherwise, we checek event comes from the renderer process.
     if (frame.url !== pathToFileURL(getUiPath()).toString()) {
-        logger.warn(
+        logger.error(
             `While validating event frame, malicious event may have occured!`,
         );
-        throw new Error("Malicious Event Occured!");
+        throw new Error("Malicious event cccured!");
     }
 }
