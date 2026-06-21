@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { logger } from "./logger.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * Loads .json file with an array of recent files.

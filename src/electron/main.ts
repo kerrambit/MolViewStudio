@@ -9,12 +9,12 @@ import {
     getServerPath,
     getUiPath,
 } from "./utils/pathResolver.js";
-import { loadUserSettings } from "./utils/localUserSettingsUtils.js";
+import { loadUserSettings } from "./services/localUserSettingsStorage.js";
 import { isDev } from "./utils/devUtils.js";
 import { createTray } from "./tray.js";
 import { logger } from "./utils/logger.js";
-import { getAvailablePort } from "./utils/serverUtils.js";
-import { SplashScreen } from "./utils/splashScreen.js";
+import { getAvailablePort } from "./utils/portUtils.js";
+import { SplashScreen } from "./splashScreen.js";
 import { registerAllIpcHandlers } from "./ipc/IpcRouter.js";
 
 app.on("ready", async () => {

@@ -1,7 +1,7 @@
 import path from "path";
 import { readFileSync } from "fs";
 import { writeFile, mkdir } from "fs/promises";
-import { logger } from "./logger.js";
+import { logger } from "../utils/logger.js";
 
 export function readFiles(filePaths: string[]): FileData[] | Error {
     const collectedFileData: FileData[] = [];
@@ -11,6 +11,7 @@ export function readFiles(filePaths: string[]): FileData[] | Error {
             const fileName = path.basename(filePath);
             const fileExtension = path.extname(filePath).toLowerCase().slice(1);
             const isBinary = ["mvsx", "cvsx", "bcif", "map", "ccp4"].includes(
+                // TODO: put it into some domain/config file
                 fileExtension,
             );
 

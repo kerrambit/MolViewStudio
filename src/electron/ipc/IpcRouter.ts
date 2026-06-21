@@ -1,16 +1,16 @@
 import { app, BrowserWindow, dialog, Menu, shell } from "electron";
 import path from "path";
 import os from "os";
-import { saveUserSettings } from "../utils/localUserSettingsUtils.js";
+import { saveUserSettings } from "../services/localUserSettingsStorage.js";
 import { isDev } from "../utils/devUtils.js";
 import { Ipc } from "../Ipc.Electron.js";
 import { logger } from "../utils/logger.js";
-import { readFiles, saveFile } from "../utils/fileUtils.js";
+import { readFiles, saveFile } from "../services/fileStorageService.js";
 import { BUILD_INFO } from "../build-info.js";
 import {
     loadRecentFiles,
     writeRecentFiles,
-} from "../utils/recentFilesUtils.js";
+} from "../services/recentFilesStorage.js";
 
 // TODO: devide the indivudal handlers to more grouped folders such as "ipc/file" etc.
 export function registerAllIpcHandlers(
