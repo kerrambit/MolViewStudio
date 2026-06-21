@@ -1,10 +1,10 @@
 {
-  "appId": "com.kerrambit.molstarapp",
+  "appId": "com.kerrambit.molviewstudio",
   "files": ["dist-electron", "dist-react"],
   "extraResources": ["dist-electron/preload.cjs", "src/assets/**", "src/locales/**", {
         "from": "dist-server/",
         "to": ".",
-        "filter": "MolStarAppServer*"
+        "filter": "MolViewStudio*"
       }],
   "icon": "./src/assets/desktopIcon.ico",
   "mac": {
@@ -23,7 +23,7 @@
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
-    "shortcutName": "MolStarApp",
+    "shortcutName": "MolViewStudio",
     "createDesktopShortcut": false,
     "installerIcon": "./src/assets/installerIcon.ico",
     "uninstallerIcon": "./src/assets/installerIcon.ico"

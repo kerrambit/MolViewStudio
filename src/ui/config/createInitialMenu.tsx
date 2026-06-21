@@ -13,7 +13,7 @@ import {
     createFileRootMenuItem,
     createGeneralHelpSection,
     createHelpRootMenuItem,
-    createMolstarAppMenuItem,
+    createMolViewStudioMenuItem,
     createMolstarMenuItem,
     createOnlyDevSection,
     createOpenDevToolsMenuItem,
@@ -69,7 +69,7 @@ export function createInitialMenu(
         createSettingsRootMenuItem(navigate),
         createHelpRootMenuItem([
             createGeneralHelpSection([
-                createMolstarAppMenuItem(),
+                createMolViewStudioMenuItem(),
                 createMolstarMenuItem(),
                 createReportIssueMenuItem(),
             ]),

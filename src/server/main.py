@@ -12,7 +12,7 @@ def get_cors_origins(settings: Settings):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Mol* App Server")
+    parser = argparse.ArgumentParser(description="MolView Studio Server")
 
     parser.add_argument(
         "--host", default="localhost", help="Host to bind to (default: localhost)"
@@ -45,7 +45,7 @@ def main():
     reload = args.reload if args.env == "dev" else False
 
     print(
-        f">>> Starting Mol* App Server on <{args.host}:{args.port}> with log level set to <info>."
+        f">>> Starting MolView Studio Server on <{args.host}:{args.port}> with log level set to <info>."
     )
     print(
         f">>> Other settings: environment: <{settings.env}>, CORS: <{settings.cors}>, reloading: {reload}."

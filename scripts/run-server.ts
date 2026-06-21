@@ -4,12 +4,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const executable =
-    process.platform === "win32" ? "MolStarAppServer.exe" : "MolStarAppServer";
+    process.platform === "win32"
+        ? "MolViewStudioServer.exe"
+        : "MolViewStudioServer";
 
 const serverPath = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "../dist-server",
-    executable
+    executable,
 );
 
 if (!existsSync(serverPath)) {

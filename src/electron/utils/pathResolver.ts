@@ -17,8 +17,8 @@ export function getUiPath(): string {
 export function getServerPath(): string {
     const executable =
         process.platform === "win32"
-            ? "MolStarAppServer.exe"
-            : "MolStarAppServer";
+            ? "MolViewStudioServer.exe"
+            : "MolViewStudioServer";
 
     if (isDev()) {
         return path.join(app.getAppPath(), "dist-server", executable);

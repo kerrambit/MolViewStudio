@@ -268,10 +268,10 @@ export function createReportIssueMenuItem(): MenuItem {
     };
 }
 
-export function createMolstarAppMenuItem(): MenuItem {
+export function createMolViewStudioMenuItem(): MenuItem {
     return {
-        id: "molstarapp",
-        title: "MolstarApp GitHub",
+        id: "molviewstudio",
+        title: "MolView Studio GitHub",
         icon: { icon: IconBrandGithub, position: "left" },
         task: {
             action: () => {

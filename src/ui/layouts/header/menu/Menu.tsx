@@ -37,10 +37,10 @@ export function Menu({ className = "" }: MenuProps) {
     return (
         <div className={className}>
             <span
-                title={`Mol* App (Version ${info.appVersion})`}
+                title={`MolView Studio (Version ${info.appVersion})`}
                 className="menu__title"
             >
-                Mol* App{" "}
+                MolView Studio{" "}
                 {isDev ? (
                     <Badge
                         title="You are in developer mode."
