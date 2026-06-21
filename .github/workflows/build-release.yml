@@ -1,4 +1,4 @@
-name: Build and Release Mol* App
+name: Build and Release MolView Studio
 
 on:
   push:

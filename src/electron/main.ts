@@ -41,7 +41,7 @@ app.on("ready", async () => {
 
     // Create and show splash screen. Source: https://www.freepik.com/free-vector/superimposed-water-drop-shape-abstract-graphics-background_14803692.htm#fromView=search&page=1&position=5&uuid=851272e9-7991-4653-9e3f-c5086e86f2da&query=Splash+molecules.
     const splash = new SplashScreen(path.join(getAssetsPath(), "splash.png"), {
-        width: 498,
+        width: 500,
         height: 300,
     });
 

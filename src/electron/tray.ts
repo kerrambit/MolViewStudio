@@ -14,7 +14,7 @@ export function createTray(mainWindow: BrowserWindow) {
     );
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: "Mol* App",
+            label: "MolView Studio",
             type: "header",
             enabled: false,
             click: () => {
@@ -23,7 +23,7 @@ export function createTray(mainWindow: BrowserWindow) {
         },
         { type: "separator" },
         {
-            label: "Show Mol* App",
+            label: "Show MolView Studio",
             click: () => {
                 mainWindow.show();
                 if (app.dock) {
@@ -34,13 +34,13 @@ export function createTray(mainWindow: BrowserWindow) {
         { label: "Check For Updates...", click: () => {} },
         { type: "separator" },
         {
-            label: "Quit Mol* App",
+            label: "Quit MolView Studio",
             click: () => {
                 app.quit();
             },
         },
     ]);
 
-    tray.setToolTip("Mol* App");
+    tray.setToolTip("MolView Studio");
     tray.setContextMenu(contextMenu);
 }
