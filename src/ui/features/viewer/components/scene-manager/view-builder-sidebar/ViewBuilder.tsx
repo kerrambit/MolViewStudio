@@ -3,6 +3,7 @@ import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { useViewBuilder } from "../../../hooks/useViewBuilder";
 import { AssetBuilderCard } from "./AssetBuilderCard";
+import { AutoScrollList } from "../../../../../components/common/auto-scroll-list/AutoScrollList";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -28,6 +29,11 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
     // Render nothing if no view was found with given key.
     if (!view) return <></>;
+
+    // Computes index of first selected asset in the list, otherwise -1.
+    const firstSelectedAssetIndex = assetsInView.findIndex((asset) =>
+        selectedAssetIds.includes(asset.id),
+    );
 
     // Render the component.
     return (
@@ -73,23 +79,35 @@ export function ViewBuilder(props: ViewBuilderProps) {
                     gap: "0.5em",
                 }}
             >
-                {assetsInView.map((asset) => (
-                    <AssetBuilderCard
-                        key={asset.id}
-                        asset={asset}
-                        isDark={isDark}
-                        isExpanded={expandedAssetId === asset.id}
-                        isSelected={selectedAssetIds.includes(asset.id)}
-                        viewModel={getViewModel(asset.id)}
-                        onToggleExpand={() => toggleExpandAsset(asset.id)}
-                        onToggleSelect={(checked) =>
-                            handleAssetToggle(asset.id, checked)
-                        }
-                        onUpdateParam={(key, val, sync) =>
-                            updateViewModel(asset.id, key, val, sync)
-                        }
-                    />
-                ))}
+                <AutoScrollList
+                    list={assetsInView}
+                    activeIndex={
+                        firstSelectedAssetIndex === -1
+                            ? 0
+                            : firstSelectedAssetIndex
+                    }
+                    renderItem={(asset, _) => {
+                        return (
+                            <AssetBuilderCard
+                                key={asset.id}
+                                asset={asset}
+                                isDark={isDark}
+                                isExpanded={expandedAssetId === asset.id}
+                                isSelected={selectedAssetIds.includes(asset.id)}
+                                viewModel={getViewModel(asset.id)}
+                                onToggleExpand={() =>
+                                    toggleExpandAsset(asset.id)
+                                }
+                                onToggleSelect={(checked) =>
+                                    handleAssetToggle(asset.id, checked)
+                                }
+                                onUpdateParam={(key, val, sync) =>
+                                    updateViewModel(asset.id, key, val, sync)
+                                }
+                            />
+                        );
+                    }}
+                ></AutoScrollList>
             </div>
         </div>
     );
