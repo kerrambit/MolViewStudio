@@ -16,6 +16,7 @@ import {
 import {
     createCreateNewProjectMenuItem,
     createExitMenuItem,
+    createHomePageMenuItem,
     createOnlyDevSection,
     createOpenFileInViewerMenuItem,
     createOpenRecentFileInViewerMenuItem,
@@ -44,6 +45,7 @@ import {
     loadDefaultMVSXFile,
     loadDefaultPDBFile,
 } from "../services/defaultLoaderService";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 
 export function useViewerMenu() {
     // Use translation.
@@ -73,6 +75,9 @@ export function useViewerMenu() {
         restoreMenuItem,
     } = useMenu();
 
+    // Use navigation.
+    const navigate = useNavigate();
+
     // For viewer editor, we modify menu.
     useEffect(() => {
         // For viewer editor, show new root menu item "Edit".
@@ -93,11 +98,13 @@ export function useViewerMenu() {
             customCreateNewProjectAction,
             customOpenFileInViewerAction,
             customOpenRecentFileInViewerAction,
+            customHomePageAction,
         } = createCustomMenuItems(
             showDialogue,
             openFileExplorerAndLoadFileInApp,
             createNewProjectInApp,
             loadRecentFileInApp,
+            navigate,
         );
 
         replaceMenuItem("exit", createExitMenuItem(customExitAction));
@@ -115,6 +122,10 @@ export function useViewerMenu() {
                 customOpenRecentFileInViewerAction,
             ),
         );
+        replaceMenuItem(
+            "homepage",
+            createHomePageMenuItem(customHomePageAction),
+        );
 
         return () => {
             deleteRootMenuItem(editMenuItem.id);
@@ -122,6 +133,7 @@ export function useViewerMenu() {
             restoreMenuItem("create-new-project");
             restoreMenuItem("open-file-in-viewer");
             restoreMenuItem("recent-file-in-viewer");
+            restoreMenuItem("homepage");
         };
     }, [t, regime, setRegime, showDialogue, getAllLocalAssets, clearAssets]);
 }
@@ -131,6 +143,7 @@ function createCustomMenuItems(
     openFileExplorerAndLoadFileInApp: () => Promise<void>,
     createNewProjectInApp: () => void,
     loadRecentFileInApp: (path: string) => Promise<void>,
+    navigate: NavigateFunction,
 ) {
     const customExitAction = async () => {
         const confirmed = await showDialogue<boolean>({
@@ -190,11 +203,28 @@ function createCustomMenuItems(
         }
     };
 
+    const customHomePageAction = async () => {
+        const confirmed = await showDialogue<boolean>({
+            title: "Confirmation",
+            showCloseButton: false,
+            content: (close) => (
+                <ConfirmationDialogueContent
+                    close={close}
+                    doYouReallyWantToQuestion="Do you really want to leave the viewer and go to home page?"
+                />
+            ),
+        });
+        if (confirmed) {
+            navigate("/home");
+        }
+    };
+
     return {
         customExitAction,
         customCreateNewProjectAction,
         customOpenFileInViewerAction,
         customOpenRecentFileInViewerAction,
+        customHomePageAction,
     };
 }
 

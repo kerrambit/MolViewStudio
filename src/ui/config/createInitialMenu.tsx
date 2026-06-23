@@ -13,6 +13,8 @@ import {
     createFileRootMenuItem,
     createGeneralHelpSection,
     createHelpRootMenuItem,
+    createHomePageMenuItem,
+    createHomePageSection,
     createMolViewStudioMenuItem,
     createMolstarMenuItem,
     createOnlyDevSection,
@@ -68,6 +70,11 @@ export function createInitialMenu(
         ]),
         createSettingsRootMenuItem(navigate),
         createHelpRootMenuItem([
+            createHomePageSection([
+                createHomePageMenuItem(() => {
+                    navigate("/home");
+                }),
+            ]),
             createGeneralHelpSection([
                 createMolViewStudioMenuItem(),
                 createMolstarMenuItem(),
