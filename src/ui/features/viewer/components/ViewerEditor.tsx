@@ -4,8 +4,8 @@ import { useMolstarInit } from "../hooks/useMolstarInit";
 import { ProcessingJobs } from "./processing-manager/ProcessingJobs";
 import { SceneManager } from "./scene-manager/SceneManager";
 
-import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import "./ViewerEditor.css";
+import { useMolstarTheme } from "../hooks/useMolstarTheme";
 
 export function ViewerEditor() {
     // Use viewer menu.
@@ -13,6 +13,9 @@ export function ViewerEditor() {
 
     // Use Molstar.
     const { parentRef, molstarLoading, molstarExpanded } = useMolstarInit();
+
+    // Use Molstar theme.
+    useMolstarTheme();
 
     // Render the component.
     return (
