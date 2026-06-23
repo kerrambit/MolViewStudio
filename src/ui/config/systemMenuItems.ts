@@ -7,6 +7,7 @@ import {
     IconFlag,
     IconFolderCog,
     IconFolderOpen,
+    IconHome,
     IconInfoOctagon,
     IconProgressCheck,
     IconTopologyStar3,
@@ -234,6 +235,27 @@ export function createCheckForUpdatesSection(items: MenuItem[]): Section {
     return {
         id: "help-updates",
         items: items,
+    };
+}
+
+export function createHomePageSection(items: MenuItem[]): Section {
+    return {
+        id: "home-page",
+        items: items,
+    };
+}
+
+export function createHomePageMenuItem(action: () => void): MenuItem {
+    return {
+        id: "homepage",
+        title: "Home page",
+        icon: { icon: IconHome, position: "left" },
+        task: {
+            action: () => {
+                action();
+            },
+            type: "direct",
+        },
     };
 }
 
