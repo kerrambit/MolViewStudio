@@ -77,7 +77,6 @@ export function Assets() {
                                             );
 
                                         if (result) {
-                                            console.log(result);
                                             const wasSuccessful =
                                                 editRelativePathAndFilenameOfLocalAsset(
                                                     asset.asset.url,
