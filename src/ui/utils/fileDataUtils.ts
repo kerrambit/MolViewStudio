@@ -13,6 +13,13 @@ export function getFilenameWithoutExtension(filename: string | undefined) {
     return splitted.at(0);
 }
 
+export function getFilePathWithoutFile(filepath: string): string {
+    const lastSlashIndex = filepath.lastIndexOf("/");
+    if (lastSlashIndex === -1) return "";
+
+    return filepath.substring(0, lastSlashIndex);
+}
+
 export function addExtensionToFilename(filename: string, extension: string) {
     return `${filename}.${extension}`;
 }

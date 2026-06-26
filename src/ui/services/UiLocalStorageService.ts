@@ -8,6 +8,7 @@ const PREFIX = {
     VIEW_BUILDER_ASSET: "view-builder-expanded-asset-",
     VIEW_BUILDER_TAB: "view-builder-tab-",
     VIEW_BUILDER_FILTER: "view-builder-asset-filters-",
+    VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
 };
 
 export const UiLocalStorageService = {
@@ -124,6 +125,33 @@ export const UiLocalStorageService = {
             localStorage.setItem(
                 `${PREFIX.VIEW_BUILDER_FILTER}${viewKey}`,
                 JSON.stringify(filters),
+            );
+        },
+
+        getAssetFolders: (viewKey: string): string[] | null => {
+            const stored = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_FOLDER}${viewKey}`,
+            );
+
+            if (!stored) return null;
+
+            try {
+                return JSON.parse(stored) as string[];
+            } catch (error) {
+                pushErrorNotification(
+                    `Internal error occured concerning reading the stored UI state!`,
+                );
+                loggerUi.error(
+                    `Failed to parse asset folders from localStorage! Details: <${error}>.`,
+                );
+                return null;
+            }
+        },
+
+        setAssetFolders: (viewKey: string, folders: string[]): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_FOLDER}${viewKey}`,
+                JSON.stringify(folders),
             );
         },
     },

@@ -4,7 +4,10 @@ import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
-import { getExtensionFromFileName } from "../../../utils/fileDataUtils";
+import {
+    getExtensionFromFileName,
+    getFilePathWithoutFile,
+} from "../../../utils/fileDataUtils";
 import {
     getAssetConfig,
     getAllSupportedAssetsParsers,
@@ -130,18 +133,20 @@ export function useViewBuilder(viewKey: string) {
         UiLocalStorageService.ViewBuilder.getAssetFilters(viewKey) ?? ["All"],
     );
 
-    // Memoized list of all managed assets in the application.
-    const assetsInView = useMemo(() => {
+    // Current selected asset relative paths.
+    const [selectedAssetRelativePaths, setSelectedAssetRelativePaths] =
+        useState<string[]>(
+            UiLocalStorageService.ViewBuilder.getAssetFolders(viewKey) ?? [
+                "All",
+            ],
+        );
+
+    // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...).
+    const assetsFilteredByType = useMemo(() => {
         const allAssets = getAllAssets();
 
-        if (selectedAssetFilters.length === 0) {
-            return [];
-        }
-
-        // If "All" is selected, return everything.
-        if (selectedAssetFilters.includes("All")) {
-            return allAssets;
-        }
+        if (selectedAssetFilters.length === 0) return [];
+        if (selectedAssetFilters.includes("All")) return allAssets;
 
         const hasLocationFilters = selectedAssetFilters.some(
             (f) => f === "Local assets" || f === "Remote assets",
@@ -156,18 +161,15 @@ export function useViewBuilder(viewKey: string) {
                 if (
                     selectedAssetFilters.includes("Local assets") &&
                     asset.tag === "local"
-                ) {
+                )
                     matchesLocation = true;
-                }
                 if (
                     selectedAssetFilters.includes("Remote assets") &&
                     asset.tag === "remote"
-                ) {
+                )
                     matchesLocation = true;
-                }
             }
 
-            // Validate Extension Filter (if any are selected).
             let matchesExtension = !hasExtensionFilters;
             if (hasExtensionFilters) {
                 matchesExtension = selectedAssetFilters.some((ext) =>
@@ -178,6 +180,19 @@ export function useViewBuilder(viewKey: string) {
             return matchesLocation && matchesExtension;
         });
     }, [getAllAssets, selectedAssetFilters]);
+
+    // Memoized assets further narrowed down by relative paths.
+    const assetsInView = useMemo(() => {
+        if (selectedAssetRelativePaths.includes("All")) {
+            return assetsFilteredByType;
+        }
+
+        return assetsFilteredByType.filter((asset) => {
+            const path = getFilePathWithoutFile(asset.relativePath);
+            const normalizedAssetPath = !path ? "./" : path;
+            return selectedAssetRelativePaths.includes(normalizedAssetPath);
+        });
+    }, [assetsFilteredByType, selectedAssetRelativePaths]);
 
     // Function which returns safe view model based on asset ID.
     const getViewModel = (assetId: string): VolumeViewModel => {
@@ -395,8 +410,11 @@ export function useViewBuilder(viewKey: string) {
     return {
         view,
         assetsInView,
+        assetsFilteredByType,
         selectedAssetFilters,
         setSelectedAssetFilters,
+        selectedAssetRelativePaths,
+        setSelectedAssetRelativePaths,
         selectedAssetIds,
         expandedAssetId,
         getViewModel,

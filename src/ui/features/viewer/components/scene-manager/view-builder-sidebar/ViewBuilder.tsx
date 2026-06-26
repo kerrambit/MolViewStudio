@@ -5,6 +5,7 @@ import { useViewBuilder } from "../../../hooks/useViewBuilder";
 import { AssetBuilderCard } from "./AssetBuilderCard";
 import { AutoScrollList } from "../../../../../components/common/auto-scroll-list/AutoScrollList";
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -20,8 +21,11 @@ export function ViewBuilder(props: ViewBuilderProps) {
     const {
         view,
         assetsInView,
+        assetsFilteredByType,
         selectedAssetFilters,
         setSelectedAssetFilters,
+        selectedAssetRelativePaths,
+        setSelectedAssetRelativePaths,
         selectedAssetIds,
         expandedAssetId,
         getViewModel,
@@ -94,7 +98,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                         filters,
                     );
                 }}
-                placeholder="Select asset types you want to use."
+                placeholder="Select asset types filters."
                 defaultValue={["All"]}
                 checkIconPosition="left"
                 withAlignedLabels
@@ -102,6 +106,52 @@ export function ViewBuilder(props: ViewBuilderProps) {
                 hidePickedOptions
                 searchable
                 nothingFoundMessage="No asset found!"
+                style={{ paddingBottom: "1em" }}
+                styles={{
+                    pill: {
+                        background:
+                            colorScheme === "dark"
+                                ? "var(--mantine-primary-color-7)"
+                                : "var(--mantine-primary-color-3)",
+                    },
+                }}
+            ></MultiSelect>
+
+            <MultiSelect
+                label="Select asset folders"
+                data={[
+                    "All",
+                    ...Array.from(
+                        new Set(
+                            assetsFilteredByType.map((asset) => {
+                                const path = getFilePathWithoutFile(
+                                    asset.relativePath,
+                                );
+                                if (!path) {
+                                    return "./";
+                                } else {
+                                    return path;
+                                }
+                            }),
+                        ),
+                    ),
+                ]}
+                value={selectedAssetRelativePaths}
+                onChange={(paths) => {
+                    setSelectedAssetRelativePaths(paths);
+                    UiLocalStorageService.ViewBuilder.setAssetFolders(
+                        props.viewKey,
+                        paths,
+                    );
+                }}
+                placeholder="Select asset folders."
+                defaultValue={["All"]}
+                checkIconPosition="left"
+                withAlignedLabels
+                clearable
+                hidePickedOptions
+                searchable
+                nothingFoundMessage="No paths found!"
                 style={{ paddingBottom: "1em" }}
                 styles={{
                     pill: {
