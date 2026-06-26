@@ -1,11 +1,4 @@
-import {
-    Text,
-    Divider,
-    MultiSelect,
-    Collapse,
-    Checkbox,
-    UnstyledButton,
-} from "@mantine/core";
+import { Text, Divider, MultiSelect, Collapse } from "@mantine/core";
 import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { useViewBuilder } from "../../../hooks/useViewBuilder";
@@ -13,7 +6,7 @@ import { AssetBuilderCard } from "./AssetBuilderCard";
 import { AutoScrollList } from "../../../../../components/common/auto-scroll-list/AutoScrollList";
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -89,7 +82,9 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
             <Divider style={{ paddingBottom: "1em" }} />
 
-            <UnstyledButton
+            <CollapseTrigger
+                title={"Filters"}
+                expanded={areFiltersExpanded}
                 onClick={() => {
                     setAreFiltersExpanded((prev) => {
                         const nextState = !prev;
@@ -100,22 +95,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                         return nextState;
                     });
                 }}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--mantine-spacing-xs)",
-                    paddingBottom: "var(--mantine-spacing-sm)",
-                    cursor: "pointer",
-                    userSelect: "none",
-                }}
-            >
-                <Text size="lg">Filters</Text>
-                {areFiltersExpanded ? (
-                    <IconChevronUp size={16} style={{ opacity: 0.7 }} />
-                ) : (
-                    <IconChevronDown size={16} style={{ opacity: 0.7 }} />
-                )}
-            </UnstyledButton>
+            ></CollapseTrigger>
 
             <Collapse expanded={areFiltersExpanded}>
                 <MultiSelect
