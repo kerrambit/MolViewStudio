@@ -125,8 +125,59 @@ export function useViewBuilder(viewKey: string) {
         Record<string, VolumeViewModel>
     >({});
 
+    // Current selected asset filters.
+    const [selectedAssetFilters, setSelectedAssetFilters] = useState<string[]>(
+        UiLocalStorageService.ViewBuilder.getAssetFilters(viewKey) ?? ["All"],
+    );
+
     // Memoized list of all managed assets in the application.
-    const assetsInView = useMemo(() => getAllAssets(), [getAllAssets]);
+    const assetsInView = useMemo(() => {
+        const allAssets = getAllAssets();
+
+        if (selectedAssetFilters.length === 0) {
+            return [];
+        }
+
+        // If "All" is selected, return everything.
+        if (selectedAssetFilters.includes("All")) {
+            return allAssets;
+        }
+
+        const hasLocationFilters = selectedAssetFilters.some(
+            (f) => f === "Local assets" || f === "Remote assets",
+        );
+        const hasExtensionFilters = selectedAssetFilters.some((f) =>
+            f.startsWith("."),
+        );
+
+        return allAssets.filter((asset) => {
+            let matchesLocation = !hasLocationFilters;
+            if (hasLocationFilters) {
+                if (
+                    selectedAssetFilters.includes("Local assets") &&
+                    asset.tag === "local"
+                ) {
+                    matchesLocation = true;
+                }
+                if (
+                    selectedAssetFilters.includes("Remote assets") &&
+                    asset.tag === "remote"
+                ) {
+                    matchesLocation = true;
+                }
+            }
+
+            // Validate Extension Filter (if any are selected).
+            let matchesExtension = !hasExtensionFilters;
+            if (hasExtensionFilters) {
+                matchesExtension = selectedAssetFilters.some((ext) =>
+                    asset.name.toLowerCase().endsWith(ext.toLowerCase()),
+                );
+            }
+
+            return matchesLocation && matchesExtension;
+        });
+    }, [getAllAssets, selectedAssetFilters]);
 
     // Function which returns safe view model based on asset ID.
     const getViewModel = (assetId: string): VolumeViewModel => {
@@ -344,6 +395,8 @@ export function useViewBuilder(viewKey: string) {
     return {
         view,
         assetsInView,
+        selectedAssetFilters,
+        setSelectedAssetFilters,
         selectedAssetIds,
         expandedAssetId,
         getViewModel,

@@ -1,9 +1,13 @@
+import { pushErrorNotification } from "./NotificationService";
+import { loggerUi } from "./UiLoggingService";
+
 const PREFIX = {
     PENDING_SCREENSHOT: "view-options-wants-screenshot-",
     SCENE_MANAGER_TAB: "scene-manager-tab-",
     SCENE_MANAGER_BUILDER_SIDEBAR: "scene-manager-builder-sidebar",
     VIEW_BUILDER_ASSET: "view-builder-expanded-asset-",
     VIEW_BUILDER_TAB: "view-builder-tab-",
+    VIEW_BUILDER_FILTER: "view-builder-asset-filters-",
 };
 
 export const UiLocalStorageService = {
@@ -94,6 +98,33 @@ export const UiLocalStorageService = {
 
         setTab: (tabType: "representation" | "volume"): void => {
             localStorage.setItem(`${PREFIX.VIEW_BUILDER_TAB}`, String(tabType));
+        },
+
+        getAssetFilters: (viewKey: string): string[] | null => {
+            const stored = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_FILTER}${viewKey}`,
+            );
+
+            if (!stored) return null;
+
+            try {
+                return JSON.parse(stored) as string[];
+            } catch (error) {
+                pushErrorNotification(
+                    `Internal error occured concerning reading the stored UI state!`,
+                );
+                loggerUi.error(
+                    `Failed to parse asset filters from localStorage! Details: <${error}>.`,
+                );
+                return null;
+            }
+        },
+
+        setAssetFilters: (viewKey: string, filters: string[]): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_FILTER}${viewKey}`,
+                JSON.stringify(filters),
+            );
         },
     },
 };

@@ -1,9 +1,10 @@
-import { Text, Divider } from "@mantine/core";
+import { Text, Divider, MultiSelect } from "@mantine/core";
 import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { useViewBuilder } from "../../../hooks/useViewBuilder";
 import { AssetBuilderCard } from "./AssetBuilderCard";
 import { AutoScrollList } from "../../../../../components/common/auto-scroll-list/AutoScrollList";
+import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -19,6 +20,8 @@ export function ViewBuilder(props: ViewBuilderProps) {
     const {
         view,
         assetsInView,
+        selectedAssetFilters,
+        setSelectedAssetFilters,
         selectedAssetIds,
         expandedAssetId,
         getViewModel,
@@ -71,6 +74,44 @@ export function ViewBuilder(props: ViewBuilderProps) {
             </div>
 
             <Divider style={{ paddingBottom: "1em" }} />
+
+            <MultiSelect
+                label="Select asset type filters"
+                data={[
+                    "All",
+                    "Local assets",
+                    "Remote assets",
+                    ".map",
+                    ".bcif",
+                    ".cif",
+                    ".ccp4",
+                ]}
+                value={selectedAssetFilters}
+                onChange={(filters) => {
+                    setSelectedAssetFilters(filters);
+                    UiLocalStorageService.ViewBuilder.setAssetFilters(
+                        props.viewKey,
+                        filters,
+                    );
+                }}
+                placeholder="Select asset types you want to use."
+                defaultValue={["All"]}
+                checkIconPosition="left"
+                withAlignedLabels
+                clearable
+                hidePickedOptions
+                searchable
+                nothingFoundMessage="No asset found!"
+                style={{ paddingBottom: "1em" }}
+                styles={{
+                    pill: {
+                        background:
+                            colorScheme === "dark"
+                                ? "var(--mantine-primary-color-7)"
+                                : "var(--mantine-primary-color-3)",
+                    },
+                }}
+            ></MultiSelect>
 
             <div
                 style={{
