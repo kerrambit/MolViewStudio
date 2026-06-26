@@ -141,6 +141,10 @@ export function useViewBuilder(viewKey: string) {
             ],
         );
 
+    const [areFiltersExpanded, setAreFiltersExpanded] = useState(
+        UiLocalStorageService.ViewBuilder.getExpandedFiltersSection(viewKey),
+    );
+
     // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...).
     const assetsFilteredByType = useMemo(() => {
         const allAssets = getAllAssets();
@@ -411,6 +415,8 @@ export function useViewBuilder(viewKey: string) {
         view,
         assetsInView,
         assetsFilteredByType,
+        areFiltersExpanded,
+        setAreFiltersExpanded,
         selectedAssetFilters,
         setSelectedAssetFilters,
         selectedAssetRelativePaths,

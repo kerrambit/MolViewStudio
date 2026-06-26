@@ -7,7 +7,8 @@ const PREFIX = {
     SCENE_MANAGER_BUILDER_SIDEBAR: "scene-manager-builder-sidebar",
     VIEW_BUILDER_ASSET: "view-builder-expanded-asset-",
     VIEW_BUILDER_TAB: "view-builder-tab-",
-    VIEW_BUILDER_FILTER: "view-builder-asset-filters-",
+    VIEW_BUILDER_FILTER_SECTION: "view-builder-asset-filter-section-",
+    VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
 };
 
@@ -103,7 +104,7 @@ export const UiLocalStorageService = {
 
         getAssetFilters: (viewKey: string): string[] | null => {
             const stored = localStorage.getItem(
-                `${PREFIX.VIEW_BUILDER_FILTER}${viewKey}`,
+                `${PREFIX.VIEW_BUILDER_FILTERS}${viewKey}`,
             );
 
             if (!stored) return null;
@@ -123,7 +124,7 @@ export const UiLocalStorageService = {
 
         setAssetFilters: (viewKey: string, filters: string[]): void => {
             localStorage.setItem(
-                `${PREFIX.VIEW_BUILDER_FILTER}${viewKey}`,
+                `${PREFIX.VIEW_BUILDER_FILTERS}${viewKey}`,
                 JSON.stringify(filters),
             );
         },
@@ -153,6 +154,33 @@ export const UiLocalStorageService = {
                 `${PREFIX.VIEW_BUILDER_FOLDER}${viewKey}`,
                 JSON.stringify(folders),
             );
+        },
+
+        getExpandedFiltersSection: (viewKey: string): boolean => {
+            const result = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_FILTER_SECTION}${viewKey}`,
+            );
+            if (result) {
+                return result === "true";
+            }
+            return true;
+        },
+
+        setExpandedFiltersSection: (
+            viewKey: string,
+            isExpanded: boolean,
+        ): void => {
+            if (isExpanded) {
+                localStorage.setItem(
+                    `${PREFIX.VIEW_BUILDER_FILTER_SECTION}${viewKey}`,
+                    "true",
+                );
+            } else {
+                localStorage.setItem(
+                    `${PREFIX.VIEW_BUILDER_FILTER_SECTION}${viewKey}`,
+                    "false",
+                );
+            }
         },
     },
 };
