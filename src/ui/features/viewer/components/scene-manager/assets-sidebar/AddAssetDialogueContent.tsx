@@ -10,6 +10,10 @@ import {
 import { pushWarningNotification } from "../../../../../services/NotificationService";
 import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
 import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
+import {
+    addExtensionToFilename,
+    getFilenameWithoutExtension,
+} from "../../../../../utils/fileDataUtils";
 
 export interface AddAssetDialogueReturnType {
     file: FileData;
@@ -28,6 +32,12 @@ export function AddAssetDialogueContent({
 }: AddAssetDialogueContentProps) {
     // State for the chosen file asset.
     const [file, setFile] = useState<FileData | undefined>(undefined);
+
+    // State for the file name, which can be changed.
+    const [fileName, setFilename] = useState<string | undefined>(undefined);
+
+    // State if file name is valid or not.
+    const [isFileNameInvalid, setIsFileNameInvalid] = useState(false);
 
     // State for up path segments for a relative path of asset.
     const [pathSegments, setPathSegments] = useState<string[]>([]);
@@ -67,6 +77,9 @@ export function AddAssetDialogueContent({
                         if (!(result instanceof Error)) {
                             const selectedFile = result[0];
                             setFile(selectedFile);
+                            setFilename(
+                                getFilenameWithoutExtension(selectedFile.name),
+                            );
 
                             if (checkRequiresProcessing(selectedFile.name)) {
                                 setProcessAsset(true);
@@ -98,6 +111,32 @@ export function AddAssetDialogueContent({
                 />
             </div>
 
+            {/* Change name of the asset. */}
+            <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
+                <Text size="sm" style={{ minWidth: "9em" }}>
+                    Change name of the asset:
+                </Text>
+                <UnstyledTextInput
+                    placeholder="N/A"
+                    value={fileName}
+                    enabled={file !== undefined}
+                    onValueChange={(value) => {
+                        setFilename(value);
+                    }}
+                    onBlur={(value) => {
+                        setFilename(value);
+                    }}
+                    onErrorChange={(hasError) => {
+                        if (hasError) {
+                            setIsFileNameInvalid(true);
+                        } else {
+                            setIsFileNameInvalid(false);
+                        }
+                    }}
+                    style={{ flexGrow: 1 }}
+                />
+            </div>
+
             {/* We might show processing checkbox if given asset type allows. */}
             <Collapse expanded={showProcessingUi}>
                 <div
@@ -123,6 +162,10 @@ export function AddAssetDialogueContent({
                             setProcessAsset(e.currentTarget.checked)
                         }
                     />
+                    <Text size="xs" c="dimmed">
+                        Note that processed files might not share the name you
+                        set for asset in this dialogue!
+                    </Text>
                 </div>
             </Collapse>
 
@@ -149,14 +192,22 @@ export function AddAssetDialogueContent({
                 }}
             >
                 <Button
-                    disabled={!file || isPathInvalid}
-                    onClick={() =>
+                    disabled={!file || isPathInvalid || isFileNameInvalid}
+                    onClick={() => {
+                        const newFile: FileData = {
+                            ...file!,
+                            name: addExtensionToFilename(
+                                fileName!,
+                                file!.extension,
+                            ),
+                        };
+
                         close({
-                            file: file!,
+                            file: newFile,
                             relativePath: compileFinalPath(pathSegments),
                             processAsset,
-                        })
-                    }
+                        });
+                    }}
                     tooltip="Save local asset."
                 >
                     Save

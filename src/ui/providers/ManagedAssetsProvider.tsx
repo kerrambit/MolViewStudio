@@ -48,14 +48,16 @@ type ManagedAssetsContextType = {
     removeAsset: (url: string) => boolean;
 
     /**
-     * Edits relative path of local asset.
+     * Edits relative path and file name of local asset.
      * Beware that original object is deleted both from map and Molstar!
      * @param url url of asset
+     * @param newFilenameWithExtension new filename with its extensions
      * @param newRelativePath new relative path (e.g. "volumes/segments/", or "" for no folders)
      * @returns false if given url does not exist, otherwise true
      */
-    editRelativePathOfLocalAsset: (
+    editRelativePathAndFilenameOfLocalAsset: (
         url: string,
+        newFilenameWithExtension: string,
         newRelativePath: string,
     ) => boolean;
 
@@ -190,14 +192,19 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         [assets],
     );
 
-    const editRelativePathOfLocalAsset = useCallback(
-        (url: string, newRelativePath: string): boolean => {
+    const editRelativePathAndFilenameOfLocalAsset = useCallback(
+        (
+            url: string,
+            newFilenameWithExtension: string,
+            newRelativePath: string,
+        ): boolean => {
             if (!assets.has(url)) return false;
 
             const existingAsset = assets.get(url)!;
             if (existingAsset.tag !== "local") return false;
 
-            const newFullPath = `${newRelativePath}${existingAsset.name}`;
+            const newFullPath = `${newRelativePath}${newFilenameWithExtension}`;
+
             if (existingAsset.relativePath === newFullPath) return false;
 
             const result = replaceAssetRelativePathFromMolstar(
@@ -218,6 +225,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                     ...existingAsset,
                     asset: result.asset,
                     relativePath: newFullPath,
+                    name: newFilenameWithExtension,
                 });
 
                 return newMap;
@@ -309,7 +317,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 addLocalAsset,
                 addRemoteAsset,
                 removeAsset,
-                editRelativePathOfLocalAsset,
+                editRelativePathAndFilenameOfLocalAsset,
                 incrementAssetUseCount,
                 decrementAssetUseCount,
                 clearAssets,

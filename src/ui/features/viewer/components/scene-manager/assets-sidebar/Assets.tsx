@@ -32,7 +32,7 @@ export function Assets() {
         getAllLocalAssets,
         getAllRemoteAssets,
         removeAsset,
-        editRelativePathOfLocalAsset,
+        editRelativePathAndFilenameOfLocalAsset,
     } = useManagedAssets();
 
     // Use workspace management.
@@ -77,9 +77,11 @@ export function Assets() {
                                             );
 
                                         if (result) {
+                                            console.log(result);
                                             const wasSuccessful =
-                                                editRelativePathOfLocalAsset(
+                                                editRelativePathAndFilenameOfLocalAsset(
                                                     asset.asset.url,
+                                                    `${result.newFileName}`,
                                                     `${result.relativePath}`,
                                                 );
                                             if (!wasSuccessful) {
