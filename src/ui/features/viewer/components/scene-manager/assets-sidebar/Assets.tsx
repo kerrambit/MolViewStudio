@@ -14,6 +14,7 @@ import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspace
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { LocalAssetsTree } from "./LocalAssetsTree";
+import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
 
 export function Assets() {
     // Storing current remote url in UI,
@@ -135,7 +136,25 @@ export function Assets() {
                             }
                             rightComponent={
                                 <DeleteActionIcon
-                                    onClick={() => removeAsset(asset.asset.url)}
+                                    onClick={async () => {
+                                        // Show confirmation dialogue.
+                                        const result =
+                                            await showDialogue<boolean>({
+                                                title: "Delete Confirmation",
+                                                width: "550px",
+                                                showCloseButton: true,
+                                                content: (close) => (
+                                                    <DeleteAssetDialogueContent
+                                                        assetName={asset.name}
+                                                        close={close}
+                                                    />
+                                                ),
+                                            });
+
+                                        if (result) {
+                                            removeAsset(asset.asset.url);
+                                        }
+                                    }}
                                     tooltip={
                                         asset.useCount > 0
                                             ? "Cannot delete remote asset, as it is being referenced in view."

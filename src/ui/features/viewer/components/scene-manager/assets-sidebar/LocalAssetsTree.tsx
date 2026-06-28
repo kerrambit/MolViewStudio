@@ -16,6 +16,7 @@ import {
 import { useDialogue } from "../../../../../providers/DialogueProvider";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
+import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
 
 import "../../../../../components/common/actionables/ActionableListItem.css";
 
@@ -160,9 +161,27 @@ export function LocalAssetsTree() {
                                     />
 
                                     <DeleteActionIcon
-                                        onClick={() =>
-                                            removeAsset(asset.asset.url)
-                                        }
+                                        onClick={async () => {
+                                            // Show confirmation dialogue.
+                                            const result =
+                                                await showDialogue<boolean>({
+                                                    title: "Delete Confirmation",
+                                                    width: "550px",
+                                                    showCloseButton: true,
+                                                    content: (close) => (
+                                                        <DeleteAssetDialogueContent
+                                                            assetName={
+                                                                asset.name
+                                                            }
+                                                            close={close}
+                                                        />
+                                                    ),
+                                                });
+
+                                            if (result) {
+                                                removeAsset(asset.asset.url);
+                                            }
+                                        }}
                                         tooltip={
                                             asset.useCount > 0
                                                 ? "Cannot delete asset, as it is being referenced in view."
