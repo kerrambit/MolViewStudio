@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Text, Group, Tree, useTree } from "@mantine/core";
 import { IconFile, IconFolder, IconFolderOpen } from "@tabler/icons-react";
 import {
@@ -17,6 +17,8 @@ import { useDialogue } from "../../../../../providers/DialogueProvider";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
+import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { useRegime } from "../../../../../providers/RegimeProvider";
 
 import "../../../../../components/common/actionables/ActionableListItem.css";
 
@@ -27,6 +29,9 @@ export function LocalAssetsTree() {
     // Use dialogue.
     const { showDialogue } = useDialogue();
 
+    // Use regime.
+    const { regime } = useRegime();
+
     // Use managed assets.
     const {
         getAllLocalAssets,
@@ -34,8 +39,24 @@ export function LocalAssetsTree() {
         editRelativePathAndFilenameOfLocalAsset,
     } = useManagedAssets();
 
+    // State for the tree.
+    const [expandedState, setExpandedState] = useState<Record<string, boolean>>(
+        UiLocalStorageService.Assets.getInitialTreeExpandedState(
+            regime.kind === "viewing" ? regime.fileToView.path : "",
+        ),
+    );
+
     // Use tree.
-    const tree = useTree();
+    const tree = useTree({
+        expandedState,
+        onExpandedStateChange: (nextState) => {
+            setExpandedState(nextState);
+            UiLocalStorageService.Assets.setInitialTreeExpandedState(
+                regime.kind === "viewing" ? regime.fileToView.path : "",
+                nextState,
+            );
+        },
+    });
 
     // Memoize managed assets.
     const localAssetsTreeData = useMemo(() => {

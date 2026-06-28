@@ -10,6 +10,7 @@ const PREFIX = {
     VIEW_BUILDER_FILTER_SECTION: "view-builder-asset-filter-section-",
     VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
+    ASSETS_TREE: "assets-tree-",
 };
 
 export const UiLocalStorageService = {
@@ -181,6 +182,30 @@ export const UiLocalStorageService = {
                     "false",
                 );
             }
+        },
+    },
+    Assets: {
+        getInitialTreeExpandedState: (
+            filepath: string,
+        ): Record<string, boolean> => {
+            try {
+                const stored = localStorage.getItem(
+                    `${PREFIX.ASSETS_TREE}${filepath}`,
+                );
+                return stored ? JSON.parse(stored) : {};
+            } catch (e) {
+                return {};
+            }
+        },
+
+        setInitialTreeExpandedState: (
+            filepath: string,
+            state: Record<string, boolean>,
+        ) => {
+            localStorage.setItem(
+                `${PREFIX.ASSETS_TREE}${filepath}`,
+                JSON.stringify(state),
+            );
         },
     },
 };
