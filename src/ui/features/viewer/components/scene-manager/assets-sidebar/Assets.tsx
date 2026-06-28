@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Text, TextInput } from "@mantine/core";
+import { Text } from "@mantine/core";
 import { IconWorldWww } from "@tabler/icons-react";
 import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
 import { Button } from "../../../../../components/common/button/Button";
@@ -15,11 +14,12 @@ import { ActionableList } from "../../../../../components/common/actionables/Act
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { LocalAssetsTree } from "./LocalAssetsTree";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
+import {
+    AddRemoteAssetDialogueContent,
+    type AddRemoteAssetDialogueReturnType,
+} from "./AddRemoteAssetDialogueContent";
 
 export function Assets() {
-    // Storing current remote url in UI,
-    const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
-
     // Use dialogue.
     const { showDialogue } = useDialogue();
 
@@ -177,33 +177,40 @@ export function Assets() {
                         display: "flex",
                         justifyContent: "center",
                         marginTop:
-                            getAllRemoteAssets().length === 0 ? "0em" : "1em",
+                            getAllRemoteAssets().length === 0 ? "0.5em" : "1em",
                         gap: "0.5em",
                     }}
                 >
-                    <TextInput
-                        value={remoteUrl}
-                        title="Add new remote asset."
-                        aria-label="Add new remote asset."
-                        placeholder="https://example.com/file.bcif"
-                        onChange={(event) =>
-                            setRemoteUrl(event.currentTarget.value)
-                        }
-                        style={{ flexGrow: 1 }}
-                    />
                     <Button
                         variant="primary"
-                        size="small"
-                        onClick={() => {
-                            if (remoteUrl && remoteUrl.trim() !== "") {
-                                // TODO: check if it is valid URL
-                                addRemoteAsset(remoteUrl.trim());
-                                setRemoteUrl("");
+                        size="medium"
+                        onClick={async () => {
+                            const result =
+                                await showDialogue<AddRemoteAssetDialogueReturnType>(
+                                    {
+                                        title: "Add remote asset",
+                                        width: "800px",
+                                        showCloseButton: true,
+                                        content: (close) => (
+                                            <AddRemoteAssetDialogueContent
+                                                close={close}
+                                            />
+                                        ),
+                                    },
+                                );
+
+                            if (result) {
+                                if (result.url && result.url.trim() !== "") {
+                                    addRemoteAsset(
+                                        result.url.trim(),
+                                        result.extension,
+                                    );
+                                }
                             }
                         }}
                         tooltip="Add new remote asset."
                     >
-                        Add
+                        Add...
                     </Button>
                 </div>
             </div>
