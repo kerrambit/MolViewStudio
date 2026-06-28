@@ -159,31 +159,52 @@ export function Assets() {
                 </div>
             </div>
 
-            <div>
+            {/* Remote assets part. */}
+            <div style={{ marginTop: "2em" }}>
+                {/* Label. */}
                 <Text size="xl" mb="sm">
                     Remote
                 </Text>
+
+                {/* Info text if no remote assets are found. */}
+                {getAllRemoteAssets().length === 0 ? (
+                    <Text size="sm" c="dimmed" ta="center">
+                        No remote assets found...
+                    </Text>
+                ) : (
+                    <></>
+                )}
+
+                {/* Flat list of remote assets. */}
                 <ActionableList>
                     {getAllRemoteAssets().map((asset) => (
                         <ActionableListItem
                             key={asset.asset.id}
                             title={asset.relativePath}
-                        >
-                            <DeleteActionIcon
-                                onClick={() => {
-                                    removeAsset(asset.asset.url);
-                                }}
-                                tooltip={
-                                    asset.useCount > 0
-                                        ? "Cannot delete remote asset, as it is being referenced in view."
-                                        : "Delete remote asset."
-                                }
-                                enabled={asset.useCount > 0}
-                            ></DeleteActionIcon>
-                        </ActionableListItem>
+                            titleSize="sm"
+                            tooltip={asset.asset.url}
+                            leftComponent={
+                                <IconWorldWww
+                                    size={16}
+                                    style={{ opacity: 0.6 }}
+                                />
+                            }
+                            rightComponent={
+                                <DeleteActionIcon
+                                    onClick={() => removeAsset(asset.asset.url)}
+                                    tooltip={
+                                        asset.useCount > 0
+                                            ? "Cannot delete remote asset, as it is being referenced in view."
+                                            : "Delete remote asset."
+                                    }
+                                    enabled={asset.useCount > 0}
+                                />
+                            }
+                        />
                     ))}
                 </ActionableList>
 
+                {/* Input form to add new remote asset. */}
                 <div
                     style={{
                         display: "flex",
@@ -201,10 +222,8 @@ export function Assets() {
                         onChange={(event) =>
                             setRemoteUrl(event.currentTarget.value)
                         }
-                        style={{
-                            flexGrow: 1,
-                        }}
-                    ></TextInput>
+                        style={{ flexGrow: 1 }}
+                    />
                     <Button
                         variant="primary"
                         size="small"

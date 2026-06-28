@@ -1,10 +1,15 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { Text } from "@mantine/core";
 
 import "./ActionableListItem.css";
 
 interface ActionableListItemProps {
     title?: string;
-    children?: ReactNode;
+    titleSize?: "sm" | "xs" | "md" | "lg" | "xl" | undefined;
+    tooltip?: string;
+    leftComponent?: ReactNode;
+    rightComponent?: ReactNode;
+    styles?: CSSProperties;
 }
 
 /**
@@ -12,9 +17,30 @@ interface ActionableListItemProps {
  */
 export function ActionableListItem(props: ActionableListItemProps) {
     return (
-        <div className="actionableListItem">
-            <p style={{ margin: 3 }}>{props.title}</p>
-            <div>{props.children}</div>
+        <div
+            className="actionableListItem actionableListItemColor"
+            title={props.title}
+            style={props.styles}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        paddingLeft: "0.35em",
+                        paddingRight: props.leftComponent ? "0.5em" : "0em",
+                    }}
+                >
+                    {props.leftComponent}
+                </div>
+                <Text size={props.titleSize}>{props.title}</Text>
+            </div>
+            <div>{props.rightComponent}</div>
         </div>
     );
 }
