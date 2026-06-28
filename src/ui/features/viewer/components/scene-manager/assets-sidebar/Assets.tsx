@@ -41,7 +41,11 @@ export function Assets() {
             {/* Local assets part. */}
             <div>
                 {/* Header label. */}
-                <Text size="xl" mb="sm">
+                <Text
+                    size="xl"
+                    mb="sm"
+                    title="Navigate with <Up>/<Down>, Expand with <Space>."
+                >
                     Local
                 </Text>
 
