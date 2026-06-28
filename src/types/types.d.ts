@@ -223,4 +223,9 @@ interface ManagedAsset {
      * Number of times this asset is referenced across all views.
      */
     useCount: number;
+
+    /**
+     * Determines how the data will be parsed and handled, usually mirrors extension from the `name`. However, this might not be relevant for remote assets.
+     */
+    extension: string;
 }

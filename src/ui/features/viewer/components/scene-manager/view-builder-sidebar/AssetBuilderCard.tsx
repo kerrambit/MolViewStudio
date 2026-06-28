@@ -12,8 +12,8 @@ import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 import {
-    isAssetSupported,
     getAllParserTypes,
+    isExtensionSupported,
 } from "../../../../../config/assetsDefinitions";
 import { pushWarningNotification } from "../../../../../services/NotificationService";
 import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
@@ -51,7 +51,7 @@ export function AssetBuilderCard({
     );
 
     // Checks if the given asset checked is supported or not.
-    const isSupported = isAssetSupported(asset.name);
+    const isSupported = isExtensionSupported(asset.extension);
 
     // Render the component.
     return (

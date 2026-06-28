@@ -4,10 +4,7 @@ import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
-import {
-    getExtensionFromFileName,
-    getFilePathWithoutFile,
-} from "../../../utils/fileDataUtils";
+import { getFilePathWithoutFile } from "../../../utils/fileDataUtils";
 import {
     getAssetConfig,
     getAllSupportedAssetsParsers,
@@ -20,7 +17,7 @@ import {
     addDownloadNodeToRoot,
     removeDownloadNodeFromRoot,
 } from "../../../lib/molstar";
-import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
+import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 
 /**
  * The unified View-Model for volume parameters.
@@ -346,9 +343,7 @@ export function useViewBuilder(viewKey: string) {
                         newRoot = addDownloadNodeToRoot(
                             snap.root,
                             toggledAssetId,
-                            getExtensionFromFileName(
-                                getAsset(toggledAssetId)?.name || "",
-                            ) || "",
+                            getAsset(toggledAssetId)?.extension || "unknown",
                             getAllSupportedAssetsParsers(),
                             draftedParams,
                         );

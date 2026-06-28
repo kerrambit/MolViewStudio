@@ -23,6 +23,10 @@ import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { buildRenderTreeForMolstar } from "./mvsTree";
 import { applySnapshotByIndex } from "./molstarSnapshotService";
 import { checkMolstarAfterLoading } from "./core";
+import {
+    getExtensionFromFileName,
+    getExtensionFromUrl,
+} from "../../utils/fileDataUtils";
 
 /**
  * Creates an archive from index file and assets.
@@ -416,6 +420,9 @@ async function _loadMVSXFile(
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
             useCount: usedInAnyView ? 1 : 0,
+            extension:
+                getExtensionFromFileName(path.split("/").pop() ?? path) ||
+                "unknown",
         });
     }
 
@@ -428,6 +435,7 @@ async function _loadMVSXFile(
             tag: "remote",
             name: remoteUrl,
             useCount: 1,
+            extension: getExtensionFromUrl(remoteUrl) || "unknown",
         });
     });
 
@@ -518,6 +526,7 @@ export async function loadMVSJFile(index: string): Promise<
                 tag: "remote",
                 name: remoteUrl,
                 useCount: 1,
+                extension: getExtensionFromUrl(remoteUrl) || "unknown",
             });
         });
 

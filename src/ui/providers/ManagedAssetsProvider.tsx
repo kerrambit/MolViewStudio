@@ -12,6 +12,7 @@ import {
     removeAssetFromMolstar,
     replaceAssetRelativePathFromMolstar,
 } from "../lib/molstar";
+import { getExtensionFromFileName } from "../utils/fileDataUtils";
 
 type ManagedAssetsContextType = {
     /**
@@ -37,8 +38,9 @@ type ManagedAssetsContextType = {
     /**
      * Adds new remote asset into the system and the Molstar inner repository.
      * @param url url, e.g. https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx.
+     * @param extension dermines the extension of the data
      */
-    addRemoteAsset: (url: string) => void;
+    addRemoteAsset: (url: string, extension: string) => void;
 
     /**
      * Tries to remove the asset from both local system and Molstar inner repository.
@@ -149,6 +151,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 tag: "local",
                 name: file.name,
                 useCount: 0,
+                extension: getExtensionFromFileName(file.name) || "unknown",
             };
 
             setAssets((prev) => new Map(prev).set(result.url, entry));
@@ -157,20 +160,24 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
         [],
     );
 
-    const addRemoteAsset = useCallback((url: string): void => {
-        const { asset } = addRemoteAssetIntoMolstar(url);
+    const addRemoteAsset = useCallback(
+        (url: string, extension: string): void => {
+            const { asset } = addRemoteAssetIntoMolstar(url);
 
-        const entry: ManagedAsset = {
-            id: crypto.randomUUID(),
-            asset,
-            relativePath: url,
-            tag: "remote",
-            name: url,
-            useCount: 0,
-        };
+            const entry: ManagedAsset = {
+                id: crypto.randomUUID(),
+                asset,
+                relativePath: url,
+                tag: "remote",
+                name: url,
+                useCount: 0,
+                extension: extension,
+            };
 
-        setAssets((prev) => new Map(prev).set(url, entry));
-    }, []);
+            setAssets((prev) => new Map(prev).set(url, entry));
+        },
+        [],
+    );
 
     const removeAsset = useCallback(
         (url: string) => {
