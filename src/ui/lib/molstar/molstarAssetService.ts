@@ -105,7 +105,7 @@ export function replaceAssetRelativePathFromMolstar(
 
     const file = entry.file as File;
 
-    molstar.managers.asset.release(asset);
+    molstar.managers.asset.delete(asset);
 
     const newUrl = arcpUri(generateArchiveID(), newRelativeFilePath);
     const newAsset = Asset.getUrlAsset(molstar.managers.asset, newUrl);

@@ -96,7 +96,7 @@ export function AssetBuilderCard({
                     <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
                         {asset.tag}
                     </Text>
-                    {asset.name}
+                    {asset.relativePath}
                 </div>
                 <Checkbox
                     checked={isSelected}

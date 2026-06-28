@@ -1,22 +1,20 @@
+import { useState } from "react";
+import { Text, TextInput } from "@mantine/core";
+import { IconWorldWww } from "@tabler/icons-react";
 import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
 import { Button } from "../../../../../components/common/button/Button";
-import { Text, TextInput } from "@mantine/core";
-import { useState } from "react";
-import { EditActionIcon } from "../../../../../components/common/actionables/actions-icons/EditActionIcon";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
-import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { useDialogue } from "../../../../../providers/DialogueProvider";
 import {
     AddAssetDialogueContent,
     type AddAssetDialogueReturnType,
 } from "./AddAssetDialogueContent";
-import {
-    EditAssetDialogueContent,
-    type EditAssetDialogueReturnType,
-} from "./EditAssetDialogueContent";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
+import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
+import { LocalAssetsTree } from "./LocalAssetsTree";
+import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
 
 export function Assets() {
     // Storing current remote url in UI,
@@ -32,7 +30,6 @@ export function Assets() {
         getAllLocalAssets,
         getAllRemoteAssets,
         removeAsset,
-        editRelativePathOfLocalAsset,
     } = useManagedAssets();
 
     // Use workspace management.
@@ -41,79 +38,32 @@ export function Assets() {
     // Render the component.
     return (
         <div>
+            {/* Local assets part. */}
             <div>
-                <Text size="xl" mb="sm">
+                {/* Header label. */}
+                <Text
+                    size="xl"
+                    mb="sm"
+                    title="Navigate with <Up>/<Down>, Expand with <Space>."
+                >
                     Local
                 </Text>
 
-                <ActionableList>
-                    {getAllLocalAssets().map((asset) => (
-                        <ActionableListItem
-                            key={asset.asset.id}
-                            title={asset.relativePath}
-                        >
-                            <div>
-                                <EditActionIcon
-                                    onClick={async () => {
-                                        const result =
-                                            await showDialogue<EditAssetDialogueReturnType>(
-                                                {
-                                                    title: "Edit local asset",
-                                                    width: "800px",
-                                                    showCloseButton: true,
-                                                    content: (close) => (
-                                                        <EditAssetDialogueContent
-                                                            filename={
-                                                                asset.name
-                                                            }
-                                                            pathSegments={asset.relativePath
-                                                                .split("/")
-                                                                .filter(Boolean)
-                                                                .slice(0, -1)}
-                                                            close={close}
-                                                        />
-                                                    ),
-                                                },
-                                            );
+                {/* Render all local assets in the form of a tree. */}
+                {getAllLocalAssets().length === 0 ? (
+                    <Text size="sm" c="dimmed" ta="center">
+                        No local assets found...
+                    </Text>
+                ) : (
+                    <LocalAssetsTree />
+                )}
 
-                                        if (result) {
-                                            const wasSuccessful =
-                                                editRelativePathOfLocalAsset(
-                                                    asset.asset.url,
-                                                    `${result.relativePath}`,
-                                                );
-                                            if (!wasSuccessful) {
-                                                pushErrorNotification(
-                                                    `Asset "${result.relativePath}${asset.name}" already exists!`,
-                                                );
-                                            }
-                                        }
-                                    }}
-                                    tooltip="Edit local asset."
-                                ></EditActionIcon>
-
-                                <DeleteActionIcon
-                                    onClick={() => {
-                                        removeAsset(asset.asset.url);
-                                    }}
-                                    tooltip={
-                                        asset.useCount > 0
-                                            ? "Cannot delete local asset, as it is being referenced in view."
-                                            : "Delete local asset."
-                                    }
-                                    enabled={asset.useCount > 0}
-                                ></DeleteActionIcon>
-                            </div>
-                        </ActionableListItem>
-                    ))}
-                </ActionableList>
-
+                {/* Button to open a dialogue to add new local assets. */}
                 <div
                     style={{
                         display: "flex",
                         justifyContent: "center",
-                        marginTop:
-                            getAllLocalAssets().length === 0 ? "0em" : "1em",
+                        marginTop: "1em",
                     }}
                 >
                     <Button
@@ -158,31 +108,70 @@ export function Assets() {
                 </div>
             </div>
 
-            <div>
+            {/* Remote assets part. */}
+            <div style={{ marginTop: "2em" }}>
+                {/* Label. */}
                 <Text size="xl" mb="sm">
                     Remote
                 </Text>
+
+                {/* Info text if no remote assets are found. */}
+                {getAllRemoteAssets().length === 0 ? (
+                    <Text size="sm" c="dimmed" ta="center">
+                        No remote assets found...
+                    </Text>
+                ) : (
+                    <></>
+                )}
+
+                {/* Flat list of remote assets. */}
                 <ActionableList>
                     {getAllRemoteAssets().map((asset) => (
                         <ActionableListItem
                             key={asset.asset.id}
                             title={asset.relativePath}
-                        >
-                            <DeleteActionIcon
-                                onClick={() => {
-                                    removeAsset(asset.asset.url);
-                                }}
-                                tooltip={
-                                    asset.useCount > 0
-                                        ? "Cannot delete remote asset, as it is being referenced in view."
-                                        : "Delete remote asset."
-                                }
-                                enabled={asset.useCount > 0}
-                            ></DeleteActionIcon>
-                        </ActionableListItem>
+                            titleSize="sm"
+                            tooltip={asset.asset.url}
+                            leftComponent={
+                                <IconWorldWww
+                                    size={16}
+                                    style={{ opacity: 0.6 }}
+                                />
+                            }
+                            rightComponent={
+                                <DeleteActionIcon
+                                    onClick={async () => {
+                                        // Show confirmation dialogue.
+                                        const result =
+                                            await showDialogue<boolean>({
+                                                title: "Delete Confirmation",
+                                                width: "550px",
+                                                showCloseButton: true,
+                                                content: (close) => (
+                                                    <DeleteAssetDialogueContent
+                                                        assetName={asset.name}
+                                                        close={close}
+                                                    />
+                                                ),
+                                            });
+
+                                        if (result) {
+                                            removeAsset(asset.asset.url);
+                                        }
+                                    }}
+                                    tooltip={
+                                        asset.useCount > 0
+                                            ? "Cannot delete remote asset, as it is being referenced in view."
+                                            : "Delete remote asset."
+                                    }
+                                    enabled={asset.useCount > 0}
+                                />
+                            }
+                        />
                     ))}
                 </ActionableList>
 
+                {/* Input form to add new remote asset. */}
                 <div
                     style={{
                         display: "flex",
@@ -200,10 +189,8 @@ export function Assets() {
                         onChange={(event) =>
                             setRemoteUrl(event.currentTarget.value)
                         }
-                        style={{
-                            flexGrow: 1,
-                        }}
-                    ></TextInput>
+                        style={{ flexGrow: 1 }}
+                    />
                     <Button
                         variant="primary"
                         size="small"

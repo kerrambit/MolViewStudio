@@ -1,9 +1,12 @@
-import { Text, Divider } from "@mantine/core";
+import { Text, Divider, MultiSelect, Collapse } from "@mantine/core";
 import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { useViewBuilder } from "../../../hooks/useViewBuilder";
 import { AssetBuilderCard } from "./AssetBuilderCard";
 import { AutoScrollList } from "../../../../../components/common/auto-scroll-list/AutoScrollList";
+import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
+import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -19,6 +22,13 @@ export function ViewBuilder(props: ViewBuilderProps) {
     const {
         view,
         assetsInView,
+        assetsFilteredByType,
+        areFiltersExpanded,
+        setAreFiltersExpanded,
+        selectedAssetFilters,
+        setSelectedAssetFilters,
+        selectedAssetRelativePaths,
+        setSelectedAssetRelativePaths,
         selectedAssetIds,
         expandedAssetId,
         getViewModel,
@@ -71,6 +81,109 @@ export function ViewBuilder(props: ViewBuilderProps) {
             </div>
 
             <Divider style={{ paddingBottom: "1em" }} />
+
+            <CollapseTrigger
+                title={"Filters"}
+                expanded={areFiltersExpanded}
+                onClick={() => {
+                    setAreFiltersExpanded((prev) => {
+                        const nextState = !prev;
+                        UiLocalStorageService.ViewBuilder.setExpandedFiltersSection(
+                            props.viewKey,
+                            nextState,
+                        );
+                        return nextState;
+                    });
+                }}
+            ></CollapseTrigger>
+
+            <Collapse expanded={areFiltersExpanded}>
+                <MultiSelect
+                    label="Select asset type filters"
+                    data={[
+                        "All",
+                        "Local assets",
+                        "Remote assets",
+                        ".map",
+                        ".bcif",
+                        ".cif",
+                        ".ccp4",
+                    ]}
+                    value={selectedAssetFilters}
+                    onChange={(filters) => {
+                        setSelectedAssetFilters(filters);
+                        UiLocalStorageService.ViewBuilder.setAssetFilters(
+                            props.viewKey,
+                            filters,
+                        );
+                    }}
+                    placeholder="Select asset types filters."
+                    defaultValue={["All"]}
+                    checkIconPosition="left"
+                    withAlignedLabels
+                    clearable
+                    hidePickedOptions
+                    searchable
+                    nothingFoundMessage="No asset found!"
+                    style={{ paddingBottom: "1em" }}
+                    styles={{
+                        pill: {
+                            background:
+                                colorScheme === "dark"
+                                    ? "var(--mantine-primary-color-7)"
+                                    : "var(--mantine-primary-color-3)",
+                        },
+                    }}
+                ></MultiSelect>
+
+                <MultiSelect
+                    label="Select asset folders"
+                    data={[
+                        "All",
+                        ...Array.from(
+                            new Set(
+                                assetsFilteredByType.map((asset) => {
+                                    const path = getFilePathWithoutFile(
+                                        asset.relativePath,
+                                    );
+                                    if (!path) {
+                                        return "./";
+                                    } else {
+                                        return path;
+                                    }
+                                }),
+                            ),
+                        ),
+                    ]}
+                    value={selectedAssetRelativePaths}
+                    onChange={(paths) => {
+                        setSelectedAssetRelativePaths(paths);
+                        UiLocalStorageService.ViewBuilder.setAssetFolders(
+                            props.viewKey,
+                            paths,
+                        );
+                    }}
+                    placeholder="Select asset folders."
+                    defaultValue={["All"]}
+                    checkIconPosition="left"
+                    withAlignedLabels
+                    clearable
+                    hidePickedOptions
+                    searchable
+                    nothingFoundMessage="No paths found!"
+                    style={{ paddingBottom: "1em" }}
+                    styles={{
+                        pill: {
+                            background:
+                                colorScheme === "dark"
+                                    ? "var(--mantine-primary-color-7)"
+                                    : "var(--mantine-primary-color-3)",
+                        },
+                    }}
+                ></MultiSelect>
+
+                <Divider style={{ paddingBottom: "1em" }} />
+            </Collapse>
 
             <div
                 style={{

@@ -3,18 +3,22 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.065);
-    border-radius: 6px;
 }
 
-.actionableListItem:hover {
+.actionableListItemColor {
+    background-color: rgba(0, 0, 0, 0.065);
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.actionableListItemColor:hover {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-[data-mantine-color-scheme="dark"] .actionableListItem {
+[data-mantine-color-scheme="dark"] .actionableListItemColor {
     background-color: var(--color-grey-dark);
 }
 
-[data-mantine-color-scheme="dark"] .actionableListItem:hover {
+[data-mantine-color-scheme="dark"] .actionableListItemColor:hover {
     background-color: var(--color-grey-dark-hover);
 }
