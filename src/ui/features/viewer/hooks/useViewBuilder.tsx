@@ -58,7 +58,6 @@ function applyViewModelToBranch(
 ) {
     let newRoot = root;
     const params = [
-        { node: "parse", key: "format", val: viewModel.format },
         { node: "volume_representation", key: "type", val: viewModel.type },
         {
             node: "volume_representation",
