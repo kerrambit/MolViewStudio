@@ -5,9 +5,9 @@ import { Button } from "../../../../../components/common/button/Button";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { useDialogue } from "../../../../../providers/DialogueProvider";
 import {
-    AddAssetDialogueContent,
-    type AddAssetDialogueReturnType,
-} from "./AddAssetDialogueContent";
+    AddLocalAssetDialogueContent,
+    type AddLocalAssetDialogueReturnType,
+} from "./AddLocalAssetDialogueContent";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
@@ -71,16 +71,18 @@ export function Assets() {
                         size="medium"
                         onClick={async () => {
                             const result =
-                                await showDialogue<AddAssetDialogueReturnType>({
-                                    title: "Add local asset",
-                                    width: "800px",
-                                    showCloseButton: true,
-                                    content: (close) => (
-                                        <AddAssetDialogueContent
-                                            close={close}
-                                        />
-                                    ),
-                                });
+                                await showDialogue<AddLocalAssetDialogueReturnType>(
+                                    {
+                                        title: "Add local asset",
+                                        width: "800px",
+                                        showCloseButton: true,
+                                        content: (close) => (
+                                            <AddLocalAssetDialogueContent
+                                                close={close}
+                                            />
+                                        ),
+                                    },
+                                );
 
                             if (result) {
                                 if (!result.processAsset) {

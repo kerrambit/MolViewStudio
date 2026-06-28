@@ -15,21 +15,21 @@ import {
     getFilenameWithoutExtension,
 } from "../../../../../utils/fileDataUtils";
 
-export interface AddAssetDialogueReturnType {
+export interface AddLocalAssetDialogueReturnType {
     file: FileData;
     relativePath: string;
     processAsset: boolean;
 }
 
-interface AddAssetDialogueContentProps {
-    close: (value?: AddAssetDialogueReturnType) => void;
+interface AddLocalAssetDialogueContentProps {
+    close: (value?: AddLocalAssetDialogueReturnType) => void;
 }
 
 const MAXIMUM_NUMBER_OF_PATH_SEGMENTS = 3; // TODO: define in Settings
 
-export function AddAssetDialogueContent({
+export function AddLocalAssetDialogueContent({
     close,
-}: AddAssetDialogueContentProps) {
+}: AddLocalAssetDialogueContentProps) {
     // State for the chosen file asset.
     const [file, setFile] = useState<FileData | undefined>(undefined);
 
