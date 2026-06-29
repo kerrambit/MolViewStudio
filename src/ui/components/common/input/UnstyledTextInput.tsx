@@ -78,6 +78,12 @@ interface UnstyledTextInputProps {
      * Optional inline styles applied to the root container.
      */
     style?: CSSProperties;
+
+    /**
+     * Optional validator function. Receives the current value and returns null if valid, false string containing custom error messege.
+     * When provided, validation runs on every change and on blur.
+     */
+    validator?: (value: string | undefined) => string | null;
 }
 
 export function UnstyledTextInput({
@@ -95,11 +101,27 @@ export function UnstyledTextInput({
     onBlur,
     onErrorChange,
     style,
+    validator,
 }: UnstyledTextInputProps) {
     const [internalValue, setInternalValue] = useState(defaultValue);
     const isControlled = controlledValue !== undefined;
     const value = isControlled ? controlledValue : internalValue;
     const [error, setError] = useState<string | null>(null);
+
+    const validate = (val: string) => {
+        const trimmed = val.trim();
+        if (!trimmed && !canBeEmpty) {
+            setError("Value cannot be empty!");
+            return;
+        }
+
+        if (validator && validator(trimmed) !== null) {
+            setError(validator(trimmed));
+            return;
+        }
+
+        setError(null);
+    };
 
     useEffect(() => {
         onErrorChange?.(error !== null);
@@ -110,7 +132,7 @@ export function UnstyledTextInput({
         if (val.length > maxLength) val = val.slice(0, maxLength);
 
         if (!isControlled) setInternalValue(val);
-        if (val.length > 0) setError(null);
+        validate(val);
         onValueChange?.(val);
     };
 
@@ -124,17 +146,17 @@ export function UnstyledTextInput({
 
     const handleBlur = () => {
         const trimmedValue = value.trim();
-        if (!trimmedValue && !canBeEmpty) {
-            setError("Value cannot be empty!");
-        } else {
-            setError(null);
-        }
-
+        validate(trimmedValue);
         onBlur?.(trimmedValue);
     };
 
     useEffect(() => {
         if (value.trim().length > 0) {
+            if (validator && validator(value.trim()) !== null) {
+                setError(validator(value.trim()));
+                return;
+            }
+
             setError(null);
         }
     }, [value]);

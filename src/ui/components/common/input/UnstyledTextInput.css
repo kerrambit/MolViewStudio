@@ -66,10 +66,10 @@
 }
 
 .unstyledTextInput__input-error {
-  border-bottom: 2px solid red;
+  border-bottom: 2px solid var(--mantine-color-error);
 }
 
 .unstyledTextInput__error-text {
-  color: red;
-  font-size: 0.7em;
+  color: var(--mantine-color-error);
+  font-size: 0.73em;
 }

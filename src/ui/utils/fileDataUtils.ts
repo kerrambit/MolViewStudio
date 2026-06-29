@@ -7,6 +7,16 @@ export function getExtensionFromFileName(filename: string | undefined) {
     return filename.split(".").pop() ?? "";
 }
 
+export function getExtensionFromUrl(url: string): string | undefined {
+    try {
+        const pathname = new URL(url).pathname;
+        const extension = pathname.split(".").pop();
+        return extension ?? undefined;
+    } catch (error) {
+        return undefined;
+    }
+}
+
 export function getFilenameWithoutExtension(filename: string | undefined) {
     if (!filename) return undefined;
     const splitted = filename.split(".");

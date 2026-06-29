@@ -1,5 +1,6 @@
 export type RenderStrategy = "volume" | "structure" | "both" | "unsupported";
 export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
+export type ExtensionType = "map" | "cif" | "bcif" | "ccp4";
 
 export interface AssetDefinition {
     extension: string;
@@ -72,6 +73,10 @@ export function isAssetSupported(filename: string): boolean {
     return getAssetConfig(filename) !== null;
 }
 
+export function isExtensionSupported(extension: string): boolean {
+    return (SUPPORTED_ASSETS[extension] || null) !== null;
+}
+
 export function checkRequiresProcessing(filename: string): boolean {
     const config = getAssetConfig(filename);
     return config ? config.requiresProcessing : false;
@@ -84,4 +89,8 @@ export function checkOffersProcessing(filename: string): boolean {
 
 export function getAllParserTypes(): string[] {
     return ["map", "bcif", "mmcif"];
+}
+
+export function getAllExtensions(): string[] {
+    return ["map", "cif", "bcif", "ccp4"];
 }
