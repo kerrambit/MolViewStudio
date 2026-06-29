@@ -65,13 +65,7 @@ export function addLocalAssetIntoMolstar(file: FileData, relativePath: string) {
  */
 export function addRemoteAssetIntoMolstar(url: string) {
     const molstar = getMolstar();
-
-    const asset = Asset.Url(url);
-    molstar.managers.asset.set(asset, new File([], url), {
-        isStatic: false,
-        tag: undefined,
-    });
-
+    const asset = Asset.getUrlAsset(molstar.managers.asset, url);
     return { asset };
 }
 
