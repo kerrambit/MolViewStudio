@@ -155,11 +155,13 @@ export function AssetBuilderCard({
 
                     {activeTab === "volume" && (
                         <div>
+                            {/* General settings for volume tab. */}
                             <CollapseTrigger
                                 title={"General"}
                                 size={"md"}
                                 expanded={true}
                             ></CollapseTrigger>
+
                             <Collapse expanded={true}>
                                 <div
                                     style={{
@@ -275,11 +277,14 @@ export function AssetBuilderCard({
                                     ></AlphaSlider>
                                 </div>
                             </Collapse>
+
+                            {/* Transform settings for volume tab. */}
                             <CollapseTrigger
                                 title={"Transform"}
                                 size={"md"}
                                 expanded={true}
                             ></CollapseTrigger>
+
                             <Collapse expanded={true}>
                                 <TransformControls></TransformControls>
                             </Collapse>
