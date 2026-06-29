@@ -27,6 +27,7 @@ import {
     getExtensionFromFileName,
     getExtensionFromUrl,
 } from "../../utils/fileDataUtils";
+import { isExtensionSupported } from "../../config/assetsDefinitions";
 
 /**
  * Creates an archive from index file and assets.
@@ -428,6 +429,11 @@ async function _loadMVSXFile(
 
     // Push remaining (remote) assets.
     urls.forEach((remoteUrl) => {
+        let extension = "unknown";
+        const fromUrl = getExtensionFromUrl(remoteUrl);
+        if (fromUrl && isExtensionSupported(fromUrl)) {
+            extension = fromUrl;
+        }
         assets.push({
             id: crypto.randomUUID(),
             asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
@@ -435,7 +441,7 @@ async function _loadMVSXFile(
             tag: "remote",
             name: remoteUrl,
             useCount: 1,
-            extension: getExtensionFromUrl(remoteUrl) || "unknown",
+            extension: extension,
         });
     });
 
@@ -519,6 +525,11 @@ export async function loadMVSJFile(index: string): Promise<
         // Extract all remote assets and store them.
         const assets: ManagedAsset[] = [];
         remoteUrls.forEach((remoteUrl) => {
+            let extension = "unknown";
+            const fromUrl = getExtensionFromUrl(remoteUrl);
+            if (fromUrl && isExtensionSupported(fromUrl)) {
+                extension = fromUrl;
+            }
             assets.push({
                 id: crypto.randomUUID(),
                 asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
@@ -526,7 +537,7 @@ export async function loadMVSJFile(index: string): Promise<
                 tag: "remote",
                 name: remoteUrl,
                 useCount: 1,
-                extension: getExtensionFromUrl(remoteUrl) || "unknown",
+                extension: extension,
             });
         });
 

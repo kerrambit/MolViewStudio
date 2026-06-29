@@ -225,7 +225,7 @@ interface ManagedAsset {
     useCount: number;
 
     /**
-     * Determines how the data will be parsed and handled, usually mirrors extension from the `name`. However, this might not be relevant for remote assets.
+     * Determines how the data will be parsed and handled, usually mirrors extension from the `name`. Special value `unknown` tells that extension could not be detected from `name`.
      */
     extension: string;
 }

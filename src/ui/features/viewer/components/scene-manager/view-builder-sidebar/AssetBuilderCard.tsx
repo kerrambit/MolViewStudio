@@ -99,6 +99,13 @@ export function AssetBuilderCard({
                     {asset.relativePath}
                 </div>
                 <Checkbox
+                    title={
+                        !isSupported
+                            ? asset.extension === "unknown"
+                                ? `Extension is unknown, go to Assets to check and edit the asset!`
+                                : `This extension is not supported!`
+                            : ""
+                    }
                     checked={isSelected}
                     disabled={!isSupported}
                     onChange={(e) => onToggleSelect(e.currentTarget.checked)}

@@ -6,8 +6,8 @@ import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
 import { getFilePathWithoutFile } from "../../../utils/fileDataUtils";
 import {
-    getAssetConfig,
     getAllSupportedAssetsParsers,
+    getAssetConfigBasedOnExtension,
 } from "../../../config/assetsDefinitions";
 import {
     getAllDownloadUrlsFromSnapshot,
@@ -173,7 +173,7 @@ export function useViewBuilder(viewKey: string) {
             let matchesExtension = !hasExtensionFilters;
             if (hasExtensionFilters) {
                 matchesExtension = selectedAssetFilters.some((ext) =>
-                    asset.name.toLowerCase().endsWith(ext.toLowerCase()),
+                    asset.extension.toLowerCase().endsWith(ext.toLowerCase()),
                 );
             }
 
@@ -200,8 +200,9 @@ export function useViewBuilder(viewKey: string) {
             viewModels[assetId] || {
                 ...DEFAULT_VOLUME_VIEW_MODEL,
                 format:
-                    getAssetConfig(getAsset(assetId)?.name || "")?.parser ||
-                    "N/A",
+                    getAssetConfigBasedOnExtension(
+                        getAsset(assetId)?.extension || "",
+                    )?.parser || "N/A",
             }
         );
     };
@@ -218,7 +219,9 @@ export function useViewBuilder(viewKey: string) {
                     asset.id,
                     {
                         ...DEFAULT_VOLUME_VIEW_MODEL,
-                        format: getAssetConfig(asset.name)?.parser || "N/A",
+                        format:
+                            getAssetConfigBasedOnExtension(asset.extension)
+                                ?.parser || "N/A",
                     },
                 ) as VolumeViewModel;
             }
