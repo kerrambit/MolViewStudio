@@ -2,6 +2,7 @@ import { Text, Select } from "@mantine/core";
 import { useState } from "react";
 import {
     getAllExtensions,
+    isExtensionSupported,
     type ExtensionType,
 } from "../../../../../config/assetsDefinitions";
 import { Button } from "../../../../../components/common/button/Button";
@@ -66,21 +67,37 @@ export function AddRemoteAssetDialogueContent(
                     onValueChange={(value) => {
                         setRemoteUrl(value);
                         if (value) {
-                            setRemoteUrlExtension(
-                                getExtensionFromUrl(value) as
-                                    | ExtensionType
-                                    | undefined,
-                            );
+                            const extension = getExtensionFromUrl(value);
+                            if (!extension) {
+                                setRemoteUrlExtension(undefined);
+                                return;
+                            }
+
+                            if (isExtensionSupported(extension)) {
+                                setRemoteUrlExtension(
+                                    extension as ExtensionType,
+                                );
+                            } else {
+                                setRemoteUrlExtension(undefined);
+                            }
                         } else setRemoteUrlExtension(undefined);
                     }}
                     onBlur={(value) => {
                         setRemoteUrl(value);
                         if (value) {
-                            setRemoteUrlExtension(
-                                getExtensionFromUrl(value) as
-                                    | ExtensionType
-                                    | undefined,
-                            );
+                            const extension = getExtensionFromUrl(value);
+                            if (!extension) {
+                                setRemoteUrlExtension(undefined);
+                                return;
+                            }
+
+                            if (isExtensionSupported(extension)) {
+                                setRemoteUrlExtension(
+                                    extension as ExtensionType,
+                                );
+                            } else {
+                                setRemoteUrlExtension(undefined);
+                            }
                         } else setRemoteUrlExtension(undefined);
                     }}
                     canBeEmpty={false}
