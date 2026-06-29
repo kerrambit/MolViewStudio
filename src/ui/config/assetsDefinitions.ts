@@ -1,5 +1,6 @@
 export type RenderStrategy = "volume" | "structure" | "both" | "unsupported";
 export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
+export type ExtensionType = "map" | "cif" | "bcif" | "ccp4";
 
 export interface AssetDefinition {
     extension: string;

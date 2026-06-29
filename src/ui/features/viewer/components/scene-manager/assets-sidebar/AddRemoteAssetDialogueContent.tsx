@@ -1,8 +1,12 @@
-import { Select, TextInput } from "@mantine/core";
+import { Text, Select } from "@mantine/core";
 import { useState } from "react";
-import { getAllExtensions } from "../../../../../config/assetsDefinitions";
+import {
+    getAllExtensions,
+    type ExtensionType,
+} from "../../../../../config/assetsDefinitions";
 import { Button } from "../../../../../components/common/button/Button";
 import { getExtensionFromUrl } from "../../../../../utils/fileDataUtils";
+import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 
 export interface AddRemoteAssetDialogueReturnType {
     url: string;
@@ -17,9 +21,12 @@ export function AddRemoteAssetDialogueContent(
     props: AddRemoteAssetDialogueContentProps,
 ) {
     // Storing current remote url in UI and its extension.
-    const [remoteUrl, setRemoteUrl] = useState<string>("");
-    const [remoteUrlExtension, setRemoteUrlExtension] = useState<string>("N/A");
+    const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
+    const [remoteUrlExtension, setRemoteUrlExtension] = useState<
+        ExtensionType | undefined
+    >(undefined);
 
+    // Fucntions which checks if the value is valid Url.
     const isUrlValid = (value: string) => {
         let isValid = true;
         try {
@@ -30,46 +37,90 @@ export function AddRemoteAssetDialogueContent(
         return isValid;
     };
 
+    // Render the component.
     return (
         <div
             style={{
                 display: "flex",
                 flexDirection: "column",
-                justifyItems: "center",
                 justifyContent: "center",
                 gap: "1em",
             }}
         >
-            <TextInput
-                label="Url"
-                title="Enter valid URL of the remote asset."
-                value={remoteUrl}
-                placeholder="https://example.com/file.bcif"
-                onChange={(event) => {
-                    setRemoteUrl(event.currentTarget.value);
-                    setRemoteUrlExtension(
-                        getExtensionFromUrl(event.currentTarget.value) || "N/A",
-                    );
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "start",
+                    alignItems: "center",
                 }}
-                size="sm"
-            />
+            >
+                <Text size="sm" style={{ minWidth: "5em" }}>
+                    Url:
+                </Text>
+                <UnstyledTextInput
+                    tooltip="Enter valid Url of remote asset."
+                    placeholder="https://example.com/file.bcif"
+                    maxLength={520}
+                    value={remoteUrl}
+                    onValueChange={(value) => {
+                        setRemoteUrl(value);
+                        if (value) {
+                            setRemoteUrlExtension(
+                                getExtensionFromUrl(value) as
+                                    | ExtensionType
+                                    | undefined,
+                            );
+                        } else setRemoteUrlExtension(undefined);
+                    }}
+                    onBlur={(value) => {
+                        setRemoteUrl(value);
+                        if (value) {
+                            setRemoteUrlExtension(
+                                getExtensionFromUrl(value) as
+                                    | ExtensionType
+                                    | undefined,
+                            );
+                        } else setRemoteUrlExtension(undefined);
+                    }}
+                    canBeEmpty={false}
+                    validator={(value) => {
+                        // Empty value is handled automatically by `canBeEmpty`.
+                        if (value) {
+                            if (!isUrlValid(value)) {
+                                return "Not valid Url!";
+                            }
+                        }
+                        return null;
+                    }}
+                    style={{ flexGrow: 1 }}
+                />
+            </div>
 
-            <Select
-                label="Format"
-                title="Format of remote asset is automatically derived from URL, or you can select the format youself if needed."
-                data={getAllExtensions()}
-                value={remoteUrlExtension}
-                onChange={(extension) => {
-                    if (extension) {
-                        setRemoteUrlExtension(extension);
+            <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
+                <Text size="sm" style={{ minWidth: "3em" }}>
+                    Format:
+                </Text>
+                <Select
+                    title="Format of remote asset is automatically derived from URL, or you can select the format youself if needed."
+                    data={getAllExtensions()}
+                    value={remoteUrlExtension}
+                    onChange={(extension) => {
+                        if (extension) {
+                            setRemoteUrlExtension(extension as ExtensionType);
+                        }
+                    }}
+                    placeholder="N/A"
+                    size="sm"
+                    error={
+                        remoteUrlExtension === undefined
+                            ? "Must be valid format!"
+                            : undefined
                     }
-                }}
-                placeholder="N/A"
-                size="sm"
-                comboboxProps={{ withinPortal: true, zIndex: 9999 }}
-            />
+                    comboboxProps={{ withinPortal: true, zIndex: 9999 }}
+                />
+            </div>
 
-            {/* Save button. */}
             <div
                 style={{
                     display: "flex",
@@ -78,7 +129,6 @@ export function AddRemoteAssetDialogueContent(
                 }}
             >
                 <Button
-                    // TODO: check if it is valid URL
                     disabled={
                         !remoteUrl ||
                         remoteUrl.trim() === "" ||
@@ -86,9 +136,10 @@ export function AddRemoteAssetDialogueContent(
                         !remoteUrlExtension
                     }
                     onClick={() => {
+                        console.log(remoteUrlExtension);
                         props.close({
-                            url: remoteUrl,
-                            extension: remoteUrlExtension,
+                            url: remoteUrl!,
+                            extension: remoteUrlExtension!,
                         });
                     }}
                     tooltip="Save remote asset."
