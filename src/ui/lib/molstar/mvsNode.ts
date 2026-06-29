@@ -165,6 +165,7 @@ export function addDownloadNodeToRoot(
         show_wireframe: boolean;
         show_faces: boolean;
         color: string;
+        opacity: number;
     },
 ) {
     // Default format (parser) is "bcif". If it does not match to data, Molstar will throw an error when reloading this view anyway.
@@ -176,6 +177,7 @@ export function addDownloadNodeToRoot(
     const show_wireframe = params.show_wireframe;
     const show_faces = params.show_faces;
     const color = params.color;
+    const opacity = params.opacity;
 
     const newDownloadBranch = {
         kind: "download",
@@ -202,6 +204,10 @@ export function addDownloadNodeToRoot(
                                         kind: "color",
                                         params: { color: color },
                                     },
+                                    {
+                                        kind: "opacity",
+                                        params: { opacity: opacity },
+                                    },
                                 ],
                             },
                         ],
@@ -219,6 +225,7 @@ export function addDownloadNodeToRoot(
 
 /**
  * Recursively updates a parameter inside a specific node kind, but only for the branch belonging to the target asset id.
+ * It will auto-repair missing child nodes (like color or opacity) if they don't exist.
  *
  * @param node node to update, start with root
  * @param targetAssetId node which is updated has to have this id as download url
@@ -242,17 +249,35 @@ export function updateNodeParamInAssetBranch(
     }
 
     let newParams = node.params;
+    let newChildren = node.children;
 
-    if (isCurrentlyInTargetBranch && node.kind === targetNodeKind) {
-        newParams = {
-            ...newParams,
-            [paramKey]: paramValue,
-        };
+    if (isCurrentlyInTargetBranch) {
+        if (node.kind === targetNodeKind) {
+            newParams = {
+                ...newParams,
+                [paramKey]: paramValue,
+            };
+        } else if (node.kind === "volume_representation") {
+            if (targetNodeKind === "color" || targetNodeKind === "opacity") {
+                const childExists = (node.children || []).some(
+                    (c: any) => c.kind === targetNodeKind,
+                );
+
+                if (!childExists) {
+                    newChildren = [
+                        ...(node.children || []),
+                        {
+                            kind: targetNodeKind,
+                            params: { [paramKey]: paramValue },
+                        },
+                    ];
+                }
+            }
+        }
     }
 
-    let newChildren = node.children;
-    if (Array.isArray(node.children) && node.children.length > 0) {
-        newChildren = node.children.map((child: any) =>
+    if (Array.isArray(newChildren) && newChildren.length > 0) {
+        newChildren = newChildren.map((child: any) =>
             updateNodeParamInAssetBranch(
                 child,
                 targetAssetId,
@@ -267,7 +292,7 @@ export function updateNodeParamInAssetBranch(
     return {
         ...node,
         params: newParams,
-        children: newChildren,
+        ...(newChildren !== undefined ? { children: newChildren } : {}),
     };
 }
 
@@ -288,6 +313,7 @@ export function getVolumeParamsForAsset(
         show_wireframe: boolean;
         show_faces: boolean;
         color: string;
+        opacity: number;
     },
 ) {
     const params = { ...defaultValues };
@@ -316,6 +342,10 @@ export function getVolumeParamsForAsset(
             }
             if (node.kind === "color" && node.params?.color) {
                 params.color = node.params.color;
+            }
+
+            if (node.kind === "opacity" && node.params?.opacity !== undefined) {
+                params.opacity = node.params.opacity;
             }
         }
 

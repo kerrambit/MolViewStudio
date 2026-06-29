@@ -29,6 +29,7 @@ export interface VolumeViewModel {
     show_wireframe: boolean;
     show_faces: boolean;
     color: string;
+    opacity: number;
 }
 
 /**
@@ -40,7 +41,8 @@ export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
     relative_isovalue: 1.0,
     show_wireframe: false,
     show_faces: true,
-    color: "#36bd97",
+    color: "#ffffff",
+    opacity: 1.0,
 };
 
 /**
@@ -75,6 +77,7 @@ function applyViewModelToBranch(
             val: viewModel.show_faces,
         },
         { node: "color", key: "color", val: viewModel.color },
+        { node: "opacity", key: "opacity", val: viewModel.opacity },
     ];
     params.forEach((p) => {
         newRoot = updateNodeParamInAssetBranch(
