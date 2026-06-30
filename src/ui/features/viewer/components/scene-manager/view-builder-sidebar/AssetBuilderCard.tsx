@@ -1,26 +1,11 @@
 import { useState } from "react";
-import {
-    Text,
-    Checkbox,
-    Collapse,
-    Select,
-    NumberInput,
-    Group,
-    ColorInput,
-    AlphaSlider,
-    Divider,
-} from "@mantine/core";
+import { Text, Checkbox, Collapse } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
-import {
-    getAllParserTypes,
-    isExtensionSupported,
-} from "../../../../../config/assetsDefinitions";
-import { pushWarningNotification } from "../../../../../services/NotificationService";
+import { isExtensionSupported } from "../../../../../config/assetsDefinitions";
 import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
-import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
-import { TransformControls } from "./TransformControls";
+import { VolumeTab } from "./VolumeTab";
 
 type TabType = "representation" | "volume";
 
@@ -54,20 +39,6 @@ export function AssetBuilderCard({
     // Store active tab.
     const [activeTab, setActiveTab] = useState<TabType>(() =>
         UiLocalStorageService.ViewBuilder.getTab(asset.id, viewKey),
-    );
-
-    // Store expanded secttions.
-    const [generalSectionExpanded, setGeneralSectionExpanded] = useState(
-        UiLocalStorageService.ViewBuilder.getExpandedGeneralSection(
-            asset.id,
-            viewKey,
-        ),
-    );
-    const [transformSectionExpanded, setTransformSectionExpanded] = useState(
-        UiLocalStorageService.ViewBuilder.getExpandedTransformSection(
-            asset.id,
-            viewKey,
-        ),
     );
 
     // Checks if the given asset checked is supported or not.
@@ -175,168 +146,12 @@ export function AssetBuilderCard({
                     )}
 
                     {activeTab === "volume" && (
-                        <div>
-                            {/* General settings for volume tab. */}
-                            <CollapseTrigger
-                                title={"General"}
-                                size={"md"}
-                                expanded={generalSectionExpanded}
-                                onClick={() => {
-                                    setGeneralSectionExpanded((prev) => {
-                                        const nextState = !prev;
-                                        UiLocalStorageService.ViewBuilder.setExpandedGeneralSection(
-                                            asset.id,
-                                            viewKey,
-                                            nextState,
-                                        );
-                                        return nextState;
-                                    });
-                                }}
-                            ></CollapseTrigger>
-
-                            <Collapse expanded={generalSectionExpanded}>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "1em",
-                                        paddingBottom: "1em",
-                                    }}
-                                >
-                                    <Select
-                                        label="Format"
-                                        disabled
-                                        data={getAllParserTypes()}
-                                        value={viewModel.format}
-                                        placeholder="N/A"
-                                        size="xs"
-                                    />
-                                    <Select
-                                        label="Type"
-                                        data={["isosurface", "grid_slice"]}
-                                        value={viewModel.type}
-                                        onChange={(val) => {
-                                            if (val === "grid_slice") {
-                                                pushWarningNotification(
-                                                    "The volume type of 'grid_slice' is not supported at the moment!",
-                                                );
-                                            } else if (val) {
-                                                onUpdateParam(
-                                                    "type",
-                                                    val,
-                                                    true,
-                                                );
-                                            }
-                                        }}
-                                        size="xs"
-                                    />
-                                    <NumberInput
-                                        label="Relative isosurface"
-                                        value={viewModel.relative_isovalue}
-                                        step={0.1}
-                                        size="xs"
-                                        onChange={(val) =>
-                                            typeof val === "number" &&
-                                            onUpdateParam(
-                                                "relative_isovalue",
-                                                val,
-                                                false,
-                                            )
-                                        }
-                                        onBlur={() =>
-                                            onUpdateParam(
-                                                "relative_isovalue",
-                                                viewModel.relative_isovalue,
-                                                true,
-                                            )
-                                        }
-                                        onKeyDown={(e) =>
-                                            e.key === "Enter" &&
-                                            onUpdateParam(
-                                                "relative_isovalue",
-                                                viewModel.relative_isovalue,
-                                                true,
-                                            )
-                                        }
-                                    />
-                                    <Group mt="xs">
-                                        <Checkbox
-                                            label="Show wireframe"
-                                            size="xs"
-                                            checked={viewModel.show_wireframe}
-                                            onChange={(e) =>
-                                                onUpdateParam(
-                                                    "show_wireframe",
-                                                    e.currentTarget.checked,
-                                                    true,
-                                                )
-                                            }
-                                        />
-                                        <Checkbox
-                                            label="Show faces"
-                                            size="xs"
-                                            checked={viewModel.show_faces}
-                                            onChange={(e) =>
-                                                onUpdateParam(
-                                                    "show_faces",
-                                                    e.currentTarget.checked,
-                                                    true,
-                                                )
-                                            }
-                                        />
-                                    </Group>
-                                    <ColorInput
-                                        label="Color"
-                                        value={viewModel.color}
-                                        size="xs"
-                                        format="hex"
-                                        onChange={(val) =>
-                                            onUpdateParam("color", val, false)
-                                        }
-                                        onChangeEnd={(val) =>
-                                            onUpdateParam("color", val, true)
-                                        }
-                                    />
-                                    <AlphaSlider
-                                        color={viewModel.color}
-                                        value={viewModel.opacity}
-                                        onChange={(val) =>
-                                            onUpdateParam("opacity", val, false)
-                                        }
-                                        onChangeEnd={(val) =>
-                                            onUpdateParam("opacity", val, true)
-                                        }
-                                    ></AlphaSlider>
-
-                                    <Divider mb="md" />
-                                </div>
-                            </Collapse>
-
-                            {/* Transform settings for volume tab. */}
-                            <CollapseTrigger
-                                title={"Transform"}
-                                size={"md"}
-                                expanded={transformSectionExpanded}
-                                onClick={() => {
-                                    setTransformSectionExpanded((prev) => {
-                                        const nextState = !prev;
-                                        UiLocalStorageService.ViewBuilder.setExpandedTransformSection(
-                                            asset.id,
-                                            viewKey,
-                                            nextState,
-                                        );
-                                        return nextState;
-                                    });
-                                }}
-                            ></CollapseTrigger>
-
-                            <Collapse expanded={transformSectionExpanded}>
-                                <TransformControls
-                                    viewModel={viewModel}
-                                    onUpdateParam={onUpdateParam}
-                                ></TransformControls>
-                            </Collapse>
-                        </div>
+                        <VolumeTab
+                            viewKey={viewKey}
+                            asset={asset}
+                            viewModel={viewModel}
+                            onUpdateParam={onUpdateParam}
+                        ></VolumeTab>
                     )}
                 </div>
             </Collapse>
