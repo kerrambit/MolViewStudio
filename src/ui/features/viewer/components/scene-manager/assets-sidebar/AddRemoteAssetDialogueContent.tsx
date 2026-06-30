@@ -16,16 +16,18 @@ export interface AddRemoteAssetDialogueReturnType {
 
 interface AddRemoteAssetDialogueContentProps {
     close: (value?: AddRemoteAssetDialogueReturnType) => void;
+    url: string | undefined;
+    extension: string | undefined;
 }
 
 export function AddRemoteAssetDialogueContent(
     props: AddRemoteAssetDialogueContentProps,
 ) {
     // Storing current remote url in UI and its extension.
-    const [remoteUrl, setRemoteUrl] = useState<string | undefined>(undefined);
+    const [remoteUrl, setRemoteUrl] = useState<string | undefined>(props.url);
     const [remoteUrlExtension, setRemoteUrlExtension] = useState<
         ExtensionType | undefined
-    >(undefined);
+    >(props.extension as ExtensionType | undefined);
 
     // Fucntions which checks if the value is valid Url.
     const isUrlValid = (value: string) => {

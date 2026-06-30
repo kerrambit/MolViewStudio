@@ -1,6 +1,7 @@
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Base64Png, type CameraState, type HexColor } from "./types";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
+import { getEulerAnglesFromMatrix3x3 } from "./math";
 
 /**
  * Creates a deep copy of `node`.
@@ -150,7 +151,7 @@ export function removeDownloadNodeFromRoot(
  * @param rootNode root node
  * @param assetIdToAdd managed asset id
  * @param extension extension of the file
- * @param extensionParserRecord recod of mapped extension and its parser type
+ * @param extensionParserRecord record of mapped extension and its parser type
  * @param params optional drafted parameters from the UI to use instead of defaults
  * @returns modified node
  */
@@ -165,6 +166,7 @@ export function addDownloadNodeToRoot(
         show_wireframe: boolean;
         show_faces: boolean;
         color: string;
+        opacity: number;
     },
 ) {
     // Default format (parser) is "bcif". If it does not match to data, Molstar will throw an error when reloading this view anyway.
@@ -176,6 +178,7 @@ export function addDownloadNodeToRoot(
     const show_wireframe = params.show_wireframe;
     const show_faces = params.show_faces;
     const color = params.color;
+    const opacity = params.opacity;
 
     const newDownloadBranch = {
         kind: "download",
@@ -187,8 +190,14 @@ export function addDownloadNodeToRoot(
                 children: [
                     {
                         kind: "volume",
-
                         children: [
+                            {
+                                kind: "transform",
+                                params: {
+                                    translation: [0, 0, 0],
+                                    rotation: [1, 0, 0, 0, 1, 0, 0, 0, 1], // Identity matrix.
+                                },
+                            },
                             {
                                 kind: "volume_representation",
                                 params: {
@@ -201,6 +210,10 @@ export function addDownloadNodeToRoot(
                                     {
                                         kind: "color",
                                         params: { color: color },
+                                    },
+                                    {
+                                        kind: "opacity",
+                                        params: { opacity: opacity },
                                     },
                                 ],
                             },
@@ -219,6 +232,7 @@ export function addDownloadNodeToRoot(
 
 /**
  * Recursively updates a parameter inside a specific node kind, but only for the branch belonging to the target asset id.
+ * It will auto-repair missing child nodes (like color or opacity) if they don't exist.
  *
  * @param node node to update, start with root
  * @param targetAssetId node which is updated has to have this id as download url
@@ -242,17 +256,51 @@ export function updateNodeParamInAssetBranch(
     }
 
     let newParams = node.params;
+    let newChildren = node.children;
 
-    if (isCurrentlyInTargetBranch && node.kind === targetNodeKind) {
-        newParams = {
-            ...newParams,
-            [paramKey]: paramValue,
-        };
+    if (isCurrentlyInTargetBranch) {
+        if (node.kind === targetNodeKind) {
+            newParams = {
+                ...newParams,
+                [paramKey]: paramValue,
+            };
+        } else if (node.kind === "volume_representation") {
+            if (targetNodeKind === "color" || targetNodeKind === "opacity") {
+                const childExists = (node.children || []).some(
+                    (c: any) => c.kind === targetNodeKind,
+                );
+
+                if (!childExists) {
+                    newChildren = [
+                        ...(node.children || []),
+                        { kind: targetNodeKind, params: {} },
+                    ];
+                }
+            }
+        } else if (node.kind === "volume") {
+            if (targetNodeKind === "transform") {
+                const childExists = (node.children || []).some(
+                    (c: any) => c.kind === targetNodeKind,
+                );
+
+                if (!childExists) {
+                    newChildren = [
+                        ...(node.children || []),
+                        {
+                            kind: targetNodeKind,
+                            params: {
+                                translation: [0, 0, 0],
+                                rotation: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                            },
+                        },
+                    ];
+                }
+            }
+        }
     }
 
-    let newChildren = node.children;
-    if (Array.isArray(node.children) && node.children.length > 0) {
-        newChildren = node.children.map((child: any) =>
+    if (Array.isArray(newChildren) && newChildren.length > 0) {
+        newChildren = newChildren.map((child: any) =>
             updateNodeParamInAssetBranch(
                 child,
                 targetAssetId,
@@ -267,7 +315,7 @@ export function updateNodeParamInAssetBranch(
     return {
         ...node,
         params: newParams,
-        children: newChildren,
+        ...(newChildren !== undefined ? { children: newChildren } : {}),
     };
 }
 
@@ -288,6 +336,13 @@ export function getVolumeParamsForAsset(
         show_wireframe: boolean;
         show_faces: boolean;
         color: string;
+        opacity: number;
+        translationX: number;
+        translationY: number;
+        translationZ: number;
+        rotationX: number;
+        rotationY: number;
+        rotationZ: number;
     },
 ) {
     const params = { ...defaultValues };
@@ -316,6 +371,32 @@ export function getVolumeParamsForAsset(
             }
             if (node.kind === "color" && node.params?.color) {
                 params.color = node.params.color;
+            }
+            if (node.kind === "opacity" && node.params?.opacity !== undefined) {
+                params.opacity = node.params.opacity;
+            }
+
+            if (node.kind === "transform" && node.params) {
+                if (
+                    Array.isArray(node.params.translation) &&
+                    node.params.translation.length === 3
+                ) {
+                    params.translationX = node.params.translation[0];
+                    params.translationY = node.params.translation[1];
+                    params.translationZ = node.params.translation[2];
+                }
+
+                if (
+                    Array.isArray(node.params.rotation) &&
+                    node.params.rotation.length === 9
+                ) {
+                    const [pitch, yaw, roll] = getEulerAnglesFromMatrix3x3(
+                        node.params.rotation,
+                    );
+                    params.rotationX = pitch;
+                    params.rotationY = yaw;
+                    params.rotationZ = roll;
+                }
             }
         }
 

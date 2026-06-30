@@ -9,7 +9,7 @@ interface ActionableListItemProps {
     tooltip?: string;
     leftComponent?: ReactNode;
     rightComponent?: ReactNode;
-    styles?: CSSProperties;
+    style?: CSSProperties;
 }
 
 /**
@@ -20,7 +20,7 @@ export function ActionableListItem(props: ActionableListItemProps) {
         <div
             className="actionableListItem actionableListItemColor"
             title={props.title}
-            style={props.styles}
+            style={props.style}
         >
             <div
                 style={{
@@ -38,9 +38,23 @@ export function ActionableListItem(props: ActionableListItemProps) {
                 >
                     {props.leftComponent}
                 </div>
-                <Text size={props.titleSize}>{props.title}</Text>
+                <Text
+                    size={props.titleSize}
+                    truncate="end"
+                    style={{ flex: 1, minWidth: 0 }}
+                >
+                    {props.title}
+                </Text>
             </div>
-            <div>{props.rightComponent}</div>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "0.5em",
+                }}
+            >
+                {props.rightComponent}
+            </div>
         </div>
     );
 }

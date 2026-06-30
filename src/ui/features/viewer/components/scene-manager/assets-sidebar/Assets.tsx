@@ -1,5 +1,5 @@
 import { Text } from "@mantine/core";
-import { IconWorldWww } from "@tabler/icons-react";
+import { IconAlertOctagonFilled, IconWorldWww } from "@tabler/icons-react";
 import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
 import { Button } from "../../../../../components/common/button/Button";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
@@ -18,6 +18,7 @@ import {
     AddRemoteAssetDialogueContent,
     type AddRemoteAssetDialogueReturnType,
 } from "./AddRemoteAssetDialogueContent";
+import { EditActionIcon } from "../../../../../components/common/actionables/actions-icons/EditActionIcon";
 
 export function Assets() {
     // Use dialogue.
@@ -27,6 +28,7 @@ export function Assets() {
     const {
         addLocalAsset,
         addRemoteAsset,
+        editRemoteAsset,
         getAllLocalAssets,
         getAllRemoteAssets,
         removeAsset,
@@ -128,49 +130,141 @@ export function Assets() {
 
                 {/* Flat list of remote assets. */}
                 <ActionableList>
-                    {getAllRemoteAssets().map((asset) => (
-                        <ActionableListItem
-                            key={asset.asset.id}
-                            title={asset.relativePath}
-                            titleSize="sm"
-                            tooltip={asset.asset.url}
-                            leftComponent={
-                                <IconWorldWww
-                                    size={16}
-                                    style={{ opacity: 0.6 }}
-                                />
-                            }
-                            rightComponent={
-                                <DeleteActionIcon
-                                    onClick={async () => {
-                                        // Show confirmation dialogue.
-                                        const result =
-                                            await showDialogue<boolean>({
-                                                title: "Delete Confirmation",
-                                                width: "550px",
-                                                showCloseButton: true,
-                                                content: (close) => (
-                                                    <DeleteAssetDialogueContent
-                                                        assetName={asset.name}
-                                                        close={close}
-                                                    />
-                                                ),
-                                            });
+                    {getAllRemoteAssets().map((asset) => {
+                        // Asset might has `unknown` extension and we must force user to fix the extension in the dialogue window.
+                        const hasUnknownExtension =
+                            asset.extension === "unknown";
 
-                                        if (result) {
-                                            removeAsset(asset.asset.url);
-                                        }
-                                    }}
-                                    tooltip={
-                                        asset.useCount > 0
-                                            ? "Cannot delete remote asset, as it is being referenced in view."
-                                            : "Delete remote asset."
-                                    }
-                                    enabled={asset.useCount > 0}
-                                />
-                            }
-                        />
-                    ))}
+                        return (
+                            <ActionableListItem
+                                key={asset.asset.id}
+                                style={
+                                    hasUnknownExtension
+                                        ? {
+                                              backgroundColor:
+                                                  "rgba(251, 191, 36, 0.35)",
+                                          }
+                                        : undefined
+                                }
+                                title={asset.relativePath}
+                                titleSize="sm"
+                                tooltip={asset.asset.url}
+                                leftComponent={
+                                    hasUnknownExtension ? (
+                                        <div
+                                            title="Could not detect file extension! Please set it manually."
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "row",
+                                                gap: "0.35em",
+                                            }}
+                                        >
+                                            <IconWorldWww
+                                                size={16}
+                                                style={{ opacity: 0.6 }}
+                                            />
+                                            <IconAlertOctagonFilled
+                                                size={16}
+                                                style={{ opacity: 0.6 }}
+                                            ></IconAlertOctagonFilled>
+                                        </div>
+                                    ) : (
+                                        <IconWorldWww
+                                            size={16}
+                                            style={{ opacity: 0.6 }}
+                                        />
+                                    )
+                                }
+                                rightComponent={
+                                    <>
+                                        <EditActionIcon
+                                            onClick={async () => {
+                                                const originalUrl =
+                                                    asset.asset.url;
+                                                const result =
+                                                    await showDialogue<AddRemoteAssetDialogueReturnType>(
+                                                        {
+                                                            title: "Edit remote asset",
+                                                            width: "800px",
+                                                            showCloseButton: true,
+                                                            content: (
+                                                                close,
+                                                            ) => (
+                                                                <AddRemoteAssetDialogueContent
+                                                                    url={
+                                                                        asset
+                                                                            .asset
+                                                                            .url
+                                                                    }
+                                                                    extension={
+                                                                        asset.extension ===
+                                                                        "unknown"
+                                                                            ? undefined
+                                                                            : asset.extension
+                                                                    }
+                                                                    close={
+                                                                        close
+                                                                    }
+                                                                />
+                                                            ),
+                                                        },
+                                                    );
+
+                                                if (result) {
+                                                    if (
+                                                        result.url &&
+                                                        result.url.trim() !== ""
+                                                    ) {
+                                                        editRemoteAsset(
+                                                            originalUrl,
+                                                            result.url.trim(),
+                                                            result.extension,
+                                                        );
+                                                    }
+                                                }
+                                            }}
+                                        ></EditActionIcon>
+                                        <DeleteActionIcon
+                                            onClick={async () => {
+                                                const result =
+                                                    await showDialogue<boolean>(
+                                                        {
+                                                            title: "Delete Confirmation",
+                                                            width: "550px",
+                                                            showCloseButton: true,
+                                                            content: (
+                                                                close,
+                                                            ) => (
+                                                                <DeleteAssetDialogueContent
+                                                                    assetName={
+                                                                        asset.name
+                                                                    }
+                                                                    close={
+                                                                        close
+                                                                    }
+                                                                />
+                                                            ),
+                                                        },
+                                                    );
+
+                                                if (result) {
+                                                    removeAsset(
+                                                        asset.asset.url,
+                                                    );
+                                                }
+                                            }}
+                                            tooltip={
+                                                asset.useCount > 0
+                                                    ? "Cannot delete remote asset, as it is being referenced in view."
+                                                    : "Delete remote asset."
+                                            }
+                                            enabled={asset.useCount > 0}
+                                        />
+                                    </>
+                                }
+                            />
+                        );
+                    })}
                 </ActionableList>
 
                 {/* Input form to add new remote asset. */}
@@ -195,6 +289,8 @@ export function Assets() {
                                         showCloseButton: true,
                                         content: (close) => (
                                             <AddRemoteAssetDialogueContent
+                                                url={undefined}
+                                                extension={undefined}
                                                 close={close}
                                             />
                                         ),

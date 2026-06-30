@@ -3,6 +3,23 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.actionableListItem > div:first-child {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+}
+
+.actionableListItem > div:last-child {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+    flex-shrink: 0;
 }
 
 .actionableListItemColor {

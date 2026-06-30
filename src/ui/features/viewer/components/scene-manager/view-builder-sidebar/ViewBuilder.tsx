@@ -41,9 +41,12 @@ export function ViewBuilder(props: ViewBuilderProps) {
     if (!view) return <></>;
 
     // Computes index of first selected asset in the list, otherwise -1.
-    const firstSelectedAssetIndex = assetsInView.findIndex((asset) =>
-        selectedAssetIds.includes(asset.id),
-    );
+    const firstSelectedAssetIndex =
+        expandedAssetId === null
+            ? assetsInView.findIndex((asset) =>
+                  selectedAssetIds.includes(asset.id),
+              )
+            : assetsInView.findIndex((asset) => asset.id === expandedAssetId);
 
     // Render the component.
     return (
@@ -84,6 +87,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
             <CollapseTrigger
                 title={"Filters"}
+                size="lg"
                 expanded={areFiltersExpanded}
                 onClick={() => {
                     setAreFiltersExpanded((prev) => {
@@ -202,6 +206,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                     renderItem={(asset, _) => {
                         return (
                             <AssetBuilderCard
+                                viewKey={props.viewKey}
                                 key={asset.id}
                                 asset={asset}
                                 isDark={isDark}

@@ -43,6 +43,19 @@ type ManagedAssetsContextType = {
     addRemoteAsset: (url: string, extension: string) => void;
 
     /**
+     * Edits existing remote asset.
+     * @param url url of asset
+     * @param newUrl new url of asset
+     * @param newExtension new extension
+     * @returns false if given url does not exist, the new url and extension do not differ, otherwise true
+     */
+    editRemoteAsset: (
+        url: string,
+        newUrl: string,
+        newExtension: string,
+    ) => boolean;
+
+    /**
      * Tries to remove the asset from both local system and Molstar inner repository.
      * @param url url of asset to delete
      * @returns false if the url is not found in the map, true if url was found and asset was removed from both places
@@ -175,6 +188,43 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
             };
 
             setAssets((prev) => new Map(prev).set(url, entry));
+        },
+        [],
+    );
+
+    const editRemoteAsset = useCallback(
+        (url: string, newUrl: string, newExtension: string): boolean => {
+            let didUpdate = false;
+            setAssets((prev) => {
+                if (!prev.has(url)) return prev;
+                const existingAsset = prev.get(url)!;
+                if (
+                    existingAsset.asset.url === newUrl &&
+                    existingAsset.extension === newExtension
+                ) {
+                    return prev;
+                }
+
+                let newAsset = existingAsset.asset;
+                if (existingAsset.asset.url !== newUrl) {
+                    removeAssetFromMolstar(existingAsset.asset);
+                    const { asset } = addRemoteAssetIntoMolstar(newUrl);
+                    newAsset = asset;
+                }
+
+                const newMap = new Map(prev);
+                newMap.delete(url);
+                newMap.set(newUrl, {
+                    ...existingAsset,
+                    asset: newAsset,
+                    relativePath: newUrl,
+                    name: newUrl,
+                    extension: newExtension,
+                });
+                didUpdate = true;
+                return newMap;
+            });
+            return didUpdate;
         },
         [],
     );
@@ -323,6 +373,7 @@ export function ManagedAssetsProvider({ children }: { children: ReactNode }) {
                 addAsset,
                 addLocalAsset,
                 addRemoteAsset,
+                editRemoteAsset,
                 removeAsset,
                 editRelativePathAndFilenameOfLocalAsset,
                 incrementAssetUseCount,

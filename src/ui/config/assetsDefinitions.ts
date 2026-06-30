@@ -69,6 +69,12 @@ export function getAssetConfig(filename: string): AssetDefinition | null {
     return SUPPORTED_ASSETS[extension] || null;
 }
 
+export function getAssetConfigBasedOnExtension(
+    extension: string,
+): AssetDefinition | null {
+    return SUPPORTED_ASSETS[extension] || null;
+}
+
 export function isAssetSupported(filename: string): boolean {
     return getAssetConfig(filename) !== null;
 }
