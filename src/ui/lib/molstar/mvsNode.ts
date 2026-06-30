@@ -1,6 +1,7 @@
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Base64Png, type CameraState, type HexColor } from "./types";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
+import { getEulerAnglesFromMatrix3x3 } from "./math";
 
 /**
  * Creates a deep copy of `node`.
@@ -150,7 +151,7 @@ export function removeDownloadNodeFromRoot(
  * @param rootNode root node
  * @param assetIdToAdd managed asset id
  * @param extension extension of the file
- * @param extensionParserRecord recod of mapped extension and its parser type
+ * @param extensionParserRecord record of mapped extension and its parser type
  * @param params optional drafted parameters from the UI to use instead of defaults
  * @returns modified node
  */
@@ -189,8 +190,14 @@ export function addDownloadNodeToRoot(
                 children: [
                     {
                         kind: "volume",
-
                         children: [
+                            {
+                                kind: "transform",
+                                params: {
+                                    translation: [0, 0, 0],
+                                    rotation: [1, 0, 0, 0, 1, 0, 0, 0, 1], // Identity matrix.
+                                },
+                            },
                             {
                                 kind: "volume_representation",
                                 params: {
@@ -266,9 +273,25 @@ export function updateNodeParamInAssetBranch(
                 if (!childExists) {
                     newChildren = [
                         ...(node.children || []),
+                        { kind: targetNodeKind, params: {} },
+                    ];
+                }
+            }
+        } else if (node.kind === "volume") {
+            if (targetNodeKind === "transform") {
+                const childExists = (node.children || []).some(
+                    (c: any) => c.kind === targetNodeKind,
+                );
+
+                if (!childExists) {
+                    newChildren = [
+                        ...(node.children || []),
                         {
                             kind: targetNodeKind,
-                            params: { [paramKey]: paramValue },
+                            params: {
+                                translation: [0, 0, 0],
+                                rotation: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                            },
                         },
                     ];
                 }
@@ -314,6 +337,12 @@ export function getVolumeParamsForAsset(
         show_faces: boolean;
         color: string;
         opacity: number;
+        translationX: number;
+        translationY: number;
+        translationZ: number;
+        rotationX: number;
+        rotationY: number;
+        rotationZ: number;
     },
 ) {
     const params = { ...defaultValues };
@@ -343,9 +372,31 @@ export function getVolumeParamsForAsset(
             if (node.kind === "color" && node.params?.color) {
                 params.color = node.params.color;
             }
-
             if (node.kind === "opacity" && node.params?.opacity !== undefined) {
                 params.opacity = node.params.opacity;
+            }
+
+            if (node.kind === "transform" && node.params) {
+                if (
+                    Array.isArray(node.params.translation) &&
+                    node.params.translation.length === 3
+                ) {
+                    params.translationX = node.params.translation[0];
+                    params.translationY = node.params.translation[1];
+                    params.translationZ = node.params.translation[2];
+                }
+
+                if (
+                    Array.isArray(node.params.rotation) &&
+                    node.params.rotation.length === 9
+                ) {
+                    const [pitch, yaw, roll] = getEulerAnglesFromMatrix3x3(
+                        node.params.rotation,
+                    );
+                    params.rotationX = pitch;
+                    params.rotationY = yaw;
+                    params.rotationZ = roll;
+                }
             }
         }
 

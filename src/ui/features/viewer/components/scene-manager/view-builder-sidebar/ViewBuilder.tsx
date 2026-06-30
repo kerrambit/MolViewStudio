@@ -203,6 +203,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                     renderItem={(asset, _) => {
                         return (
                             <AssetBuilderCard
+                                viewKey={props.viewKey}
                                 key={asset.id}
                                 asset={asset}
                                 isDark={isDark}

@@ -7,6 +7,8 @@ const PREFIX = {
     SCENE_MANAGER_BUILDER_SIDEBAR: "scene-manager-builder-sidebar",
     VIEW_BUILDER_ASSET: "view-builder-expanded-asset-",
     VIEW_BUILDER_TAB: "view-builder-tab-",
+    VIEW_BUILDER_GENERAL_SECTION: "view-builder-general-section-",
+    VIEW_BUILDER_TRANSFORM_SECTION: "view-builder-transform-section-",
     VIEW_BUILDER_FILTER_SECTION: "view-builder-asset-filter-section-",
     VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
@@ -94,13 +96,76 @@ export const UiLocalStorageService = {
             }
         },
 
-        getTab: (): "representation" | "volume" => {
-            const value = localStorage.getItem(`${PREFIX.VIEW_BUILDER_TAB}`);
+        getTab: (
+            assetId: string,
+            viewKey: string,
+        ): "representation" | "volume" => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_TAB}${viewKey}-${assetId}`,
+            );
             return (value as "representation" | "volume") || "representation";
         },
 
-        setTab: (tabType: "representation" | "volume"): void => {
-            localStorage.setItem(`${PREFIX.VIEW_BUILDER_TAB}`, String(tabType));
+        setTab: (
+            assetId: string,
+            viewKey: string,
+            tabType: "representation" | "volume",
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_TAB}${viewKey}-${assetId}`,
+                String(tabType),
+            );
+        },
+
+        getExpandedGeneralSection: (
+            assetId: string,
+            viewKey: string,
+        ): boolean => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_GENERAL_SECTION}${viewKey}-${assetId}`,
+            );
+            if (value === null || value === "true") {
+                return true;
+            }
+            return false;
+        },
+
+        setExpandedGeneralSection: (
+            assetId: string,
+            viewKey: string,
+            expanded: boolean,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_GENERAL_SECTION}${viewKey}-${assetId}`,
+                String(expanded),
+            );
+        },
+
+        getExpandedTransformSection: (
+            assetId: string,
+            viewKey: string,
+        ): boolean => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_TRANSFORM_SECTION}${viewKey}-${assetId}`,
+            );
+            if (value === null) {
+                return false;
+            }
+            if (value === "true") {
+                return true;
+            }
+            return false;
+        },
+
+        setExpandedTransformSection: (
+            assetId: string,
+            viewKey: string,
+            expanded: boolean,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_TRANSFORM_SECTION}${viewKey}-${assetId}`,
+                String(expanded),
+            );
         },
 
         getAssetFilters: (viewKey: string): string[] | null => {

@@ -8,6 +8,7 @@ import {
     Group,
     ColorInput,
     AlphaSlider,
+    Divider,
 } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
@@ -24,6 +25,7 @@ import { TransformControls } from "./TransformControls";
 type TabType = "representation" | "volume";
 
 interface AssetBuilderCardProps {
+    viewKey: string;
     asset: ManagedAsset;
     isDark: boolean;
     isExpanded: boolean;
@@ -39,6 +41,7 @@ interface AssetBuilderCardProps {
 }
 
 export function AssetBuilderCard({
+    viewKey,
     asset,
     isDark,
     isExpanded,
@@ -50,7 +53,21 @@ export function AssetBuilderCard({
 }: AssetBuilderCardProps) {
     // Store active tab.
     const [activeTab, setActiveTab] = useState<TabType>(() =>
-        UiLocalStorageService.ViewBuilder.getTab(),
+        UiLocalStorageService.ViewBuilder.getTab(asset.id, viewKey),
+    );
+
+    // Store expanded secttions.
+    const [generalSectionExpanded, setGeneralSectionExpanded] = useState(
+        UiLocalStorageService.ViewBuilder.getExpandedGeneralSection(
+            asset.id,
+            viewKey,
+        ),
+    );
+    const [transformSectionExpanded, setTransformSectionExpanded] = useState(
+        UiLocalStorageService.ViewBuilder.getExpandedTransformSection(
+            asset.id,
+            viewKey,
+        ),
     );
 
     // Checks if the given asset checked is supported or not.
@@ -135,7 +152,11 @@ export function AssetBuilderCard({
                         value={activeTab}
                         onChange={(tab) => {
                             setActiveTab(tab);
-                            UiLocalStorageService.ViewBuilder.setTab(tab);
+                            UiLocalStorageService.ViewBuilder.setTab(
+                                asset.id,
+                                viewKey,
+                                tab,
+                            );
                         }}
                         data={[
                             {
@@ -159,10 +180,21 @@ export function AssetBuilderCard({
                             <CollapseTrigger
                                 title={"General"}
                                 size={"md"}
-                                expanded={true}
+                                expanded={generalSectionExpanded}
+                                onClick={() => {
+                                    setGeneralSectionExpanded((prev) => {
+                                        const nextState = !prev;
+                                        UiLocalStorageService.ViewBuilder.setExpandedGeneralSection(
+                                            asset.id,
+                                            viewKey,
+                                            nextState,
+                                        );
+                                        return nextState;
+                                    });
+                                }}
                             ></CollapseTrigger>
 
-                            <Collapse expanded={true}>
+                            <Collapse expanded={generalSectionExpanded}>
                                 <div
                                     style={{
                                         display: "flex",
@@ -275,6 +307,8 @@ export function AssetBuilderCard({
                                             onUpdateParam("opacity", val, true)
                                         }
                                     ></AlphaSlider>
+
+                                    <Divider mb="md" />
                                 </div>
                             </Collapse>
 
@@ -282,11 +316,25 @@ export function AssetBuilderCard({
                             <CollapseTrigger
                                 title={"Transform"}
                                 size={"md"}
-                                expanded={true}
+                                expanded={transformSectionExpanded}
+                                onClick={() => {
+                                    setTransformSectionExpanded((prev) => {
+                                        const nextState = !prev;
+                                        UiLocalStorageService.ViewBuilder.setExpandedTransformSection(
+                                            asset.id,
+                                            viewKey,
+                                            nextState,
+                                        );
+                                        return nextState;
+                                    });
+                                }}
                             ></CollapseTrigger>
 
-                            <Collapse expanded={true}>
-                                <TransformControls></TransformControls>
+                            <Collapse expanded={transformSectionExpanded}>
+                                <TransformControls
+                                    viewModel={viewModel}
+                                    onUpdateParam={onUpdateParam}
+                                ></TransformControls>
                             </Collapse>
                         </div>
                     )}

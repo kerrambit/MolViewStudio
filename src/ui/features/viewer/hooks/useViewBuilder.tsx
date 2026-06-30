@@ -16,6 +16,7 @@ import {
     reloadMolstarAndRestoreIndex,
     addDownloadNodeToRoot,
     removeDownloadNodeFromRoot,
+    getRotationMatrix3x3,
 } from "../../../lib/molstar";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 
@@ -30,6 +31,12 @@ export interface VolumeViewModel {
     show_faces: boolean;
     color: string;
     opacity: number;
+    translationX: number;
+    translationY: number;
+    translationZ: number;
+    rotationX: number; // Pitch (Degrees)
+    rotationY: number; // Yaw (Degrees)
+    rotationZ: number; // Roll (Degrees)
 }
 
 /**
@@ -43,6 +50,12 @@ export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
     show_faces: true,
     color: "#ffffff",
     opacity: 1.0,
+    translationX: 0,
+    translationY: 0,
+    translationZ: 0,
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
 };
 
 /**
@@ -88,6 +101,33 @@ function applyViewModelToBranch(
             p.val,
         );
     });
+
+    const translationArray = [
+        viewModel.translationX,
+        viewModel.translationY,
+        viewModel.translationZ,
+    ];
+    const rotationArray = getRotationMatrix3x3(
+        viewModel.rotationX,
+        viewModel.rotationY,
+        viewModel.rotationZ,
+    );
+
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "transform",
+        "translation",
+        translationArray,
+    );
+    newRoot = updateNodeParamInAssetBranch(
+        newRoot,
+        assetId,
+        "transform",
+        "rotation",
+        rotationArray,
+    );
+
     return newRoot;
 }
 
