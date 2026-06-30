@@ -1,4 +1,4 @@
-import { Text, Divider, Stack, SegmentedControl } from "@mantine/core";
+import { Text, Divider, Stack } from "@mantine/core";
 import { SliderInputGroup } from "../../../../../components/common/slider-input-group/SliderInputGroup";
 import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
 
