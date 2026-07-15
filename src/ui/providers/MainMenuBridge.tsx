@@ -2,13 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
 import { useDialogue } from "./DialogueProvider";
 import { MenuProvider } from "./MenuProvider";
-import { createInitialMenu } from "../config/createInitialMenu";
+import { createInitialMenuForMainMenu } from "../config/createInitialMenuForMainMenu";
 
-interface AppMenuBridgeProps {
+interface MainMenuBridgeProps {
     children: React.ReactNode;
 }
 
-export function AppMenuBridge({ children }: AppMenuBridgeProps) {
+export function MainMenuBridge({ children }: MainMenuBridgeProps) {
     // Use navigation.
     const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ export function AppMenuBridge({ children }: AppMenuBridgeProps) {
     } = useWorkspaceManagement();
 
     const initialAppMenu = () =>
-        createInitialMenu(
+        createInitialMenuForMainMenu(
             navigate,
             showDialogue,
             openFileExplorerAndLoadFileInApp,

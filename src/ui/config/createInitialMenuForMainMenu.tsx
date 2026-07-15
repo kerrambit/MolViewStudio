@@ -30,7 +30,7 @@ import {
 import { pushErrorNotification } from "../services/NotificationService";
 import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
 
-export function createInitialMenu(
+export function createInitialMenuForMainMenu(
     navigate: NavigateFunction,
     showDialogue: ShowDialogueType,
     openFileExplorerAndLoadFileInApp: () => Promise<void>,

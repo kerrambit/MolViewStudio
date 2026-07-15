@@ -1,14 +1,14 @@
 import { Outlet } from "react-router-dom";
 import { Footer } from "../components/common/footer/Footer";
 import { Header } from "./header/Header";
-import { MainMenuBridge } from "../providers/MainMenuBridge";
+import { ViewerPageBridge } from "../providers/ViewerPageBridge";
 import { ServerStatus } from "../features/system/components/server-status/ServerStatus";
 
 import "./Layout.css";
 
-export function MainLayout() {
+export function ViewerPageLayout() {
     return (
-        <MainMenuBridge>
+        <ViewerPageBridge>
             <div className={"layout"}>
                 <div className="layout__header">
                     <Header />
@@ -22,8 +22,8 @@ export function MainLayout() {
                     </Footer>
                 </div>
             </div>
-        </MainMenuBridge>
+        </ViewerPageBridge>
     );
 }
 
-export default MainLayout;
+export default ViewerPageLayout;

@@ -1,4 +1,5 @@
 import {
+    IconBinaryTreeFilled,
     IconBrandGithub,
     IconCircleDashedX,
     IconFileFilled,
@@ -9,9 +10,11 @@ import {
     IconFolderOpen,
     IconHome,
     IconInfoOctagon,
+    IconPackageExport,
     IconProgressCheck,
     IconTopologyStar3,
     IconUserCog,
+    IconWorldDownload,
 } from "@tabler/icons-react";
 import type {
     Action,
@@ -25,6 +28,7 @@ import type {
 import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../services/NotificationService";
 import { useRecentFiles } from "../providers/RecentFilesProvider";
+import { BroomIcon } from "../components/icons/BroomIcon";
 
 export function createOnlyDevSection(
     id: string,
@@ -187,6 +191,111 @@ export function createOpenUserDataFolderMenuItem(
         id: "open-user-data-folder",
         title: "Open user data folder",
         icon: { icon: IconFolderCog, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+// --------------------------------------------------------------------------------------
+
+export function createEditRootMenuItem(
+    task: Dropdown | Action,
+    priority: Priority = 2,
+): RootMenuItem {
+    return {
+        id: "edit",
+        title: "Edit",
+        task: task,
+        priority: priority,
+    };
+}
+
+export function createGeneralEditSection(items: MenuItem[]): Section {
+    return {
+        id: "edit-general",
+        items: items,
+    };
+}
+
+export function createClearViwerMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "clear-viewer",
+        title: "Clear viewer",
+        icon: { icon: BroomIcon, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createExportViwerMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "export",
+        title: "Export",
+        icon: { icon: IconPackageExport, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createShowRawMVSTreeItemMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "showRawMVSTree",
+        title: "Show raw MVS tree",
+        icon: { icon: IconBinaryTreeFilled, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createLoadDefaultPDBItemMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "load-default-pdb",
+        title: "Load default PDB",
+        icon: { icon: IconWorldDownload, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createLoadDefaultMVSJtemMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "load-default-mvsj",
+        title: "Load default MVSJ",
+        icon: { icon: IconWorldDownload, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createLoadDefaultMVSXtemMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "load-default-mvsx",
+        title: "Load default MVSX",
+        icon: { icon: IconWorldDownload, position: "left" },
         task: {
             action: action,
             type: "direct",

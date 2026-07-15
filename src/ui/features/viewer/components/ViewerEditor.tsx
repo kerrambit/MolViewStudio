@@ -1,5 +1,4 @@
 import { LoadingOverlay } from "@mantine/core";
-import { useViewerMenu } from "../hooks/useViewerMenu";
 import { useMolstarInit } from "../hooks/useMolstarInit";
 import { ProcessingJobs } from "./processing-manager/ProcessingJobs";
 import { SceneManager } from "./scene-manager/SceneManager";
@@ -8,9 +7,6 @@ import "./ViewerEditor.css";
 import { useMolstarTheme } from "../hooks/useMolstarTheme";
 
 export function ViewerEditor() {
-    // Use viewer menu.
-    useViewerMenu();
-
     // Use Molstar.
     const { parentRef, molstarLoading, molstarExpanded } = useMolstarInit();
 
