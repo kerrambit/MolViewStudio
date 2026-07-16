@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
-import { useRegime } from "../../providers/RegimeProvider";
-import { useManagedAssets } from "../../providers/ManagedAssetsProvider";
 import { useDialogue } from "../../providers/DialogueProvider";
 import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
 import { createInitialMenuForViewerPageMenu } from "../../config/createInitialMenuForViewerPageMenu";
@@ -14,12 +12,6 @@ interface ViewerPageBridgeProps {
 export function ViewerPageBridge({ children }: ViewerPageBridgeProps) {
     // Use navigation.
     const navigate = useNavigate();
-
-    // Use regime,
-    const { regime, setRegime } = useRegime();
-
-    // Use managed assets.
-    const { clearAssets, getAllAssets, getAllLocalAssets } = useManagedAssets();
 
     // Use dialogue.
     const { showDialogue } = useDialogue();
@@ -39,11 +31,6 @@ export function ViewerPageBridge({ children }: ViewerPageBridgeProps) {
                 openFileExplorerAndLoadFileInApp,
                 createNewProjectInApp,
                 loadRecentFileInApp,
-                clearAssets,
-                getAllAssets,
-                getAllLocalAssets,
-                regime,
-                setRegime,
             ),
         [],
     );

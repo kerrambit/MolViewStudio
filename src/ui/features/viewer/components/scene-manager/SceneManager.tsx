@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Text } from "@mantine/core";
 import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
-import { useRegime } from "../../../../providers/RegimeProvider";
 import { StoryOptions } from "./story-options/StoryOptions";
 import { Assets } from "./assets-sidebar/Assets";
 import { Views } from "./views-sidebar/Views";
 import { ViewBuilder } from "./view-builder-sidebar/ViewBuilder";
 import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
+import { useRegimeStore } from "../../../../stores/regimeStore";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -15,8 +15,8 @@ interface SceneManagerProps {
 }
 
 export function SceneManager(props: SceneManagerProps) {
-    // Regime.
-    const { regime } = useRegime();
+    // Use regime.
+    const regime = useRegimeStore((state) => state.regime);
 
     // Main sidebar state.
     type TabType = "storyOptions" | "assets" | "views";

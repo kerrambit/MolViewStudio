@@ -27,8 +27,8 @@ import type {
 } from "../providers/MenuProvider";
 import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../services/NotificationService";
-import { useRecentFiles } from "../providers/RecentFilesProvider";
 import { BroomIcon } from "../components/icons/BroomIcon";
+import { useRecentFilesStore } from "../stores/recentFilesStore";
 
 export function createOnlyDevSection(
     id: string,
@@ -148,7 +148,7 @@ export function createOpenRecentFileInViewerMenuItem(
         // We define our LiveTask here.
         LiveTask: ({ render }: LiveMenuRenderProps) => {
             // Use recent files.
-            const { recentFiles } = useRecentFiles();
+            const recentFiles = useRecentFilesStore.getState().recentFiles;
 
             if (recentFiles.length === 0) return null;
 

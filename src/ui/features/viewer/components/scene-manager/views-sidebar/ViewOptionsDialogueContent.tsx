@@ -11,9 +11,9 @@ import {
 import ReactMarkdown from "react-markdown";
 import { Button } from "../../../../../components/common/button/Button";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
-import { useRegime } from "../../../../../providers/RegimeProvider";
 import type { HexColor } from "../../../../../lib/molstar";
 import { useAppearance } from "../../../../../providers/AppearanceProvider";
+import { useRegimeStore } from "../../../../../stores/regimeStore";
 
 export interface ViewOptionsDialogueContentReturnType {
     lingerDuration: number;
@@ -38,7 +38,7 @@ export function ViewOptionsDialogueContent({
     close,
 }: ViewOptionsDialogueContentProps) {
     // Use regime.
-    const { regime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
 
     // Use apperance.
     const { colorScheme } = useAppearance();

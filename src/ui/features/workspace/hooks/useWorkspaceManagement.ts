@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRegime, type Regime } from "../../../providers/RegimeProvider";
 import { MVSFilters, StructuralFilters } from "../../../../types/fileFilters";
 import { loggerUi } from "../../../services/UiLoggingService";
 import {
@@ -8,7 +7,6 @@ import {
     pushInfoNotification,
     pushSuccessNotification,
 } from "../../../services/NotificationService";
-import { useProcessing } from "../../../providers/ProcessingProvider";
 import { useProcessVolume } from "../../../api/hooks/useProcessVolume";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 import { getFieldFromResponse } from "../../../api/utils/apiParser";
@@ -17,27 +15,25 @@ import {
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../../lib/molstar";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
-import { useRecentFiles } from "../../../providers/RecentFilesProvider";
+import { useRegimeStore, type Regime } from "../../../stores/regimeStore";
+import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
+import { useProcessingStore } from "../../../stores/processingStore";
+import { useRecentFilesStore } from "../../../stores/recentFilesStore";
 
 export function useWorkspaceManagement() {
     // Use navigate,
     const navigate = useNavigate();
 
-    // Use regime.
-    const { regime, setRegime } = useRegime();
-
     // Use environment.
     const env = useEnvironment();
 
-    // Use assets.
-    const { addAsset, addLocalAsset, clearAssets } = useManagedAssets();
-
     // Use recent files.
-    const { addRecentFile } = useRecentFiles();
+    const addRecentFile = useRecentFilesStore((state) => state.addRecentFile);
 
     // Use processing.
-    const { startJob, completeJob, failJob } = useProcessing();
+    const startJob = useProcessingStore((state) => state.startJob);
+    const completeJob = useProcessingStore((state) => state.completeJob);
+    const failJob = useProcessingStore((state) => state.failJob);
     const processVolume = useProcessVolume();
 
     const loadFileInApp = useCallback(
@@ -49,11 +45,12 @@ export function useWorkspaceManagement() {
 
                     loggerUi.info(`File <${fileData[0].path}> was selected.`);
 
+                    // Set regime to `staging`.
                     const regime: Regime = {
                         kind: "staging",
                         fileToView: fileData[0],
                     };
-                    setRegime(regime);
+                    useRegimeStore.getState().setRegime(regime);
 
                     // Navigate to viewer page.
                     navigate("/viewer");
@@ -65,10 +62,12 @@ export function useWorkspaceManagement() {
                 );
             }
         },
-        [addRecentFile, setRegime, navigate],
+        [addRecentFile, navigate],
     );
 
     const openFileInViewer = useCallback(async () => {
+        // Open file in viewer only if the regime is in `staging` and therefore we know we have data to open in a viewer.
+        const regime = useRegimeStore.getState().regime;
         if (regime.kind !== "staging") {
             return;
         }
@@ -87,7 +86,7 @@ export function useWorkspaceManagement() {
             );
             return;
         } else if (result === undefined) {
-            clearAssets();
+            useManagedAssetsStore.getState().clearAssets();
             pushInfoNotification(
                 "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
             );
@@ -95,9 +94,9 @@ export function useWorkspaceManagement() {
         }
 
         // Clears all managed assets and then register local assets in ManagedAssetsProvider.
-        clearAssets();
+        useManagedAssetsStore.getState().clearAssets();
         result.assets.forEach((a) => {
-            addAsset(a);
+            useManagedAssetsStore.getState().addAsset(a);
         });
 
         // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
@@ -107,7 +106,7 @@ export function useWorkspaceManagement() {
         );
 
         // Set the regime with new assets and state tree.
-        setRegime({
+        useRegimeStore.getState().setRegime({
             ...regime,
             kind: "viewing",
             stateTree: stateTree,
@@ -116,7 +115,7 @@ export function useWorkspaceManagement() {
 
         // Import ended.
         pushSuccessNotification("Import ended!");
-    }, [regime, clearAssets, addAsset, setRegime]);
+    }, []);
 
     const openFileExplorerAndLoadFileInApp = useCallback(async () => {
         // Opends file explorer and let user to choose the file.
@@ -191,10 +190,9 @@ export function useWorkspaceManagement() {
 
                         assets.map((asset) => {
                             // Adds local asset into asset manager.
-                            const wasSuccessful = addLocalAsset(
-                                asset,
-                                newRelativePath,
-                            );
+                            const wasSuccessful = useManagedAssetsStore
+                                .getState()
+                                .addLocalAsset(asset, newRelativePath);
 
                             if (!wasSuccessful) {
                                 pushErrorNotification(
@@ -221,14 +219,7 @@ export function useWorkspaceManagement() {
                 },
             );
         },
-        [
-            startJob,
-            env.userDataPath,
-            processVolume,
-            completeJob,
-            addLocalAsset,
-            failJob,
-        ],
+        [startJob, env.userDataPath, processVolume, completeJob, failJob],
     );
 
     const createNewProjectInApp = useCallback(() => {
@@ -247,11 +238,11 @@ export function useWorkspaceManagement() {
             fileToView: fileData,
         };
 
-        setRegime(regime);
+        useRegimeStore.getState().setRegime(regime);
 
         // Navigate to viewer page.
         navigate("/viewer");
-    }, [setRegime, navigate]);
+    }, [navigate]);
 
     const loadRecentFileInApp = useCallback(
         async (path: string) => {

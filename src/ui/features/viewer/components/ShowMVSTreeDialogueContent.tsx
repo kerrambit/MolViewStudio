@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
 import { Button } from "../../../components/common/button/Button";
-import { useRegime } from "../../../providers/RegimeProvider";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
 import { pushWarningNotification } from "../../../services/NotificationService";
 import { PreformattedText } from "../../../components/common/preformatted-text/PreformattedText";
+import { useRegimeStore } from "../../../stores/regimeStore";
 
 interface ShowMVSTreeDialogueContentProps {
     close: () => void;
@@ -13,7 +13,7 @@ export function ShowMVSTreeDialogueContent({
     close,
 }: ShowMVSTreeDialogueContentProps) {
     // Use regime.
-    const { regime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
 
     // State for holding information if MVS tree was copied.
     const [copied, setCopied] = useState(false);

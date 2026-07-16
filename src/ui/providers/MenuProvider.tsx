@@ -126,6 +126,16 @@ export function useMenu() {
 
 type MenuProviderProps = {
     children: React.ReactNode;
+    /**
+     * Consumed once at the mount, exactly like a `useRef` initial value or
+     * `useState`'s lazy initializer: later changes to this prop are
+     * ignored.
+     *
+     * If the caller re-renders with a different `initialMenu`,
+     * the menu will NOT update. Use the menu-mutation methods
+     * (`addRootMenuItem`, `addSectionIntoRootItem`, etc.) or `LiveTask`
+     * for anything that needs to react to later changes.
+     */
     initialMenu: Menu | (() => Menu);
 };
 

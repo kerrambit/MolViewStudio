@@ -1,6 +1,5 @@
 import { createRef, useEffect, useRef, useState } from "react";
 import type { Subscription } from "rxjs";
-import { useRegime } from "../../../providers/RegimeProvider";
 import { useWorkspaceManagement } from "../../workspace/hooks/useWorkspaceManagement";
 import {
     initMolstar,
@@ -11,6 +10,7 @@ import {
     clearViewer,
     disposeMolstar,
 } from "../../../lib/molstar";
+import { useRegimeStore } from "../../../stores/regimeStore";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -26,7 +26,8 @@ export function useMolstarInit() {
     const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
 
     // Use regime.
-    const { regime, setRegime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use workspace management.
     const { openFileInViewer } = useWorkspaceManagement();

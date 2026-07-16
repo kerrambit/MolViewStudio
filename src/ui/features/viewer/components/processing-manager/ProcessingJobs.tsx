@@ -1,14 +1,15 @@
 import { Text } from "@mantine/core";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
 import { Button } from "../../../../components/common/button/Button";
-import { useProcessing } from "../../../../providers/ProcessingProvider";
+import { useProcessingStore } from "../../../../stores/processingStore";
 
 export function ProcessingJobs() {
     // Use processing.
-    const { jobs, clearJob } = useProcessing();
+    const jobs = useProcessingStore((state) => state.jobs);
+    const clearJob = useProcessingStore((state) => state.clearJob);
 
     // Variables for processing sidebar.
-    const jobsList = Object.values(jobs);
+    const jobsList = Array.from(jobs.values());
     const volumeSidebarVisible = jobsList.length > 0;
 
     // Render the component.

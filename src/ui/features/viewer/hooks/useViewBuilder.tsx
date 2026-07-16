@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRegime } from "../../../providers/RegimeProvider";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -19,6 +17,8 @@ import {
     getRotationMatrix3x3,
 } from "../../../lib/molstar";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
+import { useRegimeStore } from "../../../stores/regimeStore";
+import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 
 /**
  * The unified View-Model for volume parameters.
@@ -133,15 +133,18 @@ function applyViewModelToBranch(
 
 export function useViewBuilder(viewKey: string) {
     // Use regime.
-    const { regime, setRegime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use managed assets.
-    const {
-        getAllAssets,
-        getAsset,
-        incrementAssetUseCount,
-        decrementAssetUseCount,
-    } = useManagedAssets();
+    const assets = useManagedAssetsStore((state) => state.assets);
+    const getAsset = useManagedAssetsStore((state) => state.getAsset);
+    const incrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.incrementAssetUseCount,
+    );
+    const decrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.decrementAssetUseCount,
+    );
 
     // Memoized view.
     const view = useMemo(() => {
@@ -186,7 +189,7 @@ export function useViewBuilder(viewKey: string) {
 
     // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...).
     const assetsFilteredByType = useMemo(() => {
-        const allAssets = getAllAssets();
+        const allAssets = Array.from(assets.values());
 
         if (selectedAssetFilters.length === 0) return [];
         if (selectedAssetFilters.includes("All")) return allAssets;
@@ -222,7 +225,7 @@ export function useViewBuilder(viewKey: string) {
 
             return matchesLocation && matchesExtension;
         });
-    }, [getAllAssets, selectedAssetFilters]);
+    }, [assets, selectedAssetFilters]);
 
     // Memoized assets further narrowed down by relative paths.
     const assetsInView = useMemo(() => {
@@ -325,7 +328,7 @@ export function useViewBuilder(viewKey: string) {
             // Try to reload Molstar viewer.
             const result = await reloadMolstarAndRestoreIndex(
                 viewKey,
-                getAllAssets(),
+                Array.from(assets.values()),
                 updatedTree,
             );
             if (result instanceof Error) {
@@ -423,7 +426,7 @@ export function useViewBuilder(viewKey: string) {
         // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
             viewKey,
-            getAllAssets(),
+            Array.from(assets.values()),
             updatedTree,
         );
 

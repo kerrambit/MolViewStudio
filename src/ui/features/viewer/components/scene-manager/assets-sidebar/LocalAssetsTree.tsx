@@ -5,7 +5,7 @@ import {
     buildAssetTree,
     type AssetTreeNode,
 } from "../../../utils/buildAssetTree";
-import { useManagedAssets } from "../../../../../providers/ManagedAssetsProvider";
+import { useRegimeStore } from "../../../../../stores/regimeStore";
 import { computeOptimalYellow } from "../../../../../components/common/actionables/actions-icons/utils/computeOptimalYellow";
 import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { EditActionIcon } from "../../../../../components/common/actionables/actions-icons/EditActionIcon";
@@ -18,9 +18,12 @@ import { pushErrorNotification } from "../../../../../services/NotificationServi
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
-import { useRegime } from "../../../../../providers/RegimeProvider";
 
 import "../../../../../components/common/actionables/ActionableListItem.css";
+import {
+    isManagedAssetLocal,
+    useManagedAssetsStore,
+} from "../../../../../stores/managedAssetsStore";
 
 export function LocalAssetsTree() {
     // Use appearance.
@@ -30,14 +33,14 @@ export function LocalAssetsTree() {
     const { showDialogue } = useDialogue();
 
     // Use regime.
-    const { regime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
 
     // Use managed assets.
-    const {
-        getAllLocalAssets,
-        removeAsset,
-        editRelativePathAndFilenameOfLocalAsset,
-    } = useManagedAssets();
+    const assets = useManagedAssetsStore((state) => state.assets);
+    const removeAsset = useManagedAssetsStore((state) => state.removeAsset);
+    const editRelativePathAndFilenameOfLocalAsset = useManagedAssetsStore(
+        (state) => state.editRelativePathAndFilenameOfLocalAsset,
+    );
 
     // State for the tree.
     const [expandedState, setExpandedState] = useState<Record<string, boolean>>(
@@ -60,8 +63,10 @@ export function LocalAssetsTree() {
 
     // Memoize managed assets.
     const localAssetsTreeData = useMemo(() => {
-        return buildAssetTree(getAllLocalAssets());
-    }, [getAllLocalAssets]);
+        return buildAssetTree(
+            Array.from(assets.values()).filter(isManagedAssetLocal),
+        );
+    }, [assets]);
 
     // Render the component.
     return (

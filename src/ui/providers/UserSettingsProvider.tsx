@@ -16,7 +16,7 @@ type UserSettingsContextType = {
 export function useUserSettings() {
     const context = useContext(UserSettingsContext);
     if (!context) {
-        throw new Error("Settings must be used within UserSettingsProvider");
+        throw new Error("Settings must be used within UserSettingsProvider!");
     }
     return context;
 }
@@ -30,7 +30,7 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
 
     const [settings, setSettings] = useState<UserSettings>(() => {
         const settings = window.electron.requestUserSettings();
-        if (settings.lang && settings.lang !== i18n.language) {
+        if (settings.lang !== i18n.language) {
             i18n.changeLanguage(settings.lang);
         }
         return settings;

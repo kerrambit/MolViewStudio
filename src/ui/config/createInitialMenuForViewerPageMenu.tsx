@@ -48,13 +48,17 @@ import {
     exportStateTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
 } from "../lib/molstar";
-import type { Regime } from "../providers/RegimeProvider";
 import { ShowMVSTreeDialogueContent } from "../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
     loadDefaultPDBFile,
 } from "../features/viewer/services/defaultLoaderService";
+import { useRegimeStore } from "../stores/regimeStore";
+import {
+    isManagedAssetLocal,
+    useManagedAssetsStore,
+} from "../stores/managedAssetsStore";
 
 export function createInitialMenuForViewerPageMenu(
     navigate: NavigateFunction,
@@ -62,25 +66,52 @@ export function createInitialMenuForViewerPageMenu(
     openFileExplorerAndLoadFileInApp: () => Promise<void>,
     createNewProjectInApp: () => void,
     loadRecentFileInApp: (path: string) => Promise<void>,
-    clearAssets: () => void,
-    getAllAssets: () => ManagedAsset[],
-    getAllLocalAssets: () => ManagedAsset[],
-    regime: Regime,
-    setRegime: (regime: Regime) => void,
 ): Menu {
     return [
         createFileRootMenuItem([
             createProjectActionsSection([
-                createCreateNewProjectMenuItem(() => {
-                    createNewProjectInApp();
+                createCreateNewProjectMenuItem(async () => {
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to create new project?"
+                            />
+                        ),
+                    });
+                    if (confirmed) createNewProjectInApp();
                 }),
             ]),
             createFileImportSection([
-                createOpenFileInViewerMenuItem(() =>
-                    openFileExplorerAndLoadFileInApp(),
-                ),
+                createOpenFileInViewerMenuItem(async () => {
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                            />
+                        ),
+                    });
+                    if (confirmed) openFileExplorerAndLoadFileInApp();
+                }),
                 createOpenRecentFileInViewerMenuItem(async (path: string) => {
-                    await loadRecentFileInApp(path);
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to open the recent file in viewer?"
+                            />
+                        ),
+                    });
+                    if (confirmed) {
+                        await loadRecentFileInApp(path);
+                    }
                 }),
             ]),
             createUtilitiesSection([
@@ -97,7 +128,21 @@ export function createInitialMenuForViewerPageMenu(
             createOnlyDevSection("file-dev", "For developers", [
                 createOpenDevToolsMenuItem(),
             ]),
-            createExitSection([createExitMenuItem()]),
+            createExitSection([
+                createExitMenuItem(async () => {
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to exit the application?"
+                            />
+                        ),
+                    });
+                    if (confirmed) window.electron.requestApplicationExit();
+                }),
+            ]),
         ]),
         createEditRootMenuItem([
             createGeneralEditSection([
@@ -114,23 +159,30 @@ export function createInitialMenuForViewerPageMenu(
                     });
 
                     if (confirmed) {
-                        clearAssets();
+                        useManagedAssetsStore.getState().clearAssets();
                         await clearViewer();
-                        setRegime({
-                            kind: "idling",
-                        });
+                        useRegimeStore.getState().setRegime({ kind: "idling" });
                     }
                 }),
                 createExportViwerMenuItem(async () => {
+                    const regime = useRegimeStore.getState().regime;
                     if (regime.kind === "viewing") {
                         pushInfoNotification(`Preparing files for export...`);
 
                         const result = await exportStateTree(
                             injectRelativePathsBasedOnAssetIdsIntoTree(
                                 regime.stateTree,
-                                getAllAssets(),
+                                Array.from(
+                                    useManagedAssetsStore
+                                        .getState()
+                                        .assets.values(),
+                                ),
                             ),
-                            getAllLocalAssets(),
+                            Array.from(
+                                useManagedAssetsStore
+                                    .getState()
+                                    .assets.values(),
+                            ).filter(isManagedAssetLocal),
                         );
 
                         if (result.success) {
@@ -145,6 +197,7 @@ export function createInitialMenuForViewerPageMenu(
                     }
                 }),
                 createShowRawMVSTreeItemMenuItem(async () => {
+                    const regime = useRegimeStore.getState().regime;
                     if (regime.kind === "viewing") {
                         await showDialogue({
                             title: "MVS Tree",
@@ -164,21 +217,63 @@ export function createInitialMenuForViewerPageMenu(
             ]),
             createOnlyDevSection("edit-dev", "For developers", [
                 createLoadDefaultPDBItemMenuItem(async () => {
-                    loadDefaultPDBFile(setRegime);
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to load default PDB file?"
+                            />
+                        ),
+                    });
+                    if (confirmed) await loadDefaultPDBFile();
                 }),
                 createLoadDefaultMVSJtemMenuItem(async () => {
-                    loadDefaultMVSJFile(setRegime);
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to load default MVSJ file?"
+                            />
+                        ),
+                    });
+                    if (confirmed) await loadDefaultMVSJFile();
                 }),
                 createLoadDefaultMVSXtemMenuItem(async () => {
-                    loadDefaultMVSXFile(setRegime);
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to load default MVSX file?"
+                            />
+                        ),
+                    });
+                    if (confirmed) await loadDefaultMVSXFile();
                 }),
             ]),
         ]),
         createSettingsRootMenuItem(navigate),
         createHelpRootMenuItem([
             createHomePageSection([
-                createHomePageMenuItem(() => {
-                    navigate("/home");
+                createHomePageMenuItem(async () => {
+                    const confirmed = await showDialogue<boolean>({
+                        title: "Confirmation",
+                        showCloseButton: false,
+                        content: (close) => (
+                            <ConfirmationDialogueContent
+                                close={close}
+                                doYouReallyWantToQuestion="Do you really want to leave the viewer and go to home page?"
+                            />
+                        ),
+                    });
+                    if (confirmed) {
+                        navigate("/home");
+                    }
                 }),
             ]),
             createGeneralHelpSection([

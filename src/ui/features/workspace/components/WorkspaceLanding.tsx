@@ -5,7 +5,7 @@ import { useWorkspaceManagement } from "../hooks/useWorkspaceManagement.ts";
 import { loggerUi } from "../../../services/UiLoggingService.ts";
 import { pushWarningNotification } from "../../../services/NotificationService.ts";
 import { Button } from "../../../components/common/button/Button.tsx";
-import { useRecentFiles } from "../../../providers/RecentFilesProvider.tsx";
+import { useRecentFilesStore } from "../../../stores/recentFilesStore.tsx";
 
 export default function WorkspaceLanding() {
     // Hook for loading and handling file.
@@ -16,7 +16,7 @@ export default function WorkspaceLanding() {
     } = useWorkspaceManagement();
 
     // Use recent files.
-    const { recentFiles } = useRecentFiles();
+    const recentFiles = useRecentFilesStore((set) => set.recentFiles);
 
     // Use workflow management.
     const { loadRecentFileInApp } = useWorkspaceManagement();

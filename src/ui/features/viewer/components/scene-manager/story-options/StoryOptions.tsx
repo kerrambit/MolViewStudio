@@ -1,11 +1,12 @@
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { UnstyledTextArea } from "../../../../../components/common/input/UnstyledTextArea";
-import { useRegime } from "../../../../../providers/RegimeProvider";
+import { useRegimeStore } from "../../../../../stores/regimeStore";
 
 export function StoryOptions() {
     // Use regime.
-    const { regime, setRegime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // View metadata.
     const metadata =

@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Subscription } from "rxjs";
-import { useRegime } from "../../../providers/RegimeProvider";
 import { useDialogue } from "../../../providers/DialogueProvider";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { DeleteViewDialogueContent } from "../components/scene-manager/views-sidebar/DeleteViewDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -34,6 +32,8 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../lib/molstar";
+import { useRegimeStore } from "../../../stores/regimeStore";
+import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 
 interface useViewsManagementProps {
     isBuilderOpen: boolean;
@@ -47,14 +47,20 @@ export function useViewsManagement({
     onOpenBuilder,
 }: useViewsManagementProps) {
     // Use regime.
-    const { regime, setRegime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use dialogue.
     const { showDialogue } = useDialogue();
 
     // Use managed assets.
-    const { getAsset, incrementAssetUseCount, decrementAssetUseCount } =
-        useManagedAssets();
+    const getAsset = useManagedAssetsStore((state) => state.getAsset);
+    const incrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.incrementAssetUseCount,
+    );
+    const decrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.decrementAssetUseCount,
+    );
 
     // State for the index of currently active view card (default is the first one).
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
