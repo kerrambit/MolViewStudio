@@ -75,16 +75,22 @@ export function AddLocalAssetDialogueContent({
                         );
 
                         if (!(result instanceof Error)) {
-                            const selectedFile = result[0];
-                            setFile(selectedFile);
-                            setFilename(
-                                getFilenameWithoutExtension(selectedFile.name),
-                            );
+                            if (result.length > 0) {
+                                const selectedFile = result[0];
+                                setFile(selectedFile);
+                                setFilename(
+                                    getFilenameWithoutExtension(
+                                        selectedFile.name,
+                                    ),
+                                );
 
-                            if (checkRequiresProcessing(selectedFile.name)) {
-                                setProcessAsset(true);
-                            } else {
-                                setProcessAsset(false);
+                                if (
+                                    checkRequiresProcessing(selectedFile.name)
+                                ) {
+                                    setProcessAsset(true);
+                                } else {
+                                    setProcessAsset(false);
+                                }
                             }
                         } else {
                             pushWarningNotification(
