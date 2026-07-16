@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Footer } from "../components/common/footer/Footer";
 import { Header } from "./header/Header";
-import { MainMenuBridge } from "../providers/MainMenuBridge";
+import { MainMenuBridge } from "./menu-bridges/MainMenuBridge";
 import { ServerStatus } from "../features/system/components/server-status/ServerStatus";
 
 import "./Layout.css";

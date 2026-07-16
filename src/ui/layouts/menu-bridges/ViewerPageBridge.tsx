@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
-import { useDialogue } from "./DialogueProvider";
-import { MenuProvider } from "./MenuProvider";
-import { createInitialMenuForViewerPageMenu } from "../config/createInitialMenuForViewerPageMenu";
-import { useRegime } from "./RegimeProvider";
-import { useManagedAssets } from "./ManagedAssetsProvider";
 import { useMemo } from "react";
+import { useRegime } from "../../providers/RegimeProvider";
+import { useManagedAssets } from "../../providers/ManagedAssetsProvider";
+import { useDialogue } from "../../providers/DialogueProvider";
+import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
+import { createInitialMenuForViewerPageMenu } from "../../config/createInitialMenuForViewerPageMenu";
+import { MenuProvider } from "../../providers/MenuProvider";
 
 interface ViewerPageBridgeProps {
     children: React.ReactNode;

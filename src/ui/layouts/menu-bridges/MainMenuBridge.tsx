@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
-import { useDialogue } from "./DialogueProvider";
-import { MenuProvider } from "./MenuProvider";
-import { createInitialMenuForMainMenu } from "../config/createInitialMenuForMainMenu";
+import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
+import { useDialogue } from "../../providers/DialogueProvider";
+import { MenuProvider } from "../../providers/MenuProvider";
+import { createInitialMenuForMainMenu } from "../../config/createInitialMenuForMainMenu";
 
 interface MainMenuBridgeProps {
     children: React.ReactNode;
