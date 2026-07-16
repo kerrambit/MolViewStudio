@@ -155,7 +155,6 @@ export function AddRemoteAssetDialogueContent(
                         !remoteUrlExtension
                     }
                     onClick={() => {
-                        console.log(remoteUrlExtension);
                         props.close({
                             url: remoteUrl!,
                             extension: remoteUrlExtension!,

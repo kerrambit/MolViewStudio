@@ -1,5 +1,4 @@
 import type { NavigateFunction } from "react-router-dom";
-import type { ShowDialogueType } from "../providers/DialogueProvider";
 import type { Menu } from "../providers/MenuProvider";
 import {
     createAboutMenuItem,
@@ -59,10 +58,10 @@ import {
     isManagedAssetLocal,
     useManagedAssetsStore,
 } from "../stores/managedAssetsStore";
+import { useDialogueStore } from "../stores/dialogueStore";
 
 export function createInitialMenuForViewerPageMenu(
     navigate: NavigateFunction,
-    showDialogue: ShowDialogueType,
     openFileExplorerAndLoadFileInApp: () => Promise<void>,
     createNewProjectInApp: () => void,
     loadRecentFileInApp: (path: string) => Promise<void>,
@@ -71,44 +70,50 @@ export function createInitialMenuForViewerPageMenu(
         createFileRootMenuItem([
             createProjectActionsSection([
                 createCreateNewProjectMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to create new project?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to create new project?"
+                                />
+                            ),
+                        });
                     if (confirmed) createNewProjectInApp();
                 }),
             ]),
             createFileImportSection([
                 createOpenFileInViewerMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                                />
+                            ),
+                        });
                     if (confirmed) openFileExplorerAndLoadFileInApp();
                 }),
                 createOpenRecentFileInViewerMenuItem(async (path: string) => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to open the recent file in viewer?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to open the recent file in viewer?"
+                                />
+                            ),
+                        });
                     if (confirmed) {
                         await loadRecentFileInApp(path);
                     }
@@ -130,16 +135,18 @@ export function createInitialMenuForViewerPageMenu(
             ]),
             createExitSection([
                 createExitMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to exit the application?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to exit the application?"
+                                />
+                            ),
+                        });
                     if (confirmed) window.electron.requestApplicationExit();
                 }),
             ]),
@@ -147,16 +154,18 @@ export function createInitialMenuForViewerPageMenu(
         createEditRootMenuItem([
             createGeneralEditSection([
                 createClearViwerMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to clear the viewer?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to clear the viewer?"
+                                />
+                            ),
+                        });
 
                     if (confirmed) {
                         useManagedAssetsStore.getState().clearAssets();
@@ -199,7 +208,7 @@ export function createInitialMenuForViewerPageMenu(
                 createShowRawMVSTreeItemMenuItem(async () => {
                     const regime = useRegimeStore.getState().regime;
                     if (regime.kind === "viewing") {
-                        await showDialogue({
+                        await useDialogueStore.getState().showDialogue({
                             title: "MVS Tree",
                             showCloseButton: true,
                             width: "1000px",
@@ -217,42 +226,48 @@ export function createInitialMenuForViewerPageMenu(
             ]),
             createOnlyDevSection("edit-dev", "For developers", [
                 createLoadDefaultPDBItemMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to load default PDB file?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to load default PDB file?"
+                                />
+                            ),
+                        });
                     if (confirmed) await loadDefaultPDBFile();
                 }),
                 createLoadDefaultMVSJtemMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to load default MVSJ file?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to load default MVSJ file?"
+                                />
+                            ),
+                        });
                     if (confirmed) await loadDefaultMVSJFile();
                 }),
                 createLoadDefaultMVSXtemMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to load default MVSX file?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to load default MVSX file?"
+                                />
+                            ),
+                        });
                     if (confirmed) await loadDefaultMVSXFile();
                 }),
             ]),
@@ -261,16 +276,18 @@ export function createInitialMenuForViewerPageMenu(
         createHelpRootMenuItem([
             createHomePageSection([
                 createHomePageMenuItem(async () => {
-                    const confirmed = await showDialogue<boolean>({
-                        title: "Confirmation",
-                        showCloseButton: false,
-                        content: (close) => (
-                            <ConfirmationDialogueContent
-                                close={close}
-                                doYouReallyWantToQuestion="Do you really want to leave the viewer and go to home page?"
-                            />
-                        ),
-                    });
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to leave the viewer and go to home page?"
+                                />
+                            ),
+                        });
                     if (confirmed) {
                         navigate("/home");
                     }
@@ -284,7 +301,7 @@ export function createInitialMenuForViewerPageMenu(
             createCheckForUpdatesSection([createCheckForUpdatesMenuItem()]),
             createAboutSection([
                 createAboutMenuItem(async () => {
-                    await showDialogue({
+                    await useDialogueStore.getState().showDialogue({
                         title: "About",
                         showCloseButton: true,
                         content: (close) => (

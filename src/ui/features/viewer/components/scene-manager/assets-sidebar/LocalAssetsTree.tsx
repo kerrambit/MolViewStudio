@@ -13,7 +13,6 @@ import {
     EditAssetDialogueContent,
     type EditAssetDialogueReturnType,
 } from "./EditAssetDialogueContent";
-import { useDialogue } from "../../../../../providers/DialogueProvider";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
@@ -24,13 +23,11 @@ import {
     isManagedAssetLocal,
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
+import { useDialogueStore } from "../../../../../stores/dialogueStore";
 
 export function LocalAssetsTree() {
     // Use appearance.
     const { colorScheme } = useAppearance();
-
-    // Use dialogue.
-    const { showDialogue } = useDialogue();
 
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
@@ -144,30 +141,38 @@ export function LocalAssetsTree() {
                                     <EditActionIcon
                                         onClick={async () => {
                                             const result =
-                                                await showDialogue<EditAssetDialogueReturnType>(
-                                                    {
-                                                        title: "Edit local asset",
-                                                        width: "800px",
-                                                        showCloseButton: true,
-                                                        content: (close) => (
-                                                            <EditAssetDialogueContent
-                                                                filename={
-                                                                    asset.name
-                                                                }
-                                                                pathSegments={asset.relativePath
-                                                                    .split("/")
-                                                                    .filter(
-                                                                        Boolean,
-                                                                    )
-                                                                    .slice(
-                                                                        0,
-                                                                        -1,
-                                                                    )}
-                                                                close={close}
-                                                            />
-                                                        ),
-                                                    },
-                                                );
+                                                await useDialogueStore
+                                                    .getState()
+                                                    .showDialogue<EditAssetDialogueReturnType>(
+                                                        {
+                                                            title: "Edit local asset",
+                                                            width: "800px",
+                                                            showCloseButton: true,
+                                                            content: (
+                                                                close,
+                                                            ) => (
+                                                                <EditAssetDialogueContent
+                                                                    filename={
+                                                                        asset.name
+                                                                    }
+                                                                    pathSegments={asset.relativePath
+                                                                        .split(
+                                                                            "/",
+                                                                        )
+                                                                        .filter(
+                                                                            Boolean,
+                                                                        )
+                                                                        .slice(
+                                                                            0,
+                                                                            -1,
+                                                                        )}
+                                                                    close={
+                                                                        close
+                                                                    }
+                                                                />
+                                                            ),
+                                                        },
+                                                    );
 
                                             if (result) {
                                                 const wasSuccessful =
@@ -190,19 +195,21 @@ export function LocalAssetsTree() {
                                         onClick={async () => {
                                             // Show confirmation dialogue.
                                             const result =
-                                                await showDialogue<boolean>({
-                                                    title: "Delete Confirmation",
-                                                    width: "550px",
-                                                    showCloseButton: true,
-                                                    content: (close) => (
-                                                        <DeleteAssetDialogueContent
-                                                            assetName={
-                                                                asset.name
-                                                            }
-                                                            close={close}
-                                                        />
-                                                    ),
-                                                });
+                                                await useDialogueStore
+                                                    .getState()
+                                                    .showDialogue<boolean>({
+                                                        title: "Delete Confirmation",
+                                                        width: "550px",
+                                                        showCloseButton: true,
+                                                        content: (close) => (
+                                                            <DeleteAssetDialogueContent
+                                                                assetName={
+                                                                    asset.name
+                                                                }
+                                                                close={close}
+                                                            />
+                                                        ),
+                                                    });
 
                                             if (result) {
                                                 removeAsset(asset.asset.url);

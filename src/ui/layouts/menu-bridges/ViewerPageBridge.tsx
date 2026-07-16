@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
-import { useDialogue } from "../../providers/DialogueProvider";
 import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
 import { createInitialMenuForViewerPageMenu } from "../../config/createInitialMenuForViewerPageMenu";
 import { MenuProvider } from "../../providers/MenuProvider";
@@ -13,9 +12,6 @@ export function ViewerPageBridge({ children }: ViewerPageBridgeProps) {
     // Use navigation.
     const navigate = useNavigate();
 
-    // Use dialogue.
-    const { showDialogue } = useDialogue();
-
     // Use workspace management.
     const {
         openFileExplorerAndLoadFileInApp,
@@ -27,7 +23,6 @@ export function ViewerPageBridge({ children }: ViewerPageBridgeProps) {
         () =>
             createInitialMenuForViewerPageMenu(
                 navigate,
-                showDialogue,
                 openFileExplorerAndLoadFileInApp,
                 createNewProjectInApp,
                 loadRecentFileInApp,

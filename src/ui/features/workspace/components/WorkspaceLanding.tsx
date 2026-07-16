@@ -5,7 +5,7 @@ import { useWorkspaceManagement } from "../hooks/useWorkspaceManagement.ts";
 import { loggerUi } from "../../../services/UiLoggingService.ts";
 import { pushWarningNotification } from "../../../services/NotificationService.ts";
 import { Button } from "../../../components/common/button/Button.tsx";
-import { useRecentFilesStore } from "../../../stores/recentFilesStore.tsx";
+import { useRecentFilesStore } from "../../../stores/recentFilesStore.ts";
 
 export default function WorkspaceLanding() {
     // Hook for loading and handling file.

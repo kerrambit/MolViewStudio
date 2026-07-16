@@ -1,5 +1,4 @@
 import type { NavigateFunction } from "react-router-dom";
-import type { ShowDialogueType } from "../providers/DialogueProvider";
 import type { Menu } from "../providers/MenuProvider";
 import {
     createAboutMenuItem,
@@ -29,10 +28,10 @@ import {
 } from "./systemMenuItems";
 import { pushErrorNotification } from "../services/NotificationService";
 import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
+import { useDialogueStore } from "../stores/dialogueStore";
 
 export function createInitialMenuForMainMenu(
     navigate: NavigateFunction,
-    showDialogue: ShowDialogueType,
     openFileExplorerAndLoadFileInApp: () => Promise<void>,
     createNewProjectInApp: () => void,
     loadRecentFileInApp: (path: string) => Promise<void>,
@@ -83,7 +82,7 @@ export function createInitialMenuForMainMenu(
             createCheckForUpdatesSection([createCheckForUpdatesMenuItem()]),
             createAboutSection([
                 createAboutMenuItem(async () => {
-                    await showDialogue({
+                    await useDialogueStore.getState().showDialogue({
                         title: "About",
                         showCloseButton: true,
                         content: (close) => (

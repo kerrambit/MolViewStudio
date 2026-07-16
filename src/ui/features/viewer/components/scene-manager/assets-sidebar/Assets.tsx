@@ -2,7 +2,6 @@ import { Text } from "@mantine/core";
 import { IconAlertOctagonFilled, IconWorldWww } from "@tabler/icons-react";
 import { Button } from "../../../../../components/common/button/Button";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
-import { useDialogue } from "../../../../../providers/DialogueProvider";
 import {
     AddLocalAssetDialogueContent,
     type AddLocalAssetDialogueReturnType,
@@ -23,11 +22,9 @@ import {
     isManagedAssetRemote,
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
+import { useDialogueStore } from "../../../../../stores/dialogueStore";
 
 export function Assets() {
-    // Use dialogue.
-    const { showDialogue } = useDialogue();
-
     // Use managed assets.
     const assets = useManagedAssetsStore((state) => state.assets);
     const addLocalAsset = useManagedAssetsStore((state) => state.addLocalAsset);
@@ -78,19 +75,18 @@ export function Assets() {
                         variant="primary"
                         size="medium"
                         onClick={async () => {
-                            const result =
-                                await showDialogue<AddLocalAssetDialogueReturnType>(
-                                    {
-                                        title: "Add local asset",
-                                        width: "800px",
-                                        showCloseButton: true,
-                                        content: (close) => (
-                                            <AddLocalAssetDialogueContent
-                                                close={close}
-                                            />
-                                        ),
-                                    },
-                                );
+                            const result = await useDialogueStore
+                                .getState()
+                                .showDialogue<AddLocalAssetDialogueReturnType>({
+                                    title: "Add local asset",
+                                    width: "800px",
+                                    showCloseButton: true,
+                                    content: (close) => (
+                                        <AddLocalAssetDialogueContent
+                                            close={close}
+                                        />
+                                    ),
+                                });
 
                             if (result) {
                                 if (!result.processAsset) {
@@ -191,33 +187,35 @@ export function Assets() {
                                                     const originalUrl =
                                                         asset.asset.url;
                                                     const result =
-                                                        await showDialogue<AddRemoteAssetDialogueReturnType>(
-                                                            {
-                                                                title: "Edit remote asset",
-                                                                width: "800px",
-                                                                showCloseButton: true,
-                                                                content: (
-                                                                    close,
-                                                                ) => (
-                                                                    <AddRemoteAssetDialogueContent
-                                                                        url={
-                                                                            asset
-                                                                                .asset
-                                                                                .url
-                                                                        }
-                                                                        extension={
-                                                                            asset.extension ===
-                                                                            "unknown"
-                                                                                ? undefined
-                                                                                : asset.extension
-                                                                        }
-                                                                        close={
-                                                                            close
-                                                                        }
-                                                                    />
-                                                                ),
-                                                            },
-                                                        );
+                                                        await useDialogueStore
+                                                            .getState()
+                                                            .showDialogue<AddRemoteAssetDialogueReturnType>(
+                                                                {
+                                                                    title: "Edit remote asset",
+                                                                    width: "800px",
+                                                                    showCloseButton: true,
+                                                                    content: (
+                                                                        close,
+                                                                    ) => (
+                                                                        <AddRemoteAssetDialogueContent
+                                                                            url={
+                                                                                asset
+                                                                                    .asset
+                                                                                    .url
+                                                                            }
+                                                                            extension={
+                                                                                asset.extension ===
+                                                                                "unknown"
+                                                                                    ? undefined
+                                                                                    : asset.extension
+                                                                            }
+                                                                            close={
+                                                                                close
+                                                                            }
+                                                                        />
+                                                                    ),
+                                                                },
+                                                            );
 
                                                     if (result) {
                                                         if (
@@ -237,25 +235,27 @@ export function Assets() {
                                             <DeleteActionIcon
                                                 onClick={async () => {
                                                     const result =
-                                                        await showDialogue<boolean>(
-                                                            {
-                                                                title: "Delete Confirmation",
-                                                                width: "550px",
-                                                                showCloseButton: true,
-                                                                content: (
-                                                                    close,
-                                                                ) => (
-                                                                    <DeleteAssetDialogueContent
-                                                                        assetName={
-                                                                            asset.name
-                                                                        }
-                                                                        close={
-                                                                            close
-                                                                        }
-                                                                    />
-                                                                ),
-                                                            },
-                                                        );
+                                                        await useDialogueStore
+                                                            .getState()
+                                                            .showDialogue<boolean>(
+                                                                {
+                                                                    title: "Delete Confirmation",
+                                                                    width: "550px",
+                                                                    showCloseButton: true,
+                                                                    content: (
+                                                                        close,
+                                                                    ) => (
+                                                                        <DeleteAssetDialogueContent
+                                                                            assetName={
+                                                                                asset.name
+                                                                            }
+                                                                            close={
+                                                                                close
+                                                                            }
+                                                                        />
+                                                                    ),
+                                                                },
+                                                            );
 
                                                     if (result) {
                                                         removeAsset(
@@ -295,8 +295,9 @@ export function Assets() {
                         variant="primary"
                         size="medium"
                         onClick={async () => {
-                            const result =
-                                await showDialogue<AddRemoteAssetDialogueReturnType>(
+                            const result = await useDialogueStore
+                                .getState()
+                                .showDialogue<AddRemoteAssetDialogueReturnType>(
                                     {
                                         title: "Add remote asset",
                                         width: "800px",

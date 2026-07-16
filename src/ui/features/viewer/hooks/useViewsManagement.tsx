@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Subscription } from "rxjs";
-import { useDialogue } from "../../../providers/DialogueProvider";
 import { DeleteViewDialogueContent } from "../components/scene-manager/views-sidebar/DeleteViewDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -34,6 +33,7 @@ import {
 } from "../../../lib/molstar";
 import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
+import { useDialogueStore } from "../../../stores/dialogueStore";
 
 interface useViewsManagementProps {
     isBuilderOpen: boolean;
@@ -49,9 +49,6 @@ export function useViewsManagement({
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
     const setRegime = useRegimeStore((state) => state.setRegime);
-
-    // Use dialogue.
-    const { showDialogue } = useDialogue();
 
     // Use managed assets.
     const getAsset = useManagedAssetsStore((state) => state.getAsset);
@@ -156,7 +153,7 @@ export function useViewsManagement({
         }
 
         // Show confirmation dialogue.
-        const result = await showDialogue<boolean>({
+        const result = await useDialogueStore.getState().showDialogue<boolean>({
             title: "Delete Confirmation",
             width: "550px",
             showCloseButton: true,
@@ -396,8 +393,9 @@ export function useViewsManagement({
         key: string,
     ) => {
         // Show dialogue.
-        const result = await showDialogue<ViewOptionsDialogueContentReturnType>(
-            {
+        const result = await useDialogueStore
+            .getState()
+            .showDialogue<ViewOptionsDialogueContentReturnType>({
                 title: "View Options",
                 width: "1000px",
                 showCloseButton: true,
@@ -409,8 +407,7 @@ export function useViewsManagement({
                         close={close}
                     />
                 ),
-            },
-        );
+            });
 
         // Ignore other non-viewing regime.
         if (!result || regime.kind !== "viewing") {
