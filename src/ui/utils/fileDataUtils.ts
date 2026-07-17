@@ -12,7 +12,7 @@ export function getExtensionFromUrl(url: string): string | undefined {
         const pathname = new URL(url).pathname;
         const extension = pathname.split(".").pop();
         return extension ?? undefined;
-    } catch (error) {
+    } catch {
         return undefined;
     }
 }

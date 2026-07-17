@@ -1,12 +1,12 @@
-import type { Regime } from "../../../providers/RegimeProvider";
+import { useRegimeStore } from "../../../stores/regimeStore";
 
-export async function loadDefaultMVSJFile(setRegime: (regime: Regime) => void) {
+export async function loadDefaultMVSJFile() {
     const response = await fetch(
         "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
     );
     const rawData = await response.text();
 
-    setRegime({
+    useRegimeStore.getState().setRegime({
         kind: "staging",
         fileToView: {
             path: "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
@@ -18,14 +18,14 @@ export async function loadDefaultMVSJFile(setRegime: (regime: Regime) => void) {
     });
 }
 
-export async function loadDefaultMVSXFile(setRegime: (regime: Regime) => void) {
+export async function loadDefaultMVSXFile() {
     const response = await fetch(
         "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
     );
     const arrayBuffer = await response.arrayBuffer();
     const rawData = new Uint8Array(arrayBuffer);
 
-    setRegime({
+    useRegimeStore.getState().setRegime({
         kind: "staging",
         fileToView: {
             path: "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
@@ -37,11 +37,11 @@ export async function loadDefaultMVSXFile(setRegime: (regime: Regime) => void) {
     });
 }
 
-export async function loadDefaultPDBFile(setRegime: (regime: Regime) => void) {
+export async function loadDefaultPDBFile() {
     const response = await fetch("https://files.rcsb.org/download/3PTB.pdb");
     const rawData = await response.text();
 
-    setRegime({
+    useRegimeStore.getState().setRegime({
         kind: "staging",
         fileToView: {
             path: "https://files.rcsb.org/download/3PTB.pdb",

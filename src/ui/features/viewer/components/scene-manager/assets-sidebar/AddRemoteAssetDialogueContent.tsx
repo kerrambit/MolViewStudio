@@ -34,7 +34,7 @@ export function AddRemoteAssetDialogueContent(
         let isValid = true;
         try {
             new URL(value);
-        } catch (error) {
+        } catch {
             isValid = false;
         }
         return isValid;
@@ -155,7 +155,6 @@ export function AddRemoteAssetDialogueContent(
                         !remoteUrlExtension
                     }
                     onClick={() => {
-                        console.log(remoteUrlExtension);
                         props.close({
                             url: remoteUrl!,
                             extension: remoteUrlExtension!,

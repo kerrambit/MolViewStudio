@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Subscription } from "rxjs";
-import { useRegime } from "../../../providers/RegimeProvider";
-import { useDialogue } from "../../../providers/DialogueProvider";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
 import { DeleteViewDialogueContent } from "../components/scene-manager/views-sidebar/DeleteViewDialogueContent";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -34,6 +31,9 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../lib/molstar";
+import { useRegimeStore } from "../../../stores/regimeStore";
+import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
+import { useDialogueStore } from "../../../stores/dialogueStore";
 
 interface useViewsManagementProps {
     isBuilderOpen: boolean;
@@ -47,14 +47,17 @@ export function useViewsManagement({
     onOpenBuilder,
 }: useViewsManagementProps) {
     // Use regime.
-    const { regime, setRegime } = useRegime();
-
-    // Use dialogue.
-    const { showDialogue } = useDialogue();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use managed assets.
-    const { getAsset, incrementAssetUseCount, decrementAssetUseCount } =
-        useManagedAssets();
+    const getAsset = useManagedAssetsStore((state) => state.getAsset);
+    const incrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.incrementAssetUseCount,
+    );
+    const decrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.decrementAssetUseCount,
+    );
 
     // State for the index of currently active view card (default is the first one).
     const [activeViewCardIndex, setActiveViewCardIndex] = useState(0);
@@ -90,22 +93,29 @@ export function useViewsManagement({
     // Callback for snapshot selected changed from Molstar UI.
     useEffect(() => {
         let sub: Subscription;
+
+        const syncActiveView = (index: number) => {
+            setActiveViewCardIndex(index);
+            const current = latestDataRef.current;
+            if (current.isBuilderOpen && onOpenBuilder) {
+                const newView = current.viewItems[index];
+                if (newView) onOpenBuilder(newView.key);
+            }
+        };
+
         if (!isMolstarLoading) {
-            setActiveViewCardIndex(getCurrentSnapshotIndex());
+            queueMicrotask(() => {
+                syncActiveView(getCurrentSnapshotIndex());
+            });
+
             sub = getSnapshotChangeSubscription((index) => {
-                const current = latestDataRef.current;
-                if (current.activeViewCardIndex !== index) {
+                if (latestDataRef.current.activeViewCardIndex !== index) {
                     clearViewerContent();
                 }
-
-                setActiveViewCardIndex(index);
-
-                if (current.isBuilderOpen && onOpenBuilder) {
-                    const newView = current.viewItems[index];
-                    if (newView) onOpenBuilder(newView.key);
-                }
+                syncActiveView(index);
             });
         }
+
         return () => sub?.unsubscribe();
     }, [isMolstarLoading, onOpenBuilder]);
 
@@ -150,7 +160,7 @@ export function useViewsManagement({
         }
 
         // Show confirmation dialogue.
-        const result = await showDialogue<boolean>({
+        const result = await useDialogueStore.getState().showDialogue<boolean>({
             title: "Delete Confirmation",
             width: "550px",
             showCloseButton: true,
@@ -390,8 +400,9 @@ export function useViewsManagement({
         key: string,
     ) => {
         // Show dialogue.
-        const result = await showDialogue<ViewOptionsDialogueContentReturnType>(
-            {
+        const result = await useDialogueStore
+            .getState()
+            .showDialogue<ViewOptionsDialogueContentReturnType>({
                 title: "View Options",
                 width: "1000px",
                 showCloseButton: true,
@@ -403,8 +414,7 @@ export function useViewsManagement({
                         close={close}
                     />
                 ),
-            },
-        );
+            });
 
         // Ignore other non-viewing regime.
         if (!result || regime.kind !== "viewing") {

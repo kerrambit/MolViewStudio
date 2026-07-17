@@ -1,13 +1,10 @@
-import { useNavigate, type NavigateFunction } from "react-router-dom";
+import { router } from "../../../router/router";
 import { IconSettingsFilled } from "@tabler/icons-react";
 import Watermark from "../../../components/common/watermark/Watermark";
 
 import "./SettingsTree.css";
 
 export function SettingsTree() {
-    // Use navigation.
-    const navigate = useNavigate();
-
     // Render the component.
     return (
         <main
@@ -20,20 +17,16 @@ export function SettingsTree() {
         >
             <h1>Settings</h1>
             <Watermark icon={IconSettingsFilled} />
-            {renderTree(navigate)}
+            {renderTree()}
         </main>
     );
 }
 
-function renderTreeLink(
-    navigate: NavigateFunction,
-    name: string,
-    path: string,
-) {
+function renderTreeLink(name: string, path: string) {
     return (
         <li
             onClick={() => {
-                navigate("/settings/" + path);
+                router.navigate("/settings/" + path);
             }}
             className="settings__tree__link"
         >
@@ -42,49 +35,41 @@ function renderTreeLink(
     );
 }
 
-function renderTree(navigate: NavigateFunction) {
+function renderTree() {
     return (
         <ul className="settings__tree">
             <li>
                 General
                 <ul>
-                    {renderTreeLink(navigate, "Language", "general/language")}
+                    {renderTreeLink("Language", "general/language")}
                     <br></br>
-                    {renderTreeLink(navigate, "UI", "general/ui")}
+                    {renderTreeLink("UI", "general/ui")}
                     <br></br>
-                    {renderTreeLink(
-                        navigate,
-                        "Notifications",
-                        "general/notifications",
-                    )}
+                    {renderTreeLink("Notifications", "general/notifications")}
                     <br></br>
-                    {renderTreeLink(navigate, "Help", "general/help")}
+                    {renderTreeLink("Help", "general/help")}
                 </ul>
             </li>
 
-            {renderTreeLink(navigate, "Account", "account")}
+            {renderTreeLink("Account", "account")}
             <br></br>
-            {renderTreeLink(navigate, "Server", "server")}
+            {renderTreeLink("Server", "server")}
 
             <li>
                 Formats
                 <ul>
-                    {renderTreeLink(navigate, "Input", "formats/input")}
+                    {renderTreeLink("Input", "formats/input")}
                     <br></br>
-                    {renderTreeLink(navigate, "Export", "formats/export")}
+                    {renderTreeLink("Export", "formats/export")}
                 </ul>
             </li>
 
             <li>
                 Processing
                 <ul>
-                    {renderTreeLink(navigate, "General", "processing/general")}
+                    {renderTreeLink("General", "processing/general")}
                     <br></br>
-                    {renderTreeLink(
-                        navigate,
-                        "Per Format",
-                        "processing/per-format",
-                    )}
+                    {renderTreeLink("Per Format", "processing/per-format")}
                 </ul>
             </li>
         </ul>

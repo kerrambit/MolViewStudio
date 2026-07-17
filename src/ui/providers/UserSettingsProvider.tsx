@@ -1,28 +1,7 @@
-import React, {
-    createContext,
-    useState,
-    type ReactNode,
-    useContext,
-    useCallback,
-} from "react";
+import React, { useState, type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import "../i18n";
-
-type UserSettingsContextType = {
-    settings: UserSettings;
-    setSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
-};
-
-export function useUserSettings() {
-    const context = useContext(UserSettingsContext);
-    if (!context) {
-        throw new Error("Settings must be used within UserSettingsProvider");
-    }
-    return context;
-}
-
-export const UserSettingsContext =
-    createContext<UserSettingsContextType | null>(null);
+import { UserSettingsContext } from "./UserSettingsContext";
 
 export function UserSettingsProvider({ children }: { children: ReactNode }) {
     // Use translation.
@@ -30,7 +9,7 @@ export function UserSettingsProvider({ children }: { children: ReactNode }) {
 
     const [settings, setSettings] = useState<UserSettings>(() => {
         const settings = window.electron.requestUserSettings();
-        if (settings.lang && settings.lang !== i18n.language) {
+        if (settings.lang !== i18n.language) {
             i18n.changeLanguage(settings.lang);
         }
         return settings;

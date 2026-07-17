@@ -8,6 +8,7 @@ import LanguageSettingsPage from "../pages/settings/LanguageSettingsPage.tsx";
 import { MainLayout } from "../layouts/MainLayout.tsx";
 import ServerSettingsPage from "../pages/settings/ServerSettingsPage.tsx";
 import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
+import ViewerPageLayout from "../layouts/ViewerPageLayout.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -18,12 +19,14 @@ const routes: RouteObject[] = [
         path: "/",
         Component: MainLayout,
         errorElement: <ErrorPage />,
-        children: [
-            { path: "home", Component: HomePage },
-            { path: "viewer", Component: ViewerPage },
-        ],
+        children: [{ path: "home", Component: HomePage }],
     },
-
+    {
+        path: "/",
+        Component: ViewerPageLayout,
+        errorElement: <ErrorPage />,
+        children: [{ path: "viewer", Component: ViewerPage }],
+    },
     {
         path: "/settings",
         Component: BackNavigationLayout,

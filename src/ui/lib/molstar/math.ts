@@ -44,9 +44,7 @@ export function getEulerAnglesFromMatrix3x3(
         m21 = matrix[7],
         m22 = matrix[8];
 
-    let pitchRad = 0,
-        yawRad = 0,
-        rollRad = 0;
+    let pitchRad, yawRad, rollRad;
     const sy = -m20;
 
     if (Math.abs(sy) < 0.99999) {

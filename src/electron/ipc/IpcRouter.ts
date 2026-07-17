@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, Menu, shell } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import path from "path";
 import os from "os";
 import { saveUserSettings } from "../services/localUserSettingsStorage.js";

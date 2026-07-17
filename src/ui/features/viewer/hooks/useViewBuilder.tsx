@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { useRegime } from "../../../providers/RegimeProvider";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
+import { useCallback, useMemo, useState } from "react";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -19,6 +17,8 @@ import {
     getRotationMatrix3x3,
 } from "../../../lib/molstar";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
+import { useRegimeStore } from "../../../stores/regimeStore";
+import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 
 /**
  * The unified View-Model for volume parameters.
@@ -67,6 +67,7 @@ export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
  * @returns modified root
  */
 function applyViewModelToBranch(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     root: any,
     assetId: string,
     viewModel: VolumeViewModel,
@@ -133,15 +134,18 @@ function applyViewModelToBranch(
 
 export function useViewBuilder(viewKey: string) {
     // Use regime.
-    const { regime, setRegime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use managed assets.
-    const {
-        getAllAssets,
-        getAsset,
-        incrementAssetUseCount,
-        decrementAssetUseCount,
-    } = useManagedAssets();
+    const assets = useManagedAssetsStore((state) => state.assets);
+    const getAsset = useManagedAssetsStore((state) => state.getAsset);
+    const incrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.incrementAssetUseCount,
+    );
+    const decrementAssetUseCount = useManagedAssetsStore(
+        (state) => state.decrementAssetUseCount,
+    );
 
     // Memoized view.
     const view = useMemo(() => {
@@ -186,7 +190,7 @@ export function useViewBuilder(viewKey: string) {
 
     // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...).
     const assetsFilteredByType = useMemo(() => {
-        const allAssets = getAllAssets();
+        const allAssets = Array.from(assets.values());
 
         if (selectedAssetFilters.length === 0) return [];
         if (selectedAssetFilters.includes("All")) return allAssets;
@@ -215,14 +219,16 @@ export function useViewBuilder(viewKey: string) {
 
             let matchesExtension = !hasExtensionFilters;
             if (hasExtensionFilters) {
-                matchesExtension = selectedAssetFilters.some((ext) =>
-                    asset.extension.toLowerCase().endsWith(ext.toLowerCase()),
+                matchesExtension = selectedAssetFilters.some(
+                    (ext) =>
+                        asset.extension.toLowerCase() ===
+                        ext.slice(1).toLowerCase(),
                 );
             }
 
             return matchesLocation && matchesExtension;
         });
-    }, [getAllAssets, selectedAssetFilters]);
+    }, [assets, selectedAssetFilters]);
 
     // Memoized assets further narrowed down by relative paths.
     const assetsInView = useMemo(() => {
@@ -238,41 +244,32 @@ export function useViewBuilder(viewKey: string) {
     }, [assetsFilteredByType, selectedAssetRelativePaths]);
 
     // Function which returns safe view model based on asset ID.
-    const getViewModel = (assetId: string): VolumeViewModel => {
-        return (
-            viewModels[assetId] || {
+    const getViewModel = useCallback(
+        (assetId: string): VolumeViewModel => {
+            if (viewModels[assetId]) {
+                return viewModels[assetId];
+            }
+
+            const fallback: VolumeViewModel = {
                 ...DEFAULT_VOLUME_VIEW_MODEL,
                 format:
                     getAssetConfigBasedOnExtension(
                         getAsset(assetId)?.extension || "",
                     )?.parser || "N/A",
-            }
-        );
-    };
+            };
 
-    // Initialize View-Models from Molstar on first load or when new assets appear.
-    useEffect(() => {
-        if (!view) return;
-
-        const initialModels: Record<string, VolumeViewModel> = {};
-        assetsInView.forEach((asset) => {
-            if (!viewModels[asset.id]) {
-                initialModels[asset.id] = getVolumeParamsForAsset(
-                    view.root,
-                    asset.id,
-                    {
-                        ...DEFAULT_VOLUME_VIEW_MODEL,
-                        format:
-                            getAssetConfigBasedOnExtension(asset.extension)
-                                ?.parser || "N/A",
-                    },
-                ) as VolumeViewModel;
+            if (!view) {
+                return fallback;
             }
-        });
-        if (Object.keys(initialModels).length > 0) {
-            setViewModels((prev) => ({ ...prev, ...initialModels }));
-        }
-    }, [assetsInView, view]);
+
+            return getVolumeParamsForAsset(
+                view.root,
+                assetId,
+                fallback,
+            ) as VolumeViewModel;
+        },
+        [viewModels, getAsset, view],
+    );
 
     // Handler for expanding the asset card.
     const toggleExpandAsset = (assetId: string) => {
@@ -285,10 +282,11 @@ export function useViewBuilder(viewKey: string) {
     const updateViewModel = async (
         assetId: string,
         paramKey: keyof VolumeViewModel,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         val: any,
         syncToMolstar: boolean,
     ) => {
-        const updatedVm = { ...viewModels[assetId], [paramKey]: val };
+        const updatedVm = { ...getViewModel(assetId), [paramKey]: val };
 
         // Update UI instantly.
         setViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
@@ -325,7 +323,7 @@ export function useViewBuilder(viewKey: string) {
             // Try to reload Molstar viewer.
             const result = await reloadMolstarAndRestoreIndex(
                 viewKey,
-                getAllAssets(),
+                Array.from(assets.values()),
                 updatedTree,
             );
             if (result instanceof Error) {
@@ -378,7 +376,7 @@ export function useViewBuilder(viewKey: string) {
             ...regime.stateTree,
             snapshots: regime.stateTree.snapshots.map((snap) => {
                 if (snap.metadata.key === viewKey) {
-                    let newRoot = snap.root;
+                    let newRoot;
 
                     if (isChecked) {
                         // Get changes from our view model.
@@ -423,7 +421,7 @@ export function useViewBuilder(viewKey: string) {
         // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
             viewKey,
-            getAllAssets(),
+            Array.from(assets.values()),
             updatedTree,
         );
 

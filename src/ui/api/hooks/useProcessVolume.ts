@@ -18,7 +18,7 @@ export function useProcessVolume() {
             loggerUi.info(`API Request: POST ${API.processVolume()}`);
             loggerUi.info(`  - filepath: ${args.filepath}`);
             loggerUi.info(`  - temporaryDirectory: ${args.temporaryDirectory}`);
-
+            let isServerError;
             try {
                 const response = await fetch(endpoint, {
                     method: "POST",
@@ -45,7 +45,7 @@ export function useProcessVolume() {
                     loggerUi.error(`  - Error: ${errorMessage}`);
 
                     const error = new Error(errorMessage);
-                    (error as any).isServerError = true;
+                    isServerError = true;
                     throw error;
                 }
 
@@ -56,7 +56,7 @@ export function useProcessVolume() {
 
                 return response;
             } catch (error) {
-                if (error instanceof Error && !(error as any).isServerError) {
+                if (error instanceof Error && isServerError) {
                     loggerUi.error(
                         `API Request: POST ${API.processVolume()} - NETWORK ERROR`,
                     );

@@ -1,6 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconArrowBack } from "@tabler/icons-react";
-import { useAppearance } from "../../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../../hooks/useAppearance";
 
 interface RevertIconProps {
     tooltip?: string;
@@ -9,8 +9,10 @@ interface RevertIconProps {
 }
 
 export function RevertActionIcon(props: RevertIconProps) {
+    // Use apperance.
     const { colorScheme } = useAppearance();
 
+    // Render the component.
     return (
         <ActionIcon
             disabled={props.enabled ?? false}

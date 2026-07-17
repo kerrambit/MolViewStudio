@@ -240,7 +240,7 @@ export function getAllDownloadUrlsFromSnapshot(snapshot: Snapshot): string[] {
     const urls: string[] = [];
     if (!snapshot || !snapshot.root || !snapshot.root.children) return urls;
 
-    snapshot.root.children.forEach((child: any) => {
+    snapshot.root.children.forEach((child) => {
         if (child.kind === "download" && child.params?.url) {
             urls.push(child.params.url);
         }
@@ -254,6 +254,7 @@ export function getAllDownloadUrlsFromSnapshot(snapshot: Snapshot): string[] {
  * @returns set of unique urls/uris from MVS
  */
 export function extractUrlsFromMVS(mvsData: MVSData): Set<string> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let snapshots: any[] = [];
 
     if (mvsData.kind !== "multiple") {
@@ -266,6 +267,7 @@ export function extractUrlsFromMVS(mvsData: MVSData): Set<string> {
     const normalizePath = (path: string) =>
         path.startsWith("./") ? path.slice(2) : path;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const traverseNode = (node: any) => {
         if (node.params) {
             if (typeof node.params.url === "string") {
@@ -367,7 +369,6 @@ async function _loadMVSXFile(
     const archiveId = generateArchiveID();
 
     // Get .mvsj file.
-    const { [indexFilePath]: _ } = files;
     const indexFile = files[indexFilePath];
     if (!indexFile) {
         return {
@@ -379,7 +380,7 @@ async function _loadMVSXFile(
     }
 
     // Decode .mvsj.
-    let mvsData: MVSData = createDefaultMVS();
+    let mvsData: MVSData;
     try {
         mvsData = MVSData.fromMVSJ(decodeUtf8(indexFile));
     } catch (error) {

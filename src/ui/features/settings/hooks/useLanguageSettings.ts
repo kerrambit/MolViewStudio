@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useUserSettings } from "../../../providers/UserSettingsProvider";
+import { useUserSettings } from "../../../hooks/useUserSettings";
 
 export function useLanguageSettings() {
     // Use translation.

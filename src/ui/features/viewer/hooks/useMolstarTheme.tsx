@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAppearance } from "../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../hooks/useAppearance";
 
 // These imports tell Vite to bundle the CSS files and return their hashed URLs.
 import lightSkinUrl from "molstar/lib/mol-plugin-ui/skin/light.scss?url";

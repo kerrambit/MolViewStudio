@@ -1,4 +1,4 @@
-import { createContext, useState, type ReactNode, useContext } from "react";
+import { create } from "zustand";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import type { SerializedAssets } from "../lib/molstar";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
@@ -36,31 +36,16 @@ export type Regime =
     | ViewingRegime
     | RestoringRegime;
 
-export type RegimeContextType = {
+export type RegimeStore = {
     regime: Regime;
     setRegime: (regime: Regime) => void;
 };
 
 const initialRegime: IdlingRegime = { kind: "idling" };
 
-export const RegimeContext = createContext<RegimeContextType | undefined>(
-    undefined,
-);
-
-export function useRegime() {
-    const context = useContext(RegimeContext);
-    if (!context) {
-        throw new Error("Regime must be used within RegimeProvider");
-    }
-    return context;
-}
-
-export function RegimeProvider({ children }: { children: ReactNode }) {
-    const [regime, setRegime] = useState<Regime>(initialRegime);
-
-    return (
-        <RegimeContext.Provider value={{ regime, setRegime }}>
-            {children}
-        </RegimeContext.Provider>
-    );
-}
+export const useRegimeStore = create<RegimeStore>((set) => ({
+    regime: initialRegime,
+    setRegime: (newRegime) => {
+        set({ regime: newRegime });
+    },
+}));

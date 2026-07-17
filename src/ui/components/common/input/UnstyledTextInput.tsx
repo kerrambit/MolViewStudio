@@ -106,33 +106,24 @@ export function UnstyledTextInput({
     const [internalValue, setInternalValue] = useState(defaultValue);
     const isControlled = controlledValue !== undefined;
     const value = isControlled ? controlledValue : internalValue;
-    const [error, setError] = useState<string | null>(null);
+    const trimmedValue = value.trim();
 
-    const validate = (val: string) => {
-        const trimmed = val.trim();
-        if (!trimmed && !canBeEmpty) {
-            setError("Value cannot be empty!");
-            return;
-        }
-
-        if (validator && validator(trimmed) !== null) {
-            setError(validator(trimmed));
-            return;
-        }
-
-        setError(null);
-    };
+    const error: string | null =
+        !trimmedValue && !canBeEmpty
+            ? "Value cannot be empty!"
+            : validator
+              ? validator(trimmedValue)
+              : null;
 
     useEffect(() => {
         onErrorChange?.(error !== null);
-    }, [error]);
+    }, [error, onErrorChange]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.currentTarget.value;
         if (val.length > maxLength) val = val.slice(0, maxLength);
 
         if (!isControlled) setInternalValue(val);
-        validate(val);
         onValueChange?.(val);
     };
 
@@ -145,22 +136,10 @@ export function UnstyledTextInput({
     };
 
     const handleBlur = () => {
-        const trimmedValue = value.trim();
-        validate(trimmedValue);
         onBlur?.(trimmedValue);
     };
 
-    useEffect(() => {
-        if (value.trim().length > 0) {
-            if (validator && validator(value.trim()) !== null) {
-                setError(validator(value.trim()));
-                return;
-            }
-
-            setError(null);
-        }
-    }, [value]);
-
+    // Render the component.
     return (
         <div className="unstyledTextInput" style={style} title={tooltip}>
             <div className="unstyledTextInput__input-wrapper">
@@ -177,11 +156,11 @@ export function UnstyledTextInput({
                     onKeyDown={handleKeyPressed}
                     // TODO: when permanent background is applied, we should get also darker hover and focus
                     className={`unstyledTextInput__input-field ${
-                        error ? "unstyledTextInput__input-error" : ""
+                        error && enabled ? "unstyledTextInput__input-error" : ""
                     } ${bold ? "unstyledTextInput__input-field--bold" : ""} ${permanentInputFieldBackground ? "unstyledTextInput__input-field--permanentBackground" : ""}`}
                 />
             </div>
-            {error && (
+            {error && enabled && (
                 <span
                     className="unstyledTextInput__error-text"
                     style={{ paddingLeft: prefix ? `${prefix.length}ch` : 0 }}

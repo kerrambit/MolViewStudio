@@ -1,7 +1,7 @@
 import { IconMoon, IconSun } from "@tabler/icons-react";
-import { useAppearance } from "../../../providers/AppearanceProvider";
 import { SegmentedController } from "../../../components/common/segmented-controller/SegmentedController";
 import { Center, Text } from "@mantine/core";
+import { useAppearance } from "../../../hooks/useAppearance";
 
 export function SchemeSelector() {
     // Use apperance.

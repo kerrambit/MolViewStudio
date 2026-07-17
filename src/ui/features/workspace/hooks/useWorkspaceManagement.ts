@@ -1,6 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useRegime, type Regime } from "../../../providers/RegimeProvider";
+import { router } from "../../../router/router";
 import { MVSFilters, StructuralFilters } from "../../../../types/fileFilters";
 import { loggerUi } from "../../../services/UiLoggingService";
 import {
@@ -8,7 +7,6 @@ import {
     pushInfoNotification,
     pushSuccessNotification,
 } from "../../../services/NotificationService";
-import { useProcessing } from "../../../providers/ProcessingProvider";
 import { useProcessVolume } from "../../../api/hooks/useProcessVolume";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 import { getFieldFromResponse } from "../../../api/utils/apiParser";
@@ -17,58 +15,47 @@ import {
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../../lib/molstar";
-import { useManagedAssets } from "../../../providers/ManagedAssetsProvider";
-import { useRecentFiles } from "../../../providers/RecentFilesProvider";
+import { useRegimeStore, type Regime } from "../../../stores/regimeStore";
+import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
+import { useProcessingStore } from "../../../stores/processingStore";
+import { useRecentFilesStore } from "../../../stores/recentFilesStore";
 
 export function useWorkspaceManagement() {
-    // Use navigate,
-    const navigate = useNavigate();
-
-    // Use regime.
-    const { regime, setRegime } = useRegime();
-
     // Use environment.
     const env = useEnvironment();
 
-    // Use assets.
-    const { addAsset, addLocalAsset, clearAssets } = useManagedAssets();
-
-    // Use recent files.
-    const { addRecentFile } = useRecentFiles();
-
     // Use processing.
-    const { startJob, completeJob, failJob } = useProcessing();
     const processVolume = useProcessVolume();
 
-    const loadFileInApp = useCallback(
-        async (fileData: FileData[] | Error) => {
-            if (!(fileData instanceof Error)) {
-                if (fileData.length > 0) {
-                    // Add recent file.
-                    addRecentFile(fileData[0].path);
+    const loadFileInApp = useCallback(async (fileData: FileData[] | Error) => {
+        if (!(fileData instanceof Error)) {
+            if (fileData.length > 0) {
+                // Add recent file.
+                useRecentFilesStore.getState().addRecentFile(fileData[0].path);
 
-                    loggerUi.info(`File <${fileData[0].path}> was selected.`);
+                loggerUi.info(`File <${fileData[0].path}> was selected.`);
 
-                    const regime: Regime = {
-                        kind: "staging",
-                        fileToView: fileData[0],
-                    };
-                    setRegime(regime);
+                // Set regime to `staging`.
+                const regime: Regime = {
+                    kind: "staging",
+                    fileToView: fileData[0],
+                };
+                useRegimeStore.getState().setRegime(regime);
 
-                    // Navigate to viewer page.
-                    navigate("/viewer");
-                }
-            } else {
-                loggerUi.error(`Error occured: <${fileData.message}>!`);
-                pushErrorNotification(
-                    `Error occured! Details: {${fileData.message}}.`,
-                );
+                // Navigate to viewer page.
+                router.navigate("/viewer");
             }
-        },
-        [addRecentFile, setRegime, navigate],
-    );
+        } else {
+            loggerUi.error(`Error occured: <${fileData.message}>!`);
+            pushErrorNotification(
+                `Error occured! Details: {${fileData.message}}.`,
+            );
+        }
+    }, []);
 
     const openFileInViewer = useCallback(async () => {
+        // Open file in viewer only if the regime is in `staging` and therefore we know we have data to open in a viewer.
+        const regime = useRegimeStore.getState().regime;
         if (regime.kind !== "staging") {
             return;
         }
@@ -87,7 +74,7 @@ export function useWorkspaceManagement() {
             );
             return;
         } else if (result === undefined) {
-            clearAssets();
+            useManagedAssetsStore.getState().clearAssets();
             pushInfoNotification(
                 "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
             );
@@ -95,9 +82,9 @@ export function useWorkspaceManagement() {
         }
 
         // Clears all managed assets and then register local assets in ManagedAssetsProvider.
-        clearAssets();
+        useManagedAssetsStore.getState().clearAssets();
         result.assets.forEach((a) => {
-            addAsset(a);
+            useManagedAssetsStore.getState().addAsset(a);
         });
 
         // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
@@ -107,7 +94,7 @@ export function useWorkspaceManagement() {
         );
 
         // Set the regime with new assets and state tree.
-        setRegime({
+        useRegimeStore.getState().setRegime({
             ...regime,
             kind: "viewing",
             stateTree: stateTree,
@@ -116,7 +103,7 @@ export function useWorkspaceManagement() {
 
         // Import ended.
         pushSuccessNotification("Import ended!");
-    }, [regime, clearAssets, addAsset, setRegime]);
+    }, []);
 
     const openFileExplorerAndLoadFileInApp = useCallback(async () => {
         // Opends file explorer and let user to choose the file.
@@ -138,7 +125,7 @@ export function useWorkspaceManagement() {
     const processFile = useCallback(
         async (fileToProcess: FileData, newRelativePath: string) => {
             // Start processing job.
-            const jobId = startJob(fileToProcess);
+            const jobId = useProcessingStore.getState().startJob(fileToProcess);
 
             // Define temporary directory for processing of volumetric data.
             const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
@@ -153,7 +140,7 @@ export function useWorkspaceManagement() {
                 {
                     onSuccess: async (response) => {
                         // Parse string array containing absolute paths.
-                        let absolutePaths: string[] = [];
+                        let absolutePaths: string[];
                         try {
                             absolutePaths = await getFieldFromResponse<
                                 string[]
@@ -173,7 +160,9 @@ export function useWorkspaceManagement() {
                         );
 
                         // Job is completed.
-                        completeJob(jobId, absolutePaths);
+                        useProcessingStore
+                            .getState()
+                            .completeJob(jobId, absolutePaths);
 
                         // Read assets from processed volume file.
                         const assets =
@@ -191,10 +180,9 @@ export function useWorkspaceManagement() {
 
                         assets.map((asset) => {
                             // Adds local asset into asset manager.
-                            const wasSuccessful = addLocalAsset(
-                                asset,
-                                newRelativePath,
-                            );
+                            const wasSuccessful = useManagedAssetsStore
+                                .getState()
+                                .addLocalAsset(asset, newRelativePath);
 
                             if (!wasSuccessful) {
                                 pushErrorNotification(
@@ -209,7 +197,9 @@ export function useWorkspaceManagement() {
                     },
                     onError: (err) => {
                         // Job failed.
-                        failJob(jobId, err.message);
+                        useProcessingStore
+                            .getState()
+                            .failJob(jobId, err.message);
 
                         pushErrorNotification(
                             `Processing of file "${fileToProcess.path}" failed! For more information, see the logs. You might need to restart the application and try processing once more.`,
@@ -221,14 +211,7 @@ export function useWorkspaceManagement() {
                 },
             );
         },
-        [
-            startJob,
-            env.userDataPath,
-            processVolume,
-            completeJob,
-            addLocalAsset,
-            failJob,
-        ],
+        [env.userDataPath, processVolume],
     );
 
     const createNewProjectInApp = useCallback(() => {
@@ -247,11 +230,11 @@ export function useWorkspaceManagement() {
             fileToView: fileData,
         };
 
-        setRegime(regime);
+        useRegimeStore.getState().setRegime(regime);
 
         // Navigate to viewer page.
-        navigate("/viewer");
-    }, [setRegime, navigate]);
+        router.navigate("/viewer");
+    }, []);
 
     const loadRecentFileInApp = useCallback(
         async (path: string) => {

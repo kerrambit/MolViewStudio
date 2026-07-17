@@ -1,6 +1,5 @@
-import { createRef, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Subscription } from "rxjs";
-import { useRegime } from "../../../providers/RegimeProvider";
 import { useWorkspaceManagement } from "../../workspace/hooks/useWorkspaceManagement";
 import {
     initMolstar,
@@ -11,13 +10,14 @@ import {
     clearViewer,
     disposeMolstar,
 } from "../../../lib/molstar";
+import { useRegimeStore } from "../../../stores/regimeStore";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
 
 export function useMolstarInit() {
-    // HTML elemenet where we will insert Molstar's viewer.
-    const parentRef = createRef<HTMLDivElement>();
+    // HTML element where we will insert Molstar's viewer.
+    const parentRef = useRef<HTMLDivElement>(null);
 
     // Controls if Molstar is still in the initialization process.
     const [molstarLoading, setMolstarLoading] = useState(true);
@@ -26,14 +26,17 @@ export function useMolstarInit() {
     const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
 
     // Use regime.
-    const { regime, setRegime } = useRegime();
+    const regime = useRegimeStore((state) => state.regime);
+    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use workspace management.
     const { openFileInViewer } = useWorkspaceManagement();
 
     // Use regime to control the current regime of the application.
     const regimeReference = useRef(regime);
-    regimeReference.current = regime;
+    useEffect(() => {
+        regimeReference.current = regime;
+    });
 
     // Handle core Molstar setup and destruction.
     useEffect(() => {
@@ -91,7 +94,7 @@ export function useMolstarInit() {
                 disposeMolstar();
             });
         };
-    }, []);
+    }, [setRegime]);
 
     // Restore the previous workspace.
     useEffect(() => {
@@ -117,7 +120,7 @@ export function useMolstarInit() {
         };
 
         deconstruct();
-    }, [regime, molstarLoading]);
+    }, [regime, molstarLoading, openFileInViewer]);
 
     return { parentRef, molstarLoading, molstarExpanded };
 }

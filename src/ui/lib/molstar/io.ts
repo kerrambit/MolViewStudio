@@ -67,6 +67,7 @@ export async function loadFromFile(
 
         const trajectory = await molstar.builders.structure.parseTrajectory(
             fileResult.data,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             fileData.extension as any,
         );
 

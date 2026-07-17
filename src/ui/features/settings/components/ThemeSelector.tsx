@@ -1,6 +1,6 @@
 import { SimpleGrid, UnstyledButton, Text } from "@mantine/core";
 import { IconCheck } from "@tabler/icons-react";
-import { useAppearance } from "../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../hooks/useAppearance";
 
 export function ThemeSelector() {
     // Use apperance.

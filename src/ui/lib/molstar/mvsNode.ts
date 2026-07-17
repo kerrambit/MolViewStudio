@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";
 import { type Base64Png, type CameraState, type HexColor } from "./types";
 import { ColorT } from "molstar/lib/extensions/mvs/tree/mvs/param-types";
@@ -29,7 +31,7 @@ export function applyCameraToNode(
     if (referenceCamera) {
         const { position, target, up } = referenceCamera;
 
-        let cameraNode = nodeCopy.children?.find(
+        const cameraNode = nodeCopy.children?.find(
             (child) => child.kind === "camera",
         );
 
@@ -89,7 +91,7 @@ export function applyBackgroundColorToNode(
     const nodeCopy = copyNode(node);
 
     if (backgroundColor) {
-        let canvasNode = nodeCopy.children?.find(
+        const canvasNode = nodeCopy.children?.find(
             (child) => child.kind === "canvas",
         );
 
@@ -324,6 +326,7 @@ export function updateNodeParamInAssetBranch(
  *
  * @param rootNode root node
  * @param assetId asset id, see ManagedAsset
+ * @param defaultValues default values to use if the params cannot be retrieved from the node
  * @returns extracted information
  */
 export function getVolumeParamsForAsset(

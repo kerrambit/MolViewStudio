@@ -34,6 +34,7 @@ export async function getFieldFromResponse<T>(
     }
 
     try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return JSON.parse(value as any) as T;
     } catch {
         return value as T;

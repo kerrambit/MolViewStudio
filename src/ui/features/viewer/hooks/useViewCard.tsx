@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Color } from "molstar/lib/mol-util/color";
+import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import type { ViewCardProps } from "../components/scene-manager/view-card/ViewCard";
 import {
     areCameraStatesEqual,
@@ -40,36 +41,34 @@ export function useViewCard(props: ViewCardProps) {
     }, []);
 
     // Propagate async change of color to the parent.
+    const { onBackgrounColorChange, metadata } = props;
+    const { backgroundColor } = metadata;
     useEffect(() => {
         if (
-            props.onBackgrounColorChange &&
+            onBackgrounColorChange &&
             currentBackgroundColor &&
-            currentBackgroundColor !== props.metadata.backgroundColor
+            currentBackgroundColor !== backgroundColor
         ) {
-            props.onBackgrounColorChange(currentBackgroundColor);
+            onBackgrounColorChange(currentBackgroundColor);
         }
-    }, [
-        currentBackgroundColor,
-        props.onBackgrounColorChange,
-        props.metadata.backgroundColor,
-    ]);
+    }, [currentBackgroundColor, onBackgrounColorChange, backgroundColor]);
 
     // Compute whether the camera has moved relative to the saved reference view.
     const isCameraMoved = (() => {
-        if (!cameraState || !props.metadata.referenceCamera) return false;
+        if (!cameraState || !metadata.referenceCamera) return false;
 
         const liveCameraReferenced = {
             ...cameraState,
             position: toMVSPosition({
-                position: cameraState.position as any,
-                target: cameraState.target as any,
+                position: cameraState.position as Vec3,
+                target: cameraState.target as Vec3,
                 fov: cameraState.fov,
                 mode: cameraState.mode,
             }),
         };
 
         return !areCameraStatesEqual(
-            props.metadata.referenceCamera,
+            metadata.referenceCamera,
             liveCameraReferenced,
         );
     })();
@@ -98,8 +97,8 @@ export function useViewCard(props: ViewCardProps) {
             {
                 ...cameraState,
                 position: toMVSPosition({
-                    position: cameraState.position as any,
-                    target: cameraState.target as any,
+                    position: cameraState.position as Vec3,
+                    target: cameraState.target as Vec3,
                     fov: cameraState.fov,
                     mode: cameraState.mode,
                 }),

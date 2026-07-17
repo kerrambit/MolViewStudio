@@ -48,7 +48,7 @@ export function saveUserSettings(
         }
 
         // We do not store (actual) server port, only preferred server port.
-        const { serverPort, ...settingsToSave } = settings;
+        const { ...settingsToSave } = settings;
 
         writeFileSync(
             userSettingsFile,

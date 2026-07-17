@@ -1,12 +1,11 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import { router } from "../router/router";
 import { TopBar } from "../components/common/topbar/TopBar";
 import { MenuProvider } from "../providers/MenuProvider";
 
 import "./BackNavigationLayout.css";
 
 export function BackNavigationLayout() {
-    const navigate = useNavigate();
-
     return (
         <MenuProvider initialMenu={[]}>
             <div className="layout">
@@ -14,7 +13,7 @@ export function BackNavigationLayout() {
                     <TopBar>
                         <span
                             className="layout__back-link"
-                            onClick={() => navigate(-1)}
+                            onClick={() => router.navigate(-1)}
                             title="Go to the previous page."
                         >
                             Go back
