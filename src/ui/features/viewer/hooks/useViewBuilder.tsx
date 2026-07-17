@@ -218,8 +218,10 @@ export function useViewBuilder(viewKey: string) {
 
             let matchesExtension = !hasExtensionFilters;
             if (hasExtensionFilters) {
-                matchesExtension = selectedAssetFilters.some((ext) =>
-                    asset.extension.toLowerCase().endsWith(ext.toLowerCase()),
+                matchesExtension = selectedAssetFilters.some(
+                    (ext) =>
+                        asset.extension.toLowerCase() ===
+                        ext.slice(1).toLowerCase(),
                 );
             }
 
