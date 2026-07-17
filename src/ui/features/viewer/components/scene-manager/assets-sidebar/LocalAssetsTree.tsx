@@ -7,7 +7,6 @@ import {
 } from "../../../utils/buildAssetTree";
 import { useRegimeStore } from "../../../../../stores/regimeStore";
 import { computeOptimalYellow } from "../../../../../components/common/actionables/actions-icons/utils/computeOptimalYellow";
-import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { EditActionIcon } from "../../../../../components/common/actionables/actions-icons/EditActionIcon";
 import {
     EditAssetDialogueContent,
@@ -24,6 +23,7 @@ import {
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
+import { useAppearance } from "../../../../../hooks/useAppearance";
 
 export function LocalAssetsTree() {
     // Use appearance.

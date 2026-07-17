@@ -1,5 +1,5 @@
 import { type FileRejection } from "@mantine/dropzone";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, type DropEvent } from "react-dropzone";
 import { IconDragDrop, IconX, type ReactNode } from "@tabler/icons-react";
 
 import "./Dropzone.css";
@@ -10,7 +10,7 @@ export interface DropzoneProps {
     enableMultipleInputFiles?: boolean;
     children?: ReactNode;
     allowedExtensions?: string[];
-    getFilesFromEvent?: (event: any) => Promise<File[]>;
+    getFilesFromEvent?: (event: DropEvent) => Promise<File[]>;
 }
 
 export function Dropzone(props: DropzoneProps) {
@@ -18,10 +18,10 @@ export function Dropzone(props: DropzoneProps) {
         validator: createValidator(props.allowedExtensions ?? []),
         noClick: true,
         multiple: props.enableMultipleInputFiles,
-        onDropAccepted(files, _) {
+        onDropAccepted(files) {
             props.onDrop(files);
         },
-        onDropRejected(fileRejections, _) {
+        onDropRejected(fileRejections) {
             if (props.onReject) {
                 props.onReject(fileRejections);
             }

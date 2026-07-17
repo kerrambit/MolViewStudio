@@ -1,6 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconX } from "@tabler/icons-react";
-import { useAppearance } from "../../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../../hooks/useAppearance";
 
 interface CloseActionIconProps {
     tooltip?: string;

@@ -1,6 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
-import { useAppearance } from "../../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../../hooks/useAppearance";
 
 interface ChevronDownActionIconProps {
     tooltip?: string;

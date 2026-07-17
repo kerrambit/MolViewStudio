@@ -1,7 +1,7 @@
 import { Stack, Paper, Group, Badge, Divider, Alert } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
-import { useUserSettings } from "../../../providers/UserSettingsProvider";
 import { ServerStatus } from "../../system/components/server-status/ServerStatus";
+import { useUserSettings } from "../../../hooks/useUserSettings";
 
 export function ServerSettingsContent() {
     // Use settings.

@@ -1,9 +1,4 @@
 import { router } from "../../router/router";
-import type {
-    Dropdown,
-    LiveMenuRenderProps,
-    Menu,
-} from "../../providers/MenuProvider";
 import { pushErrorNotification } from "../../services/NotificationService";
 import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
 import { useDialogueStore } from "../../stores/dialogueStore";
@@ -40,6 +35,11 @@ import {
     createCheckForUpdatesMenuItem,
 } from "./helpMenuItems";
 import { createSettingsRootMenuItem } from "./settingsRootMenuItem";
+import type {
+    Menu,
+    LiveMenuRenderProps,
+    Dropdown,
+} from "../../providers/MenuContext";
 
 export function bindMainMenu(): Menu {
     return [

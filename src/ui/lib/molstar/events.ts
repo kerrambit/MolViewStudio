@@ -64,7 +64,7 @@ export function getSnapshotChangeSubscription(
 
             if (current) {
                 const entries = molstar.managers.snapshot.state.entries;
-                let currentIndex = -1;
+                let currentIndex;
 
                 for (let i = 0; i < entries.count(); i++) {
                     const entry = entries.get(i);

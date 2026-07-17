@@ -93,22 +93,29 @@ export function useViewsManagement({
     // Callback for snapshot selected changed from Molstar UI.
     useEffect(() => {
         let sub: Subscription;
+
+        const syncActiveView = (index: number) => {
+            setActiveViewCardIndex(index);
+            const current = latestDataRef.current;
+            if (current.isBuilderOpen && onOpenBuilder) {
+                const newView = current.viewItems[index];
+                if (newView) onOpenBuilder(newView.key);
+            }
+        };
+
         if (!isMolstarLoading) {
-            setActiveViewCardIndex(getCurrentSnapshotIndex());
+            queueMicrotask(() => {
+                syncActiveView(getCurrentSnapshotIndex());
+            });
+
             sub = getSnapshotChangeSubscription((index) => {
-                const current = latestDataRef.current;
-                if (current.activeViewCardIndex !== index) {
+                if (latestDataRef.current.activeViewCardIndex !== index) {
                     clearViewerContent();
                 }
-
-                setActiveViewCardIndex(index);
-
-                if (current.isBuilderOpen && onOpenBuilder) {
-                    const newView = current.viewItems[index];
-                    if (newView) onOpenBuilder(newView.key);
-                }
+                syncActiveView(index);
             });
         }
+
         return () => sub?.unsubscribe();
     }, [isMolstarLoading, onOpenBuilder]);
 

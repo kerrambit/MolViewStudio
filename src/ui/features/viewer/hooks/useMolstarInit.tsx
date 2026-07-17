@@ -1,4 +1,4 @@
-import { createRef, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Subscription } from "rxjs";
 import { useWorkspaceManagement } from "../../workspace/hooks/useWorkspaceManagement";
 import {
@@ -16,8 +16,8 @@ const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
 
 export function useMolstarInit() {
-    // HTML elemenet where we will insert Molstar's viewer.
-    const parentRef = createRef<HTMLDivElement>();
+    // HTML element where we will insert Molstar's viewer.
+    const parentRef = useRef<HTMLDivElement>(null);
 
     // Controls if Molstar is still in the initialization process.
     const [molstarLoading, setMolstarLoading] = useState(true);
@@ -34,7 +34,9 @@ export function useMolstarInit() {
 
     // Use regime to control the current regime of the application.
     const regimeReference = useRef(regime);
-    regimeReference.current = regime;
+    useEffect(() => {
+        regimeReference.current = regime;
+    });
 
     // Handle core Molstar setup and destruction.
     useEffect(() => {
@@ -92,7 +94,7 @@ export function useMolstarInit() {
                 disposeMolstar();
             });
         };
-    }, []);
+    }, [setRegime]);
 
     // Restore the previous workspace.
     useEffect(() => {
@@ -118,7 +120,7 @@ export function useMolstarInit() {
         };
 
         deconstruct();
-    }, [regime, molstarLoading]);
+    }, [regime, molstarLoading, openFileInViewer]);
 
     return { parentRef, molstarLoading, molstarExpanded };
 }

@@ -5,11 +5,11 @@ import {
     IconFolderOpen,
 } from "@tabler/icons-react";
 import type {
-    Dropdown,
-    LiveTaskType,
     MenuItem,
     Section,
-} from "../../providers/MenuProvider";
+    LiveTaskType,
+    Dropdown,
+} from "../../providers/MenuContext";
 
 export function createProjectActionsSection(items: MenuItem[]): Section {
     return {

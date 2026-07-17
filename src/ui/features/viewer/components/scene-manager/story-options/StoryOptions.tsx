@@ -23,7 +23,7 @@ export function StoryOptions() {
             value = undefined;
         }
 
-        const newMetadata: any = { ...(regime.stateTree.metadata || {}) };
+        const newMetadata = { ...(regime.stateTree.metadata || {}) };
 
         if (value === undefined) {
             delete newMetadata[key];

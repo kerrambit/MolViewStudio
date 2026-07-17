@@ -1,18 +1,18 @@
 import React, { useState } from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
-import { useAppearance } from "../../../providers/AppearanceProvider";
-import {
-    useMenu,
-    type Action,
-    type Dropdown,
-    type MenuIcon,
-    type MenuItem,
-    type RootMenuItem,
-    type Section,
-} from "../../../providers/MenuProvider";
 import { useEnvironment } from "../../../hooks/useEnvironment";
+import { useMenu } from "../../../hooks/useMenu";
+import type {
+    Dropdown,
+    MenuItem,
+    Section,
+    Action,
+    RootMenuItem,
+    MenuIcon,
+} from "../../../providers/MenuContext";
 
 import "./Menu.css";
+import { useAppearance } from "../../../hooks/useAppearance";
 
 interface MenuProps {
     className?: string;

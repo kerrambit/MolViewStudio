@@ -1,5 +1,4 @@
 import { Text, Divider, MultiSelect, Collapse } from "@mantine/core";
-import { useAppearance } from "../../../../../providers/AppearanceProvider";
 import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { useViewBuilder } from "../../../hooks/useViewBuilder";
 import { AssetBuilderCard } from "./AssetBuilderCard";
@@ -7,6 +6,7 @@ import { AutoScrollList } from "../../../../../components/common/auto-scroll-lis
 import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
+import { useAppearance } from "../../../../../hooks/useAppearance";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -203,7 +203,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                             ? 0
                             : firstSelectedAssetIndex
                     }
-                    renderItem={(asset, _) => {
+                    renderItem={(asset) => {
                         return (
                             <AssetBuilderCard
                                 viewKey={props.viewKey}

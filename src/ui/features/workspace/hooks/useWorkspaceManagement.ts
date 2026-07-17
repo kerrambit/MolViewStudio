@@ -24,43 +24,34 @@ export function useWorkspaceManagement() {
     // Use environment.
     const env = useEnvironment();
 
-    // Use recent files.
-    const addRecentFile = useRecentFilesStore((state) => state.addRecentFile);
-
     // Use processing.
-    const startJob = useProcessingStore((state) => state.startJob);
-    const completeJob = useProcessingStore((state) => state.completeJob);
-    const failJob = useProcessingStore((state) => state.failJob);
     const processVolume = useProcessVolume();
 
-    const loadFileInApp = useCallback(
-        async (fileData: FileData[] | Error) => {
-            if (!(fileData instanceof Error)) {
-                if (fileData.length > 0) {
-                    // Add recent file.
-                    addRecentFile(fileData[0].path);
+    const loadFileInApp = useCallback(async (fileData: FileData[] | Error) => {
+        if (!(fileData instanceof Error)) {
+            if (fileData.length > 0) {
+                // Add recent file.
+                useRecentFilesStore.getState().addRecentFile(fileData[0].path);
 
-                    loggerUi.info(`File <${fileData[0].path}> was selected.`);
+                loggerUi.info(`File <${fileData[0].path}> was selected.`);
 
-                    // Set regime to `staging`.
-                    const regime: Regime = {
-                        kind: "staging",
-                        fileToView: fileData[0],
-                    };
-                    useRegimeStore.getState().setRegime(regime);
+                // Set regime to `staging`.
+                const regime: Regime = {
+                    kind: "staging",
+                    fileToView: fileData[0],
+                };
+                useRegimeStore.getState().setRegime(regime);
 
-                    // Navigate to viewer page.
-                    router.navigate("/viewer");
-                }
-            } else {
-                loggerUi.error(`Error occured: <${fileData.message}>!`);
-                pushErrorNotification(
-                    `Error occured! Details: {${fileData.message}}.`,
-                );
+                // Navigate to viewer page.
+                router.navigate("/viewer");
             }
-        },
-        [addRecentFile],
-    );
+        } else {
+            loggerUi.error(`Error occured: <${fileData.message}>!`);
+            pushErrorNotification(
+                `Error occured! Details: {${fileData.message}}.`,
+            );
+        }
+    }, []);
 
     const openFileInViewer = useCallback(async () => {
         // Open file in viewer only if the regime is in `staging` and therefore we know we have data to open in a viewer.
@@ -134,7 +125,7 @@ export function useWorkspaceManagement() {
     const processFile = useCallback(
         async (fileToProcess: FileData, newRelativePath: string) => {
             // Start processing job.
-            const jobId = startJob(fileToProcess);
+            const jobId = useProcessingStore.getState().startJob(fileToProcess);
 
             // Define temporary directory for processing of volumetric data.
             const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
@@ -149,7 +140,7 @@ export function useWorkspaceManagement() {
                 {
                     onSuccess: async (response) => {
                         // Parse string array containing absolute paths.
-                        let absolutePaths: string[] = [];
+                        let absolutePaths: string[];
                         try {
                             absolutePaths = await getFieldFromResponse<
                                 string[]
@@ -169,7 +160,9 @@ export function useWorkspaceManagement() {
                         );
 
                         // Job is completed.
-                        completeJob(jobId, absolutePaths);
+                        useProcessingStore
+                            .getState()
+                            .completeJob(jobId, absolutePaths);
 
                         // Read assets from processed volume file.
                         const assets =
@@ -204,7 +197,9 @@ export function useWorkspaceManagement() {
                     },
                     onError: (err) => {
                         // Job failed.
-                        failJob(jobId, err.message);
+                        useProcessingStore
+                            .getState()
+                            .failJob(jobId, err.message);
 
                         pushErrorNotification(
                             `Processing of file "${fileToProcess.path}" failed! For more information, see the logs. You might need to restart the application and try processing once more.`,
@@ -216,7 +211,7 @@ export function useWorkspaceManagement() {
                 },
             );
         },
-        [startJob, env.userDataPath, processVolume, completeJob, failJob],
+        [env.userDataPath, processVolume],
     );
 
     const createNewProjectInApp = useCallback(() => {

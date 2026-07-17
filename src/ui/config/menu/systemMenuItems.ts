@@ -10,7 +10,7 @@ import type {
     Priority,
     RootMenuItem,
     Section,
-} from "../../providers/MenuProvider";
+} from "../../providers/MenuContext";
 
 // ------------------ Default first root menu item - File -------------------------------
 

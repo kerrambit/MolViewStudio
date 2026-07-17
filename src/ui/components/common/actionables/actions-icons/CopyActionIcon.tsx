@@ -1,6 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { IconCopy } from "@tabler/icons-react";
-import { useAppearance } from "../../../../providers/AppearanceProvider";
+import { useAppearance } from "../../../../hooks/useAppearance";
 import { computeOptimalYellow } from "./utils/computeOptimalYellow";
 
 interface CopyActionIconProps {

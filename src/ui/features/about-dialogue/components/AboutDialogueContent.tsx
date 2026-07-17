@@ -2,8 +2,8 @@ import { useState, useCallback } from "react";
 import { Button } from "../../../components/common/button/Button";
 import { Badge } from "@mantine/core";
 import { useEnvironment } from "../../../hooks/useEnvironment";
-import { useAppearance } from "../../../providers/AppearanceProvider";
 import desktopIcon from "../../../../assets/desktopIcon.png";
+import { useAppearance } from "../../../hooks/useAppearance";
 
 interface AboutDialogueContentProps {
     close: () => void;

@@ -5,8 +5,8 @@ import {
     IconBrandGithub,
     IconTopologyStar3,
 } from "@tabler/icons-react";
-import type { MenuItem, Section } from "../../providers/MenuProvider";
 import { pushInfoNotification } from "../../services/NotificationService";
+import type { MenuItem, Section } from "../../providers/MenuContext";
 
 export function createGeneralHelpSection(items: MenuItem[]): Section {
     return {

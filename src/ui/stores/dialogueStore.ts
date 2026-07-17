@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type React from "react";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface DialogueProps<ReturnValueType = any> {
     title?: string;
     content: (close: (value?: ReturnValueType) => void) => React.ReactNode;
@@ -14,6 +15,7 @@ export interface DialogueProps<ReturnValueType = any> {
 type StackedDialogue = {
     id: string;
     options: DialogueProps;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolve: (value?: any) => void;
 };
 
@@ -24,6 +26,7 @@ export type ShowDialogueType = <T = void>(
 type DialogueStore = {
     stack: StackedDialogue[];
     showDialogue: ShowDialogueType;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     closeDialogue: (id: string, value?: any) => void;
 };
 
@@ -36,6 +39,7 @@ export const useDialogueStore = create<DialogueStore>((set, get) => ({
             set((state) => ({
                 stack: [
                     ...state.stack,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     { id, options: options as DialogueProps<any>, resolve },
                 ],
             }));

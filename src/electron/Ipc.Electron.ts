@@ -22,6 +22,7 @@ export class Ipc {
         ) {
             ipcMain.handle(key, (event, ...args) => {
                 validateEventFrame(event.senderFrame);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return handler(...(args as any));
             });
         }
@@ -48,6 +49,7 @@ export class Ipc {
         ) {
             ipcMain.on(key, (event, ...args) => {
                 validateEventFrame(event.senderFrame);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 callback(...(args as any));
             });
         }

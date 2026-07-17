@@ -38,7 +38,7 @@ export function SegmentedController<T extends string = string>(
 
         resizeObserver.observe(ref.current);
         return () => resizeObserver.disconnect();
-    }, []);
+    }, [props.widthWrapOrientationLimit]);
 
     const colorScheme = useComputedColorScheme();
 

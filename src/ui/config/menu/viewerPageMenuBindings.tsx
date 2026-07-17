@@ -1,9 +1,4 @@
 import { router } from "../../router/router";
-import type {
-    Dropdown,
-    LiveMenuRenderProps,
-    Menu,
-} from "../../providers/MenuProvider";
 import {
     pushErrorNotification,
     pushInfoNotification,
@@ -72,6 +67,11 @@ import {
     createCheckForUpdatesMenuItem,
 } from "./helpMenuItems";
 import { createSettingsRootMenuItem } from "./settingsRootMenuItem";
+import type {
+    Menu,
+    LiveMenuRenderProps,
+    Dropdown,
+} from "../../providers/MenuContext";
 
 export function bindViewerMenu(): Menu {
     return [

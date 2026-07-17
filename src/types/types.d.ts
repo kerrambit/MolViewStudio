@@ -80,6 +80,7 @@ type IpcApiChannelMap = {
 type DeriveElectronApi<
     T extends Record<
         string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { args: any[]; reply: any; type: "invoke" | "sync" | "send" }
     >,
 > = {

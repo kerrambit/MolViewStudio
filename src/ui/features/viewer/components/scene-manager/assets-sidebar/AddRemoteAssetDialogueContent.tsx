@@ -34,7 +34,7 @@ export function AddRemoteAssetDialogueContent(
         let isValid = true;
         try {
             new URL(value);
-        } catch (error) {
+        } catch {
             isValid = false;
         }
         return isValid;

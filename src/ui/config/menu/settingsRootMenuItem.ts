@@ -1,4 +1,4 @@
-import type { Priority, RootMenuItem } from "../../providers/MenuProvider";
+import type { Priority, RootMenuItem } from "../../providers/MenuContext";
 
 export function createSettingsRootMenuItem(
     action: () => void,

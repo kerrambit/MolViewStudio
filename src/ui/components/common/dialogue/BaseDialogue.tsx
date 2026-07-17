@@ -46,7 +46,7 @@ export function BaseDialogue({
         };
         document.addEventListener("keydown", handleEscape);
         return () => document.removeEventListener("keydown", handleEscape);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, closeOnEscapeEntered]);
 
     // Closes the dialogue window when clicked on the blurred background.
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {

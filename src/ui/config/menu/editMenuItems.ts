@@ -5,13 +5,13 @@ import {
 } from "@tabler/icons-react";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import type {
-    Action,
     Dropdown,
-    MenuItem,
+    Action,
     Priority,
     RootMenuItem,
+    MenuItem,
     Section,
-} from "../../providers/MenuProvider";
+} from "../../providers/MenuContext";
 
 export function createEditRootMenuItem(
     task: Dropdown | Action,

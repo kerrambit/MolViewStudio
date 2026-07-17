@@ -258,7 +258,7 @@ export const UiLocalStorageService = {
                     `${PREFIX.ASSETS_TREE}${filepath}`,
                 );
                 return stored ? JSON.parse(stored) : {};
-            } catch (e) {
+            } catch {
                 return {};
             }
         },
