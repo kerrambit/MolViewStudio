@@ -62,6 +62,9 @@ export type LiveMenuRenderProps = {
     render: (liveDropdownTask: Dropdown | Action) => React.ReactNode;
 };
 
+/**
+ * Type for the LiveTask object.
+ */
 export type LiveTaskType = React.ComponentType<LiveMenuRenderProps>;
 
 /**

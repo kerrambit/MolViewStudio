@@ -1,4 +1,4 @@
-import { createInitialMenuForViewerPageMenu } from "../../config/createInitialMenuForViewerPageMenu";
+import { bindViewerMenu } from "../../config/menu/viewerPageMenuBindings";
 import { MenuProvider } from "../../providers/MenuProvider";
 
 interface ViewerPageBridgeProps {
@@ -7,7 +7,7 @@ interface ViewerPageBridgeProps {
 
 export function ViewerPageBridge({ children }: ViewerPageBridgeProps) {
     return (
-        <MenuProvider initialMenu={() => createInitialMenuForViewerPageMenu()}>
+        <MenuProvider initialMenu={() => bindViewerMenu()}>
             {children}
         </MenuProvider>
     );

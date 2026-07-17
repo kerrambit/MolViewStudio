@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Footer } from "../components/common/footer/Footer";
-import { Header } from "./header/Header";
+import { Header } from "../components/common/header/Header";
 import { ViewerPageBridge } from "./menu-bridges/ViewerPageBridge";
 import { ServerStatus } from "../features/system/components/server-status/ServerStatus";
 

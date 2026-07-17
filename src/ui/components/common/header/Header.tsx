@@ -1,8 +1,8 @@
-import { Menu } from "./menu/Menu";
-import { NotificationBell } from "./notification-bell/NotificationBell";
-import { TopBar } from "../../components/common/topbar/TopBar";
+import { Menu } from "../menu/Menu";
+import { TopBar } from "../topbar/TopBar";
 
 import "./Header.css";
+import { NotificationBell } from "./notification-bell/NotificationBell";
 
 export function Header() {
     return (

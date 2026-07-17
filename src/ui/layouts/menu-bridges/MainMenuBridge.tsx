@@ -1,5 +1,5 @@
 import { MenuProvider } from "../../providers/MenuProvider";
-import { createInitialMenuForMainMenu } from "../../config/createInitialMenuForMainMenu";
+import { bindMainMenu } from "../../config/menu/mainMenuBindings";
 
 interface MainMenuBridgeProps {
     children: React.ReactNode;
@@ -7,7 +7,7 @@ interface MainMenuBridgeProps {
 
 export function MainMenuBridge({ children }: MainMenuBridgeProps) {
     return (
-        <MenuProvider initialMenu={() => createInitialMenuForMainMenu()}>
+        <MenuProvider initialMenu={() => bindMainMenu()}>
             {children}
         </MenuProvider>
     );

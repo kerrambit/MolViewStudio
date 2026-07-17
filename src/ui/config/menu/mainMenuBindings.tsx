@@ -1,43 +1,47 @@
-import { router } from "../router/router";
+import { router } from "../../router/router";
 import type {
     Dropdown,
     LiveMenuRenderProps,
     Menu,
-} from "../providers/MenuProvider";
+} from "../../providers/MenuProvider";
+import { pushErrorNotification } from "../../services/NotificationService";
+import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
+import { useDialogueStore } from "../../stores/dialogueStore";
+import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
+import { IconFileFilled } from "@tabler/icons-react";
+import { useRecentFilesStore } from "../../stores/recentFilesStore";
 import {
     createAboutMenuItem,
     createAboutSection,
-    createCheckForUpdatesMenuItem,
-    createCheckForUpdatesSection,
-    createCreateNewProjectMenuItem,
     createExitMenuItem,
     createExitSection,
-    createFileImportSection,
     createFileRootMenuItem,
-    createGeneralHelpSection,
     createHelpRootMenuItem,
-    createHomePageMenuItem,
-    createHomePageSection,
-    createMolViewStudioMenuItem,
-    createMolstarMenuItem,
     createOnlyDevSection,
     createOpenDevToolsMenuItem,
+} from "./systemMenuItems";
+import {
+    createProjectActionsSection,
+    createCreateNewProjectMenuItem,
+    createFileImportSection,
     createOpenFileInViewerMenuItem,
     createOpenRecentFileInViewerMenuItem,
-    createOpenUserDataFolderMenuItem,
-    createProjectActionsSection,
-    createReportIssueMenuItem,
-    createSettingsRootMenuItem,
     createUtilitiesSection,
-} from "./systemMenuItems";
-import { pushErrorNotification } from "../services/NotificationService";
-import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
-import { useDialogueStore } from "../stores/dialogueStore";
-import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
-import { IconFileFilled } from "@tabler/icons-react";
-import { useRecentFilesStore } from "../stores/recentFilesStore";
+    createOpenUserDataFolderMenuItem,
+} from "./fileMenuItems";
+import {
+    createHomePageSection,
+    createHomePageMenuItem,
+    createGeneralHelpSection,
+    createMolViewStudioMenuItem,
+    createMolstarMenuItem,
+    createReportIssueMenuItem,
+    createCheckForUpdatesSection,
+    createCheckForUpdatesMenuItem,
+} from "./helpMenuItems";
+import { createSettingsRootMenuItem } from "./settingsRootMenuItem";
 
-export function createInitialMenuForMainMenu(): Menu {
+export function bindMainMenu(): Menu {
     return [
         createFileRootMenuItem([
             createProjectActionsSection([

@@ -1,73 +1,79 @@
-import { router } from "../router/router";
+import { router } from "../../router/router";
 import type {
     Dropdown,
     LiveMenuRenderProps,
     Menu,
-} from "../providers/MenuProvider";
-import {
-    createAboutMenuItem,
-    createAboutSection,
-    createCheckForUpdatesMenuItem,
-    createCheckForUpdatesSection,
-    createClearViwerMenuItem,
-    createCreateNewProjectMenuItem,
-    createEditRootMenuItem,
-    createExitMenuItem,
-    createExitSection,
-    createExportViwerMenuItem,
-    createFileImportSection,
-    createFileRootMenuItem,
-    createGeneralEditSection,
-    createGeneralHelpSection,
-    createHelpRootMenuItem,
-    createHomePageMenuItem,
-    createHomePageSection,
-    createLoadDefaultMVSJtemMenuItem,
-    createLoadDefaultMVSXtemMenuItem,
-    createLoadDefaultPDBItemMenuItem,
-    createMolViewStudioMenuItem,
-    createMolstarMenuItem,
-    createOnlyDevSection,
-    createOpenDevToolsMenuItem,
-    createOpenFileInViewerMenuItem,
-    createOpenRecentFileInViewerMenuItem,
-    createOpenUserDataFolderMenuItem,
-    createProjectActionsSection,
-    createReportIssueMenuItem,
-    createSettingsRootMenuItem,
-    createShowRawMVSTreeItemMenuItem,
-    createUtilitiesSection,
-} from "./systemMenuItems";
+} from "../../providers/MenuProvider";
 import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
     pushWarningNotification,
-} from "../services/NotificationService";
-import { AboutDialogueContent } from "../features/about-dialogue/components/AboutDialogueContent";
-import { ConfirmationDialogueContent } from "../components/common/dialogue/ConfirmationDialogueContent";
+} from "../../services/NotificationService";
+import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
+import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
 import {
     clearViewer,
     exportStateTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
-} from "../lib/molstar";
-import { ShowMVSTreeDialogueContent } from "../features/viewer/components/ShowMVSTreeDialogueContent";
+} from "../../lib/molstar";
+import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
     loadDefaultMVSJFile,
     loadDefaultMVSXFile,
     loadDefaultPDBFile,
-} from "../features/viewer/services/defaultLoaderService";
-import { useRegimeStore } from "../stores/regimeStore";
+} from "../../features/viewer/services/defaultLoaderService";
+import { useRegimeStore } from "../../stores/regimeStore";
 import {
     isManagedAssetLocal,
     useManagedAssetsStore,
-} from "../stores/managedAssetsStore";
-import { useDialogueStore } from "../stores/dialogueStore";
-import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
-import { useRecentFilesStore } from "../stores/recentFilesStore";
+} from "../../stores/managedAssetsStore";
+import { useDialogueStore } from "../../stores/dialogueStore";
+import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
+import { useRecentFilesStore } from "../../stores/recentFilesStore";
 import { IconFileFilled } from "@tabler/icons-react";
+import {
+    createAboutMenuItem,
+    createAboutSection,
+    createExitMenuItem,
+    createExitSection,
+    createFileRootMenuItem,
+    createHelpRootMenuItem,
+    createOnlyDevSection,
+    createOpenDevToolsMenuItem,
+} from "./systemMenuItems";
+import {
+    createEditRootMenuItem,
+    createGeneralEditSection,
+    createClearViwerMenuItem,
+    createExportViwerMenuItem,
+    createShowRawMVSTreeItemMenuItem,
+    createLoadDefaultPDBItemMenuItem,
+    createLoadDefaultMVSJtemMenuItem,
+    createLoadDefaultMVSXtemMenuItem,
+} from "./editMenuItems";
+import {
+    createProjectActionsSection,
+    createCreateNewProjectMenuItem,
+    createFileImportSection,
+    createOpenFileInViewerMenuItem,
+    createOpenRecentFileInViewerMenuItem,
+    createUtilitiesSection,
+    createOpenUserDataFolderMenuItem,
+} from "./fileMenuItems";
+import {
+    createHomePageSection,
+    createHomePageMenuItem,
+    createGeneralHelpSection,
+    createMolViewStudioMenuItem,
+    createMolstarMenuItem,
+    createReportIssueMenuItem,
+    createCheckForUpdatesSection,
+    createCheckForUpdatesMenuItem,
+} from "./helpMenuItems";
+import { createSettingsRootMenuItem } from "./settingsRootMenuItem";
 
-export function createInitialMenuForViewerPageMenu(): Menu {
+export function bindViewerMenu(): Menu {
     return [
         createFileRootMenuItem([
             createProjectActionsSection([
