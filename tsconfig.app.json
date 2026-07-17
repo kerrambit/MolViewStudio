@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "types": ["./src/types/types"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
