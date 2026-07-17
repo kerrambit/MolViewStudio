@@ -1,5 +1,9 @@
-import type { NavigateFunction } from "react-router-dom";
-import type { Menu } from "../providers/MenuProvider";
+import { router } from "../router/router";
+import type {
+    Dropdown,
+    LiveMenuRenderProps,
+    Menu,
+} from "../providers/MenuProvider";
 import {
     createAboutMenuItem,
     createAboutSection,
@@ -59,65 +63,112 @@ import {
     useManagedAssetsStore,
 } from "../stores/managedAssetsStore";
 import { useDialogueStore } from "../stores/dialogueStore";
+import { useWorkspaceManagement } from "../features/workspace/hooks/useWorkspaceManagement";
+import { useRecentFilesStore } from "../stores/recentFilesStore";
+import { IconFileFilled } from "@tabler/icons-react";
 
-export function createInitialMenuForViewerPageMenu(
-    navigate: NavigateFunction,
-    openFileExplorerAndLoadFileInApp: () => Promise<void>,
-    createNewProjectInApp: () => void,
-    loadRecentFileInApp: (path: string) => Promise<void>,
-): Menu {
+export function createInitialMenuForViewerPageMenu(): Menu {
     return [
         createFileRootMenuItem([
             createProjectActionsSection([
-                createCreateNewProjectMenuItem(async () => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to create new project?"
-                                />
-                            ),
+                createCreateNewProjectMenuItem(
+                    ({ render }: LiveMenuRenderProps) => {
+                        const { createNewProjectInApp } =
+                            useWorkspaceManagement();
+
+                        return render({
+                            action: async () => {
+                                const confirmed = await useDialogueStore
+                                    .getState()
+                                    .showDialogue<boolean>({
+                                        title: "Confirmation",
+                                        showCloseButton: false,
+                                        content: (close) => (
+                                            <ConfirmationDialogueContent
+                                                close={close}
+                                                doYouReallyWantToQuestion="Do you really want to create new project?"
+                                            />
+                                        ),
+                                    });
+                                if (confirmed) createNewProjectInApp();
+                            },
+                            type: "direct",
                         });
-                    if (confirmed) createNewProjectInApp();
-                }),
+                    },
+                ),
             ]),
             createFileImportSection([
-                createOpenFileInViewerMenuItem(async () => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
-                                />
-                            ),
+                createOpenFileInViewerMenuItem(
+                    ({ render }: LiveMenuRenderProps) => {
+                        const { openFileExplorerAndLoadFileInApp } =
+                            useWorkspaceManagement();
+                        return render({
+                            action: async () => {
+                                const confirmed = await useDialogueStore
+                                    .getState()
+                                    .showDialogue<boolean>({
+                                        title: "Confirmation",
+                                        showCloseButton: false,
+                                        content: (close) => (
+                                            <ConfirmationDialogueContent
+                                                close={close}
+                                                doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                                            />
+                                        ),
+                                    });
+                                if (confirmed)
+                                    openFileExplorerAndLoadFileInApp();
+                            },
+                            type: "secondary",
                         });
-                    if (confirmed) openFileExplorerAndLoadFileInApp();
-                }),
-                createOpenRecentFileInViewerMenuItem(async (path: string) => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to open the recent file in viewer?"
-                                />
-                            ),
-                        });
-                    if (confirmed) {
-                        await loadRecentFileInApp(path);
-                    }
-                }),
+                    },
+                ),
+                createOpenRecentFileInViewerMenuItem(
+                    ({ render }: LiveMenuRenderProps) => {
+                        const { loadRecentFileInApp } =
+                            useWorkspaceManagement();
+
+                        const recentFiles =
+                            useRecentFilesStore.getState().recentFiles;
+                        if (recentFiles.length === 0) return null;
+
+                        const liveDropdownTask: Dropdown = [
+                            {
+                                id: "recent-files-sub-list",
+                                items: recentFiles.map((path) => ({
+                                    id: `recent-file-${path}`,
+                                    icon: {
+                                        icon: IconFileFilled,
+                                        position: "left",
+                                    },
+                                    title: path,
+                                    task: {
+                                        type: "direct",
+                                        action: async () => {
+                                            const confirmed =
+                                                await useDialogueStore
+                                                    .getState()
+                                                    .showDialogue<boolean>({
+                                                        title: "Confirmation",
+                                                        showCloseButton: false,
+                                                        content: (close) => (
+                                                            <ConfirmationDialogueContent
+                                                                close={close}
+                                                                doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                                                            />
+                                                        ),
+                                                    });
+                                            if (confirmed)
+                                                await loadRecentFileInApp(path);
+                                        },
+                                    },
+                                })),
+                            },
+                        ];
+
+                        return render(liveDropdownTask);
+                    },
+                ),
             ]),
             createUtilitiesSection([
                 createOpenUserDataFolderMenuItem(async () => {
@@ -272,7 +323,9 @@ export function createInitialMenuForViewerPageMenu(
                 }),
             ]),
         ]),
-        createSettingsRootMenuItem(navigate),
+        createSettingsRootMenuItem(() => {
+            router.navigate("/settings");
+        }),
         createHelpRootMenuItem([
             createHomePageSection([
                 createHomePageMenuItem(async () => {
@@ -289,7 +342,7 @@ export function createInitialMenuForViewerPageMenu(
                             ),
                         });
                     if (confirmed) {
-                        navigate("/home");
+                        router.navigate("/home");
                     }
                 }),
             ]),

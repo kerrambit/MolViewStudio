@@ -2,7 +2,6 @@ import {
     IconBinaryTreeFilled,
     IconBrandGithub,
     IconCircleDashedX,
-    IconFileFilled,
     IconFilePlus,
     IconFileTime,
     IconFlag,
@@ -19,16 +18,14 @@ import {
 import type {
     Action,
     Dropdown,
-    LiveMenuRenderProps,
+    LiveTaskType,
     MenuItem,
     Priority,
     RootMenuItem,
     Section,
 } from "../providers/MenuProvider";
-import { type NavigateFunction } from "react-router-dom";
 import { pushInfoNotification } from "../services/NotificationService";
 import { BroomIcon } from "../components/icons/BroomIcon";
-import { useRecentFilesStore } from "../stores/recentFilesStore";
 
 export function createOnlyDevSection(
     id: string,
@@ -123,64 +120,44 @@ export function createFileRootMenuItem(
 }
 
 export function createOpenFileInViewerMenuItem(
-    action: () => Promise<void>,
+    liveTask: LiveTaskType,
 ): MenuItem {
     return {
         id: "open-file-in-viewer",
         title: "Open file in viewer",
         icon: { icon: IconFolderOpen, position: "left" },
         task: {
-            action: action,
+            action: () => {},
             type: "secondary",
         },
+        LiveTask: liveTask,
     };
 }
 
 export function createOpenRecentFileInViewerMenuItem(
-    action: (path: string) => Promise<void>,
+    liveTask: LiveTaskType,
 ): MenuItem {
     return {
         id: "recent-file-in-viewer",
         icon: { icon: IconFileTime, position: "left" },
         title: "Open recent file in viewer",
         task: [] as Dropdown,
-
-        // We define our LiveTask here.
-        LiveTask: ({ render }: LiveMenuRenderProps) => {
-            // Use recent files.
-            const recentFiles = useRecentFilesStore.getState().recentFiles;
-
-            if (recentFiles.length === 0) return null;
-
-            const liveDropdownTask: Dropdown = [
-                {
-                    id: "recent-files-sub-list",
-                    items: recentFiles.map((path) => ({
-                        id: `recent-file-${path}`,
-                        icon: { icon: IconFileFilled, position: "left" },
-                        title: path,
-                        task: {
-                            type: "direct",
-                            action: () => action(path),
-                        },
-                    })),
-                },
-            ];
-
-            return render(liveDropdownTask);
-        },
+        LiveTask: liveTask,
     };
 }
 
-export function createCreateNewProjectMenuItem(action: () => void): MenuItem {
+export function createCreateNewProjectMenuItem(
+    liveTask: LiveTaskType,
+): MenuItem {
     return {
         id: "create-new-project",
         title: "Create new project",
         icon: { icon: IconFilePlus, position: "left" },
         task: {
-            action: action,
+            action: () => {},
             type: "direct",
         },
+        LiveTask: liveTask,
     };
 }
 
@@ -306,16 +283,14 @@ export function createLoadDefaultMVSXtemMenuItem(
 // --------------------------------------------------------------------------------------
 
 export function createSettingsRootMenuItem(
-    navigate: NavigateFunction,
+    action: () => void,
     priority: Priority = 9,
 ): RootMenuItem {
     return {
         id: "settings",
         title: "Settings",
         task: {
-            action: () => {
-                navigate("/settings");
-            },
+            action: action,
             type: "direct",
         },
         priority: priority,

@@ -59,8 +59,10 @@ export type Action = {
  */
 export type LiveMenuRenderProps = {
     // Allows plugins to dynamically return an entirely fresh layout task array.
-    render: (liveDropdownTask: Dropdown) => React.ReactNode;
+    render: (liveDropdownTask: Dropdown | Action) => React.ReactNode;
 };
+
+export type LiveTaskType = React.ComponentType<LiveMenuRenderProps>;
 
 /**
  * Belongs to given `Section`. Can have tree-like structure, either leaf as `Action` or parent node as `Dropdown`, meaning another section can be opened in it.
@@ -74,7 +76,7 @@ export type MenuItem = {
      * Optional reactive hook layer. If provided, this functional component
      * overrides normal processing, allowing internal usage of useEffect or hooks.
      */
-    LiveTask?: React.ComponentType<LiveMenuRenderProps>;
+    LiveTask?: LiveTaskType;
 };
 
 /**

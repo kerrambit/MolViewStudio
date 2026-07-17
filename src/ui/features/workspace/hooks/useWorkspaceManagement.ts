@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { router } from "../../../router/router";
 import { MVSFilters, StructuralFilters } from "../../../../types/fileFilters";
 import { loggerUi } from "../../../services/UiLoggingService";
 import {
@@ -21,9 +21,6 @@ import { useProcessingStore } from "../../../stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
 
 export function useWorkspaceManagement() {
-    // Use navigate,
-    const navigate = useNavigate();
-
     // Use environment.
     const env = useEnvironment();
 
@@ -53,7 +50,7 @@ export function useWorkspaceManagement() {
                     useRegimeStore.getState().setRegime(regime);
 
                     // Navigate to viewer page.
-                    navigate("/viewer");
+                    router.navigate("/viewer");
                 }
             } else {
                 loggerUi.error(`Error occured: <${fileData.message}>!`);
@@ -62,7 +59,7 @@ export function useWorkspaceManagement() {
                 );
             }
         },
-        [addRecentFile, navigate],
+        [addRecentFile],
     );
 
     const openFileInViewer = useCallback(async () => {
@@ -241,8 +238,8 @@ export function useWorkspaceManagement() {
         useRegimeStore.getState().setRegime(regime);
 
         // Navigate to viewer page.
-        navigate("/viewer");
-    }, [navigate]);
+        router.navigate("/viewer");
+    }, []);
 
     const loadRecentFileInApp = useCallback(
         async (path: string) => {
