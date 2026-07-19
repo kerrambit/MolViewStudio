@@ -1,12 +1,12 @@
-import uvicorn  # type: ignore
+import uvicorn
 import argparse
-from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware
 
-from server import app
-from settings import settings, Settings
+from server.app.app import app
+from server.app.config import config, Config
 
 
-def get_cors_origins(settings: Settings):
+def get_cors_origins(settings: Config):
     origins = ["file://", f"http://localhost:{settings.port}"] + settings.cors
     return origins
 
@@ -41,19 +41,19 @@ def main():
 
     args = parser.parse_args()
 
-    settings.set(args.env, args.port, args.cors)
+    config.set(args.env, args.port, args.cors)
     reload = args.reload if args.env == "dev" else False
 
     print(
         f">>> Starting MolView Studio Server on <{args.host}:{args.port}> with log level set to <info>."
     )
     print(
-        f">>> Other settings: environment: <{settings.env}>, CORS: <{settings.cors}>, reloading: {reload}."
+        f">>> Other settings: environment: <{config.env}>, CORS: <{config.cors}>, reloading: {reload}."
     )
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=get_cors_origins(settings),
+        allow_origins=get_cors_origins(config),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
