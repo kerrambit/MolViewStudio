@@ -9,6 +9,7 @@
     "dev:react": "vite",
     "dev:electron": "wait-on http://localhost:5123 && npm run transpile:electron && cross-env NODE_ENV=development electron .",
     "generate:buildinfo": "tsx scripts/generate-build-info.ts",
+    "generate:api:schema": "tsx scripts/generate-api-schema.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -30,6 +31,8 @@
     "@mantine/notifications": "^9.1.1",
     "@tabler/icons-react": "^3.44.0",
     "@tanstack/react-query": "^5.100.9",
+    "@zodios/core": "^10.9.6",
+    "axios": "^1.18.1",
     "electron-log": "^5.4.3",
     "i18next": "^26.0.10",
     "molstar": "^5.11.0",
@@ -38,6 +41,7 @@
     "react-i18next": "^17.0.7",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.15.0",
+    "zod": "^3.25.76",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -56,6 +60,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "npm-run-all": "^4.1.5",
+    "openapi-zod-client": "^1.18.3",
     "postcss": "^8.5.14",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
