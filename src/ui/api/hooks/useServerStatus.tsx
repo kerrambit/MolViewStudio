@@ -1,24 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
-import { loggerUi } from "../../services/UiLoggingService";
-import { useDomain } from "./useDomain";
-import { API } from "../endpoints";
+import { useApiClient } from "./useApiClient";
+import { handleApiResponseError } from "../utils/handleApiResponseError";
 
 export function useServerStatus() {
-    const domain = useDomain();
+    // Use API client.
+    const { apiClient, endpoints, methods } = useApiClient();
 
     return useQuery({
         queryKey: ["serverStatus"],
         queryFn: async () => {
-            const response = await fetch(domain + API.health());
-
-            if (!response.ok) {
-                loggerUi.error(
-                    `When fetching <${API.health()}>, an error occured! Server returned: <${response.json}>.`,
+            try {
+                await apiClient.health();
+                return true;
+            } catch (error) {
+                handleApiResponseError(
+                    error,
+                    endpoints["health"],
+                    methods["health"],
                 );
-                throw new Error(`Server returned: <${response.status}>!`);
-            }
 
-            return true;
+                throw error;
+            }
         },
         retry: 3,
         retryDelay: 1000,

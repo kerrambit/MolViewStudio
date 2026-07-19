@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { loggerUi } from "../../services/UiLoggingService";
-import { useDomain } from "./useDomain";
-import { API } from "../endpoints";
+import { useApiClient } from "./useApiClient";
+import { handleApiResponseError } from "../utils/handleApiResponseError";
 
 interface ProcessVolumeArgs {
     filepath: string;
@@ -9,59 +9,30 @@ interface ProcessVolumeArgs {
 }
 
 export function useProcessVolume() {
-    const domain = useDomain();
+    // Use API client.
+    const { apiClient, endpoints, methods } = useApiClient();
 
     return useMutation({
         mutationFn: async (args: ProcessVolumeArgs) => {
-            const endpoint = domain + API.processVolume();
+            const endpoint = endpoints["processVolume"];
+            const method = methods["processVolume"];
 
-            loggerUi.info(`API Request: POST ${API.processVolume()}`);
-            loggerUi.info(`  - filepath: ${args.filepath}`);
-            loggerUi.info(`  - temporaryDirectory: ${args.temporaryDirectory}`);
-            let isServerError;
+            loggerUi.api.request(endpoint, method, {
+                filepath: args.filepath,
+                temporaryDirectory: args.temporaryDirectory,
+            });
+
             try {
-                const response = await fetch(endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        filepath: args.filepath,
-                        temporary_directory: args.temporaryDirectory,
-                    }),
+                const result = await apiClient.processVolume({
+                    filepath: args.filepath,
+                    temporary_directory: args.temporaryDirectory,
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    const errorMessage =
-                        errorData?.detail?.error ||
-                        errorData?.detail ||
-                        `Server returned ${response.status}`;
+                loggerUi.api.successResponse(endpoint, method);
 
-                    loggerUi.error(
-                        `API Response: POST ${API.processVolume()} - FAILED`,
-                    );
-                    loggerUi.error(`  - Status: ${response.status}`);
-                    loggerUi.error(`  - Error: ${errorMessage}`);
-
-                    const error = new Error(errorMessage);
-                    isServerError = true;
-                    throw error;
-                }
-
-                loggerUi.info(
-                    `API Response: POST ${API.processVolume()} - SUCCESS`,
-                );
-                loggerUi.info(`  - Status: ${response.status}`);
-
-                return response;
+                return result.output_files;
             } catch (error) {
-                if (error instanceof Error && isServerError) {
-                    loggerUi.error(
-                        `API Request: POST ${API.processVolume()} - NETWORK ERROR`,
-                    );
-                    loggerUi.error(`  - Error: ${error.message}`);
-                }
+                handleApiResponseError(error, endpoint, method);
                 throw error;
             }
         },
