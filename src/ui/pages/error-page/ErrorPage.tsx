@@ -17,7 +17,7 @@ export const ErrorPage = () => {
 
     // Log error.
     loggerUi.error(
-        `UI error was caught! The <RouteErrorScreen> component will be shown. Details: <${errorMessage}>.`,
+        `UI error was caught! The <ErrorPage> component will be shown. Details: <${errorMessage}>.`,
     );
 
     // Render the component.
