@@ -31,6 +31,7 @@ export function AutoScrollList<T>(props: AutoScrollListProps<T>) {
                 return (
                     <div
                         key={`scroll-item-${index}`}
+                        style={{ width: "100%" }}
                         ref={(el) => {
                             elementRefs.current[index] = el;
                         }}
