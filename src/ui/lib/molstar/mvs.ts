@@ -21,7 +21,6 @@ import { ensureUrlAsset } from "./molstarAssetService";
 import { Asset } from "molstar/lib/mol-util/assets";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { buildRenderTreeForMolstar } from "./mvsTree";
-import { applySnapshotByIndex } from "./molstarSnapshotService";
 import { checkMolstarAfterLoading } from "./core";
 import {
     getExtensionFromFileName,
@@ -579,24 +578,20 @@ export async function reloadMolstarAndRestoreIndex(
     assets: ManagedAsset[],
     updatedTree: MVSData_States,
 ) {
-    // Build and load the tree.
-    const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
-    const result = await loadMVSIntoMolstar(renderTree);
-    if (!result.success) {
-        return result.error;
-    }
-
     // Find the index of the view we are currently editing.
     const currentIndex = updatedTree.snapshots.findIndex(
-        (snap) => snap.metadata.key === viewKey,
+        (snap: Snapshot) => snap.metadata.key === viewKey,
     );
 
-    // Immediately force Molstar back to that index.
-    if (currentIndex !== -1) {
-        const result = await applySnapshotByIndex(currentIndex);
-        if (!result.success) {
-            return result.error;
-        }
+    // Build and load the tree.
+    const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
+    const result = await loadMVSIntoMolstar(
+        renderTree,
+        undefined,
+        currentIndex,
+    );
+    if (!result.success) {
+        return result.error;
     }
 }
 
@@ -604,11 +599,13 @@ export async function reloadMolstarAndRestoreIndex(
  * Loads MVS into Molstar and checks if the operation was successful.
  * @param stateTree state tree to load
  * @param sourceUrl optional sourceUrl (`Base for resolving relative URLs/URIs. May itself be a relative URL (relative to the window URL)`)
+ * @param currentIndex optional parameter which reloads given snapshot on the `currentIndex` index
  * @returns state tree or Error
  */
 export async function loadMVSIntoMolstar(
     stateTree: MVSData,
     sourceUrl?: string,
+    currentIndex?: number,
 ): Promise<Result<MVSData>> {
     const molstar = getMolstar();
 
@@ -620,6 +617,7 @@ export async function loadMVSIntoMolstar(
             keepCameraOrientation: true,
             extensions: [],
             sanityChecks: true,
+            defaultSnapshotIndex: currentIndex,
         });
 
         const result = checkMolstarAfterLoading();
