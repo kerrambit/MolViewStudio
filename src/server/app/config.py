@@ -5,7 +5,7 @@ class Env(Enum):
     DEV=1
     PROD=2
 
-class Settings:
+class Config:
     env: Env
     port: int
     cors: List[str]
@@ -28,4 +28,4 @@ class Settings:
         self.cors = cors
         
 
-settings = Settings()
+config = Config()

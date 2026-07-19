@@ -9,7 +9,6 @@ import {
 } from "../../../services/NotificationService";
 import { useProcessVolume } from "../../../api/hooks/useProcessVolume";
 import { useEnvironment } from "../../../hooks/useEnvironment";
-import { getFieldFromResponse } from "../../../api/utils/apiParser";
 import {
     createBlankMVSDataAsString,
     injectAssetIdsIntoTree,
@@ -128,7 +127,9 @@ export function useWorkspaceManagement() {
             const jobId = useProcessingStore.getState().startJob(fileToProcess);
 
             // Define temporary directory for processing of volumetric data.
-            const processingID = `${new Date().toISOString().replace(/:/g, "-")}`;
+            const processingID = `${new Date()
+                .toISOString()
+                .replace(/:/g, "-")}`;
             const temporaryDirectory = `${env.userDataPath}/Processing/${processingID}/RawData`;
 
             // Call async API endpoint.
@@ -138,23 +139,7 @@ export function useWorkspaceManagement() {
                     temporaryDirectory: temporaryDirectory,
                 },
                 {
-                    onSuccess: async (response) => {
-                        // Parse string array containing absolute paths.
-                        let absolutePaths: string[];
-                        try {
-                            absolutePaths = await getFieldFromResponse<
-                                string[]
-                            >(response, "output_files", "object");
-                        } catch (error) {
-                            pushErrorNotification(
-                                `An internal error occurred! For more information, see the logs or open an issue at https://github.com/kerrambit/MolStarApp.`,
-                            );
-                            loggerUi.error(
-                                `Internal error. Unable to parse the response: <${error}>!`,
-                            );
-                            return;
-                        }
-
+                    onSuccess: async (absolutePaths) => {
                         loggerUi.info(
                             `Processing outputted these raw files: [${absolutePaths}].`,
                         );
@@ -165,8 +150,9 @@ export function useWorkspaceManagement() {
                             .completeJob(jobId, absolutePaths);
 
                         // Read assets from processed volume file.
-                        const assets =
-                            await window.electron.getFileData(absolutePaths);
+                        const assets = await window.electron.getFileData(
+                            absolutePaths,
+                        );
 
                         if (assets instanceof Error) {
                             pushErrorNotification(
@@ -189,8 +175,11 @@ export function useWorkspaceManagement() {
                                     `Asset "${newRelativePath}${asset.name}" already exists!`,
                                 );
                             } else {
-                                pushSuccessNotification(
+                                loggerUi.info(
                                     `File "${fileToProcess.path}" was successfully processed and new asset "${newRelativePath}${asset.name}" added.`,
+                                );
+                                pushSuccessNotification(
+                                    `File "${fileToProcess.name}" was successfully processed and new asset "${newRelativePath}${asset.name}" added.`,
                                 );
                             }
                         });
@@ -202,7 +191,7 @@ export function useWorkspaceManagement() {
                             .failJob(jobId, err.message);
 
                         pushErrorNotification(
-                            `Processing of file "${fileToProcess.path}" failed! For more information, see the logs. You might need to restart the application and try processing once more.`,
+                            `Processing of file "${fileToProcess.name}" failed! For more information, see the 'Processing Jobs' sidebar, or the logs. You might need to restart the application and try processing once more.`,
                         );
                         loggerUi.error(
                             `Processing of file "${fileToProcess.path}" failed! See details: <${err.message}>.`,
