@@ -14,7 +14,7 @@ import { isDev } from "./utils/devUtils.js";
 import { createTray } from "./tray.js";
 import { logger } from "./utils/logger.js";
 import { getAvailablePort } from "./utils/portUtils.js";
-import { SplashScreen } from "./splashScreen.js";
+import { SplashScreen } from "./SplashScreen.js";
 import { registerAllIpcHandlers } from "./ipc/IpcRouter.js";
 
 app.on("ready", async () => {
@@ -214,7 +214,7 @@ function handleCloseEvents(
 
     mainWindow.on("close", (e) => {
         if (willClose) {
-            logger.info("Application and server will be closed.");
+            logger.info(`Application and server will be closed.\n`);
             quitServerProcess(serverProcess);
             serverProcess = null;
             return;

@@ -122,7 +122,9 @@ function renderDropzoneButtonsArea(
                             tooltip="Creates new blank project."
                             variant="ghost"
                             onClick={() => {
-                                loggerUi.info(`Create new project`);
+                                loggerUi.info(
+                                    "User's action on home page is: <Create new project>.",
+                                );
                                 createNewProjectInApp();
                             }}
                         />
@@ -135,7 +137,9 @@ function renderDropzoneButtonsArea(
                             tooltip="Shows file explorer and opens given file in viewer."
                             variant="ghost"
                             onClick={() => {
-                                loggerUi.info("Open file in viewer...");
+                                loggerUi.info(
+                                    "User's action on home page is: <Open file in viewer...>.",
+                                );
                                 openFileExplorerAndLoadFileInApp();
                             }}
                         />
