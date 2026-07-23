@@ -10,7 +10,9 @@ import { ConfirmationDialogueContent } from "../../components/common/dialogue/Co
 import {
     clearViewer,
     exportStateTree,
+    getCurrentViewIndex,
     injectRelativePathsBasedOnAssetIdsIntoTree,
+    reloadMolstarAndRestoreIndex,
 } from "../../lib/molstar";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
@@ -213,8 +215,30 @@ export function bindViewerMenu(): Menu {
         ]),
         createEditRootMenuItem([
             createHistorySection([
-                createUndoMenuItem(async () => {}),
-                createRedoMenuItem(async () => {}),
+                createUndoMenuItem(async () => {
+                    const regime = useRegimeStore.getState().regime;
+                    if (
+                        regime.kind === "viewing" ||
+                        regime.kind === "restoring"
+                    ) {
+                        const assets = useManagedAssetsStore.getState().assets;
+                        regime.undo();
+                        reloadMolstarAndRestoreIndex(
+                            undefined,
+                            Array.from(assets.values()),
+                            regime.history.current(),
+                        );
+                    }
+                }),
+                createRedoMenuItem(async () => {
+                    const regime = useRegimeStore.getState().regime;
+                    if (
+                        regime.kind === "viewing" ||
+                        regime.kind === "restoring"
+                    ) {
+                        regime.redo();
+                    }
+                }),
             ]),
             createGeneralEditSection([
                 createClearViwerMenuItem(async () => {
