@@ -56,7 +56,7 @@ export class SourceTreeHistory {
         return new SourceTreeHistory(
             [...this.past, this.present],
             next,
-            this.future.slice(1, -1),
+            this.future.slice(1),
         );
     }
 }
