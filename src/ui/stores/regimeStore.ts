@@ -69,13 +69,14 @@ export type RestoringSession = {
 
 export type IdlingRegime = {
     kind: "idling";
-    stageFile: (stagedFile: FileData) => void;
+    stageFile: (stagedFile: FileData, stagedAsFile: boolean) => void;
     reset: () => void;
 };
 
 export type StagingRegime = {
     kind: "staging";
     stagedFile: FileData;
+    stagedAsFile: boolean;
     viewFile: (
         viewedFile: FileData,
         sourceUrl: string,
@@ -86,7 +87,7 @@ export type StagingRegime = {
 
 export type ViewingRegime = {
     kind: "viewing";
-    stageFile: (stagedFile: FileData) => void;
+    stageFile: (stagedFile: FileData, stagedAsFile: boolean) => void;
     viewedFile: FileData;
     sourceUrl: string;
     history: SourceTreeHistory;
@@ -118,7 +119,8 @@ export type Regime =
 function makeIdling(set: (regime: Regime) => void): IdlingRegime {
     return {
         kind: "idling",
-        stageFile: (stagedFile) => set(makeStaging(set, stagedFile)),
+        stageFile: (stagedFile, stagedAsFile) =>
+            set(makeStaging(set, stagedFile, stagedAsFile)),
         reset: () => set(makeIdling(set)),
     };
 }
@@ -126,9 +128,11 @@ function makeIdling(set: (regime: Regime) => void): IdlingRegime {
 function makeStaging(
     set: (regime: Regime) => void,
     stagedFile: FileData,
+    stagedAsFile: boolean,
 ): StagingRegime {
     return {
         kind: "staging",
+        stagedAsFile: stagedAsFile,
         stagedFile,
         viewFile: (viewedFile, sourceUrl, initialStateTree) =>
             set(
@@ -151,7 +155,8 @@ function makeViewing(
 ): ViewingRegime {
     return {
         kind: "viewing",
-        stageFile: (stagedFile) => set(makeStaging(set, stagedFile)),
+        stageFile: (stagedFile, stagedAsFile) =>
+            set(makeStaging(set, stagedFile, stagedAsFile)),
         viewedFile,
         sourceUrl,
         history,

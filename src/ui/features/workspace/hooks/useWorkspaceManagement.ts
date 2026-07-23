@@ -39,7 +39,7 @@ export function useWorkspaceManagement() {
                 // Stage the file.
                 const regime = useRegimeStore.getState().regime;
                 if (regime.kind === "idling" || regime.kind === "viewing") {
-                    regime.stageFile(fileData[0]);
+                    regime.stageFile(fileData[0], true);
                 }
 
                 // Navigate to viewer page.
@@ -54,57 +54,62 @@ export function useWorkspaceManagement() {
         }
     }, []);
 
-    const openFileInViewer = useCallback(async () => {
-        // Open file in viewer only if the regime is in `staging` and we know we have data to open in a viewer.
-        const regime = useRegimeStore.getState().regime;
-        if (regime.kind !== "staging") {
-            return;
-        }
+    const openFileInViewer = useCallback(
+        async (logImportingInformation: boolean) => {
+            // Open file in viewer only if the regime is in `staging` and we know we have data to open in a viewer.
+            const regime = useRegimeStore.getState().regime;
+            if (regime.kind !== "staging") {
+                return;
+            }
 
-        // Import started.
-        pushInfoNotification("Import started.");
+            // Import started.
+            if (logImportingInformation)
+                pushInfoNotification("Import started.");
 
-        // Load the file and handle errors and undefined result.
-        const result = await loadFromFile(regime.stagedFile);
-        if (result instanceof Error) {
-            pushErrorNotification(
-                `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
-            );
-            loggerUi.error(
-                `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
-            );
+            // Load the file and handle errors and undefined result.
+            const result = await loadFromFile(regime.stagedFile);
+            if (result instanceof Error) {
+                pushErrorNotification(
+                    `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+                );
+                loggerUi.error(
+                    `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+                );
+                useManagedAssetsStore.getState().clearAssets();
+                regime.reset();
+                await clearViewer();
+                return;
+            } else if (result === undefined) {
+                pushInfoNotification(
+                    "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
+                );
+                useManagedAssetsStore.getState().clearAssets();
+                regime.reset();
+                await clearViewer(false);
+                return;
+            }
+
+            // Clears all managed assets and then register local assets in ManagedAssetsProvider.
             useManagedAssetsStore.getState().clearAssets();
-            regime.reset();
-            await clearViewer();
-            return;
-        } else if (result === undefined) {
-            pushInfoNotification(
-                "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
+            result.assets.forEach((a) => {
+                useManagedAssetsStore.getState().addAsset(a);
+            });
+
+            // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
+            const stateTree = injectAssetIdsIntoTree(
+                result.stateTree,
+                result.assets,
             );
-            useManagedAssetsStore.getState().clearAssets();
-            regime.reset();
-            await clearViewer(false);
-            return;
-        }
 
-        // Clears all managed assets and then register local assets in ManagedAssetsProvider.
-        useManagedAssetsStore.getState().clearAssets();
-        result.assets.forEach((a) => {
-            useManagedAssetsStore.getState().addAsset(a);
-        });
+            // Set the regime with new assets and state tree.
+            regime.viewFile(regime.stagedFile, result.sourceUrl, stateTree);
 
-        // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
-        const stateTree = injectAssetIdsIntoTree(
-            result.stateTree,
-            result.assets,
-        );
-
-        // Set the regime with new assets and state tree.
-        regime.viewFile(regime.stagedFile, result.sourceUrl, stateTree);
-
-        // Import ended.
-        pushSuccessNotification("Import ended!");
-    }, []);
+            // Import ended.
+            if (logImportingInformation)
+                pushSuccessNotification("Import ended!");
+        },
+        [],
+    );
 
     const openFileExplorerAndLoadFileInApp = useCallback(async () => {
         // Opends file explorer and let user to choose the file.

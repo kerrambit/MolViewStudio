@@ -110,7 +110,7 @@ export function useMolstarInit() {
                 return;
             }
 
-            await openFileInViewer();
+            await openFileInViewer(regime.stagedAsFile);
         };
 
         deconstruct();

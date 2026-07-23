@@ -1,5 +1,3 @@
-import { clearViewer } from "../../../lib/molstar";
-import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 import { useRegimeStore } from "../../../stores/regimeStore";
 
 export async function loadDefaultMVSJFile() {
@@ -10,13 +8,16 @@ export async function loadDefaultMVSJFile() {
 
     const regime = useRegimeStore.getState().regime;
     if (regime.kind === "idling" || regime.kind === "viewing") {
-        regime.stageFile({
-            path: "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
-            extension: "mvsj",
-            name: "1cbs.mvsj",
-            binary: false,
-            content: rawData,
-        });
+        regime.stageFile(
+            {
+                path: "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
+                extension: "mvsj",
+                name: "1cbs.mvsj",
+                binary: false,
+                content: rawData,
+            },
+            true,
+        );
     }
 }
 
@@ -29,13 +30,16 @@ export async function loadDefaultMVSXFile() {
 
     const regime = useRegimeStore.getState().regime;
     if (regime.kind === "idling" || regime.kind === "viewing") {
-        regime.stageFile({
-            path: "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
-            extension: "mvsx",
-            name: "1h9t.mvsx",
-            binary: true,
-            content: rawData,
-        });
+        regime.stageFile(
+            {
+                path: "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
+                extension: "mvsx",
+                name: "1h9t.mvsx",
+                binary: true,
+                content: rawData,
+            },
+            true,
+        );
     }
 }
 
@@ -45,12 +49,15 @@ export async function loadDefaultPDBFile() {
 
     const regime = useRegimeStore.getState().regime;
     if (regime.kind === "idling" || regime.kind === "viewing") {
-        regime.stageFile({
-            path: "https://files.rcsb.org/download/3PTB.pdb",
-            extension: "pdb",
-            name: "3PTB.pdb",
-            binary: false,
-            content: rawData,
-        });
+        regime.stageFile(
+            {
+                path: "https://files.rcsb.org/download/3PTB.pdb",
+                extension: "pdb",
+                name: "3PTB.pdb",
+                binary: false,
+                content: rawData,
+            },
+            true,
+        );
     }
 }
