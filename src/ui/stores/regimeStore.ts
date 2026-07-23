@@ -59,6 +59,15 @@ export class SourceTreeHistory {
             this.future.slice(1),
         );
     }
+
+    toString(): string {
+        const pastLabels = this.past.map((_, i) => `#${i}`);
+        const presentLabel = `[#${this.past.length}]`;
+        const futureStart = this.past.length + 1;
+        const futureLabels = this.future.map((_, i) => `#${futureStart + i}`);
+
+        return [...pastLabels, presentLabel, ...futureLabels].join(" -> ");
+    }
 }
 
 export type RestoringSession = {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Text } from "@mantine/core";
 import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
@@ -29,6 +29,12 @@ export function SceneManager(props: SceneManagerProps) {
         UiLocalStorageService.SceneManager.getBuilderSidebar(),
     );
 
+    const history = useMemo(() => {
+        if (regime.kind === "viewing") {
+            return regime.history;
+        }
+    }, [regime]);
+
     // Render the component.
     return (
         <>
@@ -41,6 +47,8 @@ export function SceneManager(props: SceneManagerProps) {
                 <Text size="xl" fw={520}>
                     Scene Manager
                 </Text>
+
+                <Text>History: {history?.toString()}</Text>
 
                 {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
                 {!props.isMolstarExpanded && (
