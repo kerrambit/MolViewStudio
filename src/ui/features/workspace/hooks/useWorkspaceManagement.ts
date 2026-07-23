@@ -225,9 +225,8 @@ export function useWorkspaceManagement() {
 
         // Stage the file.
         const regime = useRegimeStore.getState().regime;
-        regime.reset();
-        if (regime.kind === "idling") {
-            regime.stageFile(fileData);
+        if (regime.kind === "idling" || regime.kind === "viewing") {
+            regime.stageFile(fileData, false);
         }
 
         // Navigate to viewer page.
