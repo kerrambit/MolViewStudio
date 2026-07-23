@@ -10,7 +10,6 @@ import { ConfirmationDialogueContent } from "../../components/common/dialogue/Co
 import {
     clearViewer,
     exportStateTree,
-    getCurrentViewIndex,
     injectRelativePathsBasedOnAssetIdsIntoTree,
     reloadMolstarAndRestoreIndex,
 } from "../../lib/molstar";
