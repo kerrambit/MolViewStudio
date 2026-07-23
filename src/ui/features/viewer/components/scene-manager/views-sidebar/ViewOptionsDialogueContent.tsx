@@ -46,9 +46,9 @@ export function ViewOptionsDialogueContent({
     // Memoized view.
     const view = useMemo(() => {
         if (regime.kind !== "viewing") return null;
-        return regime.stateTree.snapshots.find(
-            (snap) => snap.metadata.key === viewKey,
-        );
+        return regime.history
+            .current()
+            .snapshots.find((snap) => snap.metadata.key === viewKey);
     }, [regime, viewKey]);
 
     // All view properies in the View Option dialogue.

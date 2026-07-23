@@ -10,11 +10,12 @@ import {
 import { useProcessVolume } from "../../../api/hooks/useProcessVolume";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 import {
+    clearViewer,
     createBlankMVSDataAsString,
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../../lib/molstar";
-import { useRegimeStore, type Regime } from "../../../stores/regimeStore";
+import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
@@ -32,19 +33,20 @@ export function useWorkspaceManagement() {
                 // Add recent file.
                 useRecentFilesStore.getState().addRecentFile(fileData[0].path);
 
+                // Log the information.
                 loggerUi.info(`File <${fileData[0].path}> was selected.`);
 
-                // Set regime to `staging`.
-                const regime: Regime = {
-                    kind: "staging",
-                    stagedFile: fileData[0],
-                };
-                useRegimeStore.getState().setRegime(regime);
+                // Stage the file.
+                const regime = useRegimeStore.getState().regime;
+                if (regime.kind === "idling" || regime.kind === "viewing") {
+                    regime.stageFile(fileData[0]);
+                }
 
                 // Navigate to viewer page.
                 router.navigate("/viewer");
             }
         } else {
+            // Log errors.
             loggerUi.error(`Error occured: <${fileData.message}>!`);
             pushErrorNotification(
                 `Error occured! Details: {${fileData.message}}.`,
@@ -53,7 +55,7 @@ export function useWorkspaceManagement() {
     }, []);
 
     const openFileInViewer = useCallback(async () => {
-        // Open file in viewer only if the regime is in `staging` and therefore we know we have data to open in a viewer.
+        // Open file in viewer only if the regime is in `staging` and we know we have data to open in a viewer.
         const regime = useRegimeStore.getState().regime;
         if (regime.kind !== "staging") {
             return;
@@ -62,7 +64,7 @@ export function useWorkspaceManagement() {
         // Import started.
         pushInfoNotification("Import started.");
 
-        // Load the file.
+        // Load the file and handle errors and undefined result.
         const result = await loadFromFile(regime.stagedFile);
         if (result instanceof Error) {
             pushErrorNotification(
@@ -71,12 +73,17 @@ export function useWorkspaceManagement() {
             loggerUi.error(
                 `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
             );
+            useManagedAssetsStore.getState().clearAssets();
+            regime.reset();
+            await clearViewer();
             return;
         } else if (result === undefined) {
-            useManagedAssetsStore.getState().clearAssets();
             pushInfoNotification(
                 "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
             );
+            useManagedAssetsStore.getState().clearAssets();
+            regime.reset();
+            await clearViewer(false);
             return;
         }
 
@@ -93,13 +100,7 @@ export function useWorkspaceManagement() {
         );
 
         // Set the regime with new assets and state tree.
-        useRegimeStore.getState().setRegime({
-            ...regime,
-            kind: "viewing",
-            viewedFile: regime.stagedFile,
-            stateTree: stateTree,
-            sourceUrl: result.sourceUrl,
-        });
+        regime.viewFile(regime.stagedFile, result.sourceUrl, stateTree);
 
         // Import ended.
         pushSuccessNotification("Import ended!");
@@ -205,8 +206,10 @@ export function useWorkspaceManagement() {
     );
 
     const createNewProjectInApp = useCallback(() => {
+        // Creates blank MVS of multiple kind.
         const fileContentString = createBlankMVSDataAsString();
 
+        // Mocked FileData object.
         const fileData: FileData = {
             path: "",
             extension: "mvsj",
@@ -215,12 +218,12 @@ export function useWorkspaceManagement() {
             content: fileContentString,
         };
 
-        const regime: Regime = {
-            kind: "staging",
-            stagedFile: fileData,
-        };
-
-        useRegimeStore.getState().setRegime(regime);
+        // Stage the file.
+        const regime = useRegimeStore.getState().regime;
+        regime.reset();
+        if (regime.kind === "idling") {
+            regime.stageFile(fileData);
+        }
 
         // Navigate to viewer page.
         router.navigate("/viewer");

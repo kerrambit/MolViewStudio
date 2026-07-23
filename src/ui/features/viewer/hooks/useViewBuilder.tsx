@@ -135,7 +135,6 @@ function applyViewModelToBranch(
 export function useViewBuilder(viewKey: string) {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
-    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use managed assets.
     const assets = useManagedAssetsStore((state) => state.assets);
@@ -150,9 +149,9 @@ export function useViewBuilder(viewKey: string) {
     // Memoized view.
     const view = useMemo(() => {
         return regime.kind === "viewing"
-            ? regime.stateTree.snapshots.find(
-                  (snap) => snap.metadata.key === viewKey,
-              )
+            ? regime.history
+                  .current()
+                  .snapshots.find((snap) => snap.metadata.key === viewKey)
             : null;
     }, [regime, viewKey]);
 
@@ -297,13 +296,10 @@ export function useViewBuilder(viewKey: string) {
             selectedAssetIds.includes(assetId) &&
             regime.kind === "viewing"
         ) {
-            // Keep copy of original state tree.
-            const originalStateTree = regime.stateTree;
-
             // Update source tree.
             const updatedTree: MVSData_States = {
-                ...regime.stateTree,
-                snapshots: regime.stateTree.snapshots.map((snap) =>
+                ...regime.history.current(),
+                snapshots: regime.history.current().snapshots.map((snap) =>
                     snap.metadata.key === viewKey
                         ? {
                               ...snap,
@@ -318,7 +314,7 @@ export function useViewBuilder(viewKey: string) {
             };
 
             // Update regime.
-            setRegime({ ...regime, stateTree: updatedTree });
+            regime.commitStateTree(updatedTree);
 
             // Try to reload Molstar viewer.
             const result = await reloadMolstarAndRestoreIndex(
@@ -332,8 +328,7 @@ export function useViewBuilder(viewKey: string) {
                 );
                 loggerUi.error(result.message);
 
-                // TODO: implement a global Undo stack, you would just call `undo()` here instead of manually reverting
-                setRegime({ ...regime, stateTree: originalStateTree });
+                regime.undo();
             }
         }
     };
@@ -371,10 +366,9 @@ export function useViewBuilder(viewKey: string) {
         }
 
         // Create updated state tree.
-        const originalStateTree = regime.stateTree;
         const updatedTree: MVSData_States = {
-            ...regime.stateTree,
-            snapshots: regime.stateTree.snapshots.map((snap) => {
+            ...regime.history.current(),
+            snapshots: regime.history.current().snapshots.map((snap) => {
                 if (snap.metadata.key === viewKey) {
                     let newRoot;
 
@@ -413,10 +407,7 @@ export function useViewBuilder(viewKey: string) {
         };
 
         // Update regime.
-        setRegime({
-            ...regime,
-            stateTree: updatedTree,
-        });
+        regime.commitStateTree(updatedTree);
 
         // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
@@ -431,7 +422,6 @@ export function useViewBuilder(viewKey: string) {
             );
             loggerUi.error(result.message);
 
-            // TODO: implement a global Undo stack, you would just call `undo()` here instead of manually reverting
             if (a) {
                 if (isChecked) {
                     decrementAssetUseCount(a.asset.url);
@@ -441,11 +431,7 @@ export function useViewBuilder(viewKey: string) {
             }
 
             setSelectedAssetIds(selectedAssetIds);
-
-            setRegime({
-                ...regime,
-                stateTree: originalStateTree,
-            });
+            regime.undo();
         }
     };
 

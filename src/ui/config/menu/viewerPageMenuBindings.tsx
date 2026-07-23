@@ -234,7 +234,7 @@ export function bindViewerMenu(): Menu {
                     if (confirmed) {
                         useManagedAssetsStore.getState().clearAssets();
                         await clearViewer();
-                        useRegimeStore.getState().setRegime({ kind: "idling" });
+                        useRegimeStore.getState().regime.reset();
                     }
                 }),
                 createExportViwerMenuItem(async () => {
@@ -244,7 +244,7 @@ export function bindViewerMenu(): Menu {
 
                         const result = await exportStateTree(
                             injectRelativePathsBasedOnAssetIdsIntoTree(
-                                regime.stateTree,
+                                regime.history.current(),
                                 Array.from(
                                     useManagedAssetsStore
                                         .getState()
