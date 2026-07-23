@@ -46,6 +46,9 @@ import {
     createLoadDefaultPDBItemMenuItem,
     createLoadDefaultMVSJtemMenuItem,
     createLoadDefaultMVSXtemMenuItem,
+    createMementoSection,
+    createUndoMenuItem,
+    createRedoMenuItem,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -209,6 +212,10 @@ export function bindViewerMenu(): Menu {
             ]),
         ]),
         createEditRootMenuItem([
+            createMementoSection([
+                createUndoMenuItem(async () => {}),
+                createRedoMenuItem(async () => {}),
+            ]),
             createGeneralEditSection([
                 createClearViwerMenuItem(async () => {
                     const confirmed = await useDialogueStore
