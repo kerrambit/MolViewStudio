@@ -23,9 +23,9 @@ jobs:
           - os: windows-latest
             platform: windows
             script: dist:win
-          - os: macos-latest
-            platform: mac
-            script: dist:mac
+          # - os: macos-latest
+          #   platform: mac
+          #   script: dist:mac
     
     runs-on: ${{ matrix.os }}
     
