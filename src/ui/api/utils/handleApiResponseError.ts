@@ -6,6 +6,7 @@ import { loggerUi } from "../../services/UiLoggingService";
  * @param error error
  * @returns message
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function constructErrorMessage(error: AxiosError<any, any>) {
     if (!error.response) {
         return error.message;
