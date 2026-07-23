@@ -218,17 +218,26 @@ export function bindViewerMenu(): Menu {
                 createUndoMenuItem(async () => {
                     const regime = useRegimeStore.getState().regime;
                     if (
-                        regime.kind === "viewing" ||
-                        regime.kind === "restoring"
-                    ) {
-                        const assets = useManagedAssetsStore.getState().assets;
-                        regime.undo();
-                        reloadMolstarAndRestoreIndex(
-                            undefined,
-                            Array.from(assets.values()),
-                            regime.history.current(),
-                        );
-                    }
+                        regime.kind !== "viewing" &&
+                        regime.kind !== "restoring"
+                    )
+                        return;
+
+                    const assets = useManagedAssetsStore.getState().assets;
+                    regime.undo();
+
+                    const updatedRegime = useRegimeStore.getState().regime;
+                    if (
+                        updatedRegime.kind !== "viewing" &&
+                        updatedRegime.kind !== "restoring"
+                    )
+                        return;
+
+                    await reloadMolstarAndRestoreIndex(
+                        undefined,
+                        Array.from(assets.values()),
+                        updatedRegime.history.current(),
+                    );
                 }),
                 createRedoMenuItem(async () => {
                     const regime = useRegimeStore.getState().regime;
