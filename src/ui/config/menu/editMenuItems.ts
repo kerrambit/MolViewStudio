@@ -27,9 +27,9 @@ export function createEditRootMenuItem(
     };
 }
 
-export function createMementoSection(items: MenuItem[]): Section {
+export function createHistorySection(items: MenuItem[]): Section {
     return {
-        id: "edit-memento",
+        id: "edit-history",
         items: items,
     };
 }

@@ -46,9 +46,9 @@ import {
     createLoadDefaultPDBItemMenuItem,
     createLoadDefaultMVSJtemMenuItem,
     createLoadDefaultMVSXtemMenuItem,
-    createMementoSection,
     createUndoMenuItem,
     createRedoMenuItem,
+    createHistorySection,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -212,7 +212,7 @@ export function bindViewerMenu(): Menu {
             ]),
         ]),
         createEditRootMenuItem([
-            createMementoSection([
+            createHistorySection([
                 createUndoMenuItem(async () => {}),
                 createRedoMenuItem(async () => {}),
             ]),
