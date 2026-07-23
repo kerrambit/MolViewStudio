@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from result import is_ok
 
 from server.models.volume import ProcessVolumeError, ProcessVolumeRequest, ProcessVolumeResponse
-from server.services.volume_processor import VolumeProcessor
+from server.services.volume_processor import Preprocessor
 
 router = APIRouter()
 
@@ -16,7 +16,7 @@ router = APIRouter()
     },
 )
 def process_volume(request: ProcessVolumeRequest) -> ProcessVolumeResponse:
-    result = VolumeProcessor.process_volume(request.filepath, request.temporary_directory)
+    result = Preprocessor.process_volume(request.filepath, request.temporary_directory)
 
     if is_ok(result):
         return ProcessVolumeResponse(output_files=result.ok_value)
