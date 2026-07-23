@@ -10,24 +10,26 @@ export type IdlingRegime = {
 
 export type StagingRegime = {
     kind: "staging";
-    fileToView: FileData;
+    stagedFile: FileData;
 };
 
 export type ViewingRegime = {
     kind: "viewing";
-    fileToView: FileData;
-    stateTree: MVSData_States;
+    viewedFile: FileData;
     sourceUrl: string;
+    stateTree: MVSData_States;
 };
 
 export type RestoringRegime = {
     kind: "restoring";
-    fileToView: FileData;
-    stateTree: MVSData_States;
+    viewedFile: FileData;
     sourceUrl: string;
-    snapshot: PluginState.Snapshot;
-    snapshotManagerState: PluginStateSnapshotManager.StateSnapshot;
-    arcpAssets: SerializedAssets; // TODO: this will be probably in my ManagedAssetsProvider
+    stateTree: MVSData_States;
+    session: {
+        snapshot: PluginState.Snapshot;
+        snapshotManagerState: PluginStateSnapshotManager.StateSnapshot;
+        arcpAssets: SerializedAssets; // TODO: this will be probably in my ManagedAssetsProvider
+    };
 };
 
 export type Regime =

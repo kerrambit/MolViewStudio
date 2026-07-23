@@ -8,7 +8,7 @@ export async function loadDefaultMVSJFile() {
 
     useRegimeStore.getState().setRegime({
         kind: "staging",
-        fileToView: {
+        stagedFile: {
             path: "https://raw.githubusercontent.com/molstar/molstar/master/examples/mvs/1cbs.mvsj",
             extension: "mvsj",
             name: "1cbs.mvsj",
@@ -27,7 +27,7 @@ export async function loadDefaultMVSXFile() {
 
     useRegimeStore.getState().setRegime({
         kind: "staging",
-        fileToView: {
+        stagedFile: {
             path: "https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx",
             extension: "mvsx",
             name: "1h9t.mvsx",
@@ -43,7 +43,7 @@ export async function loadDefaultPDBFile() {
 
     useRegimeStore.getState().setRegime({
         kind: "staging",
-        fileToView: {
+        stagedFile: {
             path: "https://files.rcsb.org/download/3PTB.pdb",
             extension: "pdb",
             name: "3PTB.pdb",

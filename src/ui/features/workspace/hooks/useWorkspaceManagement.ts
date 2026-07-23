@@ -37,7 +37,7 @@ export function useWorkspaceManagement() {
                 // Set regime to `staging`.
                 const regime: Regime = {
                     kind: "staging",
-                    fileToView: fileData[0],
+                    stagedFile: fileData[0],
                 };
                 useRegimeStore.getState().setRegime(regime);
 
@@ -63,13 +63,13 @@ export function useWorkspaceManagement() {
         pushInfoNotification("Import started.");
 
         // Load the file.
-        const result = await loadFromFile(regime.fileToView);
+        const result = await loadFromFile(regime.stagedFile);
         if (result instanceof Error) {
             pushErrorNotification(
-                `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+                `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
             );
             loggerUi.error(
-                `File "${regime.fileToView.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+                `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
             );
             return;
         } else if (result === undefined) {
@@ -96,6 +96,7 @@ export function useWorkspaceManagement() {
         useRegimeStore.getState().setRegime({
             ...regime,
             kind: "viewing",
+            viewedFile: regime.stagedFile,
             stateTree: stateTree,
             sourceUrl: result.sourceUrl,
         });
@@ -216,7 +217,7 @@ export function useWorkspaceManagement() {
 
         const regime: Regime = {
             kind: "staging",
-            fileToView: fileData,
+            stagedFile: fileData,
         };
 
         useRegimeStore.getState().setRegime(regime);

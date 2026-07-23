@@ -53,10 +53,10 @@ export function useMolstarInit() {
             // If the regime is in "restoring" state, we will supply the initializator the snapshots, assets to fully restore the session.
             regimeReference.current.kind === "restoring"
                 ? {
-                      snapshot: regimeReference.current.snapshot,
-                      assets: regimeReference.current.arcpAssets,
+                      snapshot: regimeReference.current.session.snapshot,
+                      assets: regimeReference.current.session.arcpAssets,
                       snapshotManagerState:
-                          regimeReference.current.snapshotManagerState,
+                          regimeReference.current.session.snapshotManagerState,
                   }
                 : null,
         ).then(() => {
@@ -76,10 +76,12 @@ export function useMolstarInit() {
                     setRegime({
                         ...regimeReference.current,
                         kind: "restoring",
-                        snapshot: getMolstarStateSnapshot(),
-                        arcpAssets: await serializeMVSXAssets(),
-                        snapshotManagerState:
-                            await getSnapshotManagerStateSnapshot(),
+                        session: {
+                            snapshot: getMolstarStateSnapshot(),
+                            arcpAssets: await serializeMVSXAssets(),
+                            snapshotManagerState:
+                                await getSnapshotManagerStateSnapshot(),
+                        },
                     });
                 }
                 clearViewer();
