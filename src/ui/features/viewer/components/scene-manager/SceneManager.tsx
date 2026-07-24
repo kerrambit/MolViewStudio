@@ -35,6 +35,11 @@ export function SceneManager(props: SceneManagerProps) {
         }
     }, [regime]);
 
+    // When in `idling` regime, do not render anything.
+    if (regime.kind === "idling") {
+        return null;
+    }
+
     // Render the component.
     return (
         <>
