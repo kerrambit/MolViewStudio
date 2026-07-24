@@ -26,17 +26,15 @@ export interface ViewOptionsDialogueContentReturnType {
 
 interface ViewOptionsDialogueContentProps {
     viewKey: string;
-    backgroundColor?: HexColor;
-    thumbnail?: Base64URLString;
+    backgroundColor: HexColor | undefined;
+    anyThumbnail: boolean;
+    captureScreenshot: boolean | undefined;
     close: (value?: ViewOptionsDialogueContentReturnType) => void;
 }
 
-export function ViewOptionsDialogueContent({
-    viewKey,
-    backgroundColor,
-    thumbnail,
-    close,
-}: ViewOptionsDialogueContentProps) {
+export function ViewOptionsDialogueContent(
+    props: ViewOptionsDialogueContentProps,
+) {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
 
@@ -48,8 +46,8 @@ export function ViewOptionsDialogueContent({
         if (regime.kind !== "viewing") return null;
         return regime.history
             .current()
-            .snapshots.find((snap) => snap.metadata.key === viewKey);
-    }, [regime, viewKey]);
+            .snapshots.find((snap) => snap.metadata.key === props.viewKey);
+    }, [regime, props.viewKey]);
 
     // All view properies in the View Option dialogue.
     const [lingerDuration, setLingerDuration] = useState<number>(
@@ -59,11 +57,18 @@ export function ViewOptionsDialogueContent({
         number | undefined
     >(view?.metadata.transition_duration_ms);
     const [canvasColor, setCanvasColor] = useState<HexColor | undefined>(
-        backgroundColor as HexColor,
+        props.backgroundColor as HexColor,
     );
-    const [captureScreenshot, setCaptureScreenshot] = useState<boolean>(
-        thumbnail !== undefined ? true : false,
-    );
+    const [captureScreenshot, setCaptureScreenshot] = useState<boolean>(() => {
+        if (props.captureScreenshot === undefined) {
+            if (props.anyThumbnail) {
+                return true;
+            }
+            return false;
+        }
+
+        return props.captureScreenshot;
+    });
     const [descriptionFormat, setDescriptionFormat] = useState<
         "plaintext" | "markdown"
     >(
@@ -281,7 +286,7 @@ export function ViewOptionsDialogueContent({
                             _description = undefined;
                             _descriptionFormat = undefined;
                         }
-                        close({
+                        props.close({
                             lingerDuration,
                             transitionDuration,
                             canvasColor,

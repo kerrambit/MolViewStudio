@@ -21,10 +21,13 @@ export const UiLocalStorageService = {
     },
 
     ViewOptions: {
-        getPending: (viewKey: string): boolean => {
+        getPending: (viewKey: string): boolean | undefined => {
             const value = localStorage.getItem(
                 `${PREFIX.PENDING_SCREENSHOT}${viewKey}`,
             );
+            if (value === null) {
+                return undefined;
+            }
             return value === "true";
         },
 
