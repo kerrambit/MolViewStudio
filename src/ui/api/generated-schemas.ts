@@ -1,11 +1,15 @@
 import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
-const VolumeRequest = z
+const ProcessVolumeRequest = z
   .object({ filepath: z.string(), temporary_directory: z.string() })
   .passthrough();
-const ProcessedVolumeResponse = z
-  .object({ output_files: z.array(z.string()) })
+const ProcessVolumeResponse = z
+  .object({
+    job_id: z.string(),
+    websocket_url: z.string(),
+    result_url: z.string(),
+  })
   .passthrough();
 const ValidationError = z
   .object({
@@ -20,14 +24,23 @@ const HTTPValidationError = z
   .object({ detail: z.array(ValidationError) })
   .partial()
   .passthrough();
+const ProcessedVolumeResponseStatus = z.enum(["finished", "pending"]);
+const ProcessedVolumeResponse = z
+  .object({
+    status: ProcessedVolumeResponseStatus,
+    output_files: z.array(z.string()),
+  })
+  .passthrough();
 const ErrorDetail = z.object({ error: z.string() }).passthrough();
 const ProcessVolumeError = z.object({ detail: ErrorDetail }).passthrough();
 
 export const schemas = {
-  VolumeRequest,
-  ProcessedVolumeResponse,
+  ProcessVolumeRequest,
+  ProcessVolumeResponse,
   ValidationError,
   HTTPValidationError,
+  ProcessedVolumeResponseStatus,
+  ProcessedVolumeResponse,
   ErrorDetail,
   ProcessVolumeError,
 };
@@ -49,11 +62,37 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: VolumeRequest,
+        schema: ProcessVolumeRequest,
+      },
+    ],
+    response: ProcessVolumeResponse,
+    errors: [
+      {
+        status: 422,
+        description: `Validation Error`,
+        schema: HTTPValidationError,
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/process_volume/:job_id/result",
+    alias: "getProcessedVolumeResult",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "job_id",
+        type: "Path",
+        schema: z.string(),
       },
     ],
     response: ProcessedVolumeResponse,
     errors: [
+      {
+        status: 404,
+        description: `Job was not found!`,
+        schema: ProcessVolumeError,
+      },
       {
         status: 422,
         description: `Validation Error`,
@@ -61,7 +100,7 @@ const endpoints = makeApi([
       },
       {
         status: 500,
-        description: `Processing failed.`,
+        description: `Processing failed!`,
         schema: ProcessVolumeError,
       },
     ],

@@ -30,7 +30,7 @@ export function useProcessVolume() {
 
                 loggerUi.api.successResponse(endpoint, method);
 
-                return result.output_files;
+                return result;
             } catch (error) {
                 handleApiResponseError(error, endpoint, method);
                 throw error;

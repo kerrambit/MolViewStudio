@@ -9,6 +9,7 @@ import { DialogueHost } from "./components/common/dialogue/DialogueHost.tsx";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./index.css";
+import { ProcessingJobSocketsManager } from "./features/viewer/services/ProcessingJobSocketsManager.tsx";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
         <UserSettingsProvider>
             <AppearanceProvider>
                 <RouterProvider router={router} />
+                <ProcessingJobSocketsManager />
                 <DialogueHost />
             </AppearanceProvider>
         </UserSettingsProvider>

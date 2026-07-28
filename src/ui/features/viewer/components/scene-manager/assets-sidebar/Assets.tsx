@@ -37,7 +37,7 @@ export function Assets() {
     const removeAsset = useManagedAssetsStore((state) => state.removeAsset);
 
     // Use workspace management.
-    const { processFile } = useWorkspaceManagement();
+    const { startFileProcessing } = useWorkspaceManagement();
 
     // Render the component.
     return (
@@ -100,7 +100,7 @@ export function Assets() {
                                         );
                                     }
                                 } else {
-                                    processFile(
+                                    await startFileProcessing(
                                         result.file,
                                         result.relativePath,
                                     );
@@ -193,7 +193,8 @@ export function Assets() {
                                                                 {
                                                                     title: "Edit remote asset",
                                                                     width: "800px",
-                                                                    showCloseButton: true,
+                                                                    showCloseButton:
+                                                                        true,
                                                                     content: (
                                                                         close,
                                                                     ) => (
@@ -241,7 +242,8 @@ export function Assets() {
                                                                 {
                                                                     title: "Delete Confirmation",
                                                                     width: "550px",
-                                                                    showCloseButton: true,
+                                                                    showCloseButton:
+                                                                        true,
                                                                     content: (
                                                                         close,
                                                                     ) => (

@@ -55,4 +55,12 @@ export const loggerUi = {
             loggerUi.error(`  - Error: ${error}`);
         },
     },
+    websockets: {
+        parserError: (endpoint: string, errorMessage: string) => {
+            loggerUi.error(
+                `API Response: WEBSOCKET ${endpoint} - Parser failure`,
+            );
+            loggerUi.error(`  - Error: ${errorMessage}`);
+        },
+    },
 };

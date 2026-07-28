@@ -128,16 +128,10 @@ export function useWorkspaceManagement() {
             });
     }, [loadFileInApp]);
 
-    const processFile = useCallback(
+    const startFileProcessing = useCallback(
         async (fileToProcess: FileData, newRelativePath: string) => {
-            // Start processing job.
-            const jobId = useProcessingStore.getState().startJob(fileToProcess);
-
             // Define temporary directory for processing of volumetric data.
-            const processingID = `${new Date()
-                .toISOString()
-                .replace(/:/g, "-")}`;
-            const temporaryDirectory = `${env.userDataPath}/Processing/${processingID}/RawData`;
+            const temporaryDirectory = `${env.userDataPath}/Processing`;
 
             // Call async API endpoint.
             processVolume.mutate(
@@ -146,59 +140,24 @@ export function useWorkspaceManagement() {
                     temporaryDirectory: temporaryDirectory,
                 },
                 {
-                    onSuccess: async (absolutePaths) => {
-                        loggerUi.info(
-                            `Processing outputted these raw files: [${absolutePaths}].`,
-                        );
-
-                        // Job is completed.
+                    onSuccess: async (result) => {
+                        // Start processing job.
                         useProcessingStore
                             .getState()
-                            .completeJob(jobId, absolutePaths);
+                            .startJob(
+                                fileToProcess,
+                                result.job_id,
+                                newRelativePath,
+                            );
 
-                        // Read assets from processed volume file.
-                        const assets = await window.electron.getFileData(
-                            absolutePaths,
+                        // Log the job start.
+                        loggerUi.info(
+                            `Processing job <${result.job_id}> has started.`,
                         );
-
-                        if (assets instanceof Error) {
-                            pushErrorNotification(
-                                `Application was not able to read processed assets! For more information, see the logs.`,
-                            );
-                            loggerUi.error(
-                                `Unable to read these assets [${absolutePaths}] from processed volume! Details: <${assets.message}>.`,
-                            );
-                            return;
-                        }
-
-                        assets.map((asset) => {
-                            // Adds local asset into asset manager.
-                            const wasSuccessful = useManagedAssetsStore
-                                .getState()
-                                .addLocalAsset(asset, newRelativePath);
-
-                            if (!wasSuccessful) {
-                                pushErrorNotification(
-                                    `Asset "${newRelativePath}${asset.name}" already exists!`,
-                                );
-                            } else {
-                                loggerUi.info(
-                                    `File "${fileToProcess.path}" was successfully processed and new asset "${newRelativePath}${asset.name}" added.`,
-                                );
-                                pushSuccessNotification(
-                                    `File "${fileToProcess.name}" was successfully processed and new asset "${newRelativePath}${asset.name}" added.`,
-                                );
-                            }
-                        });
                     },
                     onError: (err) => {
-                        // Job failed.
-                        useProcessingStore
-                            .getState()
-                            .failJob(jobId, err.message);
-
                         pushErrorNotification(
-                            `Processing of file "${fileToProcess.name}" failed! For more information, see the 'Processing Jobs' sidebar, or the logs. You might need to restart the application and try processing once more.`,
+                            `Processing of file "${fileToProcess.name}" could not be started, because: "${err.message}"! You might need to restart the application and try processing once more.`,
                         );
                         loggerUi.error(
                             `Processing of file "${fileToProcess.path}" failed! See details: <${err.message}>.`,
@@ -268,8 +227,8 @@ export function useWorkspaceManagement() {
         openFileInViewer,
 
         /**
-         * Function processes a file and save it as asset to given relative path. Does not change regime.
+         * Function starts processing of a file. Does not change regime.
          */
-        processFile,
+        startFileProcessing,
     };
 }
