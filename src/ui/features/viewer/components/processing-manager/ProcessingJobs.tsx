@@ -48,7 +48,7 @@ export function ProcessingJobs() {
                             }}
                         >
                             {job.status === "running" &&
-                                `Processing... ${job.progress}%`}
+                                `Processing... ${job.stage}%`}
 
                             {job.status === "success" && (
                                 <span style={{ color: "green" }}>
