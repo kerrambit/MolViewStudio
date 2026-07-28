@@ -1,22 +1,23 @@
 import enum
-from typing import List
 import shutil
 from pathlib import Path
-from result import Ok, Err, Result
 
 import volsegtools
+
+from server.models.volume import ProcessVolumeProgressMessage
+from server.services.jobs_manager import ProcessVolumeJob
+
 
 class Preprocessor:
     OVERWRITE_TMP = True
     RM_TMP = False
-    
+
     class SerializerKind(enum.StrEnum):
         BCIF = "bcif"
         MRC = "mrc"
         OBJ = "obj"
         PLY = "ply"
         STL = "stl"
-
 
     @staticmethod
     def get_serializer(kind: SerializerKind):
@@ -33,8 +34,7 @@ class Preprocessor:
                 return volsegtools.STLSerializer()
             case _:
                 raise RuntimeError("Unknown kind encountered")
-    
-    
+
     class DownsamplignAlgorithmKind(enum.StrEnum):
         NEAREST_NEIGHBOR = "nearest"
         MAX = "max"
@@ -48,8 +48,7 @@ class Preprocessor:
         STRIDED_SMOOTHING = "strided_smoothing"
         SEPARATED_SMOOTHING = "separated_smoothing"
         NULL = "null"
-    
-    
+
     @staticmethod
     def get_downsampling_strategy(kind: DownsamplignAlgorithmKind):
         match kind:
@@ -79,17 +78,17 @@ class Preprocessor:
                 return volsegtools.NullDownsamplingStrategy()
             case _:
                 return volsegtools.NullDownsamplingStrategy()
-            
-            
+
     class BundlingKind(enum.StrEnum):
         NULL = "null"
         MVXS = "mvsx"
         RESOLUTION_ZIP = "resolution_zip"
         ZIP = "zip"
-    
-    
+
     @staticmethod
-    def process_volume(filepath: str, temporary_directory: str) -> Result[List[str], str]:
+    async def process_volume(
+        job: ProcessVolumeJob, filepath: str, temporary_directory: str
+    ):
 
         volume_source = [Path(filepath)]
         strategy = "tricubic"
@@ -99,11 +98,11 @@ class Preprocessor:
         segmentation_mesh_serializer = "mrc"
         bundling_approach = "null"
 
-        local_store_path = (Path(temporary_directory) / "volsegtools_workdir")
+        local_store_path = Path(temporary_directory) / job.id / "volsegtools_workdir"
         if Preprocessor.OVERWRITE_TMP and local_store_path.exists():
             shutil.rmtree(local_store_path)
-            
-        output_path = Path(temporary_directory) / "volsegtools_output"
+
+        output_path = Path(temporary_directory) / job.id / "volsegtools_output"
 
         builder = volsegtools.create_builder()
         (
@@ -119,15 +118,21 @@ class Preprocessor:
             .add_segmentation_converter(volsegtools.VRMLConverter())
             .add_segmentation_converter(volsegtools.CIFConverter())
             .set_downsampling_strategy(Preprocessor.get_downsampling_strategy(strategy))
-            .set_serializer(volsegtools.DataKind.VOLUME, Preprocessor.get_serializer(volume_serializer))
             .set_serializer(
-                volsegtools.DataKind.SEGMENTATION_MASK, Preprocessor.get_serializer(segmentation_mask_serializer)
+                volsegtools.DataKind.VOLUME,
+                Preprocessor.get_serializer(volume_serializer),
             )
             .set_serializer(
-                volsegtools.DataKind.SEGMENTATION_VOLUME, Preprocessor.get_serializer(segmentation_volume_serializer)
+                volsegtools.DataKind.SEGMENTATION_MASK,
+                Preprocessor.get_serializer(segmentation_mask_serializer),
             )
             .set_serializer(
-                volsegtools.DataKind.SEGMENTATION_MESH, Preprocessor.get_serializer(segmentation_mesh_serializer)
+                volsegtools.DataKind.SEGMENTATION_VOLUME,
+                Preprocessor.get_serializer(segmentation_volume_serializer),
+            )
+            .set_serializer(
+                volsegtools.DataKind.SEGMENTATION_MESH,
+                Preprocessor.get_serializer(segmentation_mesh_serializer),
             )
             .set_output_dir(output_path)
         )
@@ -135,7 +140,10 @@ class Preprocessor:
         try:
             builder.set_work_dir(local_store_path)
         except RuntimeError as err:
-            return Err(str(err))
+            job.error = str(err)
+            job.done = True
+            await job.queue.put({"stage": "done", "error": job.error, "result": None})
+            return
 
         match bundling_approach:
             case Preprocessor.BundlingKind.MVXS:
@@ -149,23 +157,29 @@ class Preprocessor:
             builder.add_post_process_step(volsegtools.SmoothingStep())
 
         def update_status(state):
-            print(
-                ">>> Processing... {} ".format(
-                    state.current_stage,
-                )
+            job.queue.put_nowait(
+                ProcessVolumeProgressMessage(stage=state.current_stage)
             )
 
-        output_files: List[str] = []
         try:
             pipeline: volsegtools.ProcessingPipeline = builder.build()
             pipeline.add_state_change_callback(update_status)
-            result = pipeline.sync_process(volumes=volume_source, segmentations=[])
-            output_files = list(map(str, result))
+            result = await pipeline.process(
+                volumes=volume_source,
+                segmentations=[],
+            )
+            job.result = list(map(str, result))
             volsegtools.Timer.pop_stage()
         except volsegtools.UnsupportedCompressionError as err:
-            return Err(str(err))
+            job.error = str(err)
+        except Exception as err:
+            job.error = str(err)
         finally:
             if Preprocessor.RM_TMP and local_store_path.exists():
                 shutil.rmtree(local_store_path)
-
-        return Ok(output_files)
+            job.done = True
+            await job.queue.put(
+                ProcessVolumeProgressMessage(
+                    stage="done", error=job.error, result=job.result
+                )
+            )
