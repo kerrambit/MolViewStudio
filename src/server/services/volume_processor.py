@@ -1,3 +1,4 @@
+import asyncio
 import enum
 import shutil
 from pathlib import Path
@@ -156,18 +157,21 @@ class Preprocessor:
         if strategy == Preprocessor.DownsamplignAlgorithmKind.TRIQUINTIC:
             builder.add_post_process_step(volsegtools.SmoothingStep())
 
+        loop = asyncio.get_event_loop()
+
         def update_status(state):
-            job.queue.put_nowait(
-                ProcessVolumeProgressMessage(stage=state.current_stage)
+            loop.call_soon_threadsafe(
+                job.queue.put_nowait,
+                ProcessVolumeProgressMessage(stage=state.current_stage),
             )
 
-        try:
+        def run_pipeline_blocking():
             pipeline: volsegtools.ProcessingPipeline = builder.build()
             pipeline.add_state_change_callback(update_status)
-            result = await pipeline.process(
-                volumes=volume_source,
-                segmentations=[],
-            )
+            return pipeline.sync_process(volumes=volume_source, segmentations=[])
+
+        try:
+            result = await loop.run_in_executor(None, run_pipeline_blocking)
             job.result = list(map(str, result))
             volsegtools.Timer.pop_stage()
         except volsegtools.UnsupportedCompressionError as err:
