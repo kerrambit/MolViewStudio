@@ -82,7 +82,7 @@ app.on("ready", async () => {
                     ...details.responseHeaders,
                     "Content-Security-Policy": [
                         `default-src 'self' https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
-                            `connect-src 'self' http://localhost:${serverPort} http://localhost:5123 ws://localhost:5123 https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
+                            `connect-src 'self' http://localhost:${serverPort} ws://localhost:${serverPort} http://localhost:5123 ws://localhost:5123 https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
                             `img-src 'self' data: blob: https:; ` +
                             `style-src 'self' 'unsafe-inline'; ` +
                             `${scriptSourceDirective}`, // Inject the conditional rules safely here.
