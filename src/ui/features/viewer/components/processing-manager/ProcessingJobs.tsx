@@ -27,9 +27,7 @@ export function ProcessingJobs() {
                 </Text>
 
                 {jobsList.map((job) => (
-                    <>
-                        <ProcessingJobCard key={job.jobId} job={job} />
-                    </>
+                    <ProcessingJobCard key={job.jobId} job={job} />
                 ))}
             </Sidebar>
         )
