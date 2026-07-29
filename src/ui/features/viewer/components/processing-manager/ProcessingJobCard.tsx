@@ -73,6 +73,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                             ? job.stages.at(job.stages.length - 1)
                             : undefined
                     }
+                    isJobFinished={job.status !== "running"}
                 />
 
                 {/* Running job. */}

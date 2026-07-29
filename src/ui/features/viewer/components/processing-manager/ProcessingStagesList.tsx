@@ -4,12 +4,14 @@ import { useAppearance } from "../../../../hooks/useAppearance";
 
 export type ProcessingStagesListProps = {
     stages: string[];
-    currentStage?: string;
+    currentStage: string | undefined;
+    isJobFinished: boolean;
 };
 
 export function ProcessingStagesList({
     stages,
     currentStage,
+    isJobFinished,
 }: ProcessingStagesListProps) {
     // Use apperance.
     const { colorScheme } = useAppearance();
@@ -53,6 +55,9 @@ export function ProcessingStagesList({
                             }
                         >
                             {stage}
+                            {stage === currentStage && !isJobFinished
+                                ? "..."
+                                : ""}
                         </Text>
                     </div>
 
