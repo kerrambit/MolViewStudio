@@ -9,7 +9,7 @@ export type ProcessingJob = {
     file: FileData;
     status: ProcessingStatus;
     relativePath: string;
-    stage: string;
+    stages: string[];
     resultPaths?: string[];
     errorMessage?: string;
 };
@@ -27,6 +27,7 @@ export type ProcessingStore = {
     completeJob: (jobId: ProcessingJobId, resultPaths: string[]) => boolean;
     failJob: (jobId: ProcessingJobId, errorMessage: string) => boolean;
     clearJob: (jobId: ProcessingJobId) => boolean;
+    clearAllJobs: () => void;
 };
 
 export const useProcessingStore = create<ProcessingStore>((set, get) => ({
@@ -45,7 +46,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
             file,
             relativePath: newRelativePath,
             status: "running",
-            stage: "",
+            stages: [],
         });
         set({ jobs: newMap });
     },
@@ -61,7 +62,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         const newMap = new Map(currentJobs);
         newMap.set(jobId, {
             ...existingJob,
-            stage: stage,
+            stages: [...existingJob.stages, stage],
         });
 
         set({ jobs: newMap });
@@ -81,7 +82,6 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         newMap.set(jobId, {
             ...existingJob,
             status: "success",
-            stage: "Finished",
             resultPaths: resultPaths,
         });
 
@@ -123,5 +123,9 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         set({ jobs: newMap });
 
         return true;
+    },
+
+    clearAllJobs: () => {
+        set({ jobs: new Map() });
     },
 }));
