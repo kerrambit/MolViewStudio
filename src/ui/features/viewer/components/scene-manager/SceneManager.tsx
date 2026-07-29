@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Text } from "@mantine/core";
 import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
@@ -29,11 +29,11 @@ export function SceneManager(props: SceneManagerProps) {
         UiLocalStorageService.SceneManager.getBuilderSidebar(),
     );
 
-    const history = useMemo(() => {
-        if (regime.kind === "viewing") {
-            return regime.history;
-        }
-    }, [regime]);
+    // const history = useMemo(() => {
+    //     if (regime.kind === "viewing") {
+    //         return regime.history;
+    //     }
+    // }, [regime]);
 
     // When in `idling` regime, do not render anything.
     if (regime.kind === "idling") {
@@ -53,7 +53,7 @@ export function SceneManager(props: SceneManagerProps) {
                     Scene Manager
                 </Text>
 
-                <Text>History: {history?.toString()}</Text>
+                {/* <Text>History: {history?.toString()}</Text> */}
 
                 {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
                 {!props.isMolstarExpanded && (
