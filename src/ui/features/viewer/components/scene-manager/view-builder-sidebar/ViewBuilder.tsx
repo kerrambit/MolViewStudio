@@ -7,6 +7,7 @@ import { UiLocalStorageService } from "../../../../../services/UiLocalStorageSer
 import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 import { useAppearance } from "../../../../../hooks/useAppearance";
+import { getAllExtensions } from "../../../../../config/assetsDefinitions";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -108,10 +109,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                         "All",
                         "Local assets",
                         "Remote assets",
-                        ".map",
-                        ".bcif",
-                        ".cif",
-                        ".ccp4",
+                        ...getAllExtensions(),
                     ]}
                     value={selectedAssetFilters}
                     onChange={(filters) => {

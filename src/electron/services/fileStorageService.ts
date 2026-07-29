@@ -10,7 +10,14 @@ export function readFiles(filePaths: string[]): FileData[] | Error {
         try {
             const fileName = path.basename(filePath);
             const fileExtension = path.extname(filePath).toLowerCase().slice(1);
-            const isBinary = ["mvsx", "cvsx", "bcif", "map", "ccp4"].includes(
+            const isBinary = [
+                "mvsx",
+                "cvsx",
+                "bcif",
+                "map",
+                "ccp4",
+                "mrc",
+            ].includes(
                 // TODO: put it into some domain/config file
                 fileExtension,
             );
