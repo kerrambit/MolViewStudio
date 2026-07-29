@@ -26,7 +26,6 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
         useCallback(
             (stage: string) => {
                 // If the job does not exist, finish the handler and log the error.
-                console.log(stage);
                 const job = useProcessingStore.getState().jobs.get(props.jobId);
                 if (!job) {
                     pushErrorNotification(
