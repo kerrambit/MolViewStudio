@@ -76,6 +76,7 @@ import type {
     LiveMenuRenderProps,
     Dropdown,
 } from "../../providers/MenuContext";
+import { useProcessingStore } from "../../stores/processingStore";
 
 export function bindViewerMenu(): Menu {
     return [
@@ -265,6 +266,7 @@ export function bindViewerMenu(): Menu {
 
                     if (confirmed) {
                         useManagedAssetsStore.getState().clearAssets();
+                        useProcessingStore.getState().clearAllJobs();
                         await clearViewer();
                         useRegimeStore.getState().regime.reset();
                     }
