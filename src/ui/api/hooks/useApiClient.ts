@@ -8,7 +8,7 @@ export function useApiClient() {
 
     // Memoized the API client, endpoints and methods for each endpoint.
     return useMemo(() => {
-        const apiClient = createApiClient(domain);
+        const apiClient = createApiClient(domain.http);
 
         const endpoints = Object.fromEntries(
             apiClient.api.map((e) => [e.alias, e.path]),

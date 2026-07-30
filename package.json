@@ -41,6 +41,7 @@
     "react-i18next": "^17.0.7",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.15.0",
+    "react-use-websocket": "^4.13.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.14"
   },

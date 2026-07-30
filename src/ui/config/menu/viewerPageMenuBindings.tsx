@@ -46,6 +46,9 @@ import {
     createLoadDefaultPDBItemMenuItem,
     createLoadDefaultMVSJtemMenuItem,
     createLoadDefaultMVSXtemMenuItem,
+    createUndoMenuItem,
+    createRedoMenuItem,
+    createHistorySection,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -72,6 +75,7 @@ import type {
     LiveMenuRenderProps,
     Dropdown,
 } from "../../providers/MenuContext";
+import { useProcessingStore } from "../../stores/processingStore";
 
 export function bindViewerMenu(): Menu {
     return [
@@ -209,6 +213,45 @@ export function bindViewerMenu(): Menu {
             ]),
         ]),
         createEditRootMenuItem([
+            createHistorySection([
+                createUndoMenuItem(async () => {
+                    pushWarningNotification("Undo is not implemented yet!");
+
+                    // const regime = useRegimeStore.getState().regime;
+                    // if (
+                    //     regime.kind !== "viewing" &&
+                    //     regime.kind !== "restoring"
+                    // )
+                    //     return;
+
+                    // const assets = useManagedAssetsStore.getState().assets;
+                    // regime.undo();
+
+                    // const updatedRegime = useRegimeStore.getState().regime;
+                    // if (
+                    //     updatedRegime.kind !== "viewing" &&
+                    //     updatedRegime.kind !== "restoring"
+                    // )
+                    //     return;
+
+                    // await reloadMolstarAndRestoreIndex(
+                    //     undefined,
+                    //     Array.from(assets.values()),
+                    //     updatedRegime.history.current(),
+                    // );
+                }),
+                createRedoMenuItem(async () => {
+                    pushWarningNotification("Redo is not implemented yet!");
+
+                    // const regime = useRegimeStore.getState().regime;
+                    // if (
+                    //     regime.kind === "viewing" ||
+                    //     regime.kind === "restoring"
+                    // ) {
+                    //     regime.redo();
+                    // }
+                }),
+            ]),
             createGeneralEditSection([
                 createClearViwerMenuItem(async () => {
                     const confirmed = await useDialogueStore
@@ -226,8 +269,9 @@ export function bindViewerMenu(): Menu {
 
                     if (confirmed) {
                         useManagedAssetsStore.getState().clearAssets();
+                        useProcessingStore.getState().clearAllJobs();
                         await clearViewer();
-                        useRegimeStore.getState().setRegime({ kind: "idling" });
+                        useRegimeStore.getState().regime.reset();
                     }
                 }),
                 createExportViwerMenuItem(async () => {
@@ -237,7 +281,7 @@ export function bindViewerMenu(): Menu {
 
                         const result = await exportStateTree(
                             injectRelativePathsBasedOnAssetIdsIntoTree(
-                                regime.stateTree,
+                                regime.history.current(),
                                 Array.from(
                                     useManagedAssetsStore
                                         .getState()

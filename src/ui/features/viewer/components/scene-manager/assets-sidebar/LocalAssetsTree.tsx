@@ -42,7 +42,7 @@ export function LocalAssetsTree() {
     // State for the tree.
     const [expandedState, setExpandedState] = useState<Record<string, boolean>>(
         UiLocalStorageService.Assets.getInitialTreeExpandedState(
-            regime.kind === "viewing" ? regime.fileToView.path : "",
+            regime.kind === "viewing" ? regime.viewedFile.path : "",
         ),
     );
 
@@ -52,7 +52,7 @@ export function LocalAssetsTree() {
         onExpandedStateChange: (nextState) => {
             setExpandedState(nextState);
             UiLocalStorageService.Assets.setInitialTreeExpandedState(
-                regime.kind === "viewing" ? regime.fileToView.path : "",
+                regime.kind === "viewing" ? regime.viewedFile.path : "",
                 nextState,
             );
         },
@@ -92,7 +92,9 @@ export function LocalAssetsTree() {
                     return (
                         <Group
                             {...elementProps}
-                            className={`actionableListItemColor ${elementProps.className || ""}`}
+                            className={`actionableListItemColor ${
+                                elementProps.className || ""
+                            }`}
                             justify="space-between"
                             style={{
                                 ...elementProps.style,
@@ -147,7 +149,8 @@ export function LocalAssetsTree() {
                                                         {
                                                             title: "Edit local asset",
                                                             width: "800px",
-                                                            showCloseButton: true,
+                                                            showCloseButton:
+                                                                true,
                                                             content: (
                                                                 close,
                                                             ) => (

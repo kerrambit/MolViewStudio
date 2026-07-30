@@ -23,6 +23,8 @@ import {
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
+import { ProcessingPropertiesDialogueContent } from "./ProcessingPropertiesDialogueContent";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../../../config/processingDefinitions";
 
 export function Assets() {
     // Use managed assets.
@@ -37,7 +39,7 @@ export function Assets() {
     const removeAsset = useManagedAssetsStore((state) => state.removeAsset);
 
     // Use workspace management.
-    const { processFile } = useWorkspaceManagement();
+    const { startFileProcessing } = useWorkspaceManagement();
 
     // Render the component.
     return (
@@ -100,10 +102,30 @@ export function Assets() {
                                         );
                                     }
                                 } else {
-                                    processFile(
-                                        result.file,
-                                        result.relativePath,
-                                    );
+                                    const processingProperties =
+                                        await useDialogueStore
+                                            .getState()
+                                            .showDialogue<ProcessVolumeRequestWithoutFilepaths>(
+                                                {
+                                                    title: "Processing properties",
+                                                    width: "1000px",
+                                                    showCloseButton: true,
+                                                    content: (close) => (
+                                                        <ProcessingPropertiesDialogueContent
+                                                            file={result.file}
+                                                            close={close}
+                                                        />
+                                                    ),
+                                                },
+                                            );
+
+                                    if (processingProperties) {
+                                        await startFileProcessing(
+                                            result.file,
+                                            result.relativePath,
+                                            processingProperties,
+                                        );
+                                    }
                                 }
                             }
                         }}
@@ -193,7 +215,8 @@ export function Assets() {
                                                                 {
                                                                     title: "Edit remote asset",
                                                                     width: "800px",
-                                                                    showCloseButton: true,
+                                                                    showCloseButton:
+                                                                        true,
                                                                     content: (
                                                                         close,
                                                                     ) => (
@@ -241,7 +264,8 @@ export function Assets() {
                                                                 {
                                                                     title: "Delete Confirmation",
                                                                     width: "550px",
-                                                                    showCloseButton: true,
+                                                                    showCloseButton:
+                                                                        true,
                                                                     content: (
                                                                         close,
                                                                     ) => (

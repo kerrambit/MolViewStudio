@@ -6,24 +6,25 @@ import { useRegimeStore } from "../../../../../stores/regimeStore";
 export function StoryOptions() {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
-    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // View metadata.
     const metadata =
-        regime.kind === "viewing" ? regime.stateTree?.metadata : undefined;
+        regime.kind === "viewing"
+            ? regime.history.current().metadata
+            : undefined;
 
     // Handler for change of metadata from UI.
     const handleUpdateMetadata = (
         key: "title" | "description",
         value: string | undefined,
     ) => {
-        if (regime.kind !== "viewing" || !regime.stateTree) return;
+        if (regime.kind !== "viewing") return;
 
         if (value === "") {
             value = undefined;
         }
 
-        const newMetadata = { ...(regime.stateTree.metadata || {}) };
+        const newMetadata = { ...(regime.history.current().metadata || {}) };
 
         if (value === undefined) {
             delete newMetadata[key];
@@ -39,12 +40,9 @@ export function StoryOptions() {
             }
         }
 
-        setRegime({
-            ...regime,
-            stateTree: {
-                ...regime.stateTree,
-                metadata: newMetadata,
-            },
+        regime.commitStateTree({
+            ...regime.history.current(),
+            metadata: newMetadata,
         });
     };
 

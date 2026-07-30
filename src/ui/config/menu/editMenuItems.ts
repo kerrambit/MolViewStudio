@@ -2,6 +2,8 @@ import {
     IconPackageExport,
     IconBinaryTreeFilled,
     IconWorldDownload,
+    IconArrowBack,
+    IconArrowForward,
 } from "@tabler/icons-react";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import type {
@@ -25,10 +27,41 @@ export function createEditRootMenuItem(
     };
 }
 
+export function createHistorySection(items: MenuItem[]): Section {
+    return {
+        id: "edit-history",
+        items: items,
+    };
+}
+
 export function createGeneralEditSection(items: MenuItem[]): Section {
     return {
         id: "edit-general",
         items: items,
+    };
+}
+
+export function createUndoMenuItem(action: () => Promise<void>): MenuItem {
+    return {
+        id: "undo",
+        title: "Undo",
+        icon: { icon: IconArrowBack, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createRedoMenuItem(action: () => Promise<void>): MenuItem {
+    return {
+        id: "redo",
+        title: "Redo",
+        icon: { icon: IconArrowForward, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
     };
 }
 

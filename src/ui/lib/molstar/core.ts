@@ -101,11 +101,11 @@ export function disposeMolstar() {
 /**
  * Clears the viewer, clears the snapshots and file assets.
  */
-export async function clearViewer() {
+export async function clearViewer(clearContent: boolean = true) {
     const molstar = getMolstar();
     clearAllSnapshotsFromSnapshotManager();
     clearMVSXFileAssets();
-    await molstar.clear();
+    if (clearContent) await molstar.clear();
 }
 
 /**
@@ -140,7 +140,9 @@ export function checkMolstarAfterLoading(): Result<null> {
         const errorDetails = erroredCells
             .map(
                 (c) =>
-                    `[${c.obj?.label || c.transform.transformer.id}]: ${c.errorText}`,
+                    `[${c.obj?.label || c.transform.transformer.id}]: ${
+                        c.errorText
+                    }`,
             )
             .join(", ");
 

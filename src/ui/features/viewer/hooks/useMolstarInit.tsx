@@ -27,7 +27,6 @@ export function useMolstarInit() {
 
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
-    const setRegime = useRegimeStore((state) => state.setRegime);
 
     // Use workspace management.
     const { openFileInViewer } = useWorkspaceManagement();
@@ -53,10 +52,10 @@ export function useMolstarInit() {
             // If the regime is in "restoring" state, we will supply the initializator the snapshots, assets to fully restore the session.
             regimeReference.current.kind === "restoring"
                 ? {
-                      snapshot: regimeReference.current.snapshot,
-                      assets: regimeReference.current.arcpAssets,
+                      snapshot: regimeReference.current.session.snapshot,
+                      assets: regimeReference.current.session.arcpAssets,
                       snapshotManagerState:
-                          regimeReference.current.snapshotManagerState,
+                          regimeReference.current.session.snapshotManagerState,
                   }
                 : null,
         ).then(() => {
@@ -72,10 +71,9 @@ export function useMolstarInit() {
             const runCleanup = async () => {
                 // If the current state is "viewing", and the Molstar is about to be destroyed,
                 // we have to save the session to be able to later restore it (in the application lifetime).
-                if (regimeReference.current.kind === "viewing") {
-                    setRegime({
-                        ...regimeReference.current,
-                        kind: "restoring",
+                const regime = regimeReference.current;
+                if (regime.kind === "viewing") {
+                    regime.suspend({
                         snapshot: getMolstarStateSnapshot(),
                         arcpAssets: await serializeMVSXAssets(),
                         snapshotManagerState:
@@ -94,7 +92,7 @@ export function useMolstarInit() {
                 disposeMolstar();
             });
         };
-    }, [setRegime]);
+    }, []);
 
     // Restore the previous workspace.
     useEffect(() => {
@@ -102,12 +100,8 @@ export function useMolstarInit() {
             return;
         }
 
-        // Set the regime back to viewing.
-        setRegime({
-            ...regime,
-            kind: "viewing",
-        });
-    }, [regime, setRegime, molstarLoading]);
+        regime.resume();
+    }, [regime, molstarLoading]);
 
     // Start deconstruction of file to view.
     useEffect(() => {
@@ -116,7 +110,7 @@ export function useMolstarInit() {
                 return;
             }
 
-            await openFileInViewer();
+            await openFileInViewer(regime.stagedAsFile);
         };
 
         deconstruct();

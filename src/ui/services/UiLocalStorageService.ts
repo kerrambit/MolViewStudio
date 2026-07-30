@@ -13,6 +13,7 @@ const PREFIX = {
     VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
     ASSETS_TREE: "assets-tree-",
+    PROCESSING_JOBS: "processing-jobs-",
 };
 
 export const UiLocalStorageService = {
@@ -21,10 +22,13 @@ export const UiLocalStorageService = {
     },
 
     ViewOptions: {
-        getPending: (viewKey: string): boolean => {
+        getPending: (viewKey: string): boolean | undefined => {
             const value = localStorage.getItem(
                 `${PREFIX.PENDING_SCREENSHOT}${viewKey}`,
             );
+            if (value === null) {
+                return undefined;
+            }
             return value === "true";
         },
 
@@ -271,6 +275,31 @@ export const UiLocalStorageService = {
                 `${PREFIX.ASSETS_TREE}${filepath}`,
                 JSON.stringify(state),
             );
+        },
+    },
+    ProcessingJobs: {
+        getJobExpandedState: (jobId: string) => {
+            const result = localStorage.getItem(
+                `${PREFIX.PROCESSING_JOBS}${jobId}`,
+            );
+            if (result) {
+                return result === "true";
+            }
+            return true;
+        },
+
+        setJobExpandedState: (jobId: string, isExpanded: boolean): void => {
+            if (isExpanded) {
+                localStorage.setItem(
+                    `${PREFIX.PROCESSING_JOBS}${jobId}`,
+                    "true",
+                );
+            } else {
+                localStorage.setItem(
+                    `${PREFIX.PROCESSING_JOBS}${jobId}`,
+                    "false",
+                );
+            }
         },
     },
 };

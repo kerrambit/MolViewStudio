@@ -29,6 +29,28 @@ import {
 import { isExtensionSupported } from "../../config/assetsDefinitions";
 
 /**
+ * Retrieves current view index.
+ * @returns index or undefined
+ */
+export function getCurrentViewIndex() {
+    const molstar = getMolstar();
+    const current = molstar.managers.snapshot.state.current;
+
+    if (current) {
+        const entries = molstar.managers.snapshot.state.entries;
+        let currentIndex;
+
+        for (let i = 0; i < entries.count(); i++) {
+            const entry = entries.get(i);
+            if (entry?.snapshot?.id === current) {
+                currentIndex = i;
+                return currentIndex;
+            }
+        }
+    }
+}
+
+/**
  * Creates an archive from index file and assets.
  * @param index index
  * @param assets assets array (already in relative form)
@@ -141,7 +163,9 @@ export async function exportStateTree(
     const blob = createMVSBlob(data);
 
     // Let the user to download the story.
-    const filename = `${stateTree.metadata.title ? stateTree.metadata.title : "export"}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+    const filename = `${
+        stateTree.metadata.title ? stateTree.metadata.title : "export"
+    }.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
 
     return { success: true, value: true };
@@ -568,20 +592,25 @@ export async function loadMVSJFile(index: string): Promise<
 
 /**
  * Reloads Molstar with given `updated_tree` and restore index of view.
- * @param viewKey key of the view which has been edited
+ * @param viewKey key of the view which has been edited; if undefined, we call function to get index from Molstar library itself
  * @param assets assets from `ManagedAssets` manager
  * @param updatedTree updated tree
  * @returns undefined or Error of any problem occurs
  */
 export async function reloadMolstarAndRestoreIndex(
-    viewKey: string,
+    viewKey: string | undefined,
     assets: ManagedAsset[],
     updatedTree: MVSData_States,
 ) {
-    // Find the index of the view we are currently editing.
-    const currentIndex = updatedTree.snapshots.findIndex(
-        (snap: Snapshot) => snap.metadata.key === viewKey,
-    );
+    let currentIndex;
+    if (!viewKey) {
+        currentIndex = getCurrentViewIndex();
+    } else {
+        // Find the index of the view we are currently editing.
+        currentIndex = updatedTree.snapshots.findIndex(
+            (snap: Snapshot) => snap.metadata.key === viewKey,
+        );
+    }
 
     // Build and load the tree.
     const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
