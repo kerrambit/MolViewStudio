@@ -77,98 +77,101 @@ class Preprocessor:
         segmentation_mesh_serializer: SerializerKind,
         bundling_approach: BundlingKind,
     ):
-        volume_source: List[Path] = [Path(path) for path in volume_filepaths]
-        segmentation_source: List[Path] = [
-            Path(path) for path in segmentations_filepaths
-        ]
-
         local_store_path = Path(temporary_directory) / job.id / "RawData"
-        if Preprocessor.OVERWRITE_TMP and local_store_path.exists():
-            shutil.rmtree(local_store_path)
-
         output_path = Path(temporary_directory) / job.id / "Output"
 
-        builder = volsegtools.create_builder()
-        (
-            builder.add_volume_converter(volsegtools.MRCConverter())
-            .add_volume_converter(volsegtools.TIFFConverter())
-            .add_volume_converter(volsegtools.NGFFConverter())
-            .add_volume_converter(volsegtools.ImarisConverter())
-            .add_volume_converter(volsegtools.CIFConverter())
-            .add_segmentation_converter(volsegtools.MeshConverter())
-            .add_segmentation_converter(volsegtools.NiiConverter())
-            .add_segmentation_converter(volsegtools.MRCConverter())
-            .add_segmentation_converter(volsegtools.SFFConverter())
-            .add_segmentation_converter(volsegtools.VRMLConverter())
-            .add_segmentation_converter(volsegtools.CIFConverter())
-            .set_downsampling_strategy(
-                Preprocessor.get_downsampling_strategy(downsampling_strategy)
-            )
-            .set_serializer(
-                volsegtools.DataKind.VOLUME,
-                Preprocessor.get_serializer(volume_serializer),
-            )
-            .set_serializer(
-                volsegtools.DataKind.SEGMENTATION_MASK,
-                Preprocessor.get_serializer(segmentation_mask_serializer),
-            )
-            .set_serializer(
-                volsegtools.DataKind.SEGMENTATION_VOLUME,
-                Preprocessor.get_serializer(segmentation_volume_serializer),
-            )
-            .set_serializer(
-                volsegtools.DataKind.SEGMENTATION_MESH,
-                Preprocessor.get_serializer(segmentation_mesh_serializer),
-            )
-            .set_output_dir(output_path)
-        )
-
         try:
+            volume_source: List[Path] = [Path(path) for path in volume_filepaths]
+            segmentation_source: List[Path] = [
+                Path(path) for path in segmentations_filepaths
+            ]
+
+            if Preprocessor.OVERWRITE_TMP and local_store_path.exists():
+                shutil.rmtree(local_store_path, ignore_errors=True)
+
+            local_store_path.mkdir(parents=True, exist_ok=True)
+            output_path.mkdir(parents=True, exist_ok=True)
+
+            builder = volsegtools.create_builder()
+            (
+                builder.add_volume_converter(volsegtools.MRCConverter())
+                .add_volume_converter(volsegtools.TIFFConverter())
+                .add_volume_converter(volsegtools.NGFFConverter())
+                .add_volume_converter(volsegtools.ImarisConverter())
+                .add_volume_converter(volsegtools.CIFConverter())
+                .add_segmentation_converter(volsegtools.MeshConverter())
+                .add_segmentation_converter(volsegtools.NiiConverter())
+                .add_segmentation_converter(volsegtools.MRCConverter())
+                .add_segmentation_converter(volsegtools.SFFConverter())
+                .add_segmentation_converter(volsegtools.VRMLConverter())
+                .add_segmentation_converter(volsegtools.CIFConverter())
+                .set_downsampling_strategy(
+                    Preprocessor.get_downsampling_strategy(downsampling_strategy)
+                )
+                .set_serializer(
+                    volsegtools.DataKind.VOLUME,
+                    Preprocessor.get_serializer(volume_serializer),
+                )
+                .set_serializer(
+                    volsegtools.DataKind.SEGMENTATION_MASK,
+                    Preprocessor.get_serializer(segmentation_mask_serializer),
+                )
+                .set_serializer(
+                    volsegtools.DataKind.SEGMENTATION_VOLUME,
+                    Preprocessor.get_serializer(segmentation_volume_serializer),
+                )
+                .set_serializer(
+                    volsegtools.DataKind.SEGMENTATION_MESH,
+                    Preprocessor.get_serializer(segmentation_mesh_serializer),
+                )
+                .set_output_dir(output_path)
+            )
+
             builder.set_work_dir(local_store_path)
-        except RuntimeError as err:
-            job.error = str(err)
-            job.done = True
-            await job.queue.put({"stage": "done", "error": job.error, "result": None})
-            return
 
-        match bundling_approach:
-            case BundlingKind.MVXS:
-                builder.set_bundler(volsegtools.MVSXBundler())
-            case BundlingKind.RESOLUTION_ZIP:
-                builder.set_bundler(volsegtools.ResolutionZipBundler())
-            case BundlingKind.ZIP:
-                builder.set_bundler(volsegtools.ZipBundler())
+            match bundling_approach:
+                case BundlingKind.MVXS:
+                    builder.set_bundler(volsegtools.MVSXBundler())
+                case BundlingKind.RESOLUTION_ZIP:
+                    builder.set_bundler(volsegtools.ResolutionZipBundler())
+                case BundlingKind.ZIP:
+                    builder.set_bundler(volsegtools.ZipBundler())
 
-        if downsampling_strategy == DownsamplignAlgorithmKind.TRIQUINTIC:
-            builder.add_post_process_step(volsegtools.SmoothingStep())
+            if downsampling_strategy == DownsamplignAlgorithmKind.TRIQUINTIC:
+                builder.add_post_process_step(volsegtools.SmoothingStep())
 
-        loop = asyncio.get_event_loop()
+            loop = asyncio.get_event_loop()
 
-        def update_status(state):
-            loop.call_soon_threadsafe(
-                job.queue.put_nowait,
-                ProcessVolumeProgressMessage(stage=state.current_stage),
-            )
+            def update_status(state):
+                loop.call_soon_threadsafe(
+                    job.queue.put_nowait,
+                    ProcessVolumeProgressMessage(stage=state.current_stage),
+                )
 
-        def run_pipeline_blocking():
-            pipeline: volsegtools.ProcessingPipeline = builder.build()
-            pipeline.add_state_change_callback(update_status)
-            return pipeline.sync_process(
-                volumes=volume_source, segmentations=segmentation_source
-            )
+            def run_pipeline_blocking():
+                pipeline: volsegtools.ProcessingPipeline = builder.build()
+                pipeline.add_state_change_callback(update_status)
+                return pipeline.sync_process(
+                    volumes=volume_source, segmentations=segmentation_source
+                )
 
-        try:
             result = await loop.run_in_executor(None, run_pipeline_blocking)
             job.result = list(map(str, result))
-            volsegtools.Timer.pop_stage()
-        except volsegtools.UnsupportedCompressionError as err:
-            job.error = str(err)
+
         except Exception as err:
             job.error = str(err)
+
         finally:
+            try:
+                volsegtools.Timer.pop_stage()
+            except Exception as e:
+                print(f"Timer pop warning: {e}")
+
             if Preprocessor.RM_TMP and local_store_path.exists():
-                shutil.rmtree(local_store_path)
+                shutil.rmtree(local_store_path, ignore_errors=True)
+
             job.done = True
+
             await job.queue.put(
                 ProcessVolumeProgressMessage(
                     stage="done", error=job.error, result=job.result
