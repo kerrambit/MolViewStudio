@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Text } from "@mantine/core";
 import { IconArrowDown } from "@tabler/icons-react";
 import { useAppearance } from "../../../../hooks/useAppearance";
@@ -13,8 +14,35 @@ export function ProcessingStagesList({
     currentStage,
     isJobFinished,
 }: ProcessingStagesListProps) {
-    // Use apperance.
+    // Use appearance.
     const { colorScheme } = useAppearance();
+
+    // Processed stages.
+    const processedStages = useMemo(() => {
+        const totals: Record<string, number> = {};
+        const counts: Record<string, number> = {};
+
+        stages.forEach((stage) => {
+            totals[stage] = (totals[stage] || 0) + 1;
+        });
+
+        return stages.map((stage, index) => {
+            let displayName = stage;
+
+            if (totals[stage] > 1) {
+                counts[stage] = (counts[stage] || 0) + 1;
+                displayName = `${stage} ${counts[stage]}`;
+            }
+
+            return {
+                originalName: stage,
+                displayName,
+                key: `${stage}-${index}`,
+                isActive:
+                    stage === currentStage || displayName === currentStage,
+            };
+        });
+    }, [stages, currentStage]);
 
     // Render the component.
     return (
@@ -26,9 +54,9 @@ export function ProcessingStagesList({
                 gap: "0.25em",
             }}
         >
-            {stages.map((stage, index) => (
+            {processedStages.map((stageObj, index) => (
                 <div
-                    key={stage}
+                    key={stageObj.key}
                     style={{
                         display: "flex",
                         flexDirection: "column",
@@ -45,23 +73,21 @@ export function ProcessingStagesList({
                     >
                         <Text
                             size="sm"
-                            fw={stage === currentStage ? 700 : 400}
+                            fw={stageObj.isActive ? 700 : 400}
                             c={
-                                stage === currentStage
+                                stageObj.isActive
                                     ? colorScheme === "dark"
                                         ? "white"
                                         : "black"
                                     : undefined
                             }
                         >
-                            {stage}
-                            {stage === currentStage && !isJobFinished
-                                ? "..."
-                                : ""}
+                            {stageObj.displayName}
+                            {stageObj.isActive && !isJobFinished ? "..." : ""}
                         </Text>
                     </div>
 
-                    {index < stages.length - 1 && (
+                    {index < processedStages.length - 1 && (
                         <IconArrowDown size="1em" style={{ opacity: 0.5 }} />
                     )}
                 </div>
