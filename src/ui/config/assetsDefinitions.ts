@@ -1,6 +1,6 @@
 export type RenderStrategy = "volume" | "structure" | "both" | "unsupported";
 export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
-export type ExtensionType = "map" | "cif" | "bcif" | "ccp4";
+export type ExtensionType = "map" | "cif" | "bcif" | "ccp4" | "mrc";
 
 export interface AssetDefinition {
     extension: string;
@@ -46,6 +46,15 @@ const SUPPORTED_ASSETS: Record<string, AssetDefinition> = {
         parser: "map",
         isBinary: true,
         description: "Electron Density File",
+        requiresProcessing: false,
+        offersProcessing: false,
+    },
+    mrc: {
+        extension: "mrc",
+        renderStrategy: "volume",
+        parser: "map",
+        isBinary: true,
+        description: "3D Electron Density File or 2D Image File",
         requiresProcessing: false,
         offersProcessing: false,
     },
@@ -98,5 +107,5 @@ export function getAllParserTypes(): string[] {
 }
 
 export function getAllExtensions(): string[] {
-    return ["map", "cif", "bcif", "ccp4"];
+    return ["map", "cif", "bcif", "ccp4", "mrc"];
 }

@@ -11,7 +11,6 @@ import {
     clearViewer,
     exportStateTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
-    reloadMolstarAndRestoreIndex,
 } from "../../lib/molstar";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
@@ -76,6 +75,7 @@ import type {
     LiveMenuRenderProps,
     Dropdown,
 } from "../../providers/MenuContext";
+import { useProcessingStore } from "../../stores/processingStore";
 
 export function bindViewerMenu(): Menu {
     return [
@@ -215,37 +215,41 @@ export function bindViewerMenu(): Menu {
         createEditRootMenuItem([
             createHistorySection([
                 createUndoMenuItem(async () => {
-                    const regime = useRegimeStore.getState().regime;
-                    if (
-                        regime.kind !== "viewing" &&
-                        regime.kind !== "restoring"
-                    )
-                        return;
+                    pushWarningNotification("Undo is not implemented yet!");
 
-                    const assets = useManagedAssetsStore.getState().assets;
-                    regime.undo();
+                    // const regime = useRegimeStore.getState().regime;
+                    // if (
+                    //     regime.kind !== "viewing" &&
+                    //     regime.kind !== "restoring"
+                    // )
+                    //     return;
 
-                    const updatedRegime = useRegimeStore.getState().regime;
-                    if (
-                        updatedRegime.kind !== "viewing" &&
-                        updatedRegime.kind !== "restoring"
-                    )
-                        return;
+                    // const assets = useManagedAssetsStore.getState().assets;
+                    // regime.undo();
 
-                    await reloadMolstarAndRestoreIndex(
-                        undefined,
-                        Array.from(assets.values()),
-                        updatedRegime.history.current(),
-                    );
+                    // const updatedRegime = useRegimeStore.getState().regime;
+                    // if (
+                    //     updatedRegime.kind !== "viewing" &&
+                    //     updatedRegime.kind !== "restoring"
+                    // )
+                    //     return;
+
+                    // await reloadMolstarAndRestoreIndex(
+                    //     undefined,
+                    //     Array.from(assets.values()),
+                    //     updatedRegime.history.current(),
+                    // );
                 }),
                 createRedoMenuItem(async () => {
-                    const regime = useRegimeStore.getState().regime;
-                    if (
-                        regime.kind === "viewing" ||
-                        regime.kind === "restoring"
-                    ) {
-                        regime.redo();
-                    }
+                    pushWarningNotification("Redo is not implemented yet!");
+
+                    // const regime = useRegimeStore.getState().regime;
+                    // if (
+                    //     regime.kind === "viewing" ||
+                    //     regime.kind === "restoring"
+                    // ) {
+                    //     regime.redo();
+                    // }
                 }),
             ]),
             createGeneralEditSection([
@@ -265,6 +269,7 @@ export function bindViewerMenu(): Menu {
 
                     if (confirmed) {
                         useManagedAssetsStore.getState().clearAssets();
+                        useProcessingStore.getState().clearAllJobs();
                         await clearViewer();
                         useRegimeStore.getState().regime.reset();
                     }

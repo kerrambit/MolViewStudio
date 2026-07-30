@@ -16,7 +16,6 @@ export function CollapseTrigger(props: CollapseTriggerProps) {
                 display: "flex",
                 alignItems: "center",
                 gap: "var(--mantine-spacing-xs)",
-                paddingBottom: "var(--mantine-spacing-sm)",
                 cursor: "pointer",
                 userSelect: "none",
             }}

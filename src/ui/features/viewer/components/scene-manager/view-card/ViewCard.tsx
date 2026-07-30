@@ -4,7 +4,6 @@ import { buildCSSClassString } from "../../../../../utils/cssClassBuilder";
 import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { ChevronUpActionIcon } from "../../../../../components/common/actionables/actions-icons/ChevronUpActionIcon";
 import { ChevronDownActionIcon } from "../../../../../components/common/actionables/actions-icons/ChevronDownActionIcon";
-import { RevertActionIcon } from "../../../../../components/common/actionables/actions-icons/RevertActionIcon";
 import { CopyActionIcon } from "../../../../../components/common/actionables/actions-icons/CopyActionIcon";
 import { ActionableTile } from "../../../../../components/common/actionables/ActionableTile";
 import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
@@ -17,9 +16,9 @@ import type {
     Base64Png,
     HexColor,
 } from "../../../../../lib/molstar";
+import { useViewCard } from "../../../hooks/useViewCard";
 
 import "./ViewCard.css";
-import { useViewCard } from "../../../hooks/useViewCard";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -124,7 +123,9 @@ export function ViewCard(props: ViewCardProps) {
                         onClick={() => props.onClick?.()}
                         title="Click to select this view."
                         src={props.metadata.thumbnail}
-                        alt={`${props.metadata.title || `${props.index}. view`} - thumbnail`}
+                        alt={`${
+                            props.metadata.title || `${props.index}. view`
+                        } - thumbnail`}
                     />
                 </div>
             )}
@@ -168,17 +169,6 @@ export function ViewCard(props: ViewCardProps) {
 
                     {/* Revert action icon. */}
                     <div style={{ display: "flex", gap: "0.5em" }}>
-                        <ActionableTile>
-                            <RevertActionIcon
-                                tooltip="Reverse changes."
-                                onClick={() =>
-                                    pushWarningNotification(
-                                        "Revert of changes is not implemented yet!",
-                                    )
-                                }
-                            />
-                        </ActionableTile>
-
                         {/* Copy action icon. */}
                         <ActionableTile>
                             <CopyActionIcon

@@ -397,7 +397,10 @@ export function useViewsManagement({
                     <ViewOptionsDialogueContent
                         viewKey={key}
                         backgroundColor={view.backgroundColor}
-                        thumbnail={view.thumbnail}
+                        anyThumbnail={view.thumbnail !== undefined}
+                        captureScreenshot={UiLocalStorageService.ViewOptions.getPending(
+                            view.key!,
+                        )}
                         close={close}
                     />
                 ),
