@@ -28,7 +28,18 @@ async def process_volume(request: ProcessVolumeRequest):
     get_jobs_manager_instance().set_job(job.id, job)
 
     asyncio.create_task(
-        Preprocessor.process_volume(job, request.filepath, request.temporary_directory)
+        Preprocessor.process_volume(
+            job,
+            request.temporary_directory,
+            request.volume_filepaths,
+            request.downsampling_strategy,
+            request.volume_serializer,
+            request.segmentations_filepaths,
+            request.segmentation_mask_serializer,
+            request.segmentation_volume_serializer,
+            request.segmentation_mesh_serializer,
+            request.bundling_approach,
+        )
     )
 
     return {

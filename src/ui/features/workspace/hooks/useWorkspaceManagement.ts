@@ -19,6 +19,7 @@ import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../config/processingDefinitions";
 
 export function useWorkspaceManagement() {
     // Use environment.
@@ -129,15 +130,21 @@ export function useWorkspaceManagement() {
     }, [loadFileInApp]);
 
     const startFileProcessing = useCallback(
-        async (fileToProcess: FileData, newRelativePath: string) => {
+        async (
+            fileToProcess: FileData,
+            newRelativePath: string,
+            properties: ProcessVolumeRequestWithoutFilepaths,
+        ) => {
             // Define temporary directory for processing of volumetric data.
             const temporaryDirectory = `${env.userDataPath}/Processing`;
 
             // Call async API endpoint.
             processVolume.mutate(
                 {
-                    filepath: fileToProcess.path,
-                    temporaryDirectory: temporaryDirectory,
+                    ...properties,
+                    temporary_directory: temporaryDirectory,
+                    volume_filepaths: [fileToProcess.path],
+                    segmentations_filepaths: [],
                 },
                 {
                     onSuccess: async (result) => {

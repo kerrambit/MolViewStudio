@@ -2,34 +2,22 @@ import { useMutation } from "@tanstack/react-query";
 import { loggerUi } from "../../services/UiLoggingService";
 import { useApiClient } from "./useApiClient";
 import { handleApiResponseError } from "../utils/handleApiResponseError";
-
-interface ProcessVolumeArgs {
-    filepath: string;
-    temporaryDirectory: string;
-}
+import type { ProcessVolumeRequest } from "../../config/processingDefinitions";
 
 export function useProcessVolume() {
     // Use API client.
     const { apiClient, endpoints, methods } = useApiClient();
 
     return useMutation({
-        mutationFn: async (args: ProcessVolumeArgs) => {
+        mutationFn: async (args: ProcessVolumeRequest) => {
             const endpoint = endpoints["processVolume"];
             const method = methods["processVolume"];
 
-            loggerUi.api.request(endpoint, method, {
-                filepath: args.filepath,
-                temporaryDirectory: args.temporaryDirectory,
-            });
+            loggerUi.api.request(endpoint, method, args);
 
             try {
-                const result = await apiClient.processVolume({
-                    filepath: args.filepath,
-                    temporary_directory: args.temporaryDirectory,
-                });
-
+                const result = await apiClient.processVolume(args);
                 loggerUi.api.successResponse(endpoint, method);
-
                 return result;
             } catch (error) {
                 handleApiResponseError(error, endpoint, method);

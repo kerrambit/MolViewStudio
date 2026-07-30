@@ -23,6 +23,8 @@ import {
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
+import { ProcessingPropertiesDialogueContent } from "./ProcessingPropertiesDialogueContent";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../../../config/processingDefinitions";
 
 export function Assets() {
     // Use managed assets.
@@ -100,10 +102,30 @@ export function Assets() {
                                         );
                                     }
                                 } else {
-                                    await startFileProcessing(
-                                        result.file,
-                                        result.relativePath,
-                                    );
+                                    const processingProperties =
+                                        await useDialogueStore
+                                            .getState()
+                                            .showDialogue<ProcessVolumeRequestWithoutFilepaths>(
+                                                {
+                                                    title: "Processing properties",
+                                                    width: "1000px",
+                                                    showCloseButton: true,
+                                                    content: (close) => (
+                                                        <ProcessingPropertiesDialogueContent
+                                                            file={result.file}
+                                                            close={close}
+                                                        />
+                                                    ),
+                                                },
+                                            );
+
+                                    if (processingProperties) {
+                                        await startFileProcessing(
+                                            result.file,
+                                            result.relativePath,
+                                            processingProperties,
+                                        );
+                                    }
                                 }
                             }
                         }}

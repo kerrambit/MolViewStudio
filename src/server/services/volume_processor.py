@@ -1,11 +1,16 @@
 import asyncio
-import enum
 import shutil
 from pathlib import Path
+from typing import List
 
 import volsegtools
 
-from server.models.volume import ProcessVolumeProgressMessage
+from server.models.volume import (
+    DownsamplignAlgorithmKind,
+    ProcessVolumeProgressMessage,
+    SerializerKind,
+    BundlingKind,
+)
 from server.services.jobs_manager import ProcessVolumeJob
 
 
@@ -13,97 +18,75 @@ class Preprocessor:
     OVERWRITE_TMP = True
     RM_TMP = False
 
-    class SerializerKind(enum.StrEnum):
-        BCIF = "bcif"
-        MRC = "mrc"
-        OBJ = "obj"
-        PLY = "ply"
-        STL = "stl"
-
     @staticmethod
     def get_serializer(kind: SerializerKind):
         match kind:
-            case Preprocessor.SerializerKind.BCIF:
+            case SerializerKind.BCIF:
                 return volsegtools.BCIFSerializer()
-            case Preprocessor.SerializerKind.MRC:
+            case SerializerKind.MRC:
                 return volsegtools.MRCSerializer()
-            case Preprocessor.SerializerKind.OBJ:
+            case SerializerKind.OBJ:
                 return volsegtools.OBJSerializer()
-            case Preprocessor.SerializerKind.PLY:
+            case SerializerKind.PLY:
                 return volsegtools.PLYSerializer()
-            case Preprocessor.SerializerKind.STL:
+            case SerializerKind.STL:
                 return volsegtools.STLSerializer()
             case _:
                 raise RuntimeError("Unknown kind encountered")
 
-    class DownsamplignAlgorithmKind(enum.StrEnum):
-        NEAREST_NEIGHBOR = "nearest"
-        MAX = "max"
-        MIN = "min"
-        AVG = "avg"
-        TRILINEAR = "trilinear"
-        TRICUBIC = "tricubic"
-        TRIQUINTIC = "triquintic"
-        TRIQUINTIC_NO_SMOOTH = "triquintic_no_smooth"
-        SMOOTHING = "smoothing"
-        STRIDED_SMOOTHING = "strided_smoothing"
-        SEPARATED_SMOOTHING = "separated_smoothing"
-        NULL = "null"
-
     @staticmethod
     def get_downsampling_strategy(kind: DownsamplignAlgorithmKind):
         match kind:
-            case Preprocessor.DownsamplignAlgorithmKind.NEAREST_NEIGHBOR:
+            case DownsamplignAlgorithmKind.NEAREST_NEIGHBOR:
                 return volsegtools.NearestNeighborDownsamplingStrategy()
-            case Preprocessor.DownsamplignAlgorithmKind.MAX:
+            case DownsamplignAlgorithmKind.MAX:
                 return volsegtools.MaxPoolingStrategy()
-            case Preprocessor.DownsamplignAlgorithmKind.MIN:
+            case DownsamplignAlgorithmKind.MIN:
                 return volsegtools.MinPoolingStrategy()
-            case Preprocessor.DownsamplignAlgorithmKind.AVG:
+            case DownsamplignAlgorithmKind.AVG:
                 return volsegtools.AveragePoolingStrategy()
-            case Preprocessor.DownsamplignAlgorithmKind.TRILINEAR:
+            case DownsamplignAlgorithmKind.TRILINEAR:
                 return volsegtools.TrilinearInterpolation()
-            case Preprocessor.DownsamplignAlgorithmKind.TRICUBIC:
+            case DownsamplignAlgorithmKind.TRICUBIC:
                 return volsegtools.TricubicInterpolation()
-            case Preprocessor.DownsamplignAlgorithmKind.TRIQUINTIC:
+            case DownsamplignAlgorithmKind.TRIQUINTIC:
                 return volsegtools.TriquinticInterpolation()
-            case Preprocessor.DownsamplignAlgorithmKind.TRIQUINTIC_NO_SMOOTH:
+            case DownsamplignAlgorithmKind.TRIQUINTIC_NO_SMOOTH:
                 return volsegtools.TriquinticInterpolation()
-            case Preprocessor.DownsamplignAlgorithmKind.SMOOTHING:
+            case DownsamplignAlgorithmKind.SMOOTHING:
                 return volsegtools.HierarchyDownsamplingStrategy()
-            case Preprocessor.DownsamplignAlgorithmKind.STRIDED_SMOOTHING:
+            case DownsamplignAlgorithmKind.STRIDED_SMOOTHING:
                 return volsegtools.StridedSmoothing(volsegtools.Gaussian3DKernel(5, 1))
-            case Preprocessor.DownsamplignAlgorithmKind.SEPARATED_SMOOTHING:
+            case DownsamplignAlgorithmKind.SEPARATED_SMOOTHING:
                 return volsegtools.SeparableSmoothing(5, 1)
-            case Preprocessor.DownsamplignAlgorithmKind.NULL:
+            case DownsamplignAlgorithmKind.NULL:
                 return volsegtools.NullDownsamplingStrategy()
             case _:
                 return volsegtools.NullDownsamplingStrategy()
 
-    class BundlingKind(enum.StrEnum):
-        NULL = "null"
-        MVXS = "mvsx"
-        RESOLUTION_ZIP = "resolution_zip"
-        ZIP = "zip"
-
     @staticmethod
     async def process_volume(
-        job: ProcessVolumeJob, filepath: str, temporary_directory: str
+        job: ProcessVolumeJob,
+        temporary_directory: str,
+        volume_filepaths: List[str],
+        downsampling_strategy: DownsamplignAlgorithmKind,
+        volume_serializer: SerializerKind,
+        segmentations_filepaths: List[str],
+        segmentation_mask_serializer: SerializerKind,
+        segmentation_volume_serializer: SerializerKind,
+        segmentation_mesh_serializer: SerializerKind,
+        bundling_approach: BundlingKind,
     ):
+        volume_source: List[Path] = [Path(path) for path in volume_filepaths]
+        segmentation_source: List[Path] = [
+            Path(path) for path in segmentations_filepaths
+        ]
 
-        volume_source = [Path(filepath)]
-        strategy = "tricubic"
-        volume_serializer = "mrc"
-        segmentation_mask_serializer = "mrc"
-        segmentation_volume_serializer = "mrc"
-        segmentation_mesh_serializer = "mrc"
-        bundling_approach = "null"
-
-        local_store_path = Path(temporary_directory) / job.id / "volsegtools_workdir"
+        local_store_path = Path(temporary_directory) / job.id / "RawData"
         if Preprocessor.OVERWRITE_TMP and local_store_path.exists():
             shutil.rmtree(local_store_path)
 
-        output_path = Path(temporary_directory) / job.id / "volsegtools_output"
+        output_path = Path(temporary_directory) / job.id / "Output"
 
         builder = volsegtools.create_builder()
         (
@@ -118,7 +101,9 @@ class Preprocessor:
             .add_segmentation_converter(volsegtools.SFFConverter())
             .add_segmentation_converter(volsegtools.VRMLConverter())
             .add_segmentation_converter(volsegtools.CIFConverter())
-            .set_downsampling_strategy(Preprocessor.get_downsampling_strategy(strategy))
+            .set_downsampling_strategy(
+                Preprocessor.get_downsampling_strategy(downsampling_strategy)
+            )
             .set_serializer(
                 volsegtools.DataKind.VOLUME,
                 Preprocessor.get_serializer(volume_serializer),
@@ -147,14 +132,14 @@ class Preprocessor:
             return
 
         match bundling_approach:
-            case Preprocessor.BundlingKind.MVXS:
+            case BundlingKind.MVXS:
                 builder.set_bundler(volsegtools.MVSXBundler())
-            case Preprocessor.BundlingKind.RESOLUTION_ZIP:
+            case BundlingKind.RESOLUTION_ZIP:
                 builder.set_bundler(volsegtools.ResolutionZipBundler())
-            case Preprocessor.BundlingKind.ZIP:
+            case BundlingKind.ZIP:
                 builder.set_bundler(volsegtools.ZipBundler())
 
-        if strategy == Preprocessor.DownsamplignAlgorithmKind.TRIQUINTIC:
+        if downsampling_strategy == DownsamplignAlgorithmKind.TRIQUINTIC:
             builder.add_post_process_step(volsegtools.SmoothingStep())
 
         loop = asyncio.get_event_loop()
@@ -168,7 +153,9 @@ class Preprocessor:
         def run_pipeline_blocking():
             pipeline: volsegtools.ProcessingPipeline = builder.build()
             pipeline.add_state_change_callback(update_status)
-            return pipeline.sync_process(volumes=volume_source, segmentations=[])
+            return pipeline.sync_process(
+                volumes=volume_source, segmentations=segmentation_source
+            )
 
         try:
             result = await loop.run_in_executor(None, run_pipeline_blocking)

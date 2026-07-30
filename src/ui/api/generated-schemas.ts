@@ -1,8 +1,34 @@
 import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
+const DownsamplignAlgorithmKind = z.enum([
+  "nearest",
+  "max",
+  "min",
+  "avg",
+  "trilinear",
+  "tricubic",
+  "triquintic",
+  "triquintic_no_smooth",
+  "smoothing",
+  "strided_smoothing",
+  "separated_smoothing",
+  "null",
+]);
+const SerializerKind = z.enum(["bcif", "mrc", "obj", "ply", "stl"]);
+const BundlingKind = z.enum(["null", "mvsx", "resolution_zip", "zip"]);
 const ProcessVolumeRequest = z
-  .object({ filepath: z.string(), temporary_directory: z.string() })
+  .object({
+    temporary_directory: z.string(),
+    volume_filepaths: z.array(z.string()),
+    segmentations_filepaths: z.array(z.string()),
+    downsampling_strategy: DownsamplignAlgorithmKind,
+    volume_serializer: SerializerKind,
+    segmentation_mask_serializer: SerializerKind,
+    segmentation_volume_serializer: SerializerKind,
+    segmentation_mesh_serializer: SerializerKind,
+    bundling_approach: BundlingKind,
+  })
   .passthrough();
 const ProcessVolumeResponse = z
   .object({
@@ -35,6 +61,9 @@ const ErrorDetail = z.object({ error: z.string() }).passthrough();
 const ProcessVolumeError = z.object({ detail: ErrorDetail }).passthrough();
 
 export const schemas = {
+  DownsamplignAlgorithmKind,
+  SerializerKind,
+  BundlingKind,
   ProcessVolumeRequest,
   ProcessVolumeResponse,
   ValidationError,
