@@ -14,6 +14,7 @@ import {
     addExtensionToFilename,
     getFilenameWithoutExtension,
 } from "../../../../../utils/fileDataUtils";
+import { IconAlertHexagonFilled } from "@tabler/icons-react";
 
 export interface AddLocalAssetDialogueReturnType {
     file: FileData;
@@ -168,6 +169,7 @@ export function AddLocalAssetDialogueContent({
                             setProcessAsset(e.currentTarget.checked)
                         }
                     />
+                    <IconAlertHexagonFilled />
                     <Text size="xs" c="dimmed">
                         Note that processed files might not share the name you
                         set for asset in this dialogue!
