@@ -1,4 +1,4 @@
-import { Loader, Text } from "@mantine/core";
+import { Collapse, Loader, Text } from "@mantine/core";
 import { Button } from "../../../../components/common/button/Button";
 import {
     useProcessingStore,
@@ -12,6 +12,9 @@ import { SimpleDialogueContent } from "../../../../components/common/dialogue/Si
 
 import "./ProcessingJobCard.css";
 import { ProcessingStagesList } from "./ProcessingStagesList";
+import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
+import { useState } from "react";
+import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
 
 export type ProcessingJobCardProps = {
     job: ProcessingJob;
@@ -21,6 +24,10 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
     // Use processing.
     const clearJob = useProcessingStore((state) => state.clearJob);
     const isJobActive = job.status === "running";
+
+    const [isStagesListExpanded, setStagesListExpanded] = useState(
+        UiLocalStorageService.ProcessingJobs.getJobExpandedState(job.jobId),
+    );
 
     // Use apperance.
     const { colorScheme } = useAppearance();
@@ -39,18 +46,34 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                 marginBottom: "0.5em",
             }}
         >
-            {/* Processed filename as title. */}
+            {/* Processed filename as title and collapse trigger for stages list below. */}
             <div
                 style={{
                     width: "100%",
                     display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "start",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
                 }}
             >
                 <Text size="md" fw={700}>
                     {job.file.name}
                 </Text>
+                <CollapseTrigger
+                    title={"Stages"}
+                    size="sm"
+                    expanded={isStagesListExpanded}
+                    onClick={() => {
+                        setStagesListExpanded((prev) => {
+                            const nextState = !prev;
+                            UiLocalStorageService.ProcessingJobs.setJobExpandedState(
+                                job.jobId,
+                                nextState,
+                            );
+                            return nextState;
+                        });
+                    }}
+                ></CollapseTrigger>
             </div>
 
             {/* Main body of the card. */}
@@ -66,15 +89,17 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                 }}
             >
                 {/* Stages. */}
-                <ProcessingStagesList
-                    stages={job.stages}
-                    currentStage={
-                        job.stages.length > 0
-                            ? job.stages.at(job.stages.length - 1)
-                            : undefined
-                    }
-                    isJobFinished={job.status !== "running"}
-                />
+                <Collapse expanded={isStagesListExpanded}>
+                    <ProcessingStagesList
+                        stages={job.stages}
+                        currentStage={
+                            job.stages.length > 0
+                                ? job.stages.at(job.stages.length - 1)
+                                : undefined
+                        }
+                        isJobFinished={job.status !== "running"}
+                    />
+                </Collapse>
 
                 {/* Running job. */}
                 {job.status === "running" && (
