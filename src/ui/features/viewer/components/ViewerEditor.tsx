@@ -2,13 +2,14 @@ import { LoadingOverlay } from "@mantine/core";
 import { useMolstarInit } from "../hooks/useMolstarInit";
 import { ProcessingJobs } from "./processing-manager/ProcessingJobs";
 import { SceneManager } from "./scene-manager/SceneManager";
+import { useMolstarTheme } from "../hooks/useMolstarTheme";
 
 import "./ViewerEditor.css";
-import { useMolstarTheme } from "../hooks/useMolstarTheme";
 
 export function ViewerEditor() {
     // Use Molstar.
-    const { parentRef, molstarLoading, molstarExpanded } = useMolstarInit();
+    const { parentRef, molstarInitializing, molstarExpanded } =
+        useMolstarInit();
 
     // Use Molstar theme.
     useMolstarTheme();
@@ -17,7 +18,7 @@ export function ViewerEditor() {
     return (
         <div style={{ position: "relative", display: "flex", height: "100%" }}>
             <LoadingOverlay
-                visible={molstarLoading}
+                visible={molstarInitializing}
                 zIndex={1000}
                 overlayProps={{ radius: "sm", blur: 2 }}
                 loaderProps={{ type: "oval" }}
@@ -25,7 +26,7 @@ export function ViewerEditor() {
             <ProcessingJobs />
             <SceneManager
                 isMolstarExpanded={molstarExpanded}
-                isMolstarLoading={molstarLoading}
+                isMolstarInitializing={molstarInitializing}
             />
             <main style={{ flex: 1, padding: "0.5em" }}>
                 <div

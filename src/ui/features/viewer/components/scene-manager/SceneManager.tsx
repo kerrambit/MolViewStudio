@@ -11,7 +11,7 @@ import { useRegimeStore } from "../../../../stores/regimeStore";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
-    isMolstarLoading: boolean;
+    isMolstarInitializing: boolean;
 }
 
 export function SceneManager(props: SceneManagerProps) {
@@ -82,7 +82,7 @@ export function SceneManager(props: SceneManagerProps) {
 
                 {tab === "views" && regime.kind === "viewing" && (
                     <Views
-                        isMolstarLoading={props.isMolstarLoading}
+                        isMolstarLoading={props.isMolstarInitializing}
                         onOpenBuilder={(key) => {
                             setIsBuilderOpen(key);
                             UiLocalStorageService.SceneManager.setBuilderSidebar(
