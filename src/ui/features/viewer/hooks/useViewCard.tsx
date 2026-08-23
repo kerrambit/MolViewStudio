@@ -16,7 +16,7 @@ import { pushWarningNotification } from "../../../services/NotificationService";
 export function useViewCard(props: ViewCardProps) {
     // State for the view title.
     const [currentName, setCurrentName] = useState<string | undefined>(
-        props.metadata.title || "New view...",
+        props.metadata.title,
     );
 
     // State for the view background color.
