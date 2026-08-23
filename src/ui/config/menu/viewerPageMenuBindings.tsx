@@ -50,6 +50,7 @@ import {
     createUndoMenuItem,
     createRedoMenuItem,
     createHistorySection,
+    createShowSourceTreeHistoryMenuItem,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -77,6 +78,7 @@ import type {
     Dropdown,
 } from "../../providers/MenuContext";
 import { useProcessingStore } from "../../stores/processingStore";
+import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/components/ShowSourceTreeHistoryDialogueContent";
 
 export function bindViewerMenu(): Menu {
     return [
@@ -342,6 +344,19 @@ export function bindViewerMenu(): Menu {
                 }),
             ]),
             createOnlyDevSection("edit-dev", "For developers", [
+                createShowSourceTreeHistoryMenuItem(async () => {
+                    await useDialogueStore.getState().showDialogue({
+                        title: "Source Tree History",
+                        showCloseButton: true,
+                        width: "1000px",
+                        maxWidth: "1400px",
+                        content: (close) => (
+                            <ShowSourceTreeHistoryDialogueContent
+                                close={close}
+                            />
+                        ),
+                    });
+                }),
                 createLoadDefaultPDBItemMenuItem(async () => {
                     const confirmed = await useDialogueStore
                         .getState()
