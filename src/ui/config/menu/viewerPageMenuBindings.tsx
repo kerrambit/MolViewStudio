@@ -11,6 +11,7 @@ import {
     clearViewer,
     exportStateTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
+    reloadMolstarAndRestoreIndex,
 } from "../../lib/molstar";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
@@ -215,41 +216,56 @@ export function bindViewerMenu(): Menu {
         createEditRootMenuItem([
             createHistorySection([
                 createUndoMenuItem(async () => {
-                    pushWarningNotification("Undo is not implemented yet!");
+                    const initialRegime = useRegimeStore.getState().regime;
+                    if (
+                        initialRegime.kind !== "viewing" &&
+                        initialRegime.kind !== "restoring"
+                    ) {
+                        return;
+                    }
 
-                    // const regime = useRegimeStore.getState().regime;
-                    // if (
-                    //     regime.kind !== "viewing" &&
-                    //     regime.kind !== "restoring"
-                    // )
-                    //     return;
+                    initialRegime.undo();
 
-                    // const assets = useManagedAssetsStore.getState().assets;
-                    // regime.undo();
+                    const updatedRegime = useRegimeStore.getState().regime;
+                    if (
+                        updatedRegime.kind !== "viewing" &&
+                        updatedRegime.kind !== "restoring"
+                    ) {
+                        return;
+                    }
 
-                    // const updatedRegime = useRegimeStore.getState().regime;
-                    // if (
-                    //     updatedRegime.kind !== "viewing" &&
-                    //     updatedRegime.kind !== "restoring"
-                    // )
-                    //     return;
-
-                    // await reloadMolstarAndRestoreIndex(
-                    //     undefined,
-                    //     Array.from(assets.values()),
-                    //     updatedRegime.history.current(),
-                    // );
+                    await reloadMolstarAndRestoreIndex(
+                        undefined,
+                        Array.from(
+                            useManagedAssetsStore.getState().assets.values(),
+                        ),
+                        updatedRegime.history.current().stateTree,
+                    );
                 }),
                 createRedoMenuItem(async () => {
-                    pushWarningNotification("Redo is not implemented yet!");
+                    const initialRegime = useRegimeStore.getState().regime;
+                    if (
+                        initialRegime.kind !== "viewing" &&
+                        initialRegime.kind !== "restoring"
+                    )
+                        return;
 
-                    // const regime = useRegimeStore.getState().regime;
-                    // if (
-                    //     regime.kind === "viewing" ||
-                    //     regime.kind === "restoring"
-                    // ) {
-                    //     regime.redo();
-                    // }
+                    initialRegime.redo();
+
+                    const updatedRegime = useRegimeStore.getState().regime;
+                    if (
+                        updatedRegime.kind !== "viewing" &&
+                        updatedRegime.kind !== "restoring"
+                    )
+                        return;
+
+                    await reloadMolstarAndRestoreIndex(
+                        undefined,
+                        Array.from(
+                            useManagedAssetsStore.getState().assets.values(),
+                        ),
+                        updatedRegime.history.current().stateTree,
+                    );
                 }),
             ]),
             createGeneralEditSection([
@@ -281,7 +297,7 @@ export function bindViewerMenu(): Menu {
 
                         const result = await exportStateTree(
                             injectRelativePathsBasedOnAssetIdsIntoTree(
-                                regime.history.current(),
+                                regime.history.current().stateTree,
                                 Array.from(
                                     useManagedAssetsStore
                                         .getState()
