@@ -64,7 +64,7 @@ export function useViewsManagement({
     // Memoize views extracted from state tree.
     const viewItems = useMemo(() => {
         return regime.kind === "viewing"
-            ? extractViewsFromMVS(regime.history.current())
+            ? extractViewsFromMVS(regime.history.current().stateTree)
             : [];
     }, [regime]);
 
@@ -126,12 +126,12 @@ export function useViewsManagement({
 
         // Create updated tree.
         const result = addEmptySnapshotToTree(
-            regime.history.current(),
+            regime.history.current().stateTree,
             "New View",
         );
 
         // Update regime.
-        regime.commitStateTree(result.newStateTree);
+        regime.commitStateTree(result.newStateTree, "Added new blank view.");
 
         // Update Molstar's snapshot.
         const newKey = result.createdNode.metadata.key!;
@@ -176,7 +176,7 @@ export function useViewsManagement({
 
         // Create updated tree.
         const { updatedTree, removedSnapshot } = removeSnapshotFromTree(
-            regime.history.current(),
+            regime.history.current().stateTree,
             index,
         );
 
@@ -187,7 +187,7 @@ export function useViewsManagement({
             );
             loggerUi.error(
                 `Internal error occured! Unable to delete the view. Index <${index}> was out of range (there are currently only <${
-                    regime.history.current().snapshots.length
+                    regime.history.current().stateTree.snapshots.length
                 }> snapshots)!`,
             );
             return;
@@ -204,7 +204,10 @@ export function useViewsManagement({
         });
 
         // Update regime.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Deleted view "${view.title}" (${view.key}).`,
+        );
 
         // Update Molstar's snapshot.
         removeSnapshotInManager(index);
@@ -229,7 +232,7 @@ export function useViewsManagement({
 
         // Create updated tree.
         const { updatedTree, newSnapshot } = createCopyOfSnapshotInTree(
-            regime.history.current(),
+            regime.history.current().stateTree,
             index,
         );
 
@@ -240,7 +243,7 @@ export function useViewsManagement({
             );
             loggerUi.error(
                 `Internal error occured! Unable to create copy of the view. Index <${index}> was out of range (there are currently only <${
-                    regime.history.current().snapshots.length
+                    regime.history.current().stateTree.snapshots.length
                 }> snapshots)!`,
             );
             return;
@@ -257,7 +260,10 @@ export function useViewsManagement({
         });
 
         // Update regime.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Made a copy of the ${index}. view.`,
+        );
 
         const newKey = newSnapshot.metadata.key!;
 
@@ -291,28 +297,33 @@ export function useViewsManagement({
 
         // Create updated tree.
         const updatedTree = {
-            ...regime.history.current(),
-            snapshots: regime.history.current().snapshots.map((snap) => {
-                if (snap.metadata.key === view.key!) {
-                    return {
-                        ...snap,
-                        root: applyCameraToNode(
-                            snap.root,
-                            referenceCamera,
-                            UiLocalStorageService.ViewOptions.getPending(
-                                view.key!,
-                            )
-                                ? thumbnail
-                                : undefined,
-                        ),
-                    };
-                }
-                return snap;
-            }),
+            ...regime.history.current().stateTree,
+            snapshots: regime.history
+                .current()
+                .stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === view.key!) {
+                        return {
+                            ...snap,
+                            root: applyCameraToNode(
+                                snap.root,
+                                referenceCamera,
+                                UiLocalStorageService.ViewOptions.getPending(
+                                    view.key!,
+                                )
+                                    ? thumbnail
+                                    : undefined,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
         };
 
         // Update state tree.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Saved camera for "${view.title}" (${view.key}).`,
+        );
 
         // Update snapshot's camera in Molstar snapshot manager.
         updateSnapshotCameraInManager(index);
@@ -329,20 +340,25 @@ export function useViewsManagement({
 
         // Create updated tree.
         const updatedTree = {
-            ...regime.history.current(),
-            snapshots: regime.history.current().snapshots.map((snap) => {
-                if (snap.metadata.key === view.key) {
-                    return {
-                        ...snap,
-                        root: applyBackgroundColorToNode(snap.root, color),
-                    };
-                }
-                return snap;
-            }),
+            ...regime.history.current().stateTree,
+            snapshots: regime.history
+                .current()
+                .stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === view.key) {
+                        return {
+                            ...snap,
+                            root: applyBackgroundColorToNode(snap.root, color),
+                        };
+                    }
+                    return snap;
+                }),
         };
 
         // Update regime.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Updated background color for view "${view.title}" (${view.key}).`,
+        );
     };
 
     const handleTitleChange = (
@@ -357,23 +373,28 @@ export function useViewsManagement({
 
         // Create updated tree.
         const updatedTree = {
-            ...regime.history.current(),
-            snapshots: regime.history.current().snapshots.map((snap) => {
-                if (snap.metadata.key === view.key) {
-                    return {
-                        ...snap,
-                        metadata: {
-                            ...snap.metadata,
-                            title: title,
-                        },
-                    };
-                }
-                return snap;
-            }),
+            ...regime.history.current().stateTree,
+            snapshots: regime.history
+                .current()
+                .stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === view.key) {
+                        return {
+                            ...snap,
+                            metadata: {
+                                ...snap.metadata,
+                                title: title,
+                            },
+                        };
+                    }
+                    return snap;
+                }),
         };
 
         // Update regime.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Updated title for view "${view.title}" (${view.key}).`,
+        );
 
         // Update snapshot's title in Molstar snapshot manager.
         if (title) {
@@ -419,22 +440,25 @@ export function useViewsManagement({
 
         // Create updated tree.
         let updatedTree = {
-            ...regime.history.current(),
-            snapshots: regime.history.current().snapshots.map((snap) => {
-                if (snap.metadata.key === key) {
-                    return {
-                        ...snap,
-                        metadata: {
-                            ...snap.metadata,
-                            linger_duration_ms: result.lingerDuration,
-                            transition_duration_ms: result.transitionDuration,
-                            description: result.description,
-                            description_format: result.descriptionFormat,
-                        },
-                    };
-                }
-                return snap;
-            }),
+            ...regime.history.current().stateTree,
+            snapshots: regime.history
+                .current()
+                .stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === key) {
+                        return {
+                            ...snap,
+                            metadata: {
+                                ...snap.metadata,
+                                linger_duration_ms: result.lingerDuration,
+                                transition_duration_ms:
+                                    result.transitionDuration,
+                                description: result.description,
+                                description_format: result.descriptionFormat,
+                            },
+                        };
+                    }
+                    return snap;
+                }),
         };
 
         // Update also background color.
@@ -455,7 +479,10 @@ export function useViewsManagement({
         };
 
         // Update regime.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Updated options for view "${view.title}" (${view.key}).`,
+        );
 
         // Update snapshot's description in Molstar snapshot manager.
         updateSnapshotDescriptionInManager(

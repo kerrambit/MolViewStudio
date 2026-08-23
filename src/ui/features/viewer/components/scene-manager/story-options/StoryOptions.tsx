@@ -10,7 +10,7 @@ export function StoryOptions() {
     // View metadata.
     const metadata =
         regime.kind === "viewing"
-            ? regime.history.current().metadata
+            ? regime.history.current().stateTree.metadata
             : undefined;
 
     // Handler for change of metadata from UI.
@@ -24,7 +24,9 @@ export function StoryOptions() {
             value = undefined;
         }
 
-        const newMetadata = { ...(regime.history.current().metadata || {}) };
+        const newMetadata = {
+            ...(regime.history.current().stateTree.metadata || {}),
+        };
 
         if (value === undefined) {
             delete newMetadata[key];
@@ -40,10 +42,13 @@ export function StoryOptions() {
             }
         }
 
-        regime.commitStateTree({
-            ...regime.history.current(),
-            metadata: newMetadata,
-        });
+        regime.commitStateTree(
+            {
+                ...regime.history.current().stateTree,
+                metadata: newMetadata,
+            },
+            "Updated title and description for the story.",
+        );
     };
 
     // Render the component.

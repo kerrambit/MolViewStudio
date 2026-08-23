@@ -46,7 +46,9 @@ export function ViewOptionsDialogueContent(
         if (regime.kind !== "viewing") return null;
         return regime.history
             .current()
-            .snapshots.find((snap) => snap.metadata.key === props.viewKey);
+            .stateTree.snapshots.find(
+                (snap) => snap.metadata.key === props.viewKey,
+            );
     }, [regime, props.viewKey]);
 
     // All view properies in the View Option dialogue.

@@ -24,7 +24,7 @@ export function ShowMVSTreeDialogueContent({
 
         try {
             const prettyString = MVSData.toPrettyString(
-                regime.history.current(),
+                regime.history.current().stateTree,
             );
             await navigator.clipboard.writeText(prettyString);
             setCopied(true);
@@ -50,7 +50,7 @@ export function ShowMVSTreeDialogueContent({
         >
             {/* Preformatted text of MVS tree. */}
             <PreformattedText>
-                {MVSData.toPrettyString(regime.history.current())}
+                {MVSData.toPrettyString(regime.history.current().stateTree)}
             </PreformattedText>
 
             {/* Buttons. */}
