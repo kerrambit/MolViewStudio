@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -161,6 +161,17 @@ export function useViewBuilder(viewKey: string) {
     const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(() =>
         view ? getAllDownloadUrlsFromSnapshot(view) : [],
     );
+
+    // Refresh UI if view changes (as result of undo/redo actions).
+    useEffect(() => {
+        if (view) {
+            setSelectedAssetIds(getAllDownloadUrlsFromSnapshot(view));
+            setViewModels({});
+        } else {
+            setSelectedAssetIds([]);
+            setViewModels({});
+        }
+    }, [view]);
 
     // State to keep track which asset in the list is expanded.
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(() =>
