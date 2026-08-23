@@ -10,10 +10,15 @@ import {
     useLiveCameraState,
     type Base64Png,
     type HexColor,
+    isMolstarReloading,
 } from "../../../lib/molstar";
 import { pushWarningNotification } from "../../../services/NotificationService";
 
 export function useViewCard(props: ViewCardProps) {
+    // Deconstruct the props.
+    const { onBackgrounColorChange, metadata } = props;
+    const { backgroundColor } = metadata;
+
     // State for the view title.
     const [currentName, setCurrentName] = useState<string | undefined>(
         props.metadata.title,
@@ -22,14 +27,24 @@ export function useViewCard(props: ViewCardProps) {
     // State for the view background color.
     const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
         HexColor | undefined
-    >(props.metadata.backgroundColor);
+    >(backgroundColor);
 
     // Camera hook.
     const cameraState = useLiveCameraState();
 
-    // Subscribe to the change of background color.
+    // Keep local state in sync when change is propagated with undo/redo.
+    useEffect(() => {
+        setCurrentBackgroundColor(backgroundColor);
+    }, [backgroundColor]);
+
+    // Subscribe to Molstar event guarded by lock.
     useEffect(() => {
         const sub = getBackgroundColorChangeSubscription((color) => {
+            // Ignore transient cleanup events while Molstar is reloading.
+            if (isMolstarReloading()) {
+                return;
+            }
+
             if (color) {
                 const hex = Color.toHexStyle(color);
                 setCurrentBackgroundColor((prev) =>
@@ -40,11 +55,10 @@ export function useViewCard(props: ViewCardProps) {
         return () => sub?.unsubscribe();
     }, []);
 
-    // Propagate async change of color to the parent.
-    const { onBackgrounColorChange, metadata } = props;
-    const { backgroundColor } = metadata;
+    // Propagate real changed to the user.
     useEffect(() => {
         if (
+            !isMolstarReloading() &&
             onBackgrounColorChange &&
             currentBackgroundColor &&
             currentBackgroundColor !== backgroundColor
@@ -88,7 +102,7 @@ export function useViewCard(props: ViewCardProps) {
             img = await getCanvasScreenshot();
         } catch {
             pushWarningNotification(
-                "Application could not save the canvas screenshot! The current view will contain no screenshot.",
+                "Application could not save the canvas screenshot! The current view will contain no screenshot. Undo this action if needed.",
             );
             img = undefined;
         }

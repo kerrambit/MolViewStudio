@@ -6,6 +6,7 @@ import { type Result } from "../../../types/Result";
 import { convertHexStringToColor } from "./utils";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { checkMolstarAfterLoading } from "./core";
+import { setMolstarReloading } from "./mvs";
 
 /**
  * Retrieves snapshot of manager state.
@@ -261,19 +262,22 @@ export function getCurrentSnapshotIndex(): number {
 }
 
 /**
- * Tells Molstar's snapshot manager which snapshot it should render by its index.
+ * Tells Molstar's snapshot manager which snapshot it should render by its index. Sets `isMolstarReloading` to `true`.
  * @param index index of the snapshot
  * @returns if there is error, result with `Error` is returned, otherise null
  */
 export async function applySnapshotByIndex(
     index: number,
 ): Promise<Result<null>> {
+    setMolstarReloading(true);
+
     const molstar = getMolstar();
 
     const entries = molstar.managers.snapshot.state.entries;
     const count = entries.count();
 
     if (index < 0 || index >= count) {
+        setMolstarReloading(false);
         return {
             success: false,
             error: new Error(
@@ -284,6 +288,7 @@ export async function applySnapshotByIndex(
 
     const entry = entries.get(index);
     if (!entry || !entry.snapshot) {
+        setMolstarReloading(false);
         return {
             success: false,
             error: new Error(`Given entry on index <${index}> was not found!`),
@@ -297,11 +302,13 @@ export async function applySnapshotByIndex(
 
     const result = checkMolstarAfterLoading();
     if (!result.success) {
+        setMolstarReloading(false);
         return {
             success: false,
             error: result.error,
         };
     }
 
+    setMolstarReloading(false);
     return { success: true, value: null };
 }
