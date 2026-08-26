@@ -37,6 +37,10 @@ export function useViewCard(props: ViewCardProps) {
         setCurrentBackgroundColor(backgroundColor);
     }, [backgroundColor]);
 
+    useEffect(() => {
+        setCurrentName(metadata.title);
+    }, [metadata.title]);
+
     // Subscribe to Molstar event guarded by lock.
     useEffect(() => {
         const sub = getBackgroundColorChangeSubscription((color) => {
@@ -88,11 +92,21 @@ export function useViewCard(props: ViewCardProps) {
     })();
 
     // Handler to title change.
-    const handleTitleUpdate = (newName: string | undefined) => {
+    const handleTitleUpdate = (
+        newName: string | undefined,
+        propagateChangeUp: boolean,
+    ) => {
         setCurrentName(newName);
-        props.onTitleChange?.(newName);
-    };
 
+        if (!propagateChangeUp) return;
+
+        const normalizedNew = newName || undefined;
+        const normalizedOld = metadata.title || undefined;
+
+        if (normalizedNew !== normalizedOld) {
+            props.onTitleChange?.(newName);
+        }
+    };
     // Handler to capture camera.
     const handleCaptureCamera = async () => {
         if (!props.onCameraSave || !cameraState) return;

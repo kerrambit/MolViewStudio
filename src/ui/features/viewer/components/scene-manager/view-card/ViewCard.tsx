@@ -73,8 +73,12 @@ export function ViewCard(props: ViewCardProps) {
                     placeholder="Change name for this view."
                     tooltip={currentName}
                     enabled={true}
-                    onValueChange={handleTitleUpdate}
-                    onBlur={handleTitleUpdate}
+                    onValueChange={(newName) => {
+                        handleTitleUpdate(newName, false);
+                    }}
+                    onBlur={(newName) => {
+                        handleTitleUpdate(newName, true);
+                    }}
                     bold={true}
                 />
 
