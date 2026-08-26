@@ -419,7 +419,13 @@ async function _loadMVSXFile(
     // Iterate through local files in archive.
     const assets: ManagedAsset[] = [];
     for (const path in files) {
+        // Ignore index file.
         if (path === indexFilePath) {
+            continue;
+        }
+
+        // Ignore "empty filepaths", meaning that path could happen to be "path/", resulting in empty filepath.
+        if (!path.split("/").pop()?.trim()) {
             continue;
         }
 
@@ -435,8 +441,6 @@ async function _loadMVSXFile(
         const asset = ensureUrlAsset(url, files[path], {
             isFile: true,
         }); // TODO: use my own addLocalAssetIntoMolstar?
-
-        if (path === indexFilePath) continue;
 
         assets.push({
             id: crypto.randomUUID(),
