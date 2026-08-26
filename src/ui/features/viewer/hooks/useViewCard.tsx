@@ -20,8 +20,8 @@ export function useViewCard(props: ViewCardProps) {
     const { backgroundColor } = metadata;
 
     // State for the view title.
-    const [currentName, setCurrentName] = useState<string | undefined>(
-        props.metadata.title,
+    const [currentName, setCurrentName] = useState<string>(
+        props.metadata.title || "",
     );
 
     // State for the view background color.
@@ -38,7 +38,7 @@ export function useViewCard(props: ViewCardProps) {
     }, [backgroundColor]);
 
     useEffect(() => {
-        setCurrentName(metadata.title);
+        setCurrentName(metadata.title || "");
     }, [metadata.title]);
 
     // Subscribe to Molstar event guarded by lock.
@@ -96,7 +96,7 @@ export function useViewCard(props: ViewCardProps) {
         newName: string | undefined,
         propagateChangeUp: boolean,
     ) => {
-        setCurrentName(newName);
+        setCurrentName(newName || "");
 
         if (!propagateChangeUp) return;
 

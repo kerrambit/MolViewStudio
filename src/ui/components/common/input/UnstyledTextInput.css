@@ -1,16 +1,17 @@
 .unstyledTextInput {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.2em;
 }
 
 .unstyledTextInput__wrapper {
   display: flex;
+  flex-direction: row;
   align-items: center;
 }
 
 .unstyledTextInput__prefix {
-  font-size: 0.91em;
+  font-size: 0.84em;
   margin-right: .25em;
   user-select: none;
   color: black;

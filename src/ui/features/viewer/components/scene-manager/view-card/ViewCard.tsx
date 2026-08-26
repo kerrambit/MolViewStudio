@@ -68,9 +68,8 @@ export function ViewCard(props: ViewCardProps) {
                 }}
             >
                 <UnstyledTextInput
-                    prefix={`${props.index + 1}. view`}
                     value={currentName}
-                    placeholder="Change name for this view."
+                    placeholder="Enter title for view"
                     tooltip={currentName}
                     enabled={true}
                     onValueChange={(newName) => {
