@@ -37,7 +37,7 @@ export function ShowSourceTreeHistoryDialogueContent({
                     second: "2-digit",
                 });
 
-                const label = `#${index}: ${node.description} (${time})`;
+                const label = `#${index}: ${node.description} at ${node.viewIndex}. index (${time})`;
 
                 return (
                     <Text

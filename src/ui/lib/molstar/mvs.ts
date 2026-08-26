@@ -615,26 +615,30 @@ export function setMolstarReloading(isReloading: boolean) {
 
 /**
  * Reloads Molstar with given `updated_tree` and restore index of view. Sets `isMolstarReloading` to `true`.
- * @param viewKey key of the view which has been edited; if undefined, we call function to get index from Molstar library itself
+ * @param view view which is to be selected (you can reference it using either its index or key, where index has a priority); if undefined, we call function to get index from Molstar library itself
  * @param assets assets from `ManagedAssets` manager
  * @param updatedTree updated tree
  * @returns undefined or Error of any problem occurs
  */
 export async function reloadMolstarAndRestoreIndex(
-    viewKey: string | undefined,
+    view: { index?: number; key?: string } | undefined,
     assets: ManagedAsset[],
     updatedTree: MVSData_States,
 ) {
     setMolstarReloading(true);
 
     let currentIndex;
-    if (!viewKey) {
+    if (!view) {
         currentIndex = getCurrentViewIndex();
     } else {
-        // Find the index of the view we are currently editing.
-        currentIndex = updatedTree.snapshots.findIndex(
-            (snap: Snapshot) => snap.metadata.key === viewKey,
-        );
+        if (view.index) {
+            currentIndex = view.index;
+        } else {
+            // Find the index of the view we are currently editing.
+            currentIndex = updatedTree.snapshots.findIndex(
+                (snap: Snapshot) => snap.metadata.key === view.key,
+            );
+        }
     }
 
     // Build and load the tree.

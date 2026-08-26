@@ -336,7 +336,7 @@ export function useViewBuilder(viewKey: string) {
 
             // Try to reload Molstar viewer.
             const result = await reloadMolstarAndRestoreIndex(
-                viewKey,
+                { key: viewKey },
                 Array.from(assets.values()),
                 updatedTree,
             );
@@ -435,7 +435,7 @@ export function useViewBuilder(viewKey: string) {
 
         // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
-            viewKey,
+            { key: viewKey },
             Array.from(assets.values()),
             updatedTree,
         );

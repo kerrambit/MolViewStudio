@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import type { SerializedAssets } from "../lib/molstar";
+import { getCurrentViewIndex, type SerializedAssets } from "../lib/molstar";
 import { History } from "../lib/history/History";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 
 export type SourceTreeHistoryNode = {
     stateTree: MVSData_States;
+    viewIndex: number | undefined;
     description: string;
     timestamp: number;
 };
@@ -48,6 +49,7 @@ export type ViewingRegime = {
     commitStateTree: (
         newStateTree: MVSData_States,
         description: string,
+        viewIndex?: number | undefined,
     ) => void;
     undo: () => void;
     redo: () => void;
@@ -97,6 +99,7 @@ function makeStaging(
                     sourceUrl,
                     History.initialize({
                         stateTree: initialStateTree,
+                        viewIndex: undefined,
                         description: "Initial load.",
                         timestamp: Date.now(),
                     }),
@@ -122,7 +125,7 @@ function makeViewing(
         suspend: (session) =>
             set(makeRestoring(set, viewedFile, sourceUrl, history, session)),
         reset: () => set(makeIdling(set)),
-        commitStateTree: (newStateTree, description) =>
+        commitStateTree: (newStateTree, description, viewIndex) =>
             set(
                 makeViewing(
                     set,
@@ -130,6 +133,9 @@ function makeViewing(
                     sourceUrl,
                     history.add({
                         stateTree: newStateTree,
+                        viewIndex: viewIndex
+                            ? viewIndex
+                            : getCurrentViewIndex(),
                         description: description,
                         timestamp: Date.now(),
                     }),

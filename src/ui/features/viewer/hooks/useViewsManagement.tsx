@@ -131,7 +131,11 @@ export function useViewsManagement({
         );
 
         // Update regime.
-        regime.commitStateTree(result.newStateTree, "Added new blank view.");
+        regime.commitStateTree(
+            result.newStateTree,
+            "Added new blank view.",
+            viewItems.length,
+        );
 
         // Update Molstar's snapshot.
         const newKey = result.createdNode.metadata.key!;
@@ -207,6 +211,7 @@ export function useViewsManagement({
         regime.commitStateTree(
             updatedTree,
             `Deleted view "${view.title}" (${view.key}).`,
+            index === 0 ? index : index - 1,
         );
 
         // Update Molstar's snapshot.
@@ -263,6 +268,7 @@ export function useViewsManagement({
         regime.commitStateTree(
             updatedTree,
             `Made a copy of the ${index}. view.`,
+            viewItems.length,
         );
 
         const newKey = newSnapshot.metadata.key!;

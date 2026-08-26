@@ -237,7 +237,10 @@ export function bindViewerMenu(): Menu {
                     }
 
                     await reloadMolstarAndRestoreIndex(
-                        undefined,
+                        {
+                            index:
+                                updatedRegime.history.current().viewIndex || 0,
+                        },
                         Array.from(
                             useManagedAssetsStore.getState().assets.values(),
                         ),
@@ -262,7 +265,10 @@ export function bindViewerMenu(): Menu {
                         return;
 
                     await reloadMolstarAndRestoreIndex(
-                        undefined,
+                        {
+                            index:
+                                updatedRegime.history.current().viewIndex || 0,
+                        },
                         Array.from(
                             useManagedAssetsStore.getState().assets.values(),
                         ),
