@@ -93,6 +93,21 @@ type ManagedAssetsStore = {
     decrementAssetUseCount: (url: string) => boolean;
 
     /**
+     * Returns a snapshot map of all managed assets' use counts, keyed by asset URL.
+     * @returns a new `Map` of asset URL → useCount
+     */
+    getAssetUseCounts: () => Map<string, number>;
+
+    /**
+     * Overwrites the useCount of managed assets based on a given map of URL → useCount.
+     * Only assets whose URL exists as a key in `counts` are updated; any assets not
+     * present in `counts` are left unchanged. URLs in `counts` that don't correspond
+     * to any existing asset are silently ignored.
+     * @param counts map of asset URL → new useCount
+     */
+    setAssetUseCounts: (counts: Map<string, number>) => void;
+
+    /**
      * Clears all assets from local system.
      * Does NOT clear Molstar inner repository!
      */
@@ -284,6 +299,34 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
 
         set({ assets: newMap });
         return true;
+    },
+
+    getAssetUseCounts: () => {
+        const currentAssets = get().assets;
+        const counts = new Map<string, number>();
+
+        for (const [url, asset] of currentAssets) {
+            counts.set(url, asset.useCount);
+        }
+
+        return counts;
+    },
+
+    setAssetUseCounts: (counts) => {
+        const currentAssets = get().assets;
+        const newMap = new Map(currentAssets);
+
+        for (const [url, newCount] of counts) {
+            const existingAsset = newMap.get(url);
+            if (!existingAsset) continue;
+
+            newMap.set(url, {
+                ...existingAsset,
+                useCount: newCount,
+            });
+        }
+
+        set({ assets: newMap });
     },
 
     clearAssets: () => {

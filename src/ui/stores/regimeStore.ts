@@ -4,10 +4,12 @@ import { getCurrentViewIndex, type SerializedAssets } from "../lib/molstar";
 import { History } from "../lib/history/History";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
+import { useManagedAssetsStore } from "./managedAssetsStore";
 
 export type SourceTreeHistoryNode = {
     stateTree: MVSData_States;
     viewIndex: number | undefined;
+    assetsUseCounts: Map<string, number>;
     description: string;
     timestamp: number;
 };
@@ -100,6 +102,9 @@ function makeStaging(
                     History.initialize({
                         stateTree: initialStateTree,
                         viewIndex: undefined,
+                        assetsUseCounts: useManagedAssetsStore
+                            .getState()
+                            .getAssetUseCounts(),
                         description: "Initial load.",
                         timestamp: Date.now(),
                     }),
@@ -136,6 +141,9 @@ function makeViewing(
                         viewIndex: viewIndex
                             ? viewIndex
                             : getCurrentViewIndex(),
+                        assetsUseCounts: useManagedAssetsStore
+                            .getState()
+                            .getAssetUseCounts(),
                         description: description,
                         timestamp: Date.now(),
                     }),

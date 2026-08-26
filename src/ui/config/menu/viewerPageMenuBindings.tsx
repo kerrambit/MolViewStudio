@@ -236,6 +236,13 @@ export function bindViewerMenu(): Menu {
                         return;
                     }
 
+                    // Synchronization with managed assets.
+                    useManagedAssetsStore
+                        .getState()
+                        .setAssetUseCounts(
+                            updatedRegime.history.current().assetsUseCounts,
+                        );
+
                     await reloadMolstarAndRestoreIndex(
                         {
                             index:
@@ -263,6 +270,13 @@ export function bindViewerMenu(): Menu {
                         updatedRegime.kind !== "restoring"
                     )
                         return;
+
+                    // Synchronization with managed assets.
+                    useManagedAssetsStore
+                        .getState()
+                        .setAssetUseCounts(
+                            updatedRegime.history.current().assetsUseCounts,
+                        );
 
                     await reloadMolstarAndRestoreIndex(
                         {
