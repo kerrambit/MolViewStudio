@@ -38,13 +38,13 @@ class Preprocessor:
     def get_downsampling_strategy(kind: DownsamplignAlgorithmKind):
         match kind:
             case DownsamplignAlgorithmKind.NEAREST_NEIGHBOR:
-                return volsegtools.NearestNeighborDownsamplingStrategy()
+                return volsegtools.NearestNeighbor()
             case DownsamplignAlgorithmKind.MAX:
-                return volsegtools.MaxPoolingStrategy()
+                return volsegtools.MaxPooling()
             case DownsamplignAlgorithmKind.MIN:
-                return volsegtools.MinPoolingStrategy()
+                return volsegtools.MinPooling()
             case DownsamplignAlgorithmKind.AVG:
-                return volsegtools.AveragePoolingStrategy()
+                return volsegtools.AveragePooling()
             case DownsamplignAlgorithmKind.TRILINEAR:
                 return volsegtools.TrilinearInterpolation()
             case DownsamplignAlgorithmKind.TRICUBIC:
@@ -54,15 +54,15 @@ class Preprocessor:
             case DownsamplignAlgorithmKind.TRIQUINTIC_NO_SMOOTH:
                 return volsegtools.TriquinticInterpolation()
             case DownsamplignAlgorithmKind.SMOOTHING:
-                return volsegtools.HierarchyDownsamplingStrategy()
+                return volsegtools.Smoothing()
             case DownsamplignAlgorithmKind.STRIDED_SMOOTHING:
                 return volsegtools.StridedSmoothing(volsegtools.Gaussian3DKernel(5, 1))
             case DownsamplignAlgorithmKind.SEPARATED_SMOOTHING:
-                return volsegtools.SeparableSmoothing(5, 1)
+                return volsegtools.SeparatedSmoothing(5, 1)
             case DownsamplignAlgorithmKind.NULL:
-                return volsegtools.NullDownsamplingStrategy()
+                return volsegtools.Null()
             case _:
-                return volsegtools.NullDownsamplingStrategy()
+                return volsegtools.Null()
 
     @staticmethod
     async def process_volume(
@@ -145,7 +145,7 @@ class Preprocessor:
             def update_status(state):
                 loop.call_soon_threadsafe(
                     job.queue.put_nowait,
-                    ProcessVolumeProgressMessage(stage=state.current_stage),
+                    ProcessVolumeProgressMessage(stage=state.stage),
                 )
 
             def run_pipeline_blocking():
