@@ -2,17 +2,28 @@ import { useState } from "react";
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { UnstyledTextArea } from "../../../../../components/common/input/UnstyledTextArea";
-import { useRegimeStore } from "../../../../../stores/regimeStore";
+import {
+    useRegimeStore,
+    type ViewingRegime,
+} from "../../../../../stores/regimeStore";
 
 export function StoryOptions() {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
+    if (regime.kind !== "viewing") return null;
 
-    // View metadata.
-    const metadata =
-        regime.kind === "viewing"
-            ? regime.history.current().stateTree.metadata
-            : undefined;
+    // Render the component.
+    return (
+        <StoryOptionsFields
+            key={regime.history.current().timestamp}
+            regime={regime}
+        />
+    );
+}
+
+function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
+    // Metadata.
+    const metadata = regime.history.current().stateTree.metadata;
 
     // Local title and description variables for controlled inputs.
     const [title, setTitle] = useState(metadata?.title ?? "");
@@ -59,9 +70,7 @@ export function StoryOptions() {
                 placeholder="Enter title of your story..."
                 tooltip={title}
                 bold={true}
-                onValueChange={(newTitle) => {
-                    if (newTitle) setTitle(newTitle);
-                }}
+                onValueChange={(newTitle) => newTitle && setTitle(newTitle)}
                 onBlur={(newTitle) => commitMetadata("title", newTitle)}
                 canBeEmpty={true}
             />
@@ -75,9 +84,9 @@ export function StoryOptions() {
                 tooltip="Write your story description here."
                 minRows={31}
                 maxRows={31}
-                onValueChange={(newDescription) => {
-                    if (newDescription) setDescription(newDescription);
-                }}
+                onValueChange={(newDescription) =>
+                    newDescription && setDescription(newDescription)
+                }
                 onBlur={(newDescription) =>
                     commitMetadata("description", newDescription)
                 }
