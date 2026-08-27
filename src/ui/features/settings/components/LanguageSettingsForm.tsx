@@ -20,10 +20,7 @@ export function LanguageSettingsForm() {
             <SegmentedController
                 value={currentLanguage}
                 onChange={(value) => changeLanguage(value as "en" | "de")}
-                data={[
-                    { label: t("English"), value: "en" },
-                    { label: t("German"), value: "de" },
-                ]}
+                data={[{ label: t("English"), value: "en" }]}
             />
         </Stack>
     );
