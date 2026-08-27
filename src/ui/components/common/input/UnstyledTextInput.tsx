@@ -112,8 +112,8 @@ export function UnstyledTextInput({
         !trimmedValue && !canBeEmpty
             ? "Value cannot be empty!"
             : validator
-              ? validator(trimmedValue)
-              : null;
+            ? validator(trimmedValue)
+            : null;
 
     useEffect(() => {
         onErrorChange?.(error !== null);
@@ -142,7 +142,7 @@ export function UnstyledTextInput({
     // Render the component.
     return (
         <div className="unstyledTextInput" style={style} title={tooltip}>
-            <div className="unstyledTextInput__input-wrapper">
+            <div className="unstyledTextInput__wrapper">
                 {prefix && (
                     <span className="unstyledTextInput__prefix">{prefix}</span>
                 )}
@@ -157,13 +157,19 @@ export function UnstyledTextInput({
                     // TODO: when permanent background is applied, we should get also darker hover and focus
                     className={`unstyledTextInput__input-field ${
                         error && enabled ? "unstyledTextInput__input-error" : ""
-                    } ${bold ? "unstyledTextInput__input-field--bold" : ""} ${permanentInputFieldBackground ? "unstyledTextInput__input-field--permanentBackground" : ""}`}
+                    } ${bold ? "unstyledTextInput__input-field--bold" : ""} ${
+                        permanentInputFieldBackground
+                            ? "unstyledTextInput__input-field--permanentBackground"
+                            : ""
+                    }`}
                 />
             </div>
             {error && enabled && (
                 <span
                     className="unstyledTextInput__error-text"
-                    style={{ paddingLeft: prefix ? `${prefix.length}ch` : 0 }}
+                    style={{
+                        paddingLeft: prefix ? `${prefix.length + 1}ch` : 1,
+                    }}
                 >
                     {error}
                 </span>

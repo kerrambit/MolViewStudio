@@ -13,7 +13,13 @@ export function DeleteAssetDialogueContent({
     return (
         <>
             <p style={{ marginBottom: "1rem" }}>
-                {`Do you really want to delete '${assetName}' asset?`}
+                Are you sure you want to delete the asset{" "}
+                <b>{`'${assetName}'`}</b>? This action cannot be undone!
+                <br />
+                <br />
+                Note that undoing later changes could bring back a view that
+                used to reference this asset — since the asset itself won't be
+                restored, that view would be left with a broken reference.
             </p>
 
             <div
@@ -23,10 +29,10 @@ export function DeleteAssetDialogueContent({
                     gap: "8px",
                 }}
             >
-                <Button variant={"ghost"} onClick={() => close(true)}>
-                    Yes
+                <Button variant={"ghost"} onClick={() => close(false)}>
+                    Cancel
                 </Button>
-                <Button onClick={() => close(false)}>Cancel</Button>
+                <Button onClick={() => close(true)}>Delete</Button>
             </div>
         </>
     );

@@ -11,7 +11,7 @@ import { useRegimeStore } from "../../../../stores/regimeStore";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
-    isMolstarLoading: boolean;
+    isMolstarInitializing: boolean;
 }
 
 export function SceneManager(props: SceneManagerProps) {
@@ -28,12 +28,6 @@ export function SceneManager(props: SceneManagerProps) {
     const [isBuilderOpen, setIsBuilderOpen] = useState<string | undefined>(
         UiLocalStorageService.SceneManager.getBuilderSidebar(),
     );
-
-    // const history = useMemo(() => {
-    //     if (regime.kind === "viewing") {
-    //         return regime.history;
-    //     }
-    // }, [regime]);
 
     // When in `idling` regime, do not render anything.
     if (regime.kind === "idling") {
@@ -52,8 +46,6 @@ export function SceneManager(props: SceneManagerProps) {
                 <Text size="xl" fw={520}>
                     Scene Manager
                 </Text>
-
-                {/* <Text>History: {history?.toString()}</Text> */}
 
                 {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
                 {!props.isMolstarExpanded && (
@@ -82,7 +74,7 @@ export function SceneManager(props: SceneManagerProps) {
 
                 {tab === "views" && regime.kind === "viewing" && (
                     <Views
-                        isMolstarLoading={props.isMolstarLoading}
+                        isMolstarLoading={props.isMolstarInitializing}
                         onOpenBuilder={(key) => {
                             setIsBuilderOpen(key);
                             UiLocalStorageService.SceneManager.setBuilderSidebar(

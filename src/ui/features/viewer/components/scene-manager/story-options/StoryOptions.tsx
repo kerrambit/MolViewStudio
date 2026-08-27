@@ -1,49 +1,64 @@
+import { useState } from "react";
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { UnstyledTextArea } from "../../../../../components/common/input/UnstyledTextArea";
-import { useRegimeStore } from "../../../../../stores/regimeStore";
+import {
+    useRegimeStore,
+    type ViewingRegime,
+} from "../../../../../stores/regimeStore";
 
 export function StoryOptions() {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
+    if (regime.kind !== "viewing") return null;
 
-    // View metadata.
-    const metadata =
-        regime.kind === "viewing"
-            ? regime.history.current().metadata
-            : undefined;
+    // Render the component.
+    return (
+        <StoryOptionsFields
+            key={regime.history.current().timestamp}
+            regime={regime}
+        />
+    );
+}
+
+function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
+    // Metadata.
+    const metadata = regime.history.current().stateTree.metadata;
+
+    // Local title and description variables for controlled inputs.
+    const [title, setTitle] = useState(metadata?.title ?? "");
+    const [description, setDescription] = useState(metadata?.description ?? "");
 
     // Handler for change of metadata from UI.
-    const handleUpdateMetadata = (
+    const commitMetadata = (
         key: "title" | "description",
         value: string | undefined,
     ) => {
         if (regime.kind !== "viewing") return;
 
-        if (value === "") {
-            value = undefined;
-        }
+        const currentMetadata =
+            regime.history.current().stateTree.metadata || {};
+        const prev = currentMetadata[key] ?? "";
+        const next = value ?? "";
 
-        const newMetadata = { ...(regime.history.current().metadata || {}) };
+        // Nothing actually changed - don't touch history.
+        if (prev === next) return;
 
-        if (value === undefined) {
+        const newMetadata = { ...currentMetadata };
+
+        if (!value) {
             delete newMetadata[key];
-
-            if (key === "description") {
-                delete newMetadata.description_format;
-            }
+            if (key === "description") delete newMetadata.description_format;
         } else {
             newMetadata[key] = value;
-
-            if (key === "description") {
+            if (key === "description")
                 newMetadata.description_format = "plaintext";
-            }
         }
 
-        regime.commitStateTree({
-            ...regime.history.current(),
-            metadata: newMetadata,
-        });
+        regime.commitStateTree(
+            { ...regime.history.current().stateTree, metadata: newMetadata },
+            "Updated title and description for the story.",
+        );
     };
 
     // Render the component.
@@ -51,14 +66,12 @@ export function StoryOptions() {
         <div>
             <Text size="xl">Title</Text>
             <UnstyledTextInput
-                value={metadata?.title}
+                value={title}
                 placeholder="Enter title of your story..."
-                tooltip={metadata?.title}
+                tooltip={title}
                 bold={true}
-                onValueChange={(newTitle) =>
-                    handleUpdateMetadata("title", newTitle)
-                }
-                onBlur={(newTitle) => handleUpdateMetadata("title", newTitle)}
+                onValueChange={(newTitle) => newTitle && setTitle(newTitle)}
+                onBlur={(newTitle) => commitMetadata("title", newTitle)}
                 canBeEmpty={true}
             />
 
@@ -66,16 +79,16 @@ export function StoryOptions() {
                 Description
             </Text>
             <UnstyledTextArea
-                value={metadata?.description}
+                value={description}
                 placeholder="Write your story description here."
                 tooltip="Write your story description here."
                 minRows={31}
                 maxRows={31}
                 onValueChange={(newDescription) =>
-                    handleUpdateMetadata("description", newDescription)
+                    newDescription && setDescription(newDescription)
                 }
                 onBlur={(newDescription) =>
-                    handleUpdateMetadata("description", newDescription)
+                    commitMetadata("description", newDescription)
                 }
             />
         </div>

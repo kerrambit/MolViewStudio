@@ -11,6 +11,7 @@ import {
     clearViewer,
     exportStateTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
+    reloadMolstarAndRestoreIndex,
 } from "../../lib/molstar";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
@@ -49,6 +50,7 @@ import {
     createUndoMenuItem,
     createRedoMenuItem,
     createHistorySection,
+    createShowSourceTreeHistoryMenuItem,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -76,6 +78,7 @@ import type {
     Dropdown,
 } from "../../providers/MenuContext";
 import { useProcessingStore } from "../../stores/processingStore";
+import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/components/ShowSourceTreeHistoryDialogueContent";
 
 export function bindViewerMenu(): Menu {
     return [
@@ -215,41 +218,76 @@ export function bindViewerMenu(): Menu {
         createEditRootMenuItem([
             createHistorySection([
                 createUndoMenuItem(async () => {
-                    pushWarningNotification("Undo is not implemented yet!");
+                    const initialRegime = useRegimeStore.getState().regime;
+                    if (
+                        initialRegime.kind !== "viewing" &&
+                        initialRegime.kind !== "restoring"
+                    ) {
+                        return;
+                    }
 
-                    // const regime = useRegimeStore.getState().regime;
-                    // if (
-                    //     regime.kind !== "viewing" &&
-                    //     regime.kind !== "restoring"
-                    // )
-                    //     return;
+                    initialRegime.undo();
 
-                    // const assets = useManagedAssetsStore.getState().assets;
-                    // regime.undo();
+                    const updatedRegime = useRegimeStore.getState().regime;
+                    if (
+                        updatedRegime.kind !== "viewing" &&
+                        updatedRegime.kind !== "restoring"
+                    ) {
+                        return;
+                    }
 
-                    // const updatedRegime = useRegimeStore.getState().regime;
-                    // if (
-                    //     updatedRegime.kind !== "viewing" &&
-                    //     updatedRegime.kind !== "restoring"
-                    // )
-                    //     return;
+                    // Synchronization with managed assets.
+                    useManagedAssetsStore
+                        .getState()
+                        .setAssetUseCounts(
+                            updatedRegime.history.current().assetsUseCounts,
+                        );
 
-                    // await reloadMolstarAndRestoreIndex(
-                    //     undefined,
-                    //     Array.from(assets.values()),
-                    //     updatedRegime.history.current(),
-                    // );
+                    await reloadMolstarAndRestoreIndex(
+                        {
+                            index:
+                                updatedRegime.history.current().viewIndex || 0,
+                        },
+                        Array.from(
+                            useManagedAssetsStore.getState().assets.values(),
+                        ),
+                        updatedRegime.history.current().stateTree,
+                    );
                 }),
                 createRedoMenuItem(async () => {
-                    pushWarningNotification("Redo is not implemented yet!");
+                    const initialRegime = useRegimeStore.getState().regime;
+                    if (
+                        initialRegime.kind !== "viewing" &&
+                        initialRegime.kind !== "restoring"
+                    )
+                        return;
 
-                    // const regime = useRegimeStore.getState().regime;
-                    // if (
-                    //     regime.kind === "viewing" ||
-                    //     regime.kind === "restoring"
-                    // ) {
-                    //     regime.redo();
-                    // }
+                    initialRegime.redo();
+
+                    const updatedRegime = useRegimeStore.getState().regime;
+                    if (
+                        updatedRegime.kind !== "viewing" &&
+                        updatedRegime.kind !== "restoring"
+                    )
+                        return;
+
+                    // Synchronization with managed assets.
+                    useManagedAssetsStore
+                        .getState()
+                        .setAssetUseCounts(
+                            updatedRegime.history.current().assetsUseCounts,
+                        );
+
+                    await reloadMolstarAndRestoreIndex(
+                        {
+                            index:
+                                updatedRegime.history.current().viewIndex || 0,
+                        },
+                        Array.from(
+                            useManagedAssetsStore.getState().assets.values(),
+                        ),
+                        updatedRegime.history.current().stateTree,
+                    );
                 }),
             ]),
             createGeneralEditSection([
@@ -281,7 +319,7 @@ export function bindViewerMenu(): Menu {
 
                         const result = await exportStateTree(
                             injectRelativePathsBasedOnAssetIdsIntoTree(
-                                regime.history.current(),
+                                regime.history.current().stateTree,
                                 Array.from(
                                     useManagedAssetsStore
                                         .getState()
@@ -326,6 +364,19 @@ export function bindViewerMenu(): Menu {
                 }),
             ]),
             createOnlyDevSection("edit-dev", "For developers", [
+                createShowSourceTreeHistoryMenuItem(async () => {
+                    await useDialogueStore.getState().showDialogue({
+                        title: "Source Tree History",
+                        showCloseButton: true,
+                        width: "1000px",
+                        maxWidth: "1400px",
+                        content: (close) => (
+                            <ShowSourceTreeHistoryDialogueContent
+                                close={close}
+                            />
+                        ),
+                    });
+                }),
                 createLoadDefaultPDBItemMenuItem(async () => {
                     const confirmed = await useDialogueStore
                         .getState()

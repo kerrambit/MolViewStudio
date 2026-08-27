@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -151,7 +151,9 @@ export function useViewBuilder(viewKey: string) {
         return regime.kind === "viewing"
             ? regime.history
                   .current()
-                  .snapshots.find((snap) => snap.metadata.key === viewKey)
+                  .stateTree.snapshots.find(
+                      (snap) => snap.metadata.key === viewKey,
+                  )
             : null;
     }, [regime, viewKey]);
 
@@ -159,6 +161,17 @@ export function useViewBuilder(viewKey: string) {
     const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(() =>
         view ? getAllDownloadUrlsFromSnapshot(view) : [],
     );
+
+    // Refresh UI if view changes (as result of undo/redo actions).
+    useEffect(() => {
+        if (view) {
+            setSelectedAssetIds(getAllDownloadUrlsFromSnapshot(view));
+            setViewModels({});
+        } else {
+            setSelectedAssetIds([]);
+            setViewModels({});
+        }
+    }, [view]);
 
     // State to keep track which asset in the list is expanded.
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(() =>
@@ -298,27 +311,32 @@ export function useViewBuilder(viewKey: string) {
         ) {
             // Update source tree.
             const updatedTree: MVSData_States = {
-                ...regime.history.current(),
-                snapshots: regime.history.current().snapshots.map((snap) =>
-                    snap.metadata.key === viewKey
-                        ? {
-                              ...snap,
-                              root: applyViewModelToBranch(
-                                  snap.root,
-                                  assetId,
-                                  updatedVm,
-                              ),
-                          }
-                        : snap,
-                ),
+                ...regime.history.current().stateTree,
+                snapshots: regime.history
+                    .current()
+                    .stateTree.snapshots.map((snap) =>
+                        snap.metadata.key === viewKey
+                            ? {
+                                  ...snap,
+                                  root: applyViewModelToBranch(
+                                      snap.root,
+                                      assetId,
+                                      updatedVm,
+                                  ),
+                              }
+                            : snap,
+                    ),
             };
 
             // Update regime.
-            regime.commitStateTree(updatedTree);
+            regime.commitStateTree(
+                updatedTree,
+                `Updated "${paramKey}" for view "${view?.metadata.title}" (${viewKey}).`,
+            );
 
             // Try to reload Molstar viewer.
             const result = await reloadMolstarAndRestoreIndex(
-                viewKey,
+                { key: viewKey },
                 Array.from(assets.values()),
                 updatedTree,
             );
@@ -367,51 +385,57 @@ export function useViewBuilder(viewKey: string) {
 
         // Create updated state tree.
         const updatedTree: MVSData_States = {
-            ...regime.history.current(),
-            snapshots: regime.history.current().snapshots.map((snap) => {
-                if (snap.metadata.key === viewKey) {
-                    let newRoot;
+            ...regime.history.current().stateTree,
+            snapshots: regime.history
+                .current()
+                .stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        let newRoot;
 
-                    if (isChecked) {
-                        // Get changes from our view model.
-                        const draftedParams = getViewModel(toggledAssetId);
+                        if (isChecked) {
+                            // Get changes from our view model.
+                            const draftedParams = getViewModel(toggledAssetId);
 
-                        // New root.
-                        newRoot = addDownloadNodeToRoot(
-                            snap.root,
-                            toggledAssetId,
-                            getAsset(toggledAssetId)?.extension || "unknown",
-                            getAllSupportedAssetsParsers(),
-                            draftedParams,
-                        );
-
-                        // Cleanly apply the current view model state to the newly created branch.
-                        if (viewModels[toggledAssetId]) {
-                            newRoot = applyViewModelToBranch(
-                                newRoot,
+                            // New root.
+                            newRoot = addDownloadNodeToRoot(
+                                snap.root,
                                 toggledAssetId,
-                                viewModels[toggledAssetId],
+                                getAsset(toggledAssetId)?.extension ||
+                                    "unknown",
+                                getAllSupportedAssetsParsers(),
+                                draftedParams,
+                            );
+
+                            // Cleanly apply the current view model state to the newly created branch.
+                            if (viewModels[toggledAssetId]) {
+                                newRoot = applyViewModelToBranch(
+                                    newRoot,
+                                    toggledAssetId,
+                                    viewModels[toggledAssetId],
+                                );
+                            }
+                        } else {
+                            newRoot = removeDownloadNodeFromRoot(
+                                snap.root,
+                                toggledAssetId,
                             );
                         }
-                    } else {
-                        newRoot = removeDownloadNodeFromRoot(
-                            snap.root,
-                            toggledAssetId,
-                        );
-                    }
 
-                    return { ...snap, root: newRoot };
-                }
-                return snap;
-            }),
+                        return { ...snap, root: newRoot };
+                    }
+                    return snap;
+                }),
         };
 
         // Update regime.
-        regime.commitStateTree(updatedTree);
+        regime.commitStateTree(
+            updatedTree,
+            `Updated asset "${toggledAssetId}" for view "${view?.metadata.title}" (${viewKey}).`,
+        );
 
         // Try to reload Molstar viewer.
         const result = await reloadMolstarAndRestoreIndex(
-            viewKey,
+            { key: viewKey },
             Array.from(assets.values()),
             updatedTree,
         );

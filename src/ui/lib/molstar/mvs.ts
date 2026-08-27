@@ -419,7 +419,13 @@ async function _loadMVSXFile(
     // Iterate through local files in archive.
     const assets: ManagedAsset[] = [];
     for (const path in files) {
+        // Ignore index file.
         if (path === indexFilePath) {
+            continue;
+        }
+
+        // Ignore "empty filepaths", meaning that path could happen to be "path/", resulting in empty filepath.
+        if (!path.split("/").pop()?.trim()) {
             continue;
         }
 
@@ -435,8 +441,6 @@ async function _loadMVSXFile(
         const asset = ensureUrlAsset(url, files[path], {
             isFile: true,
         }); // TODO: use my own addLocalAssetIntoMolstar?
-
-        if (path === indexFilePath) continue;
 
         assets.push({
             id: crypto.randomUUID(),
@@ -591,25 +595,54 @@ export async function loadMVSJFile(index: string): Promise<
 }
 
 /**
- * Reloads Molstar with given `updated_tree` and restore index of view.
- * @param viewKey key of the view which has been edited; if undefined, we call function to get index from Molstar library itself
+ * Global variable holding the information if the Molstar viewer is in the (re)loading process.
+ * Do not confuse with `molstarInitializing` variable from `useMolstarInit` hook.
+ */
+let _isMolstarReloading = false;
+
+/**
+ * Retrieves information if Molstar is (re)loading view, or applying given view index (essentially again reloading of a view).
+ * Can be used for example to check if the subscription to some event is made by inner Molstar action or by calling our `reloadMolstarAndRestoreIndex` or `applySnapshotByIndex` functions.
+ * @returns true if reloading otherwise false
+ */
+export function isMolstarReloading() {
+    return _isMolstarReloading;
+}
+
+/**
+ * Sets global `isMolstarReloading` variable. See `isMolstarReloading` for more information.
+ * @param isReloading state
+ */
+export function setMolstarReloading(isReloading: boolean) {
+    _isMolstarReloading = isReloading;
+}
+
+/**
+ * Reloads Molstar with given `updated_tree` and restore index of view. Sets `isMolstarReloading` to `true`.
+ * @param view view which is to be selected (you can reference it using either its index or key, where index has a priority); if undefined, we call function to get index from Molstar library itself
  * @param assets assets from `ManagedAssets` manager
  * @param updatedTree updated tree
  * @returns undefined or Error of any problem occurs
  */
 export async function reloadMolstarAndRestoreIndex(
-    viewKey: string | undefined,
+    view: { index?: number; key?: string } | undefined,
     assets: ManagedAsset[],
     updatedTree: MVSData_States,
 ) {
+    setMolstarReloading(true);
+
     let currentIndex;
-    if (!viewKey) {
+    if (!view) {
         currentIndex = getCurrentViewIndex();
     } else {
-        // Find the index of the view we are currently editing.
-        currentIndex = updatedTree.snapshots.findIndex(
-            (snap: Snapshot) => snap.metadata.key === viewKey,
-        );
+        if (view.index) {
+            currentIndex = view.index;
+        } else {
+            // Find the index of the view we are currently editing.
+            currentIndex = updatedTree.snapshots.findIndex(
+                (snap: Snapshot) => snap.metadata.key === view.key,
+            );
+        }
     }
 
     // Build and load the tree.
@@ -619,13 +652,16 @@ export async function reloadMolstarAndRestoreIndex(
         undefined,
         currentIndex,
     );
+
+    setMolstarReloading(false);
+
     if (!result.success) {
         return result.error;
     }
 }
 
 /**
- * Loads MVS into Molstar and checks if the operation was successful.
+ * Loads MVS into Molstar and checks if the operation was successful. Does not set `isMolstarReloading`.
  * @param stateTree state tree to load
  * @param sourceUrl optional sourceUrl (`Base for resolving relative URLs/URIs. May itself be a relative URL (relative to the window URL)`)
  * @param currentIndex optional parameter which reloads given snapshot on the `currentIndex` index

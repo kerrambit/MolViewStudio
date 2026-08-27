@@ -4,6 +4,7 @@ import {
     IconWorldDownload,
     IconArrowBack,
     IconArrowForward,
+    IconHistory,
 } from "@tabler/icons-react";
 import { BroomIcon } from "../../components/icons/BroomIcon";
 import type {
@@ -142,6 +143,20 @@ export function createLoadDefaultMVSXtemMenuItem(
         id: "load-default-mvsx",
         title: "Load default MVSX",
         icon: { icon: IconWorldDownload, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createShowSourceTreeHistoryMenuItem(
+    action: () => Promise<void>,
+): MenuItem {
+    return {
+        id: "showSourceTreeHistory",
+        title: "Show source tree history",
+        icon: { icon: IconHistory, position: "left" },
         task: {
             action: action,
             type: "direct",

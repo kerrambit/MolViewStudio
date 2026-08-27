@@ -1,74 +1,20 @@
 import { create } from "zustand";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import type { SerializedAssets } from "../lib/molstar";
+import { getCurrentViewIndex, type SerializedAssets } from "../lib/molstar";
+import { History } from "../lib/history/History";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
+import { useManagedAssetsStore } from "./managedAssetsStore";
 
-export class SourceTreeHistory {
-    private readonly past: Readonly<MVSData_States[]>;
-    private readonly present: MVSData_States;
-    private readonly future: Readonly<MVSData_States[]>;
+export type SourceTreeHistoryNode = {
+    stateTree: MVSData_States;
+    viewIndex: number | undefined;
+    assetsUseCounts: Map<string, number>;
+    description: string;
+    timestamp: number;
+};
 
-    private constructor(
-        past: Readonly<MVSData_States[]>,
-        present: MVSData_States,
-        future: Readonly<MVSData_States[]>,
-    ) {
-        this.past = past;
-        this.present = present;
-        this.future = future;
-    }
-
-    public static init(initial: MVSData_States): SourceTreeHistory {
-        return new SourceTreeHistory([], initial, []);
-    }
-
-    public current(): MVSData_States {
-        return this.present;
-    }
-
-    public canUndo(): boolean {
-        return this.past.length > 0;
-    }
-
-    public canRedo(): boolean {
-        return this.future.length > 0;
-    }
-
-    add(next: MVSData_States): SourceTreeHistory {
-        return new SourceTreeHistory([...this.past, this.present], next, []);
-    }
-
-    undo(): SourceTreeHistory {
-        if (!this.canUndo()) return this;
-
-        const prev = this.past[this.past.length - 1];
-        return new SourceTreeHistory(this.past.slice(0, -1), prev, [
-            this.present,
-            ...this.future,
-        ]);
-    }
-
-    redo(): SourceTreeHistory {
-        if (!this.canRedo()) return this;
-
-        const next = this.future[0];
-        return new SourceTreeHistory(
-            [...this.past, this.present],
-            next,
-            this.future.slice(1),
-        );
-    }
-
-    toString(): string {
-        const pastLabels = this.past.map((_, i) => `#${i}`);
-        const presentLabel = `[#${this.past.length}]`;
-        const futureStart = this.past.length + 1;
-        const futureLabels = this.future.map((_, i) => `#${futureStart + i}`);
-
-        return [...pastLabels, presentLabel, ...futureLabels].join(" -> ");
-    }
-}
+export type SourceTreeHistory = History<SourceTreeHistoryNode>;
 
 export type RestoringSession = {
     snapshot: PluginState.Snapshot;
@@ -102,7 +48,11 @@ export type ViewingRegime = {
     history: SourceTreeHistory;
     suspend: (session: RestoringSession) => void;
     reset: () => void;
-    commitStateTree: (newStateTree: MVSData_States) => void;
+    commitStateTree: (
+        newStateTree: MVSData_States,
+        description: string,
+        viewIndex?: number | undefined,
+    ) => void;
     undo: () => void;
     redo: () => void;
 };
@@ -149,7 +99,15 @@ function makeStaging(
                     set,
                     viewedFile,
                     sourceUrl,
-                    SourceTreeHistory.init(initialStateTree),
+                    History.initialize({
+                        stateTree: initialStateTree,
+                        viewIndex: undefined,
+                        assetsUseCounts: useManagedAssetsStore
+                            .getState()
+                            .getAssetUseCounts(),
+                        description: "Initial load.",
+                        timestamp: Date.now(),
+                    }),
                 ),
             ),
         reset: () => set(makeIdling(set)),
@@ -172,13 +130,23 @@ function makeViewing(
         suspend: (session) =>
             set(makeRestoring(set, viewedFile, sourceUrl, history, session)),
         reset: () => set(makeIdling(set)),
-        commitStateTree: (newStateTree) =>
+        commitStateTree: (newStateTree, description, viewIndex) =>
             set(
                 makeViewing(
                     set,
                     viewedFile,
                     sourceUrl,
-                    history.add(newStateTree),
+                    history.add({
+                        stateTree: newStateTree,
+                        viewIndex: viewIndex
+                            ? viewIndex
+                            : getCurrentViewIndex(),
+                        assetsUseCounts: useManagedAssetsStore
+                            .getState()
+                            .getAssetUseCounts(),
+                        description: description,
+                        timestamp: Date.now(),
+                    }),
                 ),
             ),
         undo: () =>

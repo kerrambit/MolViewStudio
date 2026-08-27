@@ -10,48 +10,54 @@ import {
     useLiveCameraState,
     type Base64Png,
     type HexColor,
+    isMolstarReloading,
 } from "../../../lib/molstar";
 import { pushWarningNotification } from "../../../services/NotificationService";
 
 export function useViewCard(props: ViewCardProps) {
-    // State for the view title.
-    const [currentName, setCurrentName] = useState<string | undefined>(
-        props.metadata.title || "New view...",
+    // Deconstruct the props.
+    const { onBackgrounColorChange, metadata } = props;
+    const { backgroundColor } = metadata;
+
+    // Local display state for the view title.
+    const [currentName, setCurrentName] = useState<string>(
+        props.metadata.title || "",
     );
 
-    // State for the view background color.
+    // Local display state for the background color.
     const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
         HexColor | undefined
-    >(props.metadata.backgroundColor);
+    >(backgroundColor);
 
     // Camera hook.
     const cameraState = useLiveCameraState();
 
-    // Subscribe to the change of background color.
+    // Keep local state in sync when change is propagated with undo/redo.
+    useEffect(() => {
+        setCurrentBackgroundColor(backgroundColor);
+    }, [backgroundColor]);
+
+    useEffect(() => {
+        setCurrentName(metadata.title || "");
+    }, [metadata.title]);
+
+    // Molstar's own in-canvas UI changed the color.
+    // This is an explicit, one-shot reaction to a live event — not an effect that infers change by diffing state - so it can't loop.
     useEffect(() => {
         const sub = getBackgroundColorChangeSubscription((color) => {
-            if (color) {
-                const hex = Color.toHexStyle(color);
-                setCurrentBackgroundColor((prev) =>
-                    prev === hex ? prev : hex,
-                );
+            if (isMolstarReloading() || color === undefined || color === null) {
+                return;
+            }
+            const hex = Color.toHexStyle(color);
+
+            setCurrentBackgroundColor((prev) => (prev === hex ? prev : hex));
+
+            if (hex !== backgroundColor) {
+                onBackgrounColorChange?.(hex);
             }
         });
         return () => sub?.unsubscribe();
-    }, []);
-
-    // Propagate async change of color to the parent.
-    const { onBackgrounColorChange, metadata } = props;
-    const { backgroundColor } = metadata;
-    useEffect(() => {
-        if (
-            onBackgrounColorChange &&
-            currentBackgroundColor &&
-            currentBackgroundColor !== backgroundColor
-        ) {
-            onBackgrounColorChange(currentBackgroundColor);
-        }
-    }, [currentBackgroundColor, onBackgrounColorChange, backgroundColor]);
+    }, [backgroundColor, onBackgrounColorChange]);
 
     // Compute whether the camera has moved relative to the saved reference view.
     const isCameraMoved = (() => {
@@ -74,11 +80,21 @@ export function useViewCard(props: ViewCardProps) {
     })();
 
     // Handler to title change.
-    const handleTitleUpdate = (newName: string | undefined) => {
-        setCurrentName(newName);
-        props.onTitleChange?.(newName);
-    };
+    const handleTitleUpdate = (
+        newName: string | undefined,
+        propagateChangeUp: boolean,
+    ) => {
+        setCurrentName(newName || "");
 
+        if (!propagateChangeUp) return;
+
+        const normalizedNew = newName || undefined;
+        const normalizedOld = metadata.title || undefined;
+
+        if (normalizedNew !== normalizedOld) {
+            props.onTitleChange?.(newName);
+        }
+    };
     // Handler to capture camera.
     const handleCaptureCamera = async () => {
         if (!props.onCameraSave || !cameraState) return;
@@ -88,7 +104,7 @@ export function useViewCard(props: ViewCardProps) {
             img = await getCanvasScreenshot();
         } catch {
             pushWarningNotification(
-                "Application could not save the canvas screenshot! The current view will contain no screenshot.",
+                "Application could not save the canvas screenshot! The current view will contain no screenshot. Undo this action if needed.",
             );
             img = undefined;
         }

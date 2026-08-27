@@ -20,7 +20,7 @@ export function useMolstarInit() {
     const parentRef = useRef<HTMLDivElement>(null);
 
     // Controls if Molstar is still in the initialization process.
-    const [molstarLoading, setMolstarLoading] = useState(true);
+    const [molstarInitializing, setMolstarInitializing] = useState(true);
 
     // Controls if the Molstar viewer is expanded or not.
     const [molstarExpanded, setMolstarExpanded] = useState(MOLSTAR_EXPANDED);
@@ -60,7 +60,7 @@ export function useMolstarInit() {
                 : null,
         ).then(() => {
             // Molstar is fully initialized.
-            setMolstarLoading(false);
+            setMolstarInitializing(false);
             fullScreenSubscription = getFullScreenSubscription((val) =>
                 setMolstarExpanded(val),
             );
@@ -96,17 +96,17 @@ export function useMolstarInit() {
 
     // Restore the previous workspace.
     useEffect(() => {
-        if (molstarLoading || regime.kind !== "restoring") {
+        if (molstarInitializing || regime.kind !== "restoring") {
             return;
         }
 
         regime.resume();
-    }, [regime, molstarLoading]);
+    }, [regime, molstarInitializing]);
 
     // Start deconstruction of file to view.
     useEffect(() => {
         const deconstruct = async () => {
-            if (molstarLoading || regime.kind !== "staging") {
+            if (molstarInitializing || regime.kind !== "staging") {
                 return;
             }
 
@@ -114,7 +114,7 @@ export function useMolstarInit() {
         };
 
         deconstruct();
-    }, [regime, molstarLoading, openFileInViewer]);
+    }, [regime, molstarInitializing, openFileInViewer]);
 
-    return { parentRef, molstarLoading, molstarExpanded };
+    return { parentRef, molstarInitializing, molstarExpanded };
 }
