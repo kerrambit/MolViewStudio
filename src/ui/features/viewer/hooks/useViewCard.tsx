@@ -19,12 +19,12 @@ export function useViewCard(props: ViewCardProps) {
     const { onBackgrounColorChange, metadata } = props;
     const { backgroundColor } = metadata;
 
-    // State for the view title.
+    // Local display state for the view title.
     const [currentName, setCurrentName] = useState<string>(
         props.metadata.title || "",
     );
 
-    // State for the view background color.
+    // Local display state for the background color.
     const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
         HexColor | undefined
     >(backgroundColor);
@@ -41,35 +41,23 @@ export function useViewCard(props: ViewCardProps) {
         setCurrentName(metadata.title || "");
     }, [metadata.title]);
 
-    // Subscribe to Molstar event guarded by lock.
+    // Molstar's own in-canvas UI changed the color.
+    // This is an explicit, one-shot reaction to a live event — not an effect that infers change by diffing state - so it can't loop.
     useEffect(() => {
         const sub = getBackgroundColorChangeSubscription((color) => {
-            // Ignore transient cleanup events while Molstar is reloading.
-            if (isMolstarReloading()) {
+            if (isMolstarReloading() || color === undefined || color === null) {
                 return;
             }
+            const hex = Color.toHexStyle(color);
 
-            if (color) {
-                const hex = Color.toHexStyle(color);
-                setCurrentBackgroundColor((prev) =>
-                    prev === hex ? prev : hex,
-                );
+            setCurrentBackgroundColor((prev) => (prev === hex ? prev : hex));
+
+            if (hex !== backgroundColor) {
+                onBackgrounColorChange?.(hex);
             }
         });
         return () => sub?.unsubscribe();
-    }, []);
-
-    // Propagate real changed to the user.
-    useEffect(() => {
-        if (
-            !isMolstarReloading() &&
-            onBackgrounColorChange &&
-            currentBackgroundColor &&
-            currentBackgroundColor !== backgroundColor
-        ) {
-            onBackgrounColorChange(currentBackgroundColor);
-        }
-    }, [currentBackgroundColor, onBackgrounColorChange, backgroundColor]);
+    }, [backgroundColor, onBackgrounColorChange]);
 
     // Compute whether the camera has moved relative to the saved reference view.
     const isCameraMoved = (() => {

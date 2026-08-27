@@ -335,38 +335,6 @@ export function useViewsManagement({
         updateSnapshotCameraInManager(index);
     };
 
-    const handleBackgroundColorChange = (
-        view: ViewMetadata,
-        color: HexColor,
-    ) => {
-        // Ignore other non-viewing regime.
-        if (regime.kind !== "viewing") {
-            return;
-        }
-
-        // Create updated tree.
-        const updatedTree = {
-            ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === view.key) {
-                        return {
-                            ...snap,
-                            root: applyBackgroundColorToNode(snap.root, color),
-                        };
-                    }
-                    return snap;
-                }),
-        };
-
-        // Update regime.
-        regime.commitStateTree(
-            updatedTree,
-            `Updated background color for view "${view.title}" (${view.key}).`,
-        );
-    };
-
     const handleTitleChange = (
         index: number,
         view: ViewMetadata,
@@ -512,6 +480,41 @@ export function useViewsManagement({
         if (isBuilderOpen && onOpenBuilder) {
             onOpenBuilder(view.key);
         }
+    };
+
+    const handleBackgroundColorChange = (
+        view: ViewMetadata,
+        color: HexColor,
+    ) => {
+        // Ignore other non-viewing regime.
+        if (regime.kind !== "viewing") {
+            return;
+        }
+
+        // Avoids redundant commits from Molstar echoing a color we already pushed via the Options dialog.
+        if (view.backgroundColor === color) return;
+
+        // Create updated tree.
+        const updatedTree = {
+            ...regime.history.current().stateTree,
+            snapshots: regime.history
+                .current()
+                .stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === view.key) {
+                        return {
+                            ...snap,
+                            root: applyBackgroundColorToNode(snap.root, color),
+                        };
+                    }
+                    return snap;
+                }),
+        };
+
+        // Update regime.
+        regime.commitStateTree(
+            updatedTree,
+            `Updated background color for view "${view.title}" (${view.key}).`,
+        );
     };
 
     return {
