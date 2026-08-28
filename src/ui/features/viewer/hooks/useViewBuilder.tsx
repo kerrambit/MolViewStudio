@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
 import { pushErrorNotification } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
@@ -163,31 +163,29 @@ export function useViewBuilder(viewKey: string) {
             : null;
     }, [regime, viewKey]);
 
-    // State for all selected assets IDs in UI.
-    const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(() =>
-        view ? getAllDownloadUrlsFromSnapshot(view) : [],
-    );
-
-    // Refresh UI if view changes (as result of undo/redo actions).
-    useEffect(() => {
-        if (view) {
-            setSelectedAssetIds(getAllDownloadUrlsFromSnapshot(view));
-            setViewModels({});
-        } else {
-            setSelectedAssetIds([]);
-            setViewModels({});
-        }
-    }, [view]);
-
     // State to keep track which asset in the list is expanded.
     const [expandedAssetId, setExpandedAssetId] = useState<string | null>(() =>
         UiLocalStorageService.ViewBuilder.getExpandedAssetId(viewKey),
+    );
+
+    // State for all selected assets IDs in UI.
+    const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(() =>
+        view ? getAllDownloadUrlsFromSnapshot(view) : [],
     );
 
     // Current record of volume view models for each asset.
     const [viewModels, setViewModels] = useState<
         Record<string, VolumeViewModel>
     >({});
+
+    const [prevView, setPrevView] = useState(view);
+
+    // Refresh UI if view changes (as result of undo/redo actions).
+    if (view !== prevView) {
+        setPrevView(view);
+        setSelectedAssetIds(view ? getAllDownloadUrlsFromSnapshot(view) : []);
+        setViewModels({});
+    }
 
     // Current selected asset filters.
     const [selectedAssetFilters, setSelectedAssetFilters] = useState<string[]>(

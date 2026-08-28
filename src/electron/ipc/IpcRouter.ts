@@ -17,10 +17,12 @@ import {
     loadRecentFiles,
     writeRecentFiles,
 } from "../services/recentFilesStorage.js";
+import { AutoUpdater } from "../AutoUpdater.js";
 
 // TODO: devide the indivudal handlers to more grouped folders such as "ipc/file" etc.
 export function registerAllIpcHandlers(
     mainWindow: BrowserWindow,
+    updater: AutoUpdater,
     userSettings: UserSettings,
     serverPort: number,
     paths: {
@@ -168,5 +170,22 @@ export function registerAllIpcHandlers(
             paths.recentFilesFilePath,
             updatedFiles,
         );
+    });
+
+    Ipc.Electron.handle("checkForUpdates", async () => {
+        logger.info("Manual update check triggered from UI.");
+        try {
+            const result = await updater.checkForUpdates(true);
+            if (result && result.updateInfo) {
+                return {
+                    version: result.updateInfo.version,
+                    releaseDate: result.updateInfo.releaseDate,
+                };
+            }
+            return null;
+        } catch (error) {
+            logger.error(`Manual update check failed: <${error}>!`);
+            return null;
+        }
     });
 }

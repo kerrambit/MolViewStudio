@@ -1,5 +1,11 @@
 {
   "appId": "com.kerrambit.molviewstudio",
+  "artifactName": "${name}-Setup-${version}.${ext}",
+  "publish": {
+    "provider": "github",
+    "owner": "kerrambit",
+    "repo": "MolViewStudio"
+  },
   "files": ["dist-electron", "dist-react"],
   "extraResources": ["dist-electron/preload.cjs", "src/assets/**", "src/locales/**", {
         "from": "dist-server/",
