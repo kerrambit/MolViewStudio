@@ -59,34 +59,40 @@ jobs:
         run: npm run build:server
 
       - name: Build application
-        run: npm run ${{ matrix.script }}
+        run: npm run ${{ matrix.script }} -- -p never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload build artifacts (Linux)
         if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: |
             dist/*.AppImage
+            dist/latest-linux.yml
+            dist/*.blockmap
 
       - name: Upload build artifacts (Windows)
         if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: |
             dist/*.exe
             dist/*.msi
+            dist/latest.yml
+            dist/*.blockmap
 
       - name: Upload build artifacts (macOS)
         if: matrix.platform == 'mac'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: mac-build
           path: |
             dist/*.dmg
+            dist/latest-mac.yml
+            dist/*.blockmap
 
   release:
     needs: build
@@ -115,6 +121,6 @@ jobs:
             artifacts/*
           generate_release_notes: true
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
