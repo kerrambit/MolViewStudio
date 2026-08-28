@@ -64,6 +64,7 @@ app.on("ready", async () => {
     logger.info("Application has started.");
 
     autoUpdater.on("update-available", async (info) => {
+        logger.info("Show dialogue <MolViewStudio Update Available>.");
         const { response } = await dialog.showMessageBox({
             type: "info",
             title: "MolViewStudio Update Available",
@@ -73,12 +74,13 @@ app.on("ready", async () => {
         });
 
         if (response === 0) {
-            logger.info("User clicked Yes to download.");
+            logger.info("User clicked 'Yes' to download the update.");
             autoUpdater.downloadUpdate();
         }
     });
 
     autoUpdater.on("update-downloaded", async () => {
+        logger.info("Show dialogue <MolViewStudio Update Ready>.");
         const { response } = await dialog.showMessageBox({
             type: "info",
             title: "MolViewStudio Update Ready",
@@ -89,29 +91,12 @@ app.on("ready", async () => {
         });
 
         if (response === 0) {
-            logger.info("User clicked Restart Now.");
+            logger.info(
+                "User clicked 'Restart Now' to restart the app and install update.",
+            );
             autoUpdater.quitAndInstall();
         }
     });
-
-    // Check for updates on startup.
-    if (app.isPackaged) {
-        logger.info("Checking for updates on startup...");
-        try {
-            const updateResult = await autoUpdater.checkForUpdates();
-            if (updateResult) {
-                logger.info(
-                    `Update is available: <${updateResult.isUpdateAvailable}>. Info about update: <${updateResult.updateInfo}>.`,
-                );
-            } else {
-                logger.warn(
-                    `Cannot retrieve information is any update is available.`,
-                );
-            }
-        } catch (error) {
-            logger.error(`Error checking for updates: <${error}>!`);
-        }
-    }
 
     // ------------------------------------------------------------- //
 
@@ -171,6 +156,7 @@ app.on("ready", async () => {
 
     // Start the server and show splash screen for at least 1.5 seconds (splash screen will be displayed as long as server is starting).
     // We also handle close events here: mainly stopping the server when app is being stopped.
+    // Lastly, we check for updates of the application.
     Promise.all([
         runServer(serverPort),
         new Promise((resolve) => setTimeout(resolve, 1500)),
@@ -183,6 +169,28 @@ app.on("ready", async () => {
             splash.close();
             mainWindow.show();
             handleCloseEvents(mainWindow, serverProcess);
+
+            // Check for updates on startup.
+            if (app.isPackaged) {
+                setTimeout(async () => {
+                    logger.info("Checking for updates on startup...");
+                    try {
+                        const updateResult =
+                            await autoUpdater.checkForUpdates();
+                        if (updateResult) {
+                            logger.info(
+                                `Update is available: <${updateResult.isUpdateAvailable}>. Info about update: <{ version: ${updateResult.updateInfo.version}, releaseDate: ${updateResult.updateInfo.releaseDate} }>.`,
+                            );
+                        } else {
+                            logger.warn(
+                                `Cannot retrieve information is any update is available.`,
+                            );
+                        }
+                    } catch (error) {
+                        logger.error(`Error checking for updates: <${error}>!`);
+                    }
+                }, 2000);
+            }
         })
         .catch((err) => {
             logger.error(`Server failed to start! Details: ${err}.`);
