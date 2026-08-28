@@ -6,7 +6,7 @@
 
 import pkg from "electron-updater";
 const { autoUpdater } = pkg;
-import { app, dialog } from "electron";
+import { app, BrowserWindow, dialog } from "electron";
 import { AppUpdater } from "electron-updater";
 import { logger } from "./utils/logger.js";
 
@@ -27,7 +27,7 @@ export class AutoUpdater {
         return this._appUpdater?.checkForUpdates();
     }
 
-    public registerHandlers() {
+    public registerHandlers(window?: BrowserWindow) {
         this._appUpdater.on("update-available", async (info) => {
             this._isManualCheck = false;
 
@@ -50,6 +50,10 @@ export class AutoUpdater {
         });
 
         this._appUpdater.on("update-downloaded", async () => {
+            if (window) {
+                window.setProgressBar(-1);
+            }
+
             logger.info("AutoUpdater: Update is downloaded.");
             logger.info("Show dialogue <MolViewStudio Update Ready>.");
             const { response } = await dialog.showMessageBox({
@@ -95,7 +99,27 @@ export class AutoUpdater {
             }
         });
 
+        this._appUpdater.on("download-progress", (progressInfo) => {
+            logger.info(
+                `AutoUpdater: Downloading update: ${Math.round(
+                    progressInfo.percent,
+                )}% ` +
+                    `(${Math.round(
+                        progressInfo.transferred / 1024 / 1024,
+                    )}MB / ` +
+                    `${Math.round(progressInfo.total / 1024 / 1024)}MB)`,
+            );
+
+            if (window) {
+                window.setProgressBar(progressInfo.percent / 100);
+            }
+        });
+
         this._appUpdater.on("error", (err) => {
+            if (window) {
+                window.setProgressBar(-1);
+            }
+
             logger.error(
                 `AutoUpdater: Error during check/download: <${
                     err?.message || err

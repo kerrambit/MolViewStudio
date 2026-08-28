@@ -58,7 +58,7 @@ app.on("ready", async () => {
 
     // Register updater handlers;
     const updater = new AutoUpdater();
-    updater.registerHandlers();
+    updater.registerHandlers(mainWindow);
 
     // ------------------------------------------------------------- //
 
@@ -111,7 +111,7 @@ app.on("ready", async () => {
     });
 
     // Create tray.
-    createTray(mainWindow);
+    createTray(mainWindow, updater);
 
     // Do not create any menu (Linux and Win).
     Menu.setApplicationMenu(null);
