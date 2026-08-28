@@ -1,5 +1,6 @@
 {
   "appId": "com.kerrambit.molviewstudio",
+  "artifactName": "${name}-Setup-${version}.${ext}",
   "publish": {
     "provider": "github",
     "owner": "kerrambit",
