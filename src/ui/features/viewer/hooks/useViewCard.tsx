@@ -29,23 +29,27 @@ export function useViewCard(props: ViewCardProps) {
     const [currentName, setCurrentName] = useState<string>(
         props.metadata.title || "",
     );
+    const [prevName, setPrevName] = useState(metadata.title || "");
 
     // Local display state for the background color.
     const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
         HexColor | undefined
     >(backgroundColor);
+    const [prevBackgroundColor, setPrevBackgroundColor] =
+        useState(backgroundColor);
 
     // Camera hook.
     const cameraState = useLiveCameraState();
 
     // Keep local state in sync when change is propagated with undo/redo.
-    useEffect(() => {
+    if (backgroundColor !== prevBackgroundColor) {
+        setPrevBackgroundColor(backgroundColor);
         setCurrentBackgroundColor(backgroundColor);
-    }, [backgroundColor]);
-
-    useEffect(() => {
+    }
+    if ((metadata.title || "") !== prevName) {
+        setPrevName(metadata.title || "");
         setCurrentName(metadata.title || "");
-    }, [metadata.title]);
+    }
 
     // Molstar's own in-canvas UI changed the color.
     // This is an explicit, one-shot reaction to a live event — not an effect that infers change by diffing state - so it can't loop.
