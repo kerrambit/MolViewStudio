@@ -1,7 +1,7 @@
 {
   "name": "MolViewStudio",
   "private": true,
-  "version": "0.9.5-alpha",
+  "version": "0.9.6-alpha",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
