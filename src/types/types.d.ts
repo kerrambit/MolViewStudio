@@ -74,6 +74,15 @@ type IpcApiChannelMap = {
     };
 
     addRecentFile: { args: [path: string]; reply: void; type: "send" };
+
+    checkForUpdates: {
+        args: [];
+        reply: {
+            version: string;
+            releaseDate: string;
+        } | null;
+        type: "invoke";
+    };
 };
 
 /**

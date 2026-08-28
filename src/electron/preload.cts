@@ -104,4 +104,8 @@ electron.contextBridge.exposeInMainWorld("electron", {
     addRecentFile: (path: string) => {
         return Ipc.Ui.send("addRecentFile", path);
     },
+
+    checkForUpdates: () => {
+        return Ipc.Ui.invoke("checkForUpdates");
+    },
 } satisfies Window["electron"]);

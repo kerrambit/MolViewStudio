@@ -4,7 +4,9 @@
  * @author Marek Eibel
  */
 
-import { app, BrowserWindow, Menu } from "electron";
+import { app, BrowserWindow, dialog, Menu } from "electron";
+import pkg from "electron-updater";
+const { autoUpdater } = pkg;
 import path from "path";
 import http from "http";
 import { ChildProcess, spawn } from "child_process";
@@ -22,6 +24,12 @@ import { logger } from "./utils/logger.js";
 import { getAvailablePort } from "./utils/portUtils.js";
 import { SplashScreen } from "./SplashScreen.js";
 import { registerAllIpcHandlers } from "./ipc/IpcRouter.js";
+
+// Disable automatic background downloading.
+autoUpdater.autoDownload = false;
+
+// TODO: temporary solution
+autoUpdater.allowPrerelease = true;
 
 app.on("ready", async () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -54,6 +62,56 @@ app.on("ready", async () => {
     // Initialize logging.
     logger.initialize();
     logger.info("Application has started.");
+
+    autoUpdater.on("update-available", async (info) => {
+        const { response } = await dialog.showMessageBox({
+            type: "info",
+            title: "MolViewStudio Update Available",
+            message: `Version ${info.version} is available. Do you want to download it now?`,
+            buttons: ["Yes", "No"],
+            cancelId: 1,
+        });
+
+        if (response === 0) {
+            logger.info("User clicked Yes to download.");
+            autoUpdater.downloadUpdate();
+        }
+    });
+
+    autoUpdater.on("update-downloaded", async () => {
+        const { response } = await dialog.showMessageBox({
+            type: "info",
+            title: "MolViewStudio Update Ready",
+            message:
+                "The update has been downloaded. Do you want to restart and install it now?",
+            buttons: ["Restart Now", "Later"],
+            cancelId: 1,
+        });
+
+        if (response === 0) {
+            logger.info("User clicked Restart Now.");
+            autoUpdater.quitAndInstall();
+        }
+    });
+
+    // Check for updates on startup.
+    if (app.isPackaged) {
+        logger.info("Checking for updates on startup...");
+        try {
+            const updateResult = await autoUpdater.checkForUpdates();
+            if (updateResult) {
+                logger.info(
+                    `Update is available: <${updateResult.isUpdateAvailable}>. Info about update: <${updateResult.updateInfo}>.`,
+                );
+            } else {
+                logger.warn(
+                    `Cannot retrieve information is any update is available.`,
+                );
+            }
+        } catch (error) {
+            logger.error(`Error checking for updates: <${error}>!`);
+        }
+    }
 
     // ------------------------------------------------------------- //
 
@@ -99,7 +157,7 @@ app.on("ready", async () => {
     );
 
     // Registers all IPC handlers.
-    registerAllIpcHandlers(mainWindow, userSettings, serverPort, {
+    registerAllIpcHandlers(mainWindow, autoUpdater, userSettings, serverPort, {
         userDataPath,
         userSettingsFilePath,
         recentFilesFilePath,

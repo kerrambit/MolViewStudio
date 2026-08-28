@@ -11,7 +11,10 @@ import {
     IconBrandGithub,
     IconTopologyStar3,
 } from "@tabler/icons-react";
-import { pushInfoNotification } from "../../services/NotificationService";
+import {
+    pushErrorNotification,
+    pushInfoNotification,
+} from "../../services/NotificationService";
 import type { MenuItem, Section } from "../../providers/MenuContext";
 
 export function createGeneralHelpSection(items: MenuItem[]): Section {
@@ -55,9 +58,24 @@ export function createCheckForUpdatesMenuItem(): MenuItem {
         title: "Check for updates",
         icon: { icon: IconProgressCheck, position: "left" },
         task: {
-            action: () => {
-                // TODO: wait for https://github.com/kerrambit/MolStarApp/issues/4
-                pushInfoNotification(`You are up to date.`);
+            action: async () => {
+                // const buildInfo = window.electron.requestBuildInformation();
+                // const updates = await window.electron.checkForUpdates();
+                // if (updates) {
+                //     if (buildInfo.appVersion === updates.version) {
+                //         pushInfoNotification(`You are up to date!`);
+                //     } else {
+                //         pushInfoNotification(
+                //             `Update to version ${updates.version} released on ${updates.releaseDate} is available! Restart application to ask for update.`,
+                //         );
+                //     }
+                // } else {
+                //     pushErrorNotification(
+                //         `Not able to get information about updates at the moment.`,
+                //     );
+                // }
+                pushInfoNotification("Checking for updates...");
+                await window.electron.checkForUpdates();
             },
             type: "direct",
         },
