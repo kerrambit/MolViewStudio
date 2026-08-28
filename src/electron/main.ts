@@ -64,6 +64,7 @@ app.on("ready", async () => {
     logger.info("Application has started.");
 
     autoUpdater.on("update-available", async (info) => {
+        logger.info("AutoUpdater: Update is available.");
         logger.info("Show dialogue <MolViewStudio Update Available>.");
         const { response } = await dialog.showMessageBox({
             type: "info",
@@ -76,10 +77,13 @@ app.on("ready", async () => {
         if (response === 0) {
             logger.info("User clicked 'Yes' to download the update.");
             autoUpdater.downloadUpdate();
+        } else {
+            logger.info("User clicked 'No' to not download the update.");
         }
     });
 
     autoUpdater.on("update-downloaded", async () => {
+        logger.info("AutoUpdater: Update is downloaded.");
         logger.info("Show dialogue <MolViewStudio Update Ready>.");
         const { response } = await dialog.showMessageBox({
             type: "info",
@@ -95,7 +99,43 @@ app.on("ready", async () => {
                 "User clicked 'Restart Now' to restart the app and install update.",
             );
             autoUpdater.quitAndInstall();
+        } else {
+            logger.info(
+                "User clicked 'Later' to not restart the app and install update now.",
+            );
         }
+    });
+
+    autoUpdater.on("checking-for-update", () => {
+        logger.info("AutoUpdater: Checking for updates from GitHub.");
+    });
+
+    autoUpdater.on("update-not-available", (info) => {
+        logger.info(
+            `AutoUpdater: Application is up to date. Latest remote version: <${
+                info.version
+            }>, current app version: <${app.getVersion()}>.`,
+        );
+        logger.info("Show dialogue <MolViewStudio No Updates>.");
+        dialog.showMessageBox({
+            type: "info",
+            title: "MolViewStudio No Updates",
+            message: `You are running the latest version (${app.getVersion()}).`,
+            buttons: ["OK"],
+        });
+    });
+
+    autoUpdater.on("error", (err) => {
+        logger.error(
+            `AutoUpdater: Error during check/download: <${
+                err?.message || err
+            }>!`,
+        );
+        logger.info("Show dialogue <MolViewStudio Update Error>.");
+        dialog.showErrorBox(
+            "MolViewStudio Update Error",
+            err?.message || "Unknown updater error",
+        );
     });
 
     // ------------------------------------------------------------- //
