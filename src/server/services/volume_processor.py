@@ -183,6 +183,3 @@ class Preprocessor:
                     stage="done", error=job.error, result=job.result
                 )
             )
-ob.result
-                )
-            )
