@@ -13,9 +13,6 @@ import { logger } from "./utils/logger.js";
 // Disable automatic background downloading.
 autoUpdater.autoDownload = false;
 
-// TODO: temporary solution
-autoUpdater.allowPrerelease = true;
-
 export class AutoUpdater {
     private _appUpdater: AppUpdater = autoUpdater;
     private _isManualCheck: boolean = false;
@@ -100,16 +97,6 @@ export class AutoUpdater {
         });
 
         this._appUpdater.on("download-progress", (progressInfo) => {
-            logger.info(
-                `AutoUpdater: Downloading update: ${Math.round(
-                    progressInfo.percent,
-                )}% ` +
-                    `(${Math.round(
-                        progressInfo.transferred / 1024 / 1024,
-                    )}MB / ` +
-                    `${Math.round(progressInfo.total / 1024 / 1024)}MB)`,
-            );
-
             if (window) {
                 window.setProgressBar(progressInfo.percent / 100);
             }
