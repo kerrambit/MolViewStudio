@@ -5,7 +5,6 @@
  */
 
 import { app, BrowserWindow, dialog, shell } from "electron";
-import { AppUpdater } from "electron-updater";
 import path from "path";
 import os from "os";
 import { saveUserSettings } from "../services/localUserSettingsStorage.js";
@@ -18,11 +17,12 @@ import {
     loadRecentFiles,
     writeRecentFiles,
 } from "../services/recentFilesStorage.js";
+import { AutoUpdater } from "../AutoUpdater.js";
 
 // TODO: devide the indivudal handlers to more grouped folders such as "ipc/file" etc.
 export function registerAllIpcHandlers(
     mainWindow: BrowserWindow,
-    autoUpdater: AppUpdater,
+    updater: AutoUpdater,
     userSettings: UserSettings,
     serverPort: number,
     paths: {
@@ -175,7 +175,7 @@ export function registerAllIpcHandlers(
     Ipc.Electron.handle("checkForUpdates", async () => {
         logger.info("Manual update check triggered from UI.");
         try {
-            const result = await autoUpdater.checkForUpdates();
+            const result = await updater.checkForUpdates(true);
             if (result && result.updateInfo) {
                 return {
                     version: result.updateInfo.version,

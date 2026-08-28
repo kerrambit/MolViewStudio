@@ -4,9 +4,7 @@
  * @author Marek Eibel
  */
 
-import { app, BrowserWindow, dialog, Menu } from "electron";
-import pkg from "electron-updater";
-const { autoUpdater } = pkg;
+import { app, BrowserWindow, Menu } from "electron";
 import path from "path";
 import http from "http";
 import { ChildProcess, spawn } from "child_process";
@@ -24,12 +22,7 @@ import { logger } from "./utils/logger.js";
 import { getAvailablePort } from "./utils/portUtils.js";
 import { SplashScreen } from "./SplashScreen.js";
 import { registerAllIpcHandlers } from "./ipc/IpcRouter.js";
-
-// Disable automatic background downloading.
-autoUpdater.autoDownload = false;
-
-// TODO: temporary solution
-autoUpdater.allowPrerelease = true;
+import { AutoUpdater } from "./AutoUpdater.js";
 
 app.on("ready", async () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -63,80 +56,9 @@ app.on("ready", async () => {
     logger.initialize();
     logger.info("Application has started.");
 
-    autoUpdater.on("update-available", async (info) => {
-        logger.info("AutoUpdater: Update is available.");
-        logger.info("Show dialogue <MolViewStudio Update Available>.");
-        const { response } = await dialog.showMessageBox({
-            type: "info",
-            title: "MolViewStudio Update Available",
-            message: `Version ${info.version} is available. Do you want to download it now?`,
-            buttons: ["Yes", "No"],
-            cancelId: 1,
-        });
-
-        if (response === 0) {
-            logger.info("User clicked 'Yes' to download the update.");
-            autoUpdater.downloadUpdate();
-        } else {
-            logger.info("User clicked 'No' to not download the update.");
-        }
-    });
-
-    autoUpdater.on("update-downloaded", async () => {
-        logger.info("AutoUpdater: Update is downloaded.");
-        logger.info("Show dialogue <MolViewStudio Update Ready>.");
-        const { response } = await dialog.showMessageBox({
-            type: "info",
-            title: "MolViewStudio Update Ready",
-            message:
-                "The update has been downloaded. Do you want to restart and install it now?",
-            buttons: ["Restart Now", "Later"],
-            cancelId: 1,
-        });
-
-        if (response === 0) {
-            logger.info(
-                "User clicked 'Restart Now' to restart the app and install update.",
-            );
-            autoUpdater.quitAndInstall();
-        } else {
-            logger.info(
-                "User clicked 'Later' to not restart the app and install update now.",
-            );
-        }
-    });
-
-    autoUpdater.on("checking-for-update", () => {
-        logger.info("AutoUpdater: Checking for updates from GitHub.");
-    });
-
-    autoUpdater.on("update-not-available", (info) => {
-        logger.info(
-            `AutoUpdater: Application is up to date. Latest remote version: <${
-                info.version
-            }>, current app version: <${app.getVersion()}>.`,
-        );
-        logger.info("Show dialogue <MolViewStudio No Updates>.");
-        dialog.showMessageBox({
-            type: "info",
-            title: "MolViewStudio No Updates",
-            message: `You are running the latest version (${app.getVersion()}).`,
-            buttons: ["OK"],
-        });
-    });
-
-    autoUpdater.on("error", (err) => {
-        logger.error(
-            `AutoUpdater: Error during check/download: <${
-                err?.message || err
-            }>!`,
-        );
-        logger.info("Show dialogue <MolViewStudio Update Error>.");
-        dialog.showErrorBox(
-            "MolViewStudio Update Error",
-            err?.message || "Unknown updater error",
-        );
-    });
+    // Register updater handlers;
+    const updater = new AutoUpdater();
+    updater.registerHandlers();
 
     // ------------------------------------------------------------- //
 
@@ -182,7 +104,7 @@ app.on("ready", async () => {
     );
 
     // Registers all IPC handlers.
-    registerAllIpcHandlers(mainWindow, autoUpdater, userSettings, serverPort, {
+    registerAllIpcHandlers(mainWindow, updater, userSettings, serverPort, {
         userDataPath,
         userSettingsFilePath,
         recentFilesFilePath,
@@ -215,8 +137,9 @@ app.on("ready", async () => {
                 setTimeout(async () => {
                     logger.info("Checking for updates on startup...");
                     try {
-                        const updateResult =
-                            await autoUpdater.checkForUpdates();
+                        const updateResult = await updater.checkForUpdates(
+                            false,
+                        );
                         if (updateResult) {
                             logger.info(
                                 `Update is available: <${updateResult.isUpdateAvailable}>. Info about update: <{ version: ${updateResult.updateInfo.version}, releaseDate: ${updateResult.updateInfo.releaseDate} }>.`,
