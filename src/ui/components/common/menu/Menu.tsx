@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import React, { useState } from "react";
 import { Badge, Button, Menu as MantineMenu } from "@mantine/core";
 import { useEnvironment } from "../../../hooks/useEnvironment";

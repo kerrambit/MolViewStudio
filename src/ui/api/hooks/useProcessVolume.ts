@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useMutation } from "@tanstack/react-query";
 import { loggerUi } from "../../services/UiLoggingService";
 import { useApiClient } from "./useApiClient";

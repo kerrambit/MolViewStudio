@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { SimpleGrid, UnstyledButton, Text } from "@mantine/core";
 import { IconCheck } from "@tabler/icons-react";
 import { useAppearance } from "../../../hooks/useAppearance";

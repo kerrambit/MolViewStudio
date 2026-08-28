@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { ViewCard } from "../view-card/ViewCard";
 import { InactiveViewCard } from "../view-card/InactiveViewCard";
 import { CreateViewCard } from "../view-card/CreateViewCard";

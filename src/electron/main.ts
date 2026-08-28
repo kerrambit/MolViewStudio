@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { app, BrowserWindow, Menu } from "electron";
 import path from "path";
 import http from "http";

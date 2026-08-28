@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { PluginState } from "molstar/lib/mol-plugin/state";
 import { getMolstar, getMolstarDontThrow } from "./instance";
 import { UUID } from "molstar/lib/mol-util";

@@ -1,5 +1,7 @@
 /**
- * File with global types definitions.
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
  */
 
 /**
@@ -87,8 +89,8 @@ type DeriveElectronApi<
     [K in keyof T]: T[K]["type"] extends "invoke"
         ? (...args: T[K]["args"]) => Promise<T[K]["reply"]>
         : T[K]["type"] extends "sync"
-          ? (...args: T[K]["args"]) => T[K]["reply"]
-          : (...args: T[K]["args"]) => void;
+        ? (...args: T[K]["args"]) => T[K]["reply"]
+        : (...args: T[K]["args"]) => void;
 };
 
 /**

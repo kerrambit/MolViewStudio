@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useEffect, useRef, useState } from "react";
 import type { Subscription } from "rxjs";
 import { useWorkspaceManagement } from "../../workspace/hooks/useWorkspaceManagement";

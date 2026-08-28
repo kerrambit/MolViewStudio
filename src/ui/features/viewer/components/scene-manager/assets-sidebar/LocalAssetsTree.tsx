@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useMemo, useState } from "react";
 import { Text, Group, Tree, useTree } from "@mantine/core";
 import { IconFile, IconFolder, IconFolderOpen } from "@tabler/icons-react";

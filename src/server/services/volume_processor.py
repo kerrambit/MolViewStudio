@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+#
+# @author Marek Eibel
+#
+
 import asyncio
 import shutil
 from pathlib import Path
@@ -175,5 +181,8 @@ class Preprocessor:
             await job.queue.put(
                 ProcessVolumeProgressMessage(
                     stage="done", error=job.error, result=job.result
+                )
+            )
+ob.result
                 )
             )

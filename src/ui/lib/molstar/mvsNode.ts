@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { type MVSTree } from "molstar/lib/extensions/mvs/tree/mvs/mvs-tree";

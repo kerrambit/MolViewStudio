@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useCallback, useState } from "react";
 import { Button } from "../../../components/common/button/Button";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";

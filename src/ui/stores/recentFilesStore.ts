@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { create } from "zustand";
 
 const RECENT_FILES_LIMIT = 10; // TODO: set the limit in Settings
