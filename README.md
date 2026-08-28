@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/kerrambit/MolViewStudio?label=release)](https://github.com/kerrambit/MolViewStudio/releases/latest)
 [![Issues](https://img.shields.io/badge/issues-welcome-green.svg)](https://github.com/kerrambit/MolViewStudio/issues)
 
-[Features](#features) · [Download](#download) · [Getting Started](#getting-started) · [Development](#development) · [Contributing](#contributing)
+[About](#about) · [Download](#download) · [Getting Started](#getting-started) · [Development](#development) · [Contributing](#contributing)
 
 </div>
 
