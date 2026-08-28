@@ -56,21 +56,6 @@ export function createCheckForUpdatesMenuItem(): MenuItem {
         icon: { icon: IconProgressCheck, position: "left" },
         task: {
             action: async () => {
-                // const buildInfo = window.electron.requestBuildInformation();
-                // const updates = await window.electron.checkForUpdates();
-                // if (updates) {
-                //     if (buildInfo.appVersion === updates.version) {
-                //         pushInfoNotification(`You are up to date!`);
-                //     } else {
-                //         pushInfoNotification(
-                //             `Update to version ${updates.version} released on ${updates.releaseDate} is available! Restart application to ask for update.`,
-                //         );
-                //     }
-                // } else {
-                //     pushErrorNotification(
-                //         `Not able to get information about updates at the moment.`,
-                //     );
-                // }
                 pushInfoNotification("Checking for updates...");
                 await window.electron.checkForUpdates();
             },
