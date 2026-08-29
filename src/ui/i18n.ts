@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "../locales/en/translation.json";

@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 const electron = require("electron");
 
 /**
@@ -97,5 +103,9 @@ electron.contextBridge.exposeInMainWorld("electron", {
 
     addRecentFile: (path: string) => {
         return Ipc.Ui.send("addRecentFile", path);
+    },
+
+    checkForUpdates: () => {
+        return Ipc.Ui.invoke("checkForUpdates");
     },
 } satisfies Window["electron"]);

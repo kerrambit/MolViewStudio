@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { Navigate, type RouteObject } from "react-router-dom";
 import HomePage from "../pages/home-page/HomePage.tsx";
 import SettingsPage from "../pages/settings/SettingsPage.tsx";

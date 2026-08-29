@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { app, BrowserWindow, Menu } from "electron";
 import path from "path";
 import http from "http";
@@ -16,6 +22,7 @@ import { logger } from "./utils/logger.js";
 import { getAvailablePort } from "./utils/portUtils.js";
 import { SplashScreen } from "./SplashScreen.js";
 import { registerAllIpcHandlers } from "./ipc/IpcRouter.js";
+import { AutoUpdater } from "./AutoUpdater.js";
 
 app.on("ready", async () => {
     // Create main window with preload script. Main window is hidden so splash window can be shown first.
@@ -48,6 +55,10 @@ app.on("ready", async () => {
     // Initialize logging.
     logger.initialize();
     logger.info("Application has started.");
+
+    // Register updater handlers;
+    const updater = new AutoUpdater();
+    updater.registerHandlers(mainWindow);
 
     // ------------------------------------------------------------- //
 
@@ -93,20 +104,21 @@ app.on("ready", async () => {
     );
 
     // Registers all IPC handlers.
-    registerAllIpcHandlers(mainWindow, userSettings, serverPort, {
+    registerAllIpcHandlers(mainWindow, updater, userSettings, serverPort, {
         userDataPath,
         userSettingsFilePath,
         recentFilesFilePath,
     });
 
     // Create tray.
-    createTray(mainWindow);
+    createTray(mainWindow, updater);
 
     // Do not create any menu (Linux and Win).
     Menu.setApplicationMenu(null);
 
     // Start the server and show splash screen for at least 1.5 seconds (splash screen will be displayed as long as server is starting).
     // We also handle close events here: mainly stopping the server when app is being stopped.
+    // Lastly, we check for updates of the application.
     Promise.all([
         runServer(serverPort),
         new Promise((resolve) => setTimeout(resolve, 1500)),
@@ -119,6 +131,29 @@ app.on("ready", async () => {
             splash.close();
             mainWindow.show();
             handleCloseEvents(mainWindow, serverProcess);
+
+            // Check for updates on startup.
+            if (app.isPackaged) {
+                setTimeout(async () => {
+                    logger.info("Checking for updates on startup...");
+                    try {
+                        const updateResult = await updater.checkForUpdates(
+                            false,
+                        );
+                        if (updateResult) {
+                            logger.info(
+                                `Update is available: <${updateResult.isUpdateAvailable}>. Info about update: <{ version: ${updateResult.updateInfo.version}, releaseDate: ${updateResult.updateInfo.releaseDate} }>.`,
+                            );
+                        } else {
+                            logger.warn(
+                                `Cannot retrieve information if any update is available!`,
+                            );
+                        }
+                    } catch (error) {
+                        logger.error(`Error checking for updates: <${error}>!`);
+                    }
+                }, 2000);
+            }
         })
         .catch((err) => {
             logger.error(`Server failed to start! Details: ${err}.`);

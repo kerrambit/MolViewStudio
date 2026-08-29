@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { createMemoryRouter } from "react-router-dom";
 import routes from "./routes";
 import { loggerUi } from "../services/UiLoggingService";

@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { Asset } from "molstar/lib/mol-util/assets";
 import { Vec3 } from "molstar/lib/mol-math/linear-algebra/3d";
 import {

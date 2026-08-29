@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { BrowserWindow, ipcMain, WebFrameMain } from "electron";
 import { getUiPath } from "./utils/pathResolver.js";
 import { isDev } from "./utils/devUtils.js";

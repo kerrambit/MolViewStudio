@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { type FileRejection } from "@mantine/dropzone";
 import { useDropzone, type DropEvent } from "react-dropzone";
 import { IconDragDrop, IconX, type ReactNode } from "@tabler/icons-react";

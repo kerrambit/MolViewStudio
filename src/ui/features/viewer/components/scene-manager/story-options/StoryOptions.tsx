@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useState } from "react";
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
@@ -26,8 +32,8 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
     const metadata = regime.history.current().stateTree.metadata;
 
     // Local title and description variables for controlled inputs.
-    const [title, setTitle] = useState(metadata?.title ?? "");
-    const [description, setDescription] = useState(metadata?.description ?? "");
+    const [title, setTitle] = useState(metadata?.title);
+    const [description, setDescription] = useState(metadata?.description);
 
     // Handler for change of metadata from UI.
     const commitMetadata = (
@@ -70,7 +76,7 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
                 placeholder="Enter title of your story..."
                 tooltip={title}
                 bold={true}
-                onValueChange={(newTitle) => newTitle && setTitle(newTitle)}
+                onValueChange={(newTitle) => setTitle(newTitle)}
                 onBlur={(newTitle) => commitMetadata("title", newTitle)}
                 canBeEmpty={true}
             />
@@ -80,12 +86,12 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
             </Text>
             <UnstyledTextArea
                 value={description}
-                placeholder="Write your story description here."
-                tooltip="Write your story description here."
+                placeholder="Write your story description here..."
+                tooltip="Write your story description here..."
                 minRows={31}
                 maxRows={31}
                 onValueChange={(newDescription) =>
-                    newDescription && setDescription(newDescription)
+                    setDescription(newDescription)
                 }
                 onBlur={(newDescription) =>
                     commitMetadata("description", newDescription)

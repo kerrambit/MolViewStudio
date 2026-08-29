@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useCallback } from "react";
 import { router } from "../../../router/router";
 import { MVSFilters, StructuralFilters } from "../../../../types/fileFilters";

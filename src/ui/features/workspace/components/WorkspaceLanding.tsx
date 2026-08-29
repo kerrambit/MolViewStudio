@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import type { FileRejection } from "@mantine/dropzone";
 import { Anchor, Text } from "@mantine/core";
 import { Dropzone } from "../../../components/common/dropzone/Dropzone.tsx";

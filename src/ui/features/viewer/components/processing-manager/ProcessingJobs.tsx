@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useState } from "react";
 import { Divider, Text } from "@mantine/core";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";

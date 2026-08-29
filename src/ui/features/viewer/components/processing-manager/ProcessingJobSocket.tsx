@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useCallback } from "react";
 import { useDomain } from "../../../../api/hooks/useDomain";
 import { useProcessingSocket } from "../../../../api/hooks/useProcessVolumeWebSocket";

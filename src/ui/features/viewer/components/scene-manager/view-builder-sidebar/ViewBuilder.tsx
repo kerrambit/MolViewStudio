@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { Text, Divider, MultiSelect, Collapse } from "@mantine/core";
 import { CloseActionIcon } from "../../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { useViewBuilder } from "../../../hooks/useViewBuilder";

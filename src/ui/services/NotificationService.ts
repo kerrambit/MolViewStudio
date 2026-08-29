@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { notifications, type NotificationData } from "@mantine/notifications";
 import { ErrorNotification } from "../components/notifications/ErrorNotification";
 import { InfoNotification } from "../components/notifications/InfoNotification";

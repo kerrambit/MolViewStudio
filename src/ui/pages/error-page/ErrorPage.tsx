@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { useRouteError, isRouteErrorResponse } from "react-router-dom";
 import { loggerUi } from "../../services/UiLoggingService";
 import { Button } from "../../components/common/button/Button";

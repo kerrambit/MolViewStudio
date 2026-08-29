@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { create } from "zustand";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { getCurrentViewIndex, type SerializedAssets } from "../lib/molstar";

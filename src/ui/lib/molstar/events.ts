@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { Color } from "molstar/lib/mol-util/color";
 import { getMolstar } from "./instance";
 import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";

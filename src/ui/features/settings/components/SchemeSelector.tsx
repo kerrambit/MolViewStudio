@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { SegmentedController } from "../../../components/common/segmented-controller/SegmentedController";
 import { Center, Text } from "@mantine/core";

@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
+/**
  * Converts Euler angles (in degrees) to a flat 9-element row-major 3x3 rotation matrix.
  * Uses standard ZYX order for 3D graphics.
  */

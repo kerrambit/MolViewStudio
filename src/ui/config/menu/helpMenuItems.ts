@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import {
     IconHome,
     IconProgressCheck,
@@ -49,9 +55,9 @@ export function createCheckForUpdatesMenuItem(): MenuItem {
         title: "Check for updates",
         icon: { icon: IconProgressCheck, position: "left" },
         task: {
-            action: () => {
-                // TODO: wait for https://github.com/kerrambit/MolStarApp/issues/4
-                pushInfoNotification(`You are up to date.`);
+            action: async () => {
+                pushInfoNotification("Checking for updates...");
+                await window.electron.checkForUpdates();
             },
             type: "direct",
         },

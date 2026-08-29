@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
 import { murmurHash3_128_fromBytes } from "molstar/lib/mol-data/util";
 import { Color } from "molstar/lib/mol-util/color";
 
