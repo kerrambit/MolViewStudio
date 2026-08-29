@@ -1,0 +1,9 @@
+.viewer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  /* border-style: dashed;
+  border-color: rgb(168, 14, 40); */
+}

@@ -1,0 +1,27 @@
+.actionableTile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5em;
+    background-color: var(--mantine-color-gray-0, #f8f9fa);
+    border: 1px solid var(--mantine-color-gray-3, #dee2e6);
+    border-radius: 6px;
+}
+
+[data-mantine-color-scheme="dark"] .actionableTile {
+    background-color: var(--color-dark-ui-component-mantine);
+    border: 1px solid var(--color-grey-dark);
+}
+
+.actionableTile:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-mantine-color-scheme="dark"] .actionableTile:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+
+.actionableTile .mantine-ActionIcon-root {
+    background-color: transparent !important;
+}

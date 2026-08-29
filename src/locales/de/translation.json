@@ -1,0 +1,31 @@
+{
+  "Home": "Heimseite",
+  "Settings": "Einstellung",
+  "Viewer": "Betrachter",
+  "count is": "Zählen ist",
+  "menu": {
+    "file": {
+      "File": "Datei",
+      "Quit Mol* App": "Mol* App verlassen",
+      "DevTools": "Entwicklertools"
+    },
+    "pageSpecific": {
+      "viewer": {
+        "Clear viewer": "Betrachter Reinigen"
+      }
+    }
+  },
+  "global": {
+    "ServerStatus": {
+      "Server status": "Serverstatus",
+      "Connecting...": "Verbindung wird hergestellt...",
+      "Server is running.": "Server ist aktiv.",
+      "Server has ended with an error": "Der Server hat mit einem Fehler beendet",
+      "Go to Settings for more information.": "Weitere Informationen finden Sie unter „Einstellungen“."
+    }
+  },
+  "viewer": {
+    "Load structure from file...": "Struktur aus Datei laden...",
+    "Load default PBD structure": "Standard-PBD-Struktur laden"
+  }
+}

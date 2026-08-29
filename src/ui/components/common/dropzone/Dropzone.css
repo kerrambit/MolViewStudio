@@ -1,0 +1,27 @@
+.dropzone {
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    width: 100%;       
+}
+
+.dropzone__body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    gap: 5em;
+}
+
+.dropzone__state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.dropzone__error {
+  margin-top: 2.5em;
+  color: var(--mantine-color-red-filled);
+  font-size: 0.9rem;
+  text-align: center;
+}

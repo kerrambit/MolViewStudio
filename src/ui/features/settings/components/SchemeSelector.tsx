@@ -1,0 +1,49 @@
+/**
+ * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
+import { IconMoon, IconSun } from "@tabler/icons-react";
+import { SegmentedController } from "../../../components/common/segmented-controller/SegmentedController";
+import { Center, Text } from "@mantine/core";
+import { useAppearance } from "../../../hooks/useAppearance";
+
+export function SchemeSelector() {
+    // Use apperance.
+    const { colorScheme, setColorScheme } = useAppearance();
+
+    // Render the component.
+    return (
+        <div>
+            <SegmentedController
+                value={colorScheme}
+                onChange={(value) => setColorScheme(value as "light" | "dark")}
+                data={[
+                    {
+                        value: "light",
+                        label: (
+                            <Center style={{ gap: 8 }}>
+                                <Text size="sm" fw={550}>
+                                    Light
+                                </Text>
+                                <IconSun size={20} />
+                            </Center>
+                        ),
+                    },
+                    {
+                        value: "dark",
+                        label: (
+                            <Center style={{ gap: 8 }}>
+                                <Text size="sm" fw={550}>
+                                    Dark
+                                </Text>
+                                <IconMoon size={20} />
+                            </Center>
+                        ),
+                    },
+                ]}
+            />
+        </div>
+    );
+}

@@ -1,0 +1,41 @@
+.actionableListItem {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.actionableListItem > div:first-child {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+}
+
+.actionableListItem > div:last-child {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+    flex-shrink: 0;
+}
+
+.actionableListItemColor {
+    background-color: rgba(0, 0, 0, 0.065);
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.actionableListItemColor:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-mantine-color-scheme="dark"] .actionableListItemColor {
+    background-color: var(--color-grey-dark);
+}
+
+[data-mantine-color-scheme="dark"] .actionableListItemColor:hover {
+    background-color: var(--color-grey-dark-hover);
+}

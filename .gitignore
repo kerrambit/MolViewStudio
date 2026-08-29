@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Development
+node_modules
+dist
+dist-ssr
+dist-react
+dist-electron
+dist-server
+*.local
+test-results
+playwright-report
+tmp
+__pycache__
+src/molstar-wrapper/build
+volsegtools_tmp
+src/electron/build-info.ts
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# uv
+.python-version
+uv.lock
+pyproject.toml

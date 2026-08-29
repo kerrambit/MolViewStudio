@@ -1,0 +1,18 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-width: 22.5%;
+    flex: 1;
+    margin: 0.5em;
+    background-color: var(--color-light);
+    border: 2px solid var(--color-grey);
+    border-radius: 6px;
+    /* box-sizing: border-box;
+    border: 2px dotted red; */
+}
+
+[data-mantine-color-scheme="dark"] .sidebar {
+    background-color: var(--color-dark);
+    border: 2px solid var(--color-grey-dark-hover-lighter);
+}

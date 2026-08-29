@@ -1,0 +1,6 @@
+.actionableList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    padding: 0.25em;
+}

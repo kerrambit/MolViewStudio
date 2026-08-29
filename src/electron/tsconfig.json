@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "target": "ESNext",
+    "module": "NodeNext",
+    "outDir": "../../dist-electron",
+    "skipLibCheck": true
+  },
+  "include": [".", "../types/types.d.ts"]
+}

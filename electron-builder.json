@@ -1,0 +1,37 @@
+{
+  "appId": "com.kerrambit.molviewstudio",
+  "artifactName": "${name}-Setup-${version}.${ext}",
+  "publish": {
+    "provider": "github",
+    "owner": "kerrambit",
+    "repo": "MolViewStudio"
+  },
+  "files": ["dist-electron", "dist-react"],
+  "extraResources": ["dist-electron/preload.cjs", "src/assets/**", "src/locales/**", {
+        "from": "dist-server/",
+        "to": ".",
+        "filter": "MolViewStudio*"
+      }],
+  "icon": "./src/assets/desktopIcon.ico",
+  "mac": {
+    "target": "dmg",
+    "icon": "./src/assets/desktopIcon.icns"
+  },
+  "linux": {
+    "target": "AppImage",
+    "category": "Science",
+    "icon": "./src/assets/desktopIcon.png"
+  },
+  "win": {
+  "target": ["nsis"],
+  "icon": "./src/assets/desktopIcon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "shortcutName": "MolViewStudio",
+    "createDesktopShortcut": false,
+    "installerIcon": "./src/assets/installerIcon.ico",
+    "uninstallerIcon": "./src/assets/installerIcon.ico"
+  }
+}

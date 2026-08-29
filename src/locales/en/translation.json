@@ -1,0 +1,31 @@
+{
+  "Home": "Home",
+  "Settings": "Settings",
+  "Viewer": "Viewer",
+  "count is": "count is",
+  "menu": {
+    "file": {
+      "File": "File",
+      "Quit Mol* App": "Quit Mol* App",
+      "DevTools": "DevTools"
+    },
+    "pageSpecific": {
+      "viewer": {
+        "Clear viewer": "Clear viewer"
+      }
+    }
+  },
+  "global": {
+    "ServerStatus": {
+      "Server status": "Server status",
+      "Connecting...": "Connecting...",
+      "Server is running.": "Server is running.",
+      "Server has ended with an error": "Server has ended with an error",
+      "Go to Settings for more information.": "Go to Settings for more information."
+    }
+  },
+  "viewer": {
+    "Load structure from file...": "Load structure from file...",
+    "Load default PBD structure": "Load default PBD structure"
+  }
+}
