@@ -86,8 +86,8 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
             </Text>
             <UnstyledTextArea
                 value={description}
-                placeholder="Write your story description here."
-                tooltip="Write your story description here."
+                placeholder="Write your story description here..."
+                tooltip="Write your story description here..."
                 minRows={31}
                 maxRows={31}
                 onValueChange={(newDescription) =>

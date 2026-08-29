@@ -146,7 +146,7 @@ app.on("ready", async () => {
                             );
                         } else {
                             logger.warn(
-                                `Cannot retrieve information is any update is available.`,
+                                `Cannot retrieve information if any update is available!`,
                             );
                         }
                     } catch (error) {
