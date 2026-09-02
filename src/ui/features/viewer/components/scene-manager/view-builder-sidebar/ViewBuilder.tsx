@@ -38,9 +38,12 @@ export function ViewBuilder(props: ViewBuilderProps) {
         setSelectedAssetRelativePaths,
         selectedAssetIds,
         expandedAssetId,
-        getViewModel,
+        getVolumeViewModel,
+        getStructureViewModel,
         toggleExpandAsset,
-        updateViewModel,
+        updateVolumeViewModel,
+        updateStructureViewModel,
+        updateStructureComponentViewModel,
         handleAssetToggle,
     } = useViewBuilder(props.viewKey);
 
@@ -216,15 +219,49 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 isDark={isDark}
                                 isExpanded={expandedAssetId === asset.id}
                                 isSelected={selectedAssetIds.includes(asset.id)}
-                                viewModel={getViewModel(asset.id)}
+                                volumeViewModel={getVolumeViewModel(asset.id)}
+                                structureViewModel={getStructureViewModel(
+                                    asset.id,
+                                )}
                                 onToggleExpand={() =>
                                     toggleExpandAsset(asset.id)
                                 }
-                                onToggleSelect={(checked) =>
-                                    handleAssetToggle(asset.id, checked)
+                                onToggleSelect={(checked, tabType) =>
+                                    handleAssetToggle(
+                                        asset.id,
+                                        checked,
+                                        tabType,
+                                    )
                                 }
-                                onUpdateParam={(key, val, sync) =>
-                                    updateViewModel(asset.id, key, val, sync)
+                                onUpdateVolumeParam={(key, val, sync) =>
+                                    updateVolumeViewModel(
+                                        asset.id,
+                                        key,
+                                        val,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureParam={(key, val, sync) =>
+                                    updateStructureViewModel(
+                                        asset.id,
+                                        key,
+                                        val,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureComponentParam={(
+                                    component,
+                                    key,
+                                    val,
+                                    sync,
+                                ) =>
+                                    updateStructureComponentViewModel(
+                                        asset.id,
+                                        component,
+                                        key,
+                                        val,
+                                        sync,
+                                    )
                                 }
                             />
                         );

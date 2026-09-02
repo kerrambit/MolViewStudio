@@ -6,16 +6,20 @@
 
 import { Text, Divider, Stack } from "@mantine/core";
 import { SliderInputGroup } from "../../../../../components/common/slider-input-group/SliderInputGroup";
-import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
 
 type TransformControlsProps = {
-    viewModel: VolumeViewModel;
-    onUpdateParam: (
-        key: keyof VolumeViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
-        sync: boolean,
-    ) => void;
+    translationX: number;
+    translationY: number;
+    translationZ: number;
+    rotationX: number;
+    rotationY: number;
+    rotationZ: number;
+    onTranslationXChange: (val: number, sync: boolean) => void;
+    onTranslationYChange: (val: number, sync: boolean) => void;
+    onTranslationZChange: (val: number, sync: boolean) => void;
+    onRotationXChange: (val: number, sync: boolean) => void;
+    onRotationYChange: (val: number, sync: boolean) => void;
+    onRotationZChange: (val: number, sync: boolean) => void;
 };
 
 // TODO: set these in settings
@@ -25,7 +29,6 @@ const ROTATION_MIN = -180;
 const ROTATION_MAX = 180;
 
 export function TransformControls(props: TransformControlsProps) {
-    // Render the component.
     return (
         <Stack gap="md" pb="sm">
             <div>
@@ -35,46 +38,46 @@ export function TransformControls(props: TransformControlsProps) {
                 <SliderInputGroup
                     label="X axis"
                     labelColor="red"
-                    value={props.viewModel.translationX}
+                    value={props.translationX}
                     sliderMin={TRANSLATION_MIN}
                     sliderMax={TRANSLATION_MAX}
                     sliderStep={0.5}
                     textInputStep={0.5}
                     onChange={(val: number) =>
-                        props.onUpdateParam("translationX", val, false)
+                        props.onTranslationXChange(val, false)
                     }
                     onChangeEnd={(val: number) =>
-                        props.onUpdateParam("translationX", val, true)
+                        props.onTranslationXChange(val, true)
                     }
                 />
                 <SliderInputGroup
                     label="Y axis"
                     labelColor="green"
-                    value={props.viewModel.translationY}
+                    value={props.translationY}
                     sliderMin={TRANSLATION_MIN}
                     sliderMax={TRANSLATION_MAX}
                     sliderStep={0.5}
                     textInputStep={0.5}
                     onChange={(val: number) =>
-                        props.onUpdateParam("translationY", val, false)
+                        props.onTranslationYChange(val, false)
                     }
                     onChangeEnd={(val: number) =>
-                        props.onUpdateParam("translationY", val, true)
+                        props.onTranslationYChange(val, true)
                     }
                 />
                 <SliderInputGroup
                     label="Z axis"
                     labelColor="blue"
-                    value={props.viewModel.translationZ}
+                    value={props.translationZ}
                     sliderMin={TRANSLATION_MIN}
                     sliderMax={TRANSLATION_MAX}
                     sliderStep={0.5}
                     textInputStep={0.5}
                     onChange={(val: number) =>
-                        props.onUpdateParam("translationZ", val, false)
+                        props.onTranslationZChange(val, false)
                     }
                     onChangeEnd={(val: number) =>
-                        props.onUpdateParam("translationZ", val, true)
+                        props.onTranslationZChange(val, true)
                     }
                 />
             </div>
@@ -88,46 +91,46 @@ export function TransformControls(props: TransformControlsProps) {
                 <SliderInputGroup
                     label="Pitch (X)"
                     labelColor="red"
-                    value={props.viewModel.rotationX}
+                    value={props.rotationX}
                     sliderMin={ROTATION_MIN}
                     sliderMax={ROTATION_MAX}
                     sliderStep={1}
                     textInputStep={1}
                     onChange={(val: number) =>
-                        props.onUpdateParam("rotationX", val, false)
+                        props.onRotationXChange(val, false)
                     }
                     onChangeEnd={(val: number) =>
-                        props.onUpdateParam("rotationX", val, true)
+                        props.onRotationXChange(val, true)
                     }
                 />
                 <SliderInputGroup
                     label="Yaw (Y)"
                     labelColor="green"
-                    value={props.viewModel.rotationY}
+                    value={props.rotationY}
                     sliderMin={ROTATION_MIN}
                     sliderMax={ROTATION_MAX}
                     sliderStep={1}
                     textInputStep={1}
                     onChange={(val: number) =>
-                        props.onUpdateParam("rotationY", val, false)
+                        props.onRotationYChange(val, false)
                     }
                     onChangeEnd={(val: number) =>
-                        props.onUpdateParam("rotationY", val, true)
+                        props.onRotationYChange(val, true)
                     }
                 />
                 <SliderInputGroup
                     label="Roll (Z)"
                     labelColor="blue"
-                    value={props.viewModel.rotationZ}
+                    value={props.rotationZ}
                     sliderMin={ROTATION_MIN}
                     sliderMax={ROTATION_MAX}
                     sliderStep={1}
                     textInputStep={1}
                     onChange={(val: number) =>
-                        props.onUpdateParam("rotationZ", val, false)
+                        props.onRotationZChange(val, false)
                     }
                     onChangeEnd={(val: number) =>
-                        props.onUpdateParam("rotationZ", val, true)
+                        props.onRotationZChange(val, true)
                     }
                 />
             </div>

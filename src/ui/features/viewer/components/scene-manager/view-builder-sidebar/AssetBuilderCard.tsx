@@ -8,12 +8,19 @@ import { useState } from "react";
 import { Text, Checkbox, Collapse } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
-import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
-import { isExtensionSupported } from "../../../../../config/assetsDefinitions";
-import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
+import {
+    getPrioritizedRenderStrategy,
+    isExtensionSupported,
+} from "../../../../../config/assetsDefinitions";
 import { VolumeTab } from "./VolumeTab";
-
-type TabType = "representation" | "volume";
+import { StructureTab } from "./StructureTab";
+import type {
+    ComponentEntry,
+    StructureViewModel,
+    VolumeViewModel,
+} from "../../../models/MvsViewModels";
+import type { TabType } from "../../../hooks/useViewBuilder";
+import { pushInfoNotification } from "../../../../../services/NotificationService";
 
 interface AssetBuilderCardProps {
     viewKey: string;
@@ -21,15 +28,28 @@ interface AssetBuilderCardProps {
     isDark: boolean;
     isExpanded: boolean;
     isSelected: boolean;
-    viewModel: VolumeViewModel;
+    volumeViewModel: VolumeViewModel;
+    structureViewModel: StructureViewModel;
     onToggleExpand: () => void;
-    onToggleSelect: (checked: boolean) => void;
-    onUpdateParam: (
+    onToggleSelect: (checked: boolean, tabType: TabType) => void;
+    onUpdateVolumeParam: (
         key: keyof VolumeViewModel,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         val: any,
         sync: boolean,
     ) => void;
+    onUpdateStructureParam: (
+        key: keyof StructureViewModel,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        val: any,
+        sync: boolean,
+    ) => void;
+    onUpdateStructureComponentParam: (
+        componentId: string,
+        paramKey: keyof ComponentEntry,
+        val: ComponentEntry[keyof ComponentEntry],
+        syncToMolstar: boolean,
+    ) => Promise<void>;
 }
 
 export function AssetBuilderCard({
@@ -38,15 +58,19 @@ export function AssetBuilderCard({
     isDark,
     isExpanded,
     isSelected,
-    viewModel,
+    volumeViewModel,
+    structureViewModel,
     onToggleExpand,
     onToggleSelect,
-    onUpdateParam,
+    onUpdateVolumeParam,
+    onUpdateStructureParam,
+    onUpdateStructureComponentParam,
 }: AssetBuilderCardProps) {
     // Store active tab.
-    const [activeTab, setActiveTab] = useState<TabType>(() =>
-        UiLocalStorageService.ViewBuilder.getTab(asset.id, viewKey),
-    );
+    const [activeTab, setActiveTab] = useState<TabType>(() => {
+        const tabFromDefinition = getPrioritizedRenderStrategy(asset.extension); // We can ignore if extension is "unknown" here as we won't even allow user to expand the card.
+        return tabFromDefinition;
+    });
 
     // Checks if the given asset checked is supported or not.
     const isSupported = isExtensionSupported(asset.extension);
@@ -106,7 +130,9 @@ export function AssetBuilderCard({
                     }
                     checked={isSelected}
                     disabled={!isSupported}
-                    onChange={(e) => onToggleSelect(e.currentTarget.checked)}
+                    onChange={(e) =>
+                        onToggleSelect(e.currentTarget.checked, activeTab)
+                    }
                     onClick={(e) => e.stopPropagation()}
                     mr="sm"
                 />
@@ -130,34 +156,39 @@ export function AssetBuilderCard({
                         value={activeTab}
                         onChange={(tab) => {
                             setActiveTab(tab);
-                            UiLocalStorageService.ViewBuilder.setTab(
-                                asset.id,
-                                viewKey,
-                                tab,
-                            );
+                            if (isSelected) {
+                                // TODO: when tab is changed, let's build the view with new tab type if possible
+                                pushInfoNotification(
+                                    `To rerender the asset as '${tab}', you might have to reselect the asset itself!`,
+                                );
+                            }
                         }}
                         data={[
                             {
-                                label: "Representation",
-                                value: "representation",
+                                label: "Structure",
+                                value: "structure",
                             },
                             { label: "Volume", value: "volume" },
                         ]}
                         widthWrapOrientationLimit={200}
                     />
 
-                    {activeTab === "representation" && (
-                        <Text size="sm" c="dimmed" ta="center" py="xl">
-                            Representation options coming soon...
-                        </Text>
+                    {activeTab === "structure" && (
+                        <StructureTab
+                            viewKey={viewKey}
+                            asset={asset}
+                            viewModel={structureViewModel}
+                            onUpdateParam={onUpdateStructureParam}
+                            onUpdateStructureComponentParam={onUpdateStructureComponentParam}
+                        ></StructureTab>
                     )}
 
                     {activeTab === "volume" && (
                         <VolumeTab
                             viewKey={viewKey}
                             asset={asset}
-                            viewModel={viewModel}
-                            onUpdateParam={onUpdateParam}
+                            viewModel={volumeViewModel}
+                            onUpdateParam={onUpdateVolumeParam}
                         ></VolumeTab>
                     )}
                 </div>

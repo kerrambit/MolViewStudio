@@ -11,58 +11,111 @@ import { loggerUi } from "../../../services/UiLoggingService";
 import { getFilePathWithoutFile } from "../../../utils/fileDataUtils";
 import {
     getAllSupportedAssetsParsers,
-    getAssetConfigBasedOnExtension,
+    getParser,
 } from "../../../config/assetsDefinitions";
 import {
     getAllDownloadUrlsFromSnapshot,
     getVolumeParamsForAsset,
     updateNodeParamInAssetBranch,
     reloadMolstarAndRestoreIndex,
-    addDownloadNodeToRoot,
     removeDownloadNodeFromRoot,
     getRotationMatrix3x3,
+    getStructureParamsForAsset,
+    addVolumeDownloadNodeToRoot,
+    addStructureDownloadNodeToRoot,
+    setStructureComponentsInAssetBranch,
 } from "../../../lib/molstar";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
+import {
+    DEFAULT_STRUCTURE_VIEW_MODEL,
+    DEFAULT_VOLUME_VIEW_MODEL,
+    type ComponentEntry,
+    type StructureViewModel,
+    type VolumeViewModel,
+} from "../models/MvsViewModels";
+
+export type TabType = "structure" | "volume";
 
 /**
- * The unified View-Model for volume parameters.
+ * Applies an entire structure View-Model to a Molstar source tree.
+ *
+ * @param root root of source tree
+ * @param assetId asset id of given branch
+ * @param viewModel view model
+ * @returns modified root
  */
-export interface VolumeViewModel {
-    format: string;
-    type: string;
-    relative_isovalue: number;
-    show_wireframe: boolean;
-    show_faces: boolean;
-    color: string;
-    opacity: number;
-    translationX: number;
-    translationY: number;
-    translationZ: number;
-    rotationX: number; // Pitch (Degrees)
-    rotationY: number; // Yaw (Degrees)
-    rotationZ: number; // Roll (Degrees)
+export function applyStructureViewModelToBranch(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    root: any,
+    assetId: string,
+    viewModel: StructureViewModel,
+) {
+    let newRoot = root;
+
+    const params: { node: string; key: string; val: unknown }[] = [
+        { node: "structure", key: "type", val: viewModel.type },
+        { node: "structure", key: "block_header", val: viewModel.block_header },
+        { node: "structure", key: "block_index", val: viewModel.block_index },
+        { node: "structure", key: "model_index", val: viewModel.model_index },
+        {
+            node: "structure",
+            key: "coordinates_ref",
+            val: viewModel.coordinates_ref,
+        },
+    ];
+
+    // type-conditional structure params — only pushed when relevant so we
+    // never write e.g. `radius` onto a "model" structure.
+    if (viewModel.type === "assembly") {
+        params.push({
+            node: "structure",
+            key: "assembly_id",
+            val: viewModel.assembly_id,
+        });
+    }
+    if (viewModel.type === "symmetry_mates") {
+        params.push({
+            node: "structure",
+            key: "radius",
+            val: viewModel.radius,
+        });
+    }
+    if (viewModel.type === "symmetry") {
+        params.push({
+            node: "structure",
+            key: "ijk_min",
+            val: viewModel.ijk_min,
+        });
+        params.push({
+            node: "structure",
+            key: "ijk_max",
+            val: viewModel.ijk_max,
+        });
+    }
+
+    params.forEach((p) => {
+        newRoot = updateNodeParamInAssetBranch(
+            newRoot,
+            assetId,
+            p.node,
+            p.key,
+            p.val,
+        );
+    });
+
+    // components — wholesale replace (selector, representation, color, opacity,
+    // focus, and transform all rebuilt together per component). See
+    // setStructureComponentsInAssetBranch / buildComponentNode.
+    newRoot = setStructureComponentsInAssetBranch(
+        newRoot,
+        assetId,
+        viewModel.components,
+    );
+
+    return newRoot;
 }
-
-/**
- * Default volume view model.
- */
-export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
-    format: "N/A",
-    type: "isosurface",
-    relative_isovalue: 1.0,
-    show_wireframe: false,
-    show_faces: true,
-    color: "#ffffff",
-    opacity: 1.0,
-    translationX: 0,
-    translationY: 0,
-    translationZ: 0,
-    rotationX: 0,
-    rotationY: 0,
-    rotationZ: 0,
-};
 
 /**
  * Applies entire View-Model to a Molstar source tree.
@@ -72,7 +125,7 @@ export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
  * @param viewModel view model
  * @returns modified root
  */
-function applyViewModelToBranch(
+function applyVolumeViewModelToBranch(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     root: any,
     assetId: string,
@@ -173,9 +226,13 @@ export function useViewBuilder(viewKey: string) {
         view ? getAllDownloadUrlsFromSnapshot(view) : [],
     );
 
-    // Current record of volume view models for each asset.
-    const [viewModels, setViewModels] = useState<
+    // Current record of view models for each asset.
+    const [volumeViewModels, setVolumeViewModels] = useState<
         Record<string, VolumeViewModel>
+    >({});
+
+    const [structureViewModels, setStructureViewModels] = useState<
+        Record<string, StructureViewModel>
     >({});
 
     const [prevView, setPrevView] = useState(view);
@@ -184,7 +241,8 @@ export function useViewBuilder(viewKey: string) {
     if (view !== prevView) {
         setPrevView(view);
         setSelectedAssetIds(view ? getAllDownloadUrlsFromSnapshot(view) : []);
-        setViewModels({});
+        setVolumeViewModels({});
+        setStructureViewModels({});
     }
 
     // Current selected asset filters.
@@ -259,19 +317,18 @@ export function useViewBuilder(viewKey: string) {
         });
     }, [assetsFilteredByType, selectedAssetRelativePaths]);
 
-    // Function which returns safe view model based on asset ID.
-    const getViewModel = useCallback(
+    // Function which returns safe volume view model based on asset ID.
+    const getVolumeViewModel = useCallback(
         (assetId: string): VolumeViewModel => {
-            if (viewModels[assetId]) {
-                return viewModels[assetId];
+            if (volumeViewModels[assetId]) {
+                return volumeViewModels[assetId];
             }
 
             const fallback: VolumeViewModel = {
                 ...DEFAULT_VOLUME_VIEW_MODEL,
                 format:
-                    getAssetConfigBasedOnExtension(
-                        getAsset(assetId)?.extension || "",
-                    )?.parser || "N/A",
+                    getParser(getAsset(assetId)?.extension || "unknown") ||
+                    "N/A",
             };
 
             if (!view) {
@@ -284,7 +341,34 @@ export function useViewBuilder(viewKey: string) {
                 fallback,
             ) as VolumeViewModel;
         },
-        [viewModels, getAsset, view],
+        [volumeViewModels, getAsset, view],
+    );
+
+    // Function which returns safe structure view model based on asset ID.
+    const getStructureViewModel = useCallback(
+        (assetId: string): StructureViewModel => {
+            if (structureViewModels[assetId]) {
+                return structureViewModels[assetId];
+            }
+
+            const fallback: StructureViewModel = {
+                ...DEFAULT_STRUCTURE_VIEW_MODEL,
+                format:
+                    getParser(getAsset(assetId)?.extension || "unknown") ||
+                    "N/A",
+            };
+
+            if (!view) {
+                return fallback;
+            }
+
+            return getStructureParamsForAsset(
+                view.root,
+                assetId,
+                fallback,
+            ) as StructureViewModel;
+        },
+        [structureViewModels, getAsset, view],
     );
 
     // Handler for expanding the asset card.
@@ -294,18 +378,18 @@ export function useViewBuilder(viewKey: string) {
         UiLocalStorageService.ViewBuilder.setExpandedAssetId(viewKey, nextId);
     };
 
-    // Function which updates view model and optionally sync it to Molstar.
-    const updateViewModel = async (
+    // Function which updates volume view model and optionally sync it to Molstar.
+    const updateVolumeViewModel = async (
         assetId: string,
         paramKey: keyof VolumeViewModel,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         val: any,
         syncToMolstar: boolean,
     ) => {
-        const updatedVm = { ...getViewModel(assetId), [paramKey]: val };
+        const updatedVm = { ...getVolumeViewModel(assetId), [paramKey]: val };
 
         // Update UI instantly.
-        setViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+        setVolumeViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
 
         // Sync to Molstar only if requested and the asset is checked.
         if (
@@ -322,7 +406,7 @@ export function useViewBuilder(viewKey: string) {
                         snap.metadata.key === viewKey
                             ? {
                                   ...snap,
-                                  root: applyViewModelToBranch(
+                                  root: applyVolumeViewModelToBranch(
                                       snap.root,
                                       assetId,
                                       updatedVm,
@@ -355,10 +439,145 @@ export function useViewBuilder(viewKey: string) {
         }
     };
 
+    // Function which updates structure view model and optionally sync it to Molstar.
+    const updateStructureViewModel = async (
+        assetId: string,
+        paramKey: keyof StructureViewModel,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        val: any,
+        syncToMolstar: boolean,
+    ) => {
+        const updatedVm = {
+            ...getStructureViewModel(assetId),
+            [paramKey]: val,
+        };
+
+        // Update UI instantly.
+        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+
+        // Sync to Molstar only if requested and the asset is checked.
+        if (
+            syncToMolstar &&
+            selectedAssetIds.includes(assetId) &&
+            regime.kind === "viewing"
+        ) {
+            // Update source tree.
+            const updatedTree: MVSData_States = {
+                ...regime.history.current().stateTree,
+                snapshots: regime.history
+                    .current()
+                    .stateTree.snapshots.map((snap) =>
+                        snap.metadata.key === viewKey
+                            ? {
+                                  ...snap,
+                                  root: applyStructureViewModelToBranch(
+                                      snap.root,
+                                      assetId,
+                                      updatedVm,
+                                  ),
+                              }
+                            : snap,
+                    ),
+            };
+
+            // Update regime.
+            regime.commitStateTree(
+                updatedTree,
+                `Updated "${paramKey}" for view "${view?.metadata.title}" (${viewKey}).`,
+            );
+
+            // Try to reload Molstar viewer.
+            const result = await reloadMolstarAndRestoreIndex(
+                { key: viewKey },
+                Array.from(assets.values()),
+                updatedTree,
+            );
+            if (result instanceof Error) {
+                pushErrorNotification(
+                    `Failed to apply changes! For more information, check the logs.`,
+                );
+                loggerUi.error(result.message);
+
+                regime.undo();
+            }
+        }
+    };
+
+    const updateStructureComponentViewModel = async (
+        assetId: string,
+        componentId: string,
+        paramKey: keyof ComponentEntry,
+        val: ComponentEntry[keyof ComponentEntry],
+        syncToMolstar: boolean,
+    ) => {
+        // 1. Retrieve the current view model for the asset
+        const currentVm = getStructureViewModel(assetId);
+
+        // 2. Map over components to apply the change to the specific component ID
+        const updatedComponents = currentVm.components.map((comp) =>
+            comp.id === componentId ? { ...comp, [paramKey]: val } : comp,
+        );
+
+        const updatedVm: StructureViewModel = {
+            ...currentVm,
+            components: updatedComponents,
+        };
+
+        // 3. Update the UI state instantly
+        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+
+        // 4. Sync to Molstar if requested and viewing conditions are met
+        if (
+            syncToMolstar &&
+            selectedAssetIds.includes(assetId) &&
+            regime.kind === "viewing"
+        ) {
+            const updatedTree: MVSData_States = {
+                ...regime.history.current().stateTree,
+                snapshots: regime.history
+                    .current()
+                    .stateTree.snapshots.map((snap) =>
+                        snap.metadata.key === viewKey
+                            ? {
+                                  ...snap,
+                                  root: applyStructureViewModelToBranch(
+                                      snap.root,
+                                      assetId,
+                                      updatedVm, // Passes the updated VM with the modified component array
+                                  ),
+                              }
+                            : snap,
+                    ),
+            };
+
+            // Update regime history
+            regime.commitStateTree(
+                updatedTree,
+                `Updated component "${componentId}" param "${paramKey}" for view "${view?.metadata.title}" (${viewKey}).`,
+            );
+
+            // Try to reload Molstar viewer
+            const result = await reloadMolstarAndRestoreIndex(
+                { key: viewKey },
+                Array.from(assets.values()),
+                updatedTree,
+            );
+
+            if (result instanceof Error) {
+                pushErrorNotification(
+                    `Failed to apply component changes! For more information, check the logs.`,
+                );
+                loggerUi.error(result.message);
+                regime.undo();
+            }
+        }
+    };
+
     // Handler when asset is toggled.
     const handleAssetToggle = async (
         toggledAssetId: string,
         isChecked: boolean,
+        tabType: TabType,
     ) => {
         // If it is checked, it means we need to add it, otherwise remove it.
         let newSelectedIds: string[];
@@ -397,26 +616,54 @@ export function useViewBuilder(viewKey: string) {
                         let newRoot;
 
                         if (isChecked) {
-                            // Get changes from our view model.
-                            const draftedParams = getViewModel(toggledAssetId);
+                            // TODO: here we need to know if to add volume or structur
 
-                            // New root.
-                            newRoot = addDownloadNodeToRoot(
-                                snap.root,
-                                toggledAssetId,
-                                getAsset(toggledAssetId)?.extension ||
-                                    "unknown",
-                                getAllSupportedAssetsParsers(),
-                                draftedParams,
-                            );
+                            if (tabType === "volume") {
+                                // Get changes from our view model.
+                                const draftedParams =
+                                    getVolumeViewModel(toggledAssetId);
 
-                            // Cleanly apply the current view model state to the newly created branch.
-                            if (viewModels[toggledAssetId]) {
-                                newRoot = applyViewModelToBranch(
-                                    newRoot,
+                                // New root.
+                                newRoot = addVolumeDownloadNodeToRoot(
+                                    snap.root,
                                     toggledAssetId,
-                                    viewModels[toggledAssetId],
+                                    getAsset(toggledAssetId)?.extension ||
+                                        "unknown",
+                                    getAllSupportedAssetsParsers(),
+                                    draftedParams,
                                 );
+
+                                // Cleanly apply the current view model state to the newly created branch.
+                                if (volumeViewModels[toggledAssetId]) {
+                                    newRoot = applyVolumeViewModelToBranch(
+                                        newRoot,
+                                        toggledAssetId,
+                                        volumeViewModels[toggledAssetId],
+                                    );
+                                }
+                            } else {
+                                // Get changes from our view model.
+                                const draftedParams =
+                                    getStructureViewModel(toggledAssetId);
+
+                                // New root.
+                                newRoot = addStructureDownloadNodeToRoot(
+                                    snap.root,
+                                    toggledAssetId,
+                                    getAsset(toggledAssetId)?.extension ||
+                                        "unknown",
+                                    getAllSupportedAssetsParsers(),
+                                    draftedParams,
+                                );
+
+                                // Cleanly apply the current view model state to the newly created branch.
+                                if (structureViewModels[toggledAssetId]) {
+                                    newRoot = applyStructureViewModelToBranch(
+                                        newRoot,
+                                        toggledAssetId,
+                                        structureViewModels[toggledAssetId],
+                                    );
+                                }
                             }
                         } else {
                             newRoot = removeDownloadNodeFromRoot(
@@ -475,9 +722,12 @@ export function useViewBuilder(viewKey: string) {
         setSelectedAssetRelativePaths,
         selectedAssetIds,
         expandedAssetId,
-        getViewModel,
+        getVolumeViewModel,
+        getStructureViewModel,
         toggleExpandAsset,
-        updateViewModel,
+        updateVolumeViewModel,
+        updateStructureViewModel,
+        updateStructureComponentViewModel,
         handleAssetToggle,
     };
 }

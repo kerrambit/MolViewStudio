@@ -19,8 +19,8 @@ import {
 } from "@mantine/core";
 import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
 import { pushWarningNotification } from "../../../../../services/NotificationService";
-import { TransformControls } from "./TransformControls";
-import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
+import type { VolumeViewModel } from "../../../models/MvsViewModels";
+import { VolumeTransformControls } from "./VolumeTransformControls";
 
 type VolumeTabProps = {
     viewKey: string;
@@ -42,13 +42,20 @@ export function VolumeTab({
 }: VolumeTabProps) {
     // Store expanded sections.
     const [generalSectionExpanded, setGeneralSectionExpanded] = useState(
-        UiLocalStorageService.ViewBuilder.getExpandedGeneralSection(
+        UiLocalStorageService.ViewBuilder.getExpandedVolumeGeneralSection(
             asset.id,
             viewKey,
         ),
     );
+    const [representationSectionExpanded, setRepresentationSectionExpanded] =
+        useState(
+            UiLocalStorageService.ViewBuilder.getExpandedVolumeRepresentationSection(
+                asset.id,
+                viewKey,
+            ),
+        );
     const [transformSectionExpanded, setTransformSectionExpanded] = useState(
-        UiLocalStorageService.ViewBuilder.getExpandedTransformSection(
+        UiLocalStorageService.ViewBuilder.getExpandedVolumeTransformSection(
             asset.id,
             viewKey,
         ),
@@ -65,7 +72,7 @@ export function VolumeTab({
                 onClick={() => {
                     setGeneralSectionExpanded((prev) => {
                         const nextState = !prev;
-                        UiLocalStorageService.ViewBuilder.setExpandedGeneralSection(
+                        UiLocalStorageService.ViewBuilder.setExpandedVolumeGeneralSection(
                             asset.id,
                             viewKey,
                             nextState,
@@ -132,6 +139,38 @@ export function VolumeTab({
                             )
                         }
                     />
+
+                    <Divider mb="md" />
+                </div>
+            </Collapse>
+
+            {/* Representation settings for volume tab. */}
+            <CollapseTrigger
+                title={"Representation"}
+                size={"md"}
+                expanded={representationSectionExpanded}
+                onClick={() => {
+                    setRepresentationSectionExpanded((prev) => {
+                        const nextState = !prev;
+                        UiLocalStorageService.ViewBuilder.setExpandedVolumeRepresentationSection(
+                            asset.id,
+                            viewKey,
+                            nextState,
+                        );
+                        return nextState;
+                    });
+                }}
+            ></CollapseTrigger>
+
+            <Collapse expanded={representationSectionExpanded}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "1em",
+                        paddingBottom: "1em",
+                    }}
+                >
                     <Group mt="xs">
                         <Checkbox
                             label="Show wireframe"
@@ -187,7 +226,7 @@ export function VolumeTab({
                 onClick={() => {
                     setTransformSectionExpanded((prev) => {
                         const nextState = !prev;
-                        UiLocalStorageService.ViewBuilder.setExpandedTransformSection(
+                        UiLocalStorageService.ViewBuilder.setExpandedVolumeTransformSection(
                             asset.id,
                             viewKey,
                             nextState,
@@ -198,10 +237,10 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={transformSectionExpanded}>
-                <TransformControls
+                <VolumeTransformControls
                     viewModel={viewModel}
                     onUpdateParam={onUpdateParam}
-                ></TransformControls>
+                ></VolumeTransformControls>
             </Collapse>
         </div>
     );
