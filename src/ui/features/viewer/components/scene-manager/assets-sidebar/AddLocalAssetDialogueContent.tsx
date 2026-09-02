@@ -57,9 +57,11 @@ export function AddLocalAssetDialogueContent({
 
     // Each file asset type defines if it requires or offers processing.
     const requiresProcessing = file
-        ? checkRequiresProcessing(file.name)
+        ? checkRequiresProcessing(file.extension)
         : false;
-    const offersProcessing = file ? checkOffersProcessing(file.name) : false;
+    const offersProcessing = file
+        ? checkOffersProcessing(file.extension)
+        : false;
     const showProcessingUi = requiresProcessing || offersProcessing;
 
     // Render the component.
@@ -92,7 +94,9 @@ export function AddLocalAssetDialogueContent({
                                 );
 
                                 if (
-                                    checkRequiresProcessing(selectedFile.name)
+                                    checkRequiresProcessing(
+                                        selectedFile.extension,
+                                    )
                                 ) {
                                     setProcessAsset(true);
                                 } else {
