@@ -28,8 +28,10 @@ const PREFIX = {
         "view-builder-structure-component-representation",
     VIEW_BUILDER_STRUCTURE_COMPONENT_FOCUS_SECTION:
         "view-builder-structure-component-focus",
-    VIEW_BUILDER_STRUCTURE_TRANSFORM_SECTION:
-        "view-builder-structure-transform-section-",
+    VIEW_BUILDER_STRUCTURE_COMPONENT_TOOLTIPS_AND_LABELS_SECTION:
+        "view-builder-structure-component-tooltips-and-labels-section",
+    VIEW_BUILDER_STRUCTURE_COMPONENT_TRANSFORM_SECTION:
+        "view-builder-structure-component-transform-section-",
     VIEW_BUILDER_FILTER_SECTION: "view-builder-asset-filter-section-",
     VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
@@ -270,13 +272,13 @@ export const UiLocalStorageService = {
             );
         },
 
-        getExpandedStructureTransformSection: (
+        getExpandedStructureComponentTransformSection: (
             assetId: string,
             viewKey: string,
             componentId: string,
         ): boolean => {
             const value = localStorage.getItem(
-                `${PREFIX.VIEW_BUILDER_STRUCTURE_TRANSFORM_SECTION}${viewKey}-${assetId}-${componentId}`,
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_TRANSFORM_SECTION}${viewKey}-${assetId}-${componentId}`,
             );
             if (value === null) {
                 return false;
@@ -287,14 +289,101 @@ export const UiLocalStorageService = {
             return false;
         },
 
-        setExpandedStructureTransformSection: (
+        setExpandedStructureComponentTransformSection: (
             assetId: string,
             viewKey: string,
             componentId: string,
             expanded: boolean,
         ): void => {
             localStorage.setItem(
-                `${PREFIX.VIEW_BUILDER_STRUCTURE_TRANSFORM_SECTION}${viewKey}-${assetId}-${componentId}`,
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_TRANSFORM_SECTION}${viewKey}-${assetId}-${componentId}`,
+                String(expanded),
+            );
+        },
+
+        getExpandedStructureComponentFocusSection: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+        ): boolean => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_FOCUS_SECTION}${viewKey}-${assetId}-${componentId}`,
+            );
+            if (value === null) {
+                return false;
+            }
+            if (value === "true") {
+                return true;
+            }
+            return false;
+        },
+
+        setExpandedStructureComponentFocusSection: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+            expanded: boolean,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_FOCUS_SECTION}${viewKey}-${assetId}-${componentId}`,
+                String(expanded),
+            );
+        },
+
+        getExpandedStructureComponentTooltipsAndLabelsSection: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+        ): boolean => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_TOOLTIPS_AND_LABELS_SECTION}${viewKey}-${assetId}-${componentId}`,
+            );
+            if (value === null) {
+                return false;
+            }
+            if (value === "true") {
+                return true;
+            }
+            return false;
+        },
+
+        setExpandedStructureComponentTooltipsAndLabelsSection: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+            expanded: boolean,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_TOOLTIPS_AND_LABELS_SECTION}${viewKey}-${assetId}-${componentId}`,
+                String(expanded),
+            );
+        },
+
+        getExpandedStructureRepresentationSection: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+        ): boolean => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_REPRESENTATION_SECTION}${viewKey}-${assetId}-${componentId}`,
+            );
+            if (value === null) {
+                return false;
+            }
+            if (value === "true") {
+                return true;
+            }
+            return false;
+        },
+
+        setExpandedStructureRepresentationSection: (
+            assetId: string,
+            viewKey: string,
+            componentId: string,
+            expanded: boolean,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_STRUCTURE_COMPONENT_REPRESENTATION_SECTION}${viewKey}-${assetId}-${componentId}`,
                 String(expanded),
             );
         },
