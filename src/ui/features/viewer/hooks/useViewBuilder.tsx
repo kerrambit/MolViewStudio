@@ -96,7 +96,7 @@ export function applyStructureViewModelToBranch(
     }
 
     params.forEach((p) => {
-        newRoot = updateNodeParamInAssetBranch(
+        newRoot = updateNodeParamInAssetBranch( 
             newRoot,
             assetId,
             p.node,
@@ -616,8 +616,6 @@ export function useViewBuilder(viewKey: string) {
                         let newRoot;
 
                         if (isChecked) {
-                            // TODO: here we need to know if to add volume or structur
-
                             if (tabType === "volume") {
                                 // Get changes from our view model.
                                 const draftedParams =
