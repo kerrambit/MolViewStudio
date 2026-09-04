@@ -18,10 +18,15 @@ interface SegmentedControllerProps<T extends string = string> {
     value?: T;
     onChange?: (value: T) => void;
     defaultValue?: T;
+    size?: "xs" | "sm" | "md" | "lg" | "xl";
     /**
      * Pixel limit when the controller orientation changes from 'horizontal' to 'vertical'.
      */
     widthWrapOrientationLimit?: number;
+    /**
+     * Force the orientation of the controller. If not provided, the orientation will be determined by the width of the component and the `widthWrapOrientationLimit` prop.
+     */
+    orientation?: "horizontal" | "vertical";
 }
 
 export function SegmentedController<T extends string = string>(
@@ -29,11 +34,11 @@ export function SegmentedController<T extends string = string>(
 ) {
     const ref = useRef<HTMLDivElement>(null);
     const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
-        "horizontal",
+        props.orientation ?? "horizontal",
     );
 
     useEffect(() => {
-        if (!ref.current) return;
+        if (!ref.current || props.orientation) return;
 
         const threshold = props.widthWrapOrientationLimit ?? 100;
 
@@ -66,6 +71,7 @@ export function SegmentedController<T extends string = string>(
             style={{ width: "100%", display: "flex", justifyContent: "center" }}
         >
             <SegmentedControl
+                size={props.size}
                 value={currentValue}
                 onChange={handleChange}
                 data={props.data}
