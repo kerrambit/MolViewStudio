@@ -93,7 +93,7 @@ export function SceneManager(props: SceneManagerProps) {
             </Sidebar>
 
             {regime.kind === "viewing" && tab === "views" && isBuilderOpen && (
-                <Sidebar>
+                <Sidebar style={{ maxWidth: "33%" }}>
                     <ViewBuilder
                         key={isBuilderOpen}
                         viewKey={isBuilderOpen}
