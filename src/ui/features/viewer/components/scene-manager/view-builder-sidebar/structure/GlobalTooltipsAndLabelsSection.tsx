@@ -4,7 +4,8 @@
  * @author Marek Eibel
  */
 
-import { Text, Select, TextInput } from "@mantine/core";
+import { useState } from "react";
+import { Text, Select, TextInput, Group } from "@mantine/core";
 import {
     getLabelMode,
     getTooltipMode,
@@ -14,8 +15,9 @@ import {
 } from "../../../../models/MvsViewModels";
 import { SegmentedController } from "../../../../../../components/common/segmented-controller/SegmentedController";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { DeleteActionIcon } from "../../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import {
-    schemaOptions,
+    ANNOTATION_SCHEMA_OPTIONS,
     type UpdateViewModelFields,
     type UpdateViewModelParam,
 } from "./structureTabHelpers";
@@ -34,6 +36,73 @@ export function GlobalTooltipsAndLabelsSection({
     onUpdateParam,
     onUpdateFields,
 }: GlobalTooltipsAndLabelsSectionProps) {
+    const [remappingDrafts, setRemappingDrafts] = useState<
+        Record<string, { key: string; value: string }>
+    >({});
+
+    const getDraft = (paramKey: string) =>
+        remappingDrafts[paramKey] || { key: "", value: "" };
+
+    const handleSetDraft = (
+        paramKey: string,
+        draft: { key: string; value: string },
+    ) => {
+        setRemappingDrafts((prev) => ({ ...prev, [paramKey]: draft }));
+    };
+
+    const handleAddRemapping = (
+        paramKey: "tooltip_from_source" | "label_from_source",
+        data: DataFromSourceParams,
+    ) => {
+        console.log("new");
+        const draft = getDraft(paramKey);
+        if (!draft.key.trim() || !draft.value.trim()) return; // Require key and value.
+
+        const newRemapping = {
+            ...(data.field_remapping || {}),
+            [draft.key.trim()]: draft.value.trim() || null,
+        };
+
+        onUpdateParam(
+            paramKey,
+            { ...data, field_remapping: newRemapping },
+            true,
+        );
+        handleSetDraft(paramKey, { key: "", value: "" }); // Reset draft.
+    };
+
+    const handleRemoveRemapping = (
+        paramKey: "tooltip_from_source" | "label_from_source",
+        data: DataFromSourceParams,
+        mappingKey: string,
+    ) => {
+        const newRemapping = { ...data.field_remapping };
+        delete newRemapping[mappingKey];
+        onUpdateParam(
+            paramKey,
+            { ...data, field_remapping: newRemapping },
+            true,
+        );
+    };
+
+    const handleUpdateRemappingValue = (
+        paramKey: "tooltip_from_source" | "label_from_source",
+        data: DataFromSourceParams,
+        mappingKey: string,
+        newValue: string,
+        sync: boolean,
+    ) => {
+        const newRemapping = {
+            ...(data.field_remapping || {}),
+            [mappingKey]: newValue || null,
+        };
+        onUpdateParam(
+            paramKey,
+            { ...data, field_remapping: newRemapping },
+            sync,
+        );
+    };
+
     // Shared source picker (None / From URI / From Source) for tooltips or labels.
     const renderSourcePicker = (
         mode: "none" | "uri" | "source",
@@ -95,7 +164,7 @@ export function GlobalTooltipsAndLabelsSection({
             <Select
                 label="Schema"
                 size="xs"
-                data={schemaOptions}
+                data={ANNOTATION_SCHEMA_OPTIONS}
                 value={data.schema}
                 onChange={(val) =>
                     val &&
@@ -158,63 +227,180 @@ export function GlobalTooltipsAndLabelsSection({
     const renderFromSourceFields = (
         paramKey: "tooltip_from_source" | "label_from_source",
         data: DataFromSourceParams,
-    ) => (
-        <>
-            <Select
-                label="Schema"
-                size="xs"
-                data={schemaOptions}
-                value={data.schema}
-                onChange={(val) =>
-                    val &&
-                    onUpdateParam(
-                        paramKey,
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        { ...data, schema: val as any },
-                        true,
-                    )
-                }
-            />
-            <TextInput
-                label="Category Name"
-                size="xs"
-                value={data.category_name}
-                onChange={(e) =>
-                    onUpdateParam(
-                        paramKey,
-                        { ...data, category_name: e.currentTarget.value },
-                        false,
-                    )
-                }
-                onBlur={(e) =>
-                    onUpdateParam(
-                        paramKey,
-                        { ...data, category_name: e.currentTarget.value },
-                        true,
-                    )
-                }
-            />
-            <TextInput
-                label="Field Name"
-                size="xs"
-                value={data.field_name}
-                onChange={(e) =>
-                    onUpdateParam(
-                        paramKey,
-                        { ...data, field_name: e.currentTarget.value },
-                        false,
-                    )
-                }
-                onBlur={(e) =>
-                    onUpdateParam(
-                        paramKey,
-                        { ...data, field_name: e.currentTarget.value },
-                        true,
-                    )
-                }
-            />
-        </>
-    );
+    ) => {
+        const draft = getDraft(paramKey);
+
+        return (
+            <>
+                <Select
+                    label="Schema"
+                    size="xs"
+                    data={ANNOTATION_SCHEMA_OPTIONS}
+                    value={data.schema}
+                    onChange={(val) =>
+                        val &&
+                        onUpdateParam(
+                            paramKey,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            { ...data, schema: val as any },
+                            true,
+                        )
+                    }
+                />
+                <TextInput
+                    label="Category Name"
+                    size="xs"
+                    value={data.category_name}
+                    onChange={(e) =>
+                        onUpdateParam(
+                            paramKey,
+                            { ...data, category_name: e.currentTarget.value },
+                            false,
+                        )
+                    }
+                    onBlur={(e) =>
+                        onUpdateParam(
+                            paramKey,
+                            { ...data, category_name: e.currentTarget.value },
+                            true,
+                        )
+                    }
+                />
+                <TextInput
+                    label="Field Name"
+                    size="xs"
+                    value={data.field_name}
+                    onChange={(e) =>
+                        onUpdateParam(
+                            paramKey,
+                            { ...data, field_name: e.currentTarget.value },
+                            false,
+                        )
+                    }
+                    onBlur={(e) =>
+                        onUpdateParam(
+                            paramKey,
+                            { ...data, field_name: e.currentTarget.value },
+                            true,
+                        )
+                    }
+                />
+
+                <Text fw={600} size="sm">
+                    Field Remapping
+                </Text>
+
+                {/* Render Existing Mappings */}
+                {Object.entries(data.field_remapping || {}).map(
+                    ([mapKey, mapVal]) => (
+                        <Group
+                            key={mapKey}
+                            align="flex-end"
+                            gap="0.33em"
+                            wrap="nowrap"
+                            mt={4}
+                        >
+                            <TextInput
+                                label="MVS Field"
+                                value={mapKey}
+                                size="xs"
+                                style={{ flex: 1 }}
+                                disabled // Keep key disabled to prevent record mutation bugs.
+                            />
+                            <TextInput
+                                label="Source Column"
+                                value={mapVal || ""}
+                                size="xs"
+                                style={{ flex: 1 }}
+                                onChange={(e) =>
+                                    handleUpdateRemappingValue(
+                                        paramKey,
+                                        data,
+                                        mapKey,
+                                        e.currentTarget.value,
+                                        false,
+                                    )
+                                }
+                                onBlur={(e) =>
+                                    handleUpdateRemappingValue(
+                                        paramKey,
+                                        data,
+                                        mapKey,
+                                        e.currentTarget.value,
+                                        true,
+                                    )
+                                }
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" &&
+                                    handleUpdateRemappingValue(
+                                        paramKey,
+                                        data,
+                                        mapKey,
+                                        e.currentTarget.value,
+                                        true,
+                                    )
+                                }
+                            />
+                            <DeleteActionIcon
+                                onClick={() =>
+                                    handleRemoveRemapping(
+                                        paramKey,
+                                        data,
+                                        mapKey,
+                                    )
+                                }
+                                tooltip="Remove field mapping."
+                            />
+                        </Group>
+                    ),
+                )}
+
+                {/* Draft row to add a new mapping */}
+                <Group align="flex-end" gap="0.33em" wrap="nowrap" mt={4}>
+                    <TextInput
+                        label="MVS Field"
+                        placeholder="e.g. label_asym_id"
+                        value={draft.key}
+                        size="xs"
+                        style={{ flex: 1 }}
+                        onChange={(e) =>
+                            handleSetDraft(paramKey, {
+                                ...draft,
+                                key: e.currentTarget.value,
+                            })
+                        }
+                        onBlur={() => handleAddRemapping(paramKey, data)}
+                        onKeyDown={(e) =>
+                            e.key === "Enter" &&
+                            handleAddRemapping(paramKey, data)
+                        }
+                    />
+                    <TextInput
+                        label="Source Column"
+                        placeholder="e.g. asym_id"
+                        value={draft.value}
+                        size="xs"
+                        style={{ flex: 1 }}
+                        onChange={(e) =>
+                            handleSetDraft(paramKey, {
+                                ...draft,
+                                value: e.currentTarget.value,
+                            })
+                        }
+                        onBlur={() => handleAddRemapping(paramKey, data)}
+                        onKeyDown={(e) =>
+                            e.key === "Enter" &&
+                            handleAddRemapping(paramKey, data)
+                        }
+                    />
+                    <DeleteActionIcon
+                        tooltip="Cannot remove draft."
+                        enabled={false}
+                    />
+                </Group>
+            </>
+        );
+    };
 
     // Render the component.
     return (

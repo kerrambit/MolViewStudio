@@ -101,6 +101,7 @@ export interface DataFromSourceParams {
     schema: AnnotationSchema;
     category_name: string;
     field_name: string;
+    field_remapping?: Record<string, string | null>;
     block_header?: string;
     block_index?: number;
 }

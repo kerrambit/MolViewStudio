@@ -5,6 +5,7 @@
  */
 
 import type {
+    AnnotationSchema,
     ComponentEntry,
     PredefinedSelector,
     SelectorExpression,
@@ -54,7 +55,9 @@ export const SELECTOR_EXPRESSION_FIELDS: {
     { key: "type_symbol", label: "Type symbol", type: "text" },
 ];
 
-export const schemaOptions = [
+/** Corresponds to `AnnotationSchema`. */
+export const ANNOTATION_SCHEMA_OPTIONS: AnnotationSchema[] = [
+    "all_atomic",
     "whole_structure",
     "entity",
     "chain",
@@ -65,10 +68,9 @@ export const schemaOptions = [
     "auth_residue_range",
     "atom",
     "auth_atom",
-    "all_atomic",
 ];
 
-// Predefined selector options, shared by component and color-override selectors.
+// Predefined selector options corresponding to `PredefinedSelector`, shared by component and color-override selectors.
 export const PREDEFINED_SELECTOR_OPTIONS: PredefinedSelector[] = [
     "all",
     "polymer",
@@ -81,7 +83,7 @@ export const PREDEFINED_SELECTOR_OPTIONS: PredefinedSelector[] = [
     "coarse",
 ];
 
-// Helper to ensure Mantine ColorInput handles css text colors (like "green")
+// Helper to ensure Mantine ColorInput handles css text colors (like "green").
 export function normalizeToHex(color: string): string {
     if (!color) return "#ffffff";
     if (color.startsWith("#")) return color;

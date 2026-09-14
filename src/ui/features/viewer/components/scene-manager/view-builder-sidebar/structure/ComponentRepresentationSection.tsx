@@ -22,7 +22,7 @@ import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { ColorOverridesSection } from "./ColorOverridesSection";
 import {
     normalizeToHex,
-    schemaOptions,
+    ANNOTATION_SCHEMA_OPTIONS,
     type UpdateComponentFields,
     type UpdateComponentParam,
 } from "./structureTabHelpers";
@@ -289,7 +289,7 @@ export function ComponentRepresentationSection({
                         <Select
                             label="Schema"
                             size="xs"
-                            data={schemaOptions}
+                            data={ANNOTATION_SCHEMA_OPTIONS}
                             value={component.color_from_uri.schema}
                             onChange={(val) =>
                                 val &&
@@ -370,7 +370,7 @@ export function ComponentRepresentationSection({
                         <Select
                             label="Schema"
                             size="xs"
-                            data={schemaOptions}
+                            data={ANNOTATION_SCHEMA_OPTIONS}
                             value={component.color_from_source.schema}
                             onChange={(val) =>
                                 val &&

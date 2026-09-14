@@ -435,7 +435,7 @@ export function getStructureNode(
     if (viewModel.tooltip_from_uri)
         structureNode.tooltipFromUri(viewModel.tooltip_from_uri);
     if (viewModel.tooltip_from_source)
-        structureNode.tooltipFromSource(viewModel.tooltip_from_source as never);
+        structureNode.tooltipFromSource(viewModel.tooltip_from_source);
 
     viewModel.components.forEach((comp: ComponentEntry) => {
         const componentNode = structureNode.component({
@@ -697,10 +697,21 @@ function readComponentEntry(
                         });
                     }
                 }
-                if (grandchild.kind === "color_from_uri")
-                    entry.color_from_uri = grandchild.params;
-                if (grandchild.kind === "color_from_source")
-                    entry.color_from_source = grandchild.params;
+                if (grandchild.kind === "color_from_uri" && grandchild.params) {
+                    entry.color_from_uri = { ...grandchild.params };
+                }
+                if (
+                    grandchild.kind === "color_from_source" &&
+                    grandchild.params
+                ) {
+                    entry.color_from_source = {
+                        ...grandchild.params,
+                        // Safely clone the nested field_remapping object
+                        field_remapping: grandchild.params.field_remapping
+                            ? { ...grandchild.params.field_remapping }
+                            : undefined,
+                    };
+                }
                 if (
                     grandchild.kind === "opacity" &&
                     grandchild.params?.opacity !== undefined
@@ -787,14 +798,31 @@ export function getStructureViewModel(
     };
 
     for (const child of structureNode.children || []) {
-        if (child.kind === "label_from_uri")
-            params.label_from_uri = child.params;
-        if (child.kind === "label_from_source")
-            params.label_from_source = child.params;
-        if (child.kind === "tooltip_from_uri")
-            params.tooltip_from_uri = child.params;
-        if (child.kind === "tooltip_from_source")
-            params.tooltip_from_source = child.params;
+        if (child.kind === "label_from_uri" && child.params) {
+            params.label_from_uri = { ...child.params };
+        }
+        if (child.kind === "label_from_source" && child.params) {
+            params.label_from_source = {
+                ...child.params,
+                // Safely clone the nested field_remapping object
+                field_remapping: child.params.field_remapping
+                    ? { ...child.params.field_remapping }
+                    : undefined,
+            };
+        }
+
+        if (child.kind === "tooltip_from_uri" && child.params) {
+            params.tooltip_from_uri = { ...child.params };
+        }
+        if (child.kind === "tooltip_from_source" && child.params) {
+            params.tooltip_from_source = {
+                ...child.params,
+                // Safely clone the nested field_remapping object
+                field_remapping: child.params.field_remapping
+                    ? { ...child.params.field_remapping }
+                    : undefined,
+            };
+        }
 
         if (child.kind === "transform" && child.params) {
             if (
