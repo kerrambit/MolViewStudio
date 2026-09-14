@@ -54,7 +54,6 @@ export function GlobalTooltipsAndLabelsSection({
         paramKey: "tooltip_from_source" | "label_from_source",
         data: DataFromSourceParams,
     ) => {
-        console.log("new");
         const draft = getDraft(paramKey);
         if (!draft.key.trim() || !draft.value.trim()) return; // Require key and value.
 
