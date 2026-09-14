@@ -21,6 +21,7 @@ import {
     type UpdateViewModelFields,
     type UpdateViewModelParam,
 } from "./structureTabHelpers";
+import { useManagedAssetsStore } from "../../../../../../stores/managedAssetsStore";
 
 type GlobalTooltipsAndLabelsSectionProps = {
     viewModel: StructureViewModel;
@@ -36,6 +37,9 @@ export function GlobalTooltipsAndLabelsSection({
     onUpdateParam,
     onUpdateFields,
 }: GlobalTooltipsAndLabelsSectionProps) {
+    // Use assets.
+    const assets = useManagedAssetsStore((state) => state.assets);
+
     const [remappingDrafts, setRemappingDrafts] = useState<
         Record<string, { key: string; value: string }>
     >({});
@@ -126,24 +130,20 @@ export function GlobalTooltipsAndLabelsSection({
         data: DataFromUriParams,
     ) => (
         <>
-            <TextInput
+            <Select
                 label="URI"
                 size="xs"
+                data={Array.from(assets.values()).map((asset) => ({
+                    value: asset.id,
+                    label: asset.name,
+                }))}
                 value={data.uri}
-                onChange={(e) =>
-                    onUpdateParam(
-                        paramKey,
-                        { ...data, uri: e.currentTarget.value },
-                        false,
-                    )
-                }
-                onBlur={(e) =>
-                    onUpdateParam(
-                        paramKey,
-                        { ...data, uri: e.currentTarget.value },
-                        true,
-                    )
-                }
+                placeholder="Select asset to use."
+                onChange={(val) => {
+                    if (!val) return;
+
+                    onUpdateParam(paramKey, { ...data, uri: val }, true);
+                }}
             />
             <Select
                 label="Format"
