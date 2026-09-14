@@ -6,7 +6,14 @@
 
 export type RenderStrategy = "volume" | "structure" | "both";
 export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
-export type ExtensionType = "map" | "cif" | "bcif" | "ccp4" | "mrc";
+export type ExtensionType =
+    | "map"
+    | "cif"
+    | "mcif"
+    | "mmcif"
+    | "bcif"
+    | "ccp4"
+    | "mrc";
 
 export interface AssetDefinition {
     extension: string;
@@ -34,6 +41,24 @@ const SUPPORTED_ASSETS: Record<string, AssetDefinition> = {
         parser: "mmcif",
         isBinary: false,
         description: "CIF Structure",
+        requiresProcessing: false,
+        offersProcessing: false,
+    },
+    mcif: {
+        extension: "mcif",
+        renderStrategy: "structure",
+        parser: "mmcif",
+        isBinary: false,
+        description: "MCIF Structure",
+        requiresProcessing: false,
+        offersProcessing: false,
+    },
+    mmcif: {
+        extension: "mmcif",
+        renderStrategy: "structure",
+        parser: "mmcif",
+        isBinary: false,
+        description: "MMCIF Structure",
         requiresProcessing: false,
         offersProcessing: false,
     },
