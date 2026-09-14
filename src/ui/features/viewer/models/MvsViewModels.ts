@@ -4,6 +4,8 @@
  * @author Marek Eibel
  */
 
+// Based on documentation at https://molstar.org/mol-view-spec-docs/tree-schema/.
+
 export type PredefinedSelector =
     | "all"
     | "polymer"
