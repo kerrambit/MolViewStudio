@@ -52,6 +52,7 @@ export function AdvancedGeneralSection({
         <NumberInput
             label={label}
             value={value}
+            min={0.0}
             size="xs"
             onChange={(val) =>
                 typeof val === "number" && onUpdateParam(key, val, false)
