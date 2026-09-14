@@ -11,15 +11,18 @@ import {
     Select,
     TextInput,
     Divider,
+    Group,
 } from "@mantine/core";
 import {
     getActiveColorProperty,
     type ComponenentEntryColorProperty,
     type ComponentEntry,
+    type DataFromSourceParams,
 } from "../../../../models/MvsViewModels";
 import { SegmentedController } from "../../../../../../components/common/segmented-controller/SegmentedController";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { ColorOverridesSection } from "./ColorOverridesSection";
+import { DeleteActionIcon } from "../../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import {
     normalizeToHex,
     ANNOTATION_SCHEMA_OPTIONS,
@@ -27,6 +30,7 @@ import {
     type UpdateComponentParam,
 } from "./structureTabHelpers";
 import { useStructureComponentCache } from "../../../../hooks/useStructureComponentCache";
+import { useState } from "react";
 
 // Cache keys for stashing the color-mode state being switched away from.
 const COLOR_CACHE_KEY = "colorplain";
@@ -138,6 +142,78 @@ export function ComponentRepresentationSection({
                 false,
             );
         }
+    };
+
+    const [draft, setRemappingDrafts] = useState<{
+        key: string;
+        value: string;
+    }>({ key: "", value: "" });
+
+    const handleSetDraft = (newDraft: { key: string; value: string }) => {
+        setRemappingDrafts({ key: newDraft.key, value: newDraft.value });
+    };
+
+    const handleAddRemapping = (data: DataFromSourceParams) => {
+        if (!draft.key.trim() || !draft.value.trim()) return; // Require key and value.
+
+        const newRemapping = {
+            ...(data.field_remapping || {}),
+            [draft.key.trim()]: draft.value.trim() || null,
+        };
+
+        if (!activeComponentId) {
+            return;
+        }
+
+        onUpdateStructureComponentParam(
+            activeComponentId,
+            "color_from_source",
+            { ...data, field_remapping: newRemapping },
+            true,
+        );
+        handleSetDraft({ key: "", value: "" }); // Reset draft.
+    };
+
+    const handleRemoveRemapping = (
+        data: DataFromSourceParams,
+        mappingKey: string,
+    ) => {
+        const newRemapping = { ...data.field_remapping };
+        delete newRemapping[mappingKey];
+
+        if (!activeComponentId) {
+            return;
+        }
+
+        onUpdateStructureComponentParam(
+            activeComponentId,
+            "color_from_source",
+            { ...data, field_remapping: newRemapping },
+            true,
+        );
+    };
+
+    const handleUpdateRemappingValue = (
+        data: DataFromSourceParams,
+        mappingKey: string,
+        newValue: string,
+        sync: boolean,
+    ) => {
+        const newRemapping = {
+            ...(data.field_remapping || {}),
+            [mappingKey]: newValue || null,
+        };
+
+        if (!activeComponentId) {
+            return;
+        }
+
+        onUpdateStructureComponentParam(
+            activeComponentId,
+            "color_from_source",
+            { ...data, field_remapping: newRemapping },
+            sync,
+        );
     };
 
     // Render the component.
@@ -440,6 +516,131 @@ export function ComponentRepresentationSection({
                                 )
                             }
                         />
+                        <Text fw={600} size="sm" mt="sm">
+                            Field Remapping (Optional)
+                        </Text>
+
+                        {/* Render Existing Mappings */}
+                        {Object.entries(
+                            component.color_from_source.field_remapping || {},
+                        ).map(([mapKey, mapVal]) => (
+                            <Group
+                                key={mapKey}
+                                align="flex-end"
+                                gap="0.33em"
+                                wrap="nowrap"
+                                mt={4}
+                            >
+                                <TextInput
+                                    label="MVS Field"
+                                    value={mapKey}
+                                    size="xs"
+                                    style={{ flex: 1 }}
+                                    disabled // Keep key disabled to prevent record mutation bugs.
+                                />
+                                <TextInput
+                                    label="Source Column"
+                                    value={mapVal || ""}
+                                    size="xs"
+                                    style={{ flex: 1 }}
+                                    onChange={(e) =>
+                                        handleUpdateRemappingValue(
+                                            component.color_from_source!,
+                                            mapKey,
+                                            e.currentTarget.value,
+                                            false,
+                                        )
+                                    }
+                                    onBlur={(e) =>
+                                        handleUpdateRemappingValue(
+                                            component.color_from_source!,
+                                            mapKey,
+                                            e.currentTarget.value,
+                                            true,
+                                        )
+                                    }
+                                    onKeyDown={(e) =>
+                                        e.key === "Enter" &&
+                                        handleUpdateRemappingValue(
+                                            component.color_from_source!,
+                                            mapKey,
+                                            e.currentTarget.value,
+                                            true,
+                                        )
+                                    }
+                                />
+                                <DeleteActionIcon
+                                    onClick={() =>
+                                        handleRemoveRemapping(
+                                            component.color_from_source!,
+                                            mapKey,
+                                        )
+                                    }
+                                    tooltip="Remove field mapping."
+                                />
+                            </Group>
+                        ))}
+
+                        {/* Draft row to add a new mapping */}
+                        <Group
+                            align="flex-end"
+                            gap="0.33em"
+                            wrap="nowrap"
+                            mt={4}
+                        >
+                            <TextInput
+                                label="MVS Field"
+                                placeholder="e.g. label_asym_id"
+                                value={draft.key}
+                                size="xs"
+                                style={{ flex: 1 }}
+                                onChange={(e) =>
+                                    handleSetDraft({
+                                        ...draft,
+                                        key: e.currentTarget.value,
+                                    })
+                                }
+                                onBlur={() =>
+                                    handleAddRemapping(
+                                        component.color_from_source!,
+                                    )
+                                }
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" &&
+                                    handleAddRemapping(
+                                        component.color_from_source!,
+                                    )
+                                }
+                            />
+                            <TextInput
+                                label="Source Column"
+                                placeholder="e.g. asym_id"
+                                value={draft.value}
+                                size="xs"
+                                style={{ flex: 1 }}
+                                onChange={(e) =>
+                                    handleSetDraft({
+                                        ...draft,
+                                        value: e.currentTarget.value,
+                                    })
+                                }
+                                onBlur={() =>
+                                    handleAddRemapping(
+                                        component.color_from_source!,
+                                    )
+                                }
+                                onKeyDown={(e) =>
+                                    e.key === "Enter" &&
+                                    handleAddRemapping(
+                                        component.color_from_source!,
+                                    )
+                                }
+                            />
+                            <DeleteActionIcon
+                                tooltip="Cannot remove draft."
+                                enabled={false}
+                            />
+                        </Group>
                     </>
                 )}
             <AlphaSlider
