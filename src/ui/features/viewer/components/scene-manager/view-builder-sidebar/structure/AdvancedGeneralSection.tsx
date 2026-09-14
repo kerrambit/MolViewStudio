@@ -32,12 +32,10 @@ export function AdvancedGeneralSection({
     ) => (
         <TextInput
             label={label}
-            value={value || undefined}
+            value={value || ""}
             placeholder="null"
             size="xs"
-            onChange={(val) =>
-                typeof val === "string" && onUpdateParam(key, val, false)
-            }
+            onChange={(e) => onUpdateParam(key, e.currentTarget.value, false)}
             onBlur={() => onUpdateParam(key, value, true)}
             onKeyDown={(e) =>
                 e.key === "Enter" && onUpdateParam(key, value, true)
