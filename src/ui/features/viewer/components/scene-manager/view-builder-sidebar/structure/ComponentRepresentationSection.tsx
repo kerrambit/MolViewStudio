@@ -31,6 +31,7 @@ import {
 } from "./structureTabHelpers";
 import { useStructureComponentCache } from "../../../../hooks/useStructureComponentCache";
 import { useState } from "react";
+import { useManagedAssetsStore } from "../../../../../../stores/managedAssetsStore";
 
 // Cache keys for stashing the color-mode state being switched away from.
 const COLOR_CACHE_KEY = "colorplain";
@@ -58,6 +59,9 @@ export function ComponentRepresentationSection({
     onUpdateStructureComponentParam,
     onUpdateStructureComponentFields,
 }: ComponentRepresentationSectionProps) {
+    // Use assets.
+    const assets = useManagedAssetsStore((state) => state.assets);
+
     // Stash/restore the color-mode state when switching between the modes.
     const { readCache, writeCache } = useStructureComponentCache(
         assetId,
@@ -316,32 +320,28 @@ export function ComponentRepresentationSection({
             {getActiveColorProperty(component) === "Color from URI" &&
                 component?.color_from_uri && (
                     <>
-                        <TextInput
+                        <Select
                             label="URI"
                             size="xs"
+                            data={Array.from(assets.values()).map((asset) => ({
+                                value: asset.id,
+                                label: asset.name,
+                            }))}
                             value={component.color_from_uri.uri}
-                            onChange={(e) =>
+                            placeholder="Select asset to use."
+                            onChange={(val) => {
+                                if (!val) return;
+
                                 onUpdateStructureComponentParam(
                                     component.id,
                                     "color_from_uri",
                                     {
                                         ...component.color_from_uri!,
-                                        uri: e.currentTarget.value,
-                                    },
-                                    false,
-                                )
-                            }
-                            onBlur={(e) =>
-                                onUpdateStructureComponentParam(
-                                    component.id,
-                                    "color_from_uri",
-                                    {
-                                        ...component.color_from_uri!,
-                                        uri: e.currentTarget.value,
+                                        uri: val,
                                     },
                                     true,
-                                )
-                            }
+                                );
+                            }}
                         />
                         <Select
                             label="Format"
