@@ -97,7 +97,7 @@ export function ProcessingPropertiesDialogueContent({
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
                             title={"Volume"}
-                            size="lg"
+                            titleTextSize="lg"
                             expanded={isVolumeExpanded}
                             onClick={() => {
                                 setVolumeExpanded((prev) => !prev);
@@ -138,6 +138,7 @@ export function ProcessingPropertiesDialogueContent({
                                     label="Downsampling strategy:"
                                     data={downsamplingOptions}
                                     value={downsamplingStrategy}
+                                    allowDeselect={false}
                                     onChange={(value) =>
                                         setDownsamplingStrategy(
                                             value as DownsamplingStrategy,
@@ -155,6 +156,7 @@ export function ProcessingPropertiesDialogueContent({
                                     label="Volume serialization:"
                                     data={serializerOptions}
                                     value={volumeSerializer}
+                                    allowDeselect={false}
                                     onChange={(value) =>
                                         setVolumeSerializer(
                                             value as SerializerKind,
@@ -175,7 +177,7 @@ export function ProcessingPropertiesDialogueContent({
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
                             title={"Segmentation"}
-                            size="lg"
+                            titleTextSize="lg"
                             expanded={isSegmentationExpanded}
                             onClick={() => {
                                 setSegmentationExpanded((prev) => !prev);
@@ -195,7 +197,7 @@ export function ProcessingPropertiesDialogueContent({
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
                             title={"Bundling"}
-                            size="lg"
+                            titleTextSize="lg"
                             expanded={isBundlingExpanded}
                             onClick={() => {
                                 setBundlingExpanded((prev) => !prev);
@@ -215,6 +217,7 @@ export function ProcessingPropertiesDialogueContent({
                                     label="Bundling:"
                                     data={bundlingOptions}
                                     value={bundlingStrategy}
+                                    allowDeselect={false}
                                     onChange={(value) =>
                                         setBundlingStrategy(
                                             value as BundlingKind,

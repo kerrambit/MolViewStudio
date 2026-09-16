@@ -4,9 +4,16 @@
  * @author Marek Eibel
  */
 
-export type RenderStrategy = "volume" | "structure" | "both" | "unsupported";
+export type RenderStrategy = "volume" | "structure" | "both";
 export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
-export type ExtensionType = "map" | "cif" | "bcif" | "ccp4" | "mrc";
+export type ExtensionType =
+    | "map"
+    | "cif"
+    | "mcif"
+    | "mmcif"
+    | "bcif"
+    | "ccp4"
+    | "mrc";
 
 export interface AssetDefinition {
     extension: string;
@@ -34,6 +41,24 @@ const SUPPORTED_ASSETS: Record<string, AssetDefinition> = {
         parser: "mmcif",
         isBinary: false,
         description: "CIF Structure",
+        requiresProcessing: false,
+        offersProcessing: false,
+    },
+    mcif: {
+        extension: "mcif",
+        renderStrategy: "structure",
+        parser: "mmcif",
+        isBinary: false,
+        description: "MCIF Structure",
+        requiresProcessing: false,
+        offersProcessing: false,
+    },
+    mmcif: {
+        extension: "mmcif",
+        renderStrategy: "structure",
+        parser: "mmcif",
+        isBinary: false,
+        description: "MMCIF Structure",
         requiresProcessing: false,
         offersProcessing: false,
     },
@@ -79,33 +104,45 @@ export function getAllSupportedAssetsParsers(): Record<string, string> {
     );
 }
 
-export function getAssetConfig(filename: string): AssetDefinition | null {
-    const extension = filename.split(".").pop()?.toLowerCase() || "";
+export function getAssetConfig(extension: string): AssetDefinition | null {
     return SUPPORTED_ASSETS[extension] || null;
-}
-
-export function getAssetConfigBasedOnExtension(
-    extension: string,
-): AssetDefinition | null {
-    return SUPPORTED_ASSETS[extension] || null;
-}
-
-export function isAssetSupported(filename: string): boolean {
-    return getAssetConfig(filename) !== null;
 }
 
 export function isExtensionSupported(extension: string): boolean {
     return (SUPPORTED_ASSETS[extension] || null) !== null;
 }
 
-export function checkRequiresProcessing(filename: string): boolean {
-    const config = getAssetConfig(filename);
+export function checkRequiresProcessing(extension: string): boolean {
+    const config = getAssetConfig(extension);
     return config ? config.requiresProcessing : false;
 }
 
-export function checkOffersProcessing(filename: string): boolean {
-    const config = getAssetConfig(filename);
+export function checkOffersProcessing(extension: string): boolean {
+    const config = getAssetConfig(extension);
     return config ? config.offersProcessing : false;
+}
+
+export function getRenderStrategy(extension: string): RenderStrategy {
+    const config = getAssetConfig(extension);
+    return config?.renderStrategy ?? "structure";
+}
+
+export function getParser(extension: string): ParserType | undefined {
+    const config = getAssetConfig(extension);
+    return config?.parser;
+}
+
+export function getPrioritizedRenderStrategy(extension: string) {
+    const config = getAssetConfig(extension);
+
+    if (config) {
+        if (config.renderStrategy === "both") {
+            return "structure";
+        }
+        return config.renderStrategy;
+    }
+
+    return "structure";
 }
 
 export function getAllParserTypes(): string[] {

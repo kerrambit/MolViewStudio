@@ -5,22 +5,23 @@
  */
 
 import { useState } from "react";
-import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
-import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
 import {
     AlphaSlider,
     Checkbox,
     Collapse,
     ColorInput,
-    Divider,
     Group,
     NumberInput,
     Select,
+    TextInput,
 } from "@mantine/core";
-import { getAllParserTypes } from "../../../../../config/assetsDefinitions";
-import { pushWarningNotification } from "../../../../../services/NotificationService";
-import { TransformControls } from "./TransformControls";
-import type { VolumeViewModel } from "../../../hooks/useViewBuilder";
+import type { VolumeViewModel } from "../../../../models/MvsViewModels";
+import { CollapseTrigger } from "../../../../../../components/common/collapse-trigger/CollapseTriger";
+import { getAllParserTypes } from "../../../../../../config/assetsDefinitions";
+import { pushWarningNotification } from "../../../../../../services/NotificationService";
+import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
+import { VolumeTransformControls } from "./VolumeTransformControls";
 
 type VolumeTabProps = {
     viewKey: string;
@@ -28,8 +29,7 @@ type VolumeTabProps = {
     viewModel: VolumeViewModel;
     onUpdateParam: (
         key: keyof VolumeViewModel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        val: any,
+        val: VolumeViewModel[keyof VolumeViewModel],
         sync: boolean,
     ) => void;
 };
@@ -42,13 +42,20 @@ export function VolumeTab({
 }: VolumeTabProps) {
     // Store expanded sections.
     const [generalSectionExpanded, setGeneralSectionExpanded] = useState(
-        UiLocalStorageService.ViewBuilder.getExpandedGeneralSection(
+        UiLocalStorageService.ViewBuilder.getExpandedVolumeGeneralSection(
             asset.id,
             viewKey,
         ),
     );
+    const [representationSectionExpanded, setRepresentationSectionExpanded] =
+        useState(
+            UiLocalStorageService.ViewBuilder.getExpandedVolumeRepresentationSection(
+                asset.id,
+                viewKey,
+            ),
+        );
     const [transformSectionExpanded, setTransformSectionExpanded] = useState(
-        UiLocalStorageService.ViewBuilder.getExpandedTransformSection(
+        UiLocalStorageService.ViewBuilder.getExpandedVolumeTransformSection(
             asset.id,
             viewKey,
         ),
@@ -56,16 +63,16 @@ export function VolumeTab({
 
     // Render the component.
     return (
-        <div>
+        <AssetBuilderCardSectionGroup divider={false}>
             {/* General settings for volume tab. */}
             <CollapseTrigger
                 title={"General"}
-                size={"md"}
+                titleTextSize={"md"}
                 expanded={generalSectionExpanded}
                 onClick={() => {
                     setGeneralSectionExpanded((prev) => {
                         const nextState = !prev;
-                        UiLocalStorageService.ViewBuilder.setExpandedGeneralSection(
+                        UiLocalStorageService.ViewBuilder.setExpandedVolumeGeneralSection(
                             asset.id,
                             viewKey,
                             nextState,
@@ -76,13 +83,10 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={generalSectionExpanded}>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1em",
-                        paddingBottom: "1em",
-                    }}
+                <AssetBuilderCardSectionGroup
+                    divider={true}
+                    topMargin="sm"
+                    bottomMargin="sm"
                 >
                     <Select
                         label="Format"
@@ -91,6 +95,34 @@ export function VolumeTab({
                         value={viewModel.format}
                         placeholder="N/A"
                         size="xs"
+                    />
+                    <TextInput
+                        label={"Channel ID"}
+                        value={viewModel.channel_id || undefined}
+                        placeholder="No channel ID assigned."
+                        size="xs"
+                        onChange={(e) =>
+                            onUpdateParam(
+                                "channel_id",
+                                e.currentTarget.value,
+                                false,
+                            )
+                        }
+                        onBlur={() =>
+                            onUpdateParam(
+                                "channel_id",
+                                viewModel.channel_id,
+                                true,
+                            )
+                        }
+                        onKeyDown={(e) =>
+                            e.key === "Enter" &&
+                            onUpdateParam(
+                                "channel_id",
+                                viewModel.channel_id,
+                                true,
+                            )
+                        }
                     />
                     <Select
                         label="Type"
@@ -132,6 +164,33 @@ export function VolumeTab({
                             )
                         }
                     />
+                </AssetBuilderCardSectionGroup>
+            </Collapse>
+
+            {/* Representation settings for volume tab. */}
+            <CollapseTrigger
+                title={"Representation"}
+                titleTextSize={"md"}
+                expanded={representationSectionExpanded}
+                onClick={() => {
+                    setRepresentationSectionExpanded((prev) => {
+                        const nextState = !prev;
+                        UiLocalStorageService.ViewBuilder.setExpandedVolumeRepresentationSection(
+                            asset.id,
+                            viewKey,
+                            nextState,
+                        );
+                        return nextState;
+                    });
+                }}
+            ></CollapseTrigger>
+
+            <Collapse expanded={representationSectionExpanded}>
+                <AssetBuilderCardSectionGroup
+                    divider={true}
+                    topMargin="sm"
+                    bottomMargin="sm"
+                >
                     <Group mt="xs">
                         <Checkbox
                             label="Show wireframe"
@@ -174,20 +233,18 @@ export function VolumeTab({
                             onUpdateParam("opacity", val, true)
                         }
                     ></AlphaSlider>
-
-                    <Divider mb="md" />
-                </div>
+                </AssetBuilderCardSectionGroup>
             </Collapse>
 
             {/* Transform settings for volume tab. */}
             <CollapseTrigger
                 title={"Transform"}
-                size={"md"}
+                titleTextSize={"md"}
                 expanded={transformSectionExpanded}
                 onClick={() => {
                     setTransformSectionExpanded((prev) => {
                         const nextState = !prev;
-                        UiLocalStorageService.ViewBuilder.setExpandedTransformSection(
+                        UiLocalStorageService.ViewBuilder.setExpandedVolumeTransformSection(
                             asset.id,
                             viewKey,
                             nextState,
@@ -198,11 +255,11 @@ export function VolumeTab({
             ></CollapseTrigger>
 
             <Collapse expanded={transformSectionExpanded}>
-                <TransformControls
+                <VolumeTransformControls
                     viewModel={viewModel}
                     onUpdateParam={onUpdateParam}
-                ></TransformControls>
+                ></VolumeTransformControls>
             </Collapse>
-        </div>
+        </AssetBuilderCardSectionGroup>
     );
 }
