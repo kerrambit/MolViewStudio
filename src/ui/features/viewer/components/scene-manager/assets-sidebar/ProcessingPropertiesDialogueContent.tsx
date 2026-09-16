@@ -138,6 +138,7 @@ export function ProcessingPropertiesDialogueContent({
                                     label="Downsampling strategy:"
                                     data={downsamplingOptions}
                                     value={downsamplingStrategy}
+                                    allowDeselect={false}
                                     onChange={(value) =>
                                         setDownsamplingStrategy(
                                             value as DownsamplingStrategy,
@@ -155,6 +156,7 @@ export function ProcessingPropertiesDialogueContent({
                                     label="Volume serialization:"
                                     data={serializerOptions}
                                     value={volumeSerializer}
+                                    allowDeselect={false}
                                     onChange={(value) =>
                                         setVolumeSerializer(
                                             value as SerializerKind,
@@ -215,6 +217,7 @@ export function ProcessingPropertiesDialogueContent({
                                     label="Bundling:"
                                     data={bundlingOptions}
                                     value={bundlingStrategy}
+                                    allowDeselect={false}
                                     onChange={(value) =>
                                         setBundlingStrategy(
                                             value as BundlingKind,
