@@ -25,7 +25,7 @@ export function ActionableListItem(props: ActionableListItemProps) {
     return (
         <div
             className="actionableListItem actionableListItemColor"
-            title={props.title}
+            title={props.tooltip}
             style={props.style}
         >
             <div

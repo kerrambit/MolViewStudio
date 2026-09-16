@@ -38,9 +38,16 @@ export function ViewBuilder(props: ViewBuilderProps) {
         setSelectedAssetRelativePaths,
         selectedAssetIds,
         expandedAssetId,
-        getViewModel,
+        getVolumeViewModelForAsset,
+        getStructureViewModelForAsset,
         toggleExpandAsset,
-        updateViewModel,
+        updateVolumeViewModelForAsset,
+        updateStructureViewModelForAsset,
+        updateStructureComponentViewModel,
+        addStructureComponentForAsset,
+        deleteStructureComponentForAsset,
+        updateStructureViewModelFieldsForAsset,
+        updateStructureComponentViewModelFields,
         handleAssetToggle,
     } = useViewBuilder(props.viewKey);
 
@@ -94,7 +101,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
 
             <CollapseTrigger
                 title={"Filters"}
-                size="lg"
+                titleTextSize="lg"
                 expanded={areFiltersExpanded}
                 onClick={() => {
                     setAreFiltersExpanded((prev) => {
@@ -216,15 +223,83 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 isDark={isDark}
                                 isExpanded={expandedAssetId === asset.id}
                                 isSelected={selectedAssetIds.includes(asset.id)}
-                                viewModel={getViewModel(asset.id)}
+                                volumeViewModel={getVolumeViewModelForAsset(
+                                    asset.id,
+                                )}
+                                structureViewModel={getStructureViewModelForAsset(
+                                    asset.id,
+                                )}
                                 onToggleExpand={() =>
                                     toggleExpandAsset(asset.id)
                                 }
-                                onToggleSelect={(checked) =>
-                                    handleAssetToggle(asset.id, checked)
+                                onToggleSelect={(checked, tabType) =>
+                                    handleAssetToggle(
+                                        asset.id,
+                                        checked,
+                                        tabType,
+                                    )
                                 }
-                                onUpdateParam={(key, val, sync) =>
-                                    updateViewModel(asset.id, key, val, sync)
+                                onUpdateVolumeParam={(key, val, sync) =>
+                                    updateVolumeViewModelForAsset(
+                                        asset.id,
+                                        key,
+                                        val,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureParam={(key, val, sync) =>
+                                    updateStructureViewModelForAsset(
+                                        asset.id,
+                                        key,
+                                        val,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureComponentParam={(
+                                    component,
+                                    key,
+                                    val,
+                                    sync,
+                                ) =>
+                                    updateStructureComponentViewModel(
+                                        asset.id,
+                                        component,
+                                        key,
+                                        val,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureFields={(fields, sync) =>
+                                    updateStructureViewModelFieldsForAsset(
+                                        asset.id,
+                                        fields,
+                                        sync,
+                                    )
+                                }
+                                onUpdateStructureComponentFields={(
+                                    component,
+                                    fields,
+                                    sync,
+                                ) =>
+                                    updateStructureComponentViewModelFields(
+                                        asset.id,
+                                        component,
+                                        fields,
+                                        sync,
+                                    )
+                                }
+                                onAddStructureComponent={() =>
+                                    addStructureComponentForAsset(
+                                        asset.id,
+                                        true,
+                                    )
+                                }
+                                onDeleteStructureComponent={(component) =>
+                                    deleteStructureComponentForAsset(
+                                        asset.id,
+                                        component,
+                                        true,
+                                    )
                                 }
                             />
                         );
