@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Checkbox, Collapse, Text } from "@mantine/core";
+import { Checkbox, Collapse, Loader, Text } from "@mantine/core";
 import { AllFiles } from "../../../../../../types/fileFilters";
 import { Button } from "../../../../../components/common/button/Button";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
@@ -37,6 +37,9 @@ const MAXIMUM_NUMBER_OF_PATH_SEGMENTS = 3; // TODO: define in Settings
 export function AddLocalAssetDialogueContent({
     close,
 }: AddLocalAssetDialogueContentProps) {
+    // State if any file is loading at the moment.
+    const [fileLoading, setFileLoading] = useState(false);
+
     // State for the chosen file asset.
     const [file, setFile] = useState<FileData | undefined>(undefined);
 
@@ -78,6 +81,7 @@ export function AddLocalAssetDialogueContent({
                 <Button
                     variant="ghost"
                     onClick={async () => {
+                        setFileLoading(true);
                         const result = await window.electron.openFileExplorer(
                             false,
                             [AllFiles],
@@ -108,12 +112,23 @@ export function AddLocalAssetDialogueContent({
                                 `Unable to open file explorer! Details: <${result.message}>.`,
                             );
                         }
+
+                        setFileLoading(false);
                     }}
                     tooltip="Choose file."
                 >
                     Choose file...
                 </Button>
             </div>
+
+            {fileLoading && (
+                <div
+                    title="Loading the file..."
+                    style={{ display: "flex", justifyContent: "center" }}
+                >
+                    <Loader />
+                </div>
+            )}
 
             {/* Chosen file asset label. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
