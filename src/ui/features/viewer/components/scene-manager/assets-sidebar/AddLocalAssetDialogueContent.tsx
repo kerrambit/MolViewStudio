@@ -34,6 +34,7 @@ interface AddLocalAssetDialogueContentProps {
 }
 
 const MAXIMUM_NUMBER_OF_PATH_SEGMENTS = 3; // TODO: define in Settings
+const ALLOW_FILES_MULTISELECTION = false;
 
 export function AddLocalAssetDialogueContent({
     close,
@@ -50,6 +51,9 @@ export function AddLocalAssetDialogueContent({
     // State if file name is valid or not.
     const [isFileNameInvalid, setIsFileNameInvalid] = useState(false);
 
+    // State for the type of asset.
+    const [assetType, setAssetType] = useState<ManagedAssetType>("Volume");
+
     // State for up path segments for a relative path of asset.
     const [pathSegments, setPathSegments] = useState<string[]>([]);
 
@@ -58,9 +62,6 @@ export function AddLocalAssetDialogueContent({
 
     // Boolean flag if the chosen file asset should be processed or not.
     const [processAsset, setProcessAsset] = useState<boolean>(false);
-
-    // State for the type of asset.
-    const [assetType, setAssetType] = useState<ManagedAssetType>("Volume");
 
     // Each file asset type defines if it requires or offers processing.
     const requiresProcessing = file
@@ -89,7 +90,7 @@ export function AddLocalAssetDialogueContent({
                     onClick={async () => {
                         setFileLoading(true);
                         const result = await window.electron.openFileExplorer(
-                            false,
+                            ALLOW_FILES_MULTISELECTION,
                             [AllFiles],
                         );
 
