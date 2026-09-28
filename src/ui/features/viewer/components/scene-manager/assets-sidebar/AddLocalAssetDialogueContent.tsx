@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Checkbox, Collapse, Loader, Text } from "@mantine/core";
+import { Checkbox, Collapse, Loader, Select, Text } from "@mantine/core";
 import { AllFiles } from "../../../../../../types/fileFilters";
 import { Button } from "../../../../../components/common/button/Button";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
@@ -24,6 +24,7 @@ import { IconAlertHexagonFilled } from "@tabler/icons-react";
 
 export interface AddLocalAssetDialogueReturnType {
     file: FileData;
+    type: ManagedAssetType;
     relativePath: string;
     processAsset: boolean;
 }
@@ -53,10 +54,13 @@ export function AddLocalAssetDialogueContent({
     const [pathSegments, setPathSegments] = useState<string[]>([]);
 
     // State if path is valid or not.
-    const [isPathInvalid, setIsPathInvalid] = useState(true);
+    const [isPathInvalid, setIsPathInvalid] = useState(false);
 
     // Boolean flag if the chosen file asset should be processed or not.
     const [processAsset, setProcessAsset] = useState<boolean>(false);
+
+    // State for the type of asset.
+    const [assetType, setAssetType] = useState<ManagedAssetType>("Volume");
 
     // Each file asset type defines if it requires or offers processing.
     const requiresProcessing = file
@@ -70,6 +74,7 @@ export function AddLocalAssetDialogueContent({
     // Render the component.
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1em" }}>
+            {/* The div for Choose file asset button. */}
             <div
                 style={{
                     display: "flex",
@@ -80,6 +85,7 @@ export function AddLocalAssetDialogueContent({
                 {/* Choose file asset button. */}
                 <Button
                     variant="ghost"
+                    tooltip="Choose file."
                     onClick={async () => {
                         setFileLoading(true);
                         const result = await window.electron.openFileExplorer(
@@ -115,12 +121,11 @@ export function AddLocalAssetDialogueContent({
 
                         setFileLoading(false);
                     }}
-                    tooltip="Choose file."
                 >
                     Choose file...
                 </Button>
             </div>
-
+            {/* Loader. */}
             {fileLoading && (
                 <div
                     title="Loading the file..."
@@ -129,7 +134,6 @@ export function AddLocalAssetDialogueContent({
                     <Loader />
                 </div>
             )}
-
             {/* Chosen file asset label. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
                 <Text size="sm" style={{ minWidth: "9em" }}>
@@ -142,7 +146,6 @@ export function AddLocalAssetDialogueContent({
                     style={{ flexGrow: 1 }}
                 />
             </div>
-
             {/* Change name of the asset. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
                 <Text size="sm" style={{ minWidth: "9em" }}>
@@ -168,7 +171,6 @@ export function AddLocalAssetDialogueContent({
                     style={{ flexGrow: 1 }}
                 />
             </div>
-
             {/* We might show processing checkbox if given asset type allows. */}
             <Collapse expanded={showProcessingUi}>
                 <div
@@ -202,19 +204,67 @@ export function AddLocalAssetDialogueContent({
                 </div>
             </Collapse>
 
-            {/* Relative path builder. */}
+            {/* Asset type. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
-                <Text size="sm" style={{ minWidth: "9em" }}>
-                    Relative path:
-                </Text>
-                <PathSegmentsBuilder
-                    count={MAXIMUM_NUMBER_OF_PATH_SEGMENTS}
-                    onChange={(segments, hasError) => {
-                        setPathSegments(segments);
-                        setIsPathInvalid(hasError);
+                <Text size="sm">Type of asset:</Text>
+                <Select
+                    title=""
+                    data={[
+                        "Volume",
+                        "Segmentation",
+                        "Structure",
+                        "Annotation",
+                        "Other",
+                    ]}
+                    value={assetType}
+                    onChange={(type) => {
+                        if (type) {
+                            setAssetType(type as ManagedAssetType);
+                            switch (type) {
+                                case "Volume":
+                                    setPathSegments(["volumes"]);
+                                    break;
+                                case "Segmentation":
+                                    setPathSegments(["segmentations"]);
+                                    break;
+                                case "Structure":
+                                    setPathSegments(["structures"]);
+                                    break;
+                                case "Annotation":
+                                    setPathSegments(["annotations"]);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            setIsPathInvalid(false);
+                        }
                     }}
+                    size="sm"
+                    comboboxProps={{ withinPortal: true, zIndex: 9999 }}
                 />
             </div>
+
+            {/* Relative path builder. */}
+            {assetType === "Other" && (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1em",
+                    }}
+                >
+                    <Text size="sm" style={{ minWidth: "9em" }}>
+                        Relative path:
+                    </Text>
+                    <PathSegmentsBuilder
+                        count={MAXIMUM_NUMBER_OF_PATH_SEGMENTS}
+                        onChange={(segments, hasError) => {
+                            setPathSegments(segments);
+                            setIsPathInvalid(hasError);
+                        }}
+                    />
+                </div>
+            )}
 
             {/* Save button. */}
             <div
@@ -237,6 +287,7 @@ export function AddLocalAssetDialogueContent({
 
                         close({
                             file: newFile,
+                            type: assetType,
                             relativePath: compileFinalPath(pathSegments),
                             processAsset,
                         });

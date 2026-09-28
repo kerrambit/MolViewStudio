@@ -41,8 +41,8 @@ export function LocalAssetsTree() {
     // Use managed assets.
     const assets = useManagedAssetsStore((state) => state.assets);
     const removeAsset = useManagedAssetsStore((state) => state.removeAsset);
-    const editRelativePathAndFilenameOfLocalAsset = useManagedAssetsStore(
-        (state) => state.editRelativePathAndFilenameOfLocalAsset,
+    const editLocalAsset = useManagedAssetsStore(
+        (state) => state.editLocalAsset,
     );
 
     // State for the tree.
@@ -164,6 +164,9 @@ export function LocalAssetsTree() {
                                                                     filename={
                                                                         asset.name
                                                                     }
+                                                                    type={
+                                                                        asset.type
+                                                                    }
                                                                     pathSegments={asset.relativePath
                                                                         .split(
                                                                             "/",
@@ -185,10 +188,11 @@ export function LocalAssetsTree() {
 
                                             if (result) {
                                                 const wasSuccessful =
-                                                    editRelativePathAndFilenameOfLocalAsset(
+                                                    editLocalAsset(
                                                         asset.asset.url,
                                                         `${result.newFileName}`,
                                                         `${result.relativePath}`,
+                                                        result.type,
                                                     );
                                                 if (!wasSuccessful) {
                                                     pushErrorNotification(

@@ -85,7 +85,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 assets.map((asset) => {
                     const wasSuccessful = useManagedAssetsStore
                         .getState()
-                        .addLocalAsset(asset, job.relativePath);
+                        .addLocalAsset(asset, job.relativePath, job.assetType);
 
                     if (!wasSuccessful) {
                         pushErrorNotification(

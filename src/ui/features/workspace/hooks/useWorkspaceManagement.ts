@@ -139,6 +139,7 @@ export function useWorkspaceManagement() {
         async (
             fileToProcess: FileData,
             newRelativePath: string,
+            type: "Volume" | "Segmentation",
             properties: ProcessVolumeRequestWithoutFilepaths,
         ) => {
             // Define temporary directory for processing of volumetric data.
@@ -160,6 +161,7 @@ export function useWorkspaceManagement() {
                             .startJob(
                                 fileToProcess,
                                 result.job_id,
+                                type,
                                 newRelativePath,
                             );
 

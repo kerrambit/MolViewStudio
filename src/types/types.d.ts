@@ -201,6 +201,14 @@ type Url = {
 
 type AssetId = string;
 
+type ManagedAssetType =
+    | "Volume"
+    | "Segmentation"
+    | "Structure"
+    | "Annotation"
+    | "Other"
+    | "Unknown";
+
 /**
  * Object mirroring Assets as managed by Molstar Asset Manager.
  */
@@ -215,6 +223,11 @@ interface ManagedAsset {
      * and local files are converted into assets in the form of `arcp` protocol and thus available via URL, too.
      */
     asset: Url;
+
+    /**
+     * Type of managed asset.
+     */
+    type: ManagedAssetType;
 
     /**
      * Relative path inside MVSX archive. E.g. "volume.bcif" or "volumes/volume.bcif".

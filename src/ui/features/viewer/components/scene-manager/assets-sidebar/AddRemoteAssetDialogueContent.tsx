@@ -17,6 +17,7 @@ import { UnstyledTextInput } from "../../../../../components/common/input/Unstyl
 
 export interface AddRemoteAssetDialogueReturnType {
     url: string;
+    type: ManagedAssetType;
     extension: string;
 }
 
@@ -24,6 +25,7 @@ interface AddRemoteAssetDialogueContentProps {
     close: (value?: AddRemoteAssetDialogueReturnType) => void;
     url: string | undefined;
     extension: string | undefined;
+    type: ManagedAssetType | undefined;
 }
 
 export function AddRemoteAssetDialogueContent(
@@ -34,6 +36,11 @@ export function AddRemoteAssetDialogueContent(
     const [remoteUrlExtension, setRemoteUrlExtension] = useState<
         ExtensionType | undefined
     >(props.extension as ExtensionType | undefined);
+
+    // State for the type of asset.
+    const [assetType, setAssetType] = useState<ManagedAssetType | undefined>(
+        props.type,
+    );
 
     // Fucntions which checks if the value is valid Url.
     const isUrlValid = (value: string) => {
@@ -146,6 +153,41 @@ export function AddRemoteAssetDialogueContent(
                 />
             </div>
 
+            {/* Asset type. */}
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "1em",
+                }}
+            >
+                <Text size="sm">Type of asset:</Text>
+                <Select
+                    title=""
+                    data={[
+                        "Volume",
+                        "Segmentation",
+                        "Structure",
+                        "Annotation",
+                        "Other",
+                    ]}
+                    value={assetType}
+                    placeholder="N/A"
+                    onChange={(type) => {
+                        if (type) {
+                            setAssetType(type as ManagedAssetType);
+                        }
+                    }}
+                    error={
+                        assetType === undefined || assetType === "Unknown"
+                            ? "Must be valid asset type!"
+                            : undefined
+                    }
+                    size="sm"
+                    comboboxProps={{ withinPortal: true, zIndex: 9999 }}
+                />
+            </div>
+
             <div
                 style={{
                     display: "flex",
@@ -158,11 +200,13 @@ export function AddRemoteAssetDialogueContent(
                         !remoteUrl ||
                         remoteUrl.trim() === "" ||
                         !isUrlValid(remoteUrl) ||
-                        !remoteUrlExtension
+                        !remoteUrlExtension ||
+                        !assetType
                     }
                     onClick={() => {
                         props.close({
                             url: remoteUrl!,
+                            type: assetType!,
                             extension: remoteUrlExtension!,
                         });
                     }}

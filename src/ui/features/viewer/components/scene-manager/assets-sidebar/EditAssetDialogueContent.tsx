@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Text } from "@mantine/core";
+import { Select, Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { Button } from "../../../../../components/common/button/Button";
 import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
@@ -18,11 +18,13 @@ import {
 
 export interface EditAssetDialogueReturnType {
     relativePath: string;
+    type: ManagedAssetType;
     newFileName: string;
 }
 
 interface EditAssetDialogueContentProps {
     filename: string;
+    type: ManagedAssetType;
     pathSegments: string[];
     close: (value?: EditAssetDialogueReturnType) => void;
 }
@@ -34,6 +36,9 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
     const [fileName, setFilename] = useState<string | undefined>(
         getFilenameWithoutExtension(props.filename)!,
     );
+
+    // State for the type of asset.
+    const [assetType, setAssetType] = useState<ManagedAssetType>(props.type);
 
     // State if file name is valid or not.
     const [isFileNameInvalid, setIsFileNameInvalid] = useState(false);
@@ -89,19 +94,67 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
                 />
             </div>
 
+            {/* Asset type. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
-                <Text size="sm" style={{ minWidth: "9em" }}>
-                    Relative path:
-                </Text>
-                <PathSegmentsBuilder
-                    count={3}
-                    inputPathSegments={pathSegments}
-                    onChange={(segments, hasError) => {
-                        setPathSegments(segments);
-                        setIsPathInvalid(hasError);
+                <Text size="sm">Type of asset:</Text>
+                <Select
+                    title=""
+                    data={[
+                        "Volume",
+                        "Segmentation",
+                        "Structure",
+                        "Annotation",
+                        "Other",
+                    ]}
+                    value={assetType}
+                    onChange={(type) => {
+                        if (type) {
+                            setAssetType(type as ManagedAssetType);
+                            switch (type) {
+                                case "Volume":
+                                    setPathSegments(["volumes"]);
+                                    break;
+                                case "Segmentation":
+                                    setPathSegments(["segmentations"]);
+                                    break;
+                                case "Structure":
+                                    setPathSegments(["structures"]);
+                                    break;
+                                case "Annotation":
+                                    setPathSegments(["annotations"]);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            setIsPathInvalid(false);
+                        }
                     }}
+                    size="sm"
+                    comboboxProps={{ withinPortal: true, zIndex: 9999 }}
                 />
             </div>
+
+            {assetType === "Other" && (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1em",
+                    }}
+                >
+                    <Text size="sm" style={{ minWidth: "9em" }}>
+                        Relative path:
+                    </Text>
+                    <PathSegmentsBuilder
+                        count={3}
+                        inputPathSegments={pathSegments}
+                        onChange={(segments, hasError) => {
+                            setPathSegments(segments);
+                            setIsPathInvalid(hasError);
+                        }}
+                    />
+                </div>
+            )}
 
             <div
                 style={{
@@ -123,6 +176,7 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
 
                         props.close({
                             relativePath: compileFinalPath(pathSegments),
+                            type: assetType,
                             newFileName: newFileName,
                         });
                     }}

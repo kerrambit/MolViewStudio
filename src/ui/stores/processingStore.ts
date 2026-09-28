@@ -15,6 +15,7 @@ export type ProcessingJob = {
     file: FileData;
     status: ProcessingStatus;
     relativePath: string;
+    assetType: "Volume" | "Segmentation";
     stages: string[];
     resultPaths?: string[];
     errorMessage?: string;
@@ -26,8 +27,9 @@ export type ProcessingStore = {
     jobs: ProcessingState;
     startJob: (
         file: FileData,
-        newRelativePath: string,
         jobId: ProcessingJobId,
+        assetType: "Volume" | "Segmentation",
+        newRelativePath: string,
     ) => void;
     updateJobStage: (jobId: ProcessingJobId, stage: string) => boolean;
     completeJob: (jobId: ProcessingJobId, resultPaths: string[]) => boolean;
@@ -42,6 +44,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
     startJob: (
         file: FileData,
         jobId: ProcessingJobId,
+        assetType: "Volume" | "Segmentation",
         newRelativePath: string,
     ) => {
         const currentJobs = get().jobs;
@@ -50,6 +53,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         newMap.set(jobId, {
             jobId: jobId,
             file,
+            assetType: assetType,
             relativePath: newRelativePath,
             status: "running",
             stages: [],

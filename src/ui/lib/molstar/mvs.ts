@@ -448,9 +448,34 @@ async function _loadMVSXFile(
             isFile: true,
         }); // TODO: use my own addLocalAssetIntoMolstar?
 
+        const getAssetTypeBasedOnRelativePath = (
+            path: string,
+        ): ManagedAssetType => {
+            const normalizedPath = path.toLowerCase();
+
+            if (normalizedPath.startsWith("volumes/")) {
+                return "Volume";
+            }
+
+            if (normalizedPath.startsWith("segmentations/")) {
+                return "Segmentation";
+            }
+
+            if (normalizedPath.startsWith("structures/")) {
+                return "Structure";
+            }
+
+            if (normalizedPath.startsWith("annotations/")) {
+                return "Annotation";
+            }
+
+            return "Other";
+        };
+
         assets.push({
             id: crypto.randomUUID(),
             asset: asset,
+            type: getAssetTypeBasedOnRelativePath(path),
             relativePath: path, // E.g. "volumes/volume_0_0.bcif".
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
@@ -471,6 +496,7 @@ async function _loadMVSXFile(
         assets.push({
             id: crypto.randomUUID(),
             asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+            type: "Unknown",
             relativePath: remoteUrl,
             tag: "remote",
             name: remoteUrl,
@@ -567,6 +593,7 @@ export async function loadMVSJFile(index: string): Promise<
             assets.push({
                 id: crypto.randomUUID(),
                 asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+                type: "Unknown",
                 relativePath: remoteUrl,
                 tag: "remote",
                 name: remoteUrl,

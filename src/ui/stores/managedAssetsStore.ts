@@ -40,27 +40,39 @@ type ManagedAssetsStore = {
      *
      * @param file file to add
      * @param relativeUrl relative URL to the asset (in this format: "volumes/first_section/", or "" for current path as relative path)
+     * @param type type of asset
      */
-    addLocalAsset: (file: FileData, relativeUrl: string) => boolean;
+    addLocalAsset: (
+        file: FileData,
+        relativeUrl: string,
+        type: ManagedAssetType,
+    ) => boolean;
 
     /**
      * Adds new remote asset into the system and the Molstar inner repository.
      * @param url url, e.g. https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx.
      * @param extension dermines the extension of the data
+     * @param type type of asset
      */
-    addRemoteAsset: (url: string, extension: string) => void;
+    addRemoteAsset: (
+        url: string,
+        extension: string,
+        type: ManagedAssetType,
+    ) => void;
 
     /**
      * Edits existing remote asset.
      * @param url url of asset
      * @param newUrl new url of asset
      * @param newExtension new extension
+     * @param newType new type
      * @returns false if given url does not exist, the new url and extension do not differ, otherwise true
      */
     editRemoteAsset: (
         url: string,
         newUrl: string,
         newExtension: string,
+        newType: ManagedAssetType,
     ) => boolean;
 
     /**
@@ -76,12 +88,14 @@ type ManagedAssetsStore = {
      * @param url url of asset
      * @param newFilenameWithExtension new filename with its extensions
      * @param newRelativePath new relative path (e.g. "volumes/segments/", or "" for no folders)
+     * @param newType new type of asset
      * @returns false if given url does not exist, otherwise true
      */
-    editRelativePathAndFilenameOfLocalAsset: (
+    editLocalAsset: (
         url: string,
         newFilenameWithExtension: string,
         newRelativePath: string,
+        newType: ManagedAssetType,
     ) => boolean;
 
     /**
@@ -142,7 +156,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         set({ assets: newMap });
     },
 
-    addLocalAsset: (file, relativePath) => {
+    addLocalAsset: (file, relativePath, type) => {
         const result = addLocalAssetIntoMolstar(file, relativePath);
 
         if (!result) {
@@ -152,6 +166,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         const entry: ManagedAsset = {
             id: crypto.randomUUID(),
             asset: result.asset,
+            type: type,
             relativePath: `${relativePath}${file.name}`,
             tag: "local",
             name: file.name,
@@ -166,12 +181,13 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         return true;
     },
 
-    addRemoteAsset: (url, extension) => {
+    addRemoteAsset: (url, extension, type) => {
         const { asset } = addRemoteAssetIntoMolstar(url);
 
         const entry: ManagedAsset = {
             id: crypto.randomUUID(),
             asset,
+            type: type,
             relativePath: url,
             tag: "remote",
             name: url,
@@ -184,15 +200,19 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         set({ assets: newMap });
     },
 
-    editRemoteAsset: (url, newUrl, newExtension) => {
+    editRemoteAsset: (url, newUrl, newExtension, newType) => {
         const currentAssets = get().assets;
 
         if (!currentAssets.has(url)) return false;
 
         const existingAsset = currentAssets.get(url)!;
+        if (existingAsset.tag !== "remote") {
+            return false;
+        }
         if (
             existingAsset.asset.url === newUrl &&
-            existingAsset.extension === newExtension
+            existingAsset.extension === newExtension &&
+            existingAsset.type == newType
         ) {
             return false;
         }
@@ -209,6 +229,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         newMap.set(newUrl, {
             ...existingAsset,
             asset: newAsset,
+            type: newType,
             relativePath: newUrl,
             name: newUrl,
             extension: newExtension,
@@ -235,17 +256,20 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         return true;
     },
 
-    editRelativePathAndFilenameOfLocalAsset: (
+    editLocalAsset: (
         url,
         newFilenameWithExtension,
         newRelativePath,
+        newType,
     ) => {
         const currentAssets = get().assets;
 
         if (!currentAssets.has(url)) return false;
 
         const existingAsset = currentAssets.get(url)!;
-        if (existingAsset.tag !== "local") return false;
+        if (existingAsset.tag !== "local") {
+            return false;
+        }
 
         const newFullPath = `${newRelativePath}${newFilenameWithExtension}`;
         if (existingAsset.relativePath === newFullPath) return false;
@@ -266,6 +290,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
             asset: result.asset,
             relativePath: newFullPath,
             name: newFilenameWithExtension,
+            type: newType,
         });
 
         set({ assets: newMap });

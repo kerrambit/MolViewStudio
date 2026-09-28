@@ -101,6 +101,7 @@ export function Assets() {
                                     const wasSuccessful = addLocalAsset(
                                         result.file,
                                         result.relativePath,
+                                        result.type,
                                     );
                                     if (!wasSuccessful) {
                                         pushErrorNotification(
@@ -129,6 +130,9 @@ export function Assets() {
                                         await startFileProcessing(
                                             result.file,
                                             result.relativePath,
+                                            result.type === "Segmentation"
+                                                ? "Segmentation"
+                                                : "Volume",
                                             processingProperties,
                                         );
                                     }
@@ -168,11 +172,27 @@ export function Assets() {
                             const hasUnknownExtension =
                                 asset.extension === "unknown";
 
+                            // The same for asset type.
+                            const hasUnknownType = asset.type === "Unknown";
+
+                            let warningText = "";
+                            if (hasUnknownExtension) {
+                                warningText =
+                                    "Could not detect file extension! Please set it manually.";
+                                if (hasUnknownType) {
+                                    warningText =
+                                        "Could not detect file extension and asset type! Please set them manually.";
+                                }
+                            } else if (hasUnknownType) {
+                                warningText =
+                                    "Could not detect asset type! Please set it manually.";
+                            }
+
                             return (
                                 <ActionableListItem
                                     key={asset.asset.id}
                                     style={
-                                        hasUnknownExtension
+                                        hasUnknownExtension || hasUnknownType
                                             ? {
                                                   backgroundColor:
                                                       "rgba(251, 191, 36, 0.35)",
@@ -183,9 +203,10 @@ export function Assets() {
                                     titleSize="sm"
                                     tooltip={asset.asset.url}
                                     leftComponent={
-                                        hasUnknownExtension ? (
+                                        hasUnknownExtension ||
+                                        hasUnknownType ? (
                                             <div
-                                                title="Could not detect file extension! Please set it manually."
+                                                title={warningText}
                                                 style={{
                                                     display: "flex",
                                                     flexDirection: "row",
@@ -238,6 +259,9 @@ export function Assets() {
                                                                                     ? undefined
                                                                                     : asset.extension
                                                                             }
+                                                                            type={
+                                                                                asset.type
+                                                                            }
                                                                             close={
                                                                                 close
                                                                             }
@@ -256,6 +280,7 @@ export function Assets() {
                                                                 originalUrl,
                                                                 result.url.trim(),
                                                                 result.extension,
+                                                                result.type,
                                                             );
                                                         }
                                                     }
@@ -336,6 +361,7 @@ export function Assets() {
                                             <AddRemoteAssetDialogueContent
                                                 url={undefined}
                                                 extension={undefined}
+                                                type={undefined}
                                                 close={close}
                                             />
                                         ),
@@ -347,6 +373,7 @@ export function Assets() {
                                     addRemoteAsset(
                                         result.url.trim(),
                                         result.extension,
+                                        result.type,
                                     );
                                 }
                             }
