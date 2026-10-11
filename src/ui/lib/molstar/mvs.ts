@@ -483,6 +483,8 @@ async function _loadMVSXFile(
             extension:
                 getExtensionFromFileName(path.split("/").pop() ?? path) ||
                 "unknown",
+            processingJobIds: [],
+            children: [],
         });
     }
 
@@ -502,6 +504,8 @@ async function _loadMVSXFile(
             name: remoteUrl,
             useCount: 1,
             extension: extension,
+            processingJobIds: [],
+            children: [],
         });
     });
 
@@ -599,6 +603,8 @@ export async function loadMVSJFile(index: string): Promise<
                 name: remoteUrl,
                 useCount: 1,
                 extension: extension,
+                processingJobIds: [],
+                children: [],
             });
         });
 

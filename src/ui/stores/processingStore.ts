@@ -8,8 +8,6 @@ import { create } from "zustand";
 
 export type ProcessingStatus = "running" | "success" | "error";
 
-export type ProcessingJobId = string;
-
 export type ProcessingJob = {
     jobId: ProcessingJobId;
     file: FileData;
@@ -19,6 +17,11 @@ export type ProcessingJob = {
     stages: string[];
     resultPaths?: string[];
     errorMessage?: string;
+
+    /**
+     * ID of the parent managed asset this job was started for, e.g. when doing preview downsampling. Undefined for standalone jobs.
+     */
+    parentAssetId?: AssetId;
 };
 
 export type ProcessingState = Map<ProcessingJobId, ProcessingJob>;
@@ -30,6 +33,7 @@ export type ProcessingStore = {
         jobId: ProcessingJobId,
         assetType: "Volume" | "Segmentation",
         newRelativePath: string,
+        parentAssetId?: AssetId,
     ) => void;
     updateJobStage: (jobId: ProcessingJobId, stage: string) => boolean;
     completeJob: (jobId: ProcessingJobId, resultPaths: string[]) => boolean;
@@ -46,6 +50,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         jobId: ProcessingJobId,
         assetType: "Volume" | "Segmentation",
         newRelativePath: string,
+        parentAssetId?: AssetId,
     ) => {
         const currentJobs = get().jobs;
 
@@ -57,6 +62,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
             relativePath: newRelativePath,
             status: "running",
             stages: [],
+            parentAssetId: parentAssetId,
         });
         set({ jobs: newMap });
     },

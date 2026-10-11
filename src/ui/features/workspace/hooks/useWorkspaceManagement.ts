@@ -141,6 +141,7 @@ export function useWorkspaceManagement() {
             newRelativePath: string,
             type: "Volume" | "Segmentation",
             properties: ProcessVolumeRequestWithoutFilepaths,
+            parentAssetId?: AssetId,
         ) => {
             // Define temporary directory for processing of volumetric data.
             const temporaryDirectory = `${env.userDataPath}/Processing`;
@@ -163,7 +164,18 @@ export function useWorkspaceManagement() {
                                 result.job_id,
                                 type,
                                 newRelativePath,
+                                parentAssetId,
                             );
+
+                        // Attach the job to the parent asset, if any.
+                        if (parentAssetId) {
+                            useManagedAssetsStore
+                                .getState()
+                                .attachProcessingJob(
+                                    parentAssetId,
+                                    result.job_id,
+                                );
+                        }
 
                         // Log the job start.
                         loggerUi.info(

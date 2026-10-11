@@ -5,28 +5,32 @@
  */
 
 import { useState } from "react";
-import { Checkbox, Collapse, Loader, Select, Text } from "@mantine/core";
+import { Loader, Select, Text } from "@mantine/core";
 import { AllFiles } from "../../../../../../types/fileFilters";
 import { Button } from "../../../../../components/common/button/Button";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+import { pushWarningNotification } from "../../../../../services/NotificationService";
 import {
     checkOffersProcessing,
     checkRequiresProcessing,
 } from "../../../../../config/assetsDefinitions";
-import { pushWarningNotification } from "../../../../../services/NotificationService";
 import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
 import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
 import {
     addExtensionToFilename,
     getFilenameWithoutExtension,
 } from "../../../../../utils/fileDataUtils";
-import { IconAlertHexagonFilled } from "@tabler/icons-react";
+
+export interface AddLocalAssetDialogueFileReturnType {
+    file: FileData;
+    offersProcessing: boolean;
+    requiresProcessing: boolean;
+}
 
 export interface AddLocalAssetDialogueReturnType {
-    file: FileData;
+    files: AddLocalAssetDialogueFileReturnType[];
     type: ManagedAssetType;
     relativePath: string;
-    processAsset: boolean;
 }
 
 interface AddLocalAssetDialogueContentProps {
@@ -34,7 +38,7 @@ interface AddLocalAssetDialogueContentProps {
 }
 
 const MAXIMUM_NUMBER_OF_PATH_SEGMENTS = 3; // TODO: define in Settings
-const ALLOW_FILES_MULTISELECTION = false;
+const ALLOW_FILES_MULTISELECTION = true;
 
 export function AddLocalAssetDialogueContent({
     close,
@@ -42,10 +46,10 @@ export function AddLocalAssetDialogueContent({
     // State if any file is loading at the moment.
     const [fileLoading, setFileLoading] = useState(false);
 
-    // State for the chosen file asset.
-    const [file, setFile] = useState<FileData | undefined>(undefined);
+    // State for the chosen files assets.
+    const [files, setFiles] = useState<FileData[]>([]);
 
-    // State for the file name, which can be changed.
+    // State for the file name, which can be changed. Only used when a single file is chosen.
     const [fileName, setFilename] = useState<string | undefined>(undefined);
 
     // State if file name is valid or not.
@@ -60,22 +64,13 @@ export function AddLocalAssetDialogueContent({
     // State if path is valid or not.
     const [isPathInvalid, setIsPathInvalid] = useState(false);
 
-    // Boolean flag if the chosen file asset should be processed or not.
-    const [processAsset, setProcessAsset] = useState<boolean>(false);
-
-    // Each file asset type defines if it requires or offers processing.
-    const requiresProcessing = file
-        ? checkRequiresProcessing(file.extension)
-        : false;
-    const offersProcessing = file
-        ? checkOffersProcessing(file.extension)
-        : false;
-    const showProcessingUi = requiresProcessing || offersProcessing;
+    // Name can be changed only if exactly one file is chosen.
+    const isSingleFile = files.length === 1;
 
     // Render the component.
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "1em" }}>
-            {/* The div for Choose file asset button. */}
+            {/* The div for Choose file assets button. */}
             <div
                 style={{
                     display: "flex",
@@ -83,10 +78,10 @@ export function AddLocalAssetDialogueContent({
                     marginBottom: "0.5em",
                 }}
             >
-                {/* Choose file asset button. */}
+                {/* Choose file assets button. */}
                 <Button
                     variant="ghost"
-                    tooltip="Choose file."
+                    tooltip="Choose file(s)."
                     onClick={async () => {
                         setFileLoading(true);
                         const result = await window.electron.openFileExplorer(
@@ -96,22 +91,14 @@ export function AddLocalAssetDialogueContent({
 
                         if (!(result instanceof Error)) {
                             if (result.length > 0) {
-                                const selectedFile = result[0];
-                                setFile(selectedFile);
-                                setFilename(
-                                    getFilenameWithoutExtension(
-                                        selectedFile.name,
-                                    ),
-                                );
+                                setFiles(result);
 
-                                if (
-                                    checkRequiresProcessing(
-                                        selectedFile.extension,
-                                    )
-                                ) {
-                                    setProcessAsset(true);
-                                } else {
-                                    setProcessAsset(false);
+                                if (result.length === 1) {
+                                    setFilename(
+                                        getFilenameWithoutExtension(
+                                            result[0].name,
+                                        ),
+                                    );
                                 }
                             }
                         } else {
@@ -123,87 +110,59 @@ export function AddLocalAssetDialogueContent({
                         setFileLoading(false);
                     }}
                 >
-                    Choose file...
+                    Choose file(s)...
                 </Button>
             </div>
             {/* Loader. */}
             {fileLoading && (
                 <div
-                    title="Loading the file..."
+                    title="Loading the file(s)..."
                     style={{ display: "flex", justifyContent: "center" }}
                 >
                     <Loader />
                 </div>
             )}
-            {/* Chosen file asset label. */}
+            {/* Chosen file assets label. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
                 <Text size="sm" style={{ minWidth: "9em" }}>
-                    Chosen filename:
+                    Chosen filename{files.length > 1 ? "s" : ""}:
                 </Text>
                 <UnstyledTextInput
                     placeholder="N/A"
-                    value={file?.name || ""}
+                    value={files.map((file) => file.name).join(", ")}
                     enabled={false}
                     style={{ flexGrow: 1 }}
                 />
             </div>
-            {/* Change name of the asset. */}
-            <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
-                <Text size="sm" style={{ minWidth: "9em" }}>
-                    Change name of the asset:
-                </Text>
-                <UnstyledTextInput
-                    placeholder="N/A"
-                    value={fileName}
-                    enabled={file !== undefined}
-                    onValueChange={(value) => {
-                        setFilename(value);
-                    }}
-                    onBlur={(value) => {
-                        setFilename(value);
-                    }}
-                    onErrorChange={(hasError) => {
-                        if (hasError) {
-                            setIsFileNameInvalid(true);
-                        } else {
-                            setIsFileNameInvalid(false);
-                        }
-                    }}
-                    style={{ flexGrow: 1 }}
-                />
-            </div>
-            {/* We might show processing checkbox if given asset type allows. */}
-            <Collapse expanded={showProcessingUi}>
+            {/* Change name of the asset, only when a single file is chosen. */}
+            {isSingleFile && (
                 <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1em",
-                    }}
+                    style={{ display: "flex", alignItems: "center", gap: "1em" }}
                 >
                     <Text size="sm" style={{ minWidth: "9em" }}>
-                        Processing:
+                        Change name of the asset:
                     </Text>
-                    <Checkbox
-                        label={
-                            requiresProcessing
-                                ? "Must be processed (Required)"
-                                : "Will be processed"
-                        }
-                        size="xs"
-                        checked={processAsset}
-                        disabled={requiresProcessing}
-                        onChange={(e) =>
-                            setProcessAsset(e.currentTarget.checked)
-                        }
+                    <UnstyledTextInput
+                        placeholder="N/A"
+                        value={fileName}
+                        enabled={isSingleFile}
+                        onValueChange={(value) => {
+                            setFilename(value);
+                        }}
+                        onBlur={(value) => {
+                            setFilename(value);
+                        }}
+                        onErrorChange={(hasError) => {
+                            if (hasError) {
+                                setIsFileNameInvalid(true);
+                            } else {
+                                setIsFileNameInvalid(false);
+                            }
+                        }}
+                        style={{ flexGrow: 1 }}
                     />
-                    <IconAlertHexagonFilled />
-                    <Text size="xs" c="dimmed">
-                        Note that processed files might not share the name you
-                        set for asset in this dialogue!
-                    </Text>
                 </div>
-            </Collapse>
+            )}
 
             {/* Asset type. */}
             <div style={{ display: "flex", alignItems: "center", gap: "1em" }}>
@@ -276,25 +235,44 @@ export function AddLocalAssetDialogueContent({
                 }}
             >
                 <Button
-                    disabled={!file || isPathInvalid || isFileNameInvalid}
+                    disabled={
+                        files.length === 0 ||
+                        isPathInvalid ||
+                        (isSingleFile && isFileNameInvalid)
+                    }
                     onClick={() => {
-                        const newFile: FileData = {
-                            ...file!,
-                            name: addExtensionToFilename(
-                                fileName!,
-                                file!.extension,
-                            ),
-                        };
+                        const finalFiles: AddLocalAssetDialogueFileReturnType[] =
+                            files.map((file) => {
+                                const finalFile =
+                                    isSingleFile
+                                        ? {
+                                              ...file,
+                                              name: addExtensionToFilename(
+                                                  fileName!,
+                                                  file.extension,
+                                              ),
+                                          }
+                                        : file;
+
+                                return {
+                                    file: finalFile,
+                                    offersProcessing: checkOffersProcessing(
+                                        file.extension,
+                                    ),
+                                    requiresProcessing: checkRequiresProcessing(
+                                        file.extension,
+                                    ),
+                                };
+                            });
 
                         close({
-                            file: newFile,
+                            files: finalFiles,
                             type: assetType,
                             relativePath: compileFinalPath(pathSegments),
-                            processAsset,
                         });
                     }}
-                    tooltip="Save local asset."
-                >
+                    tooltip="Save local asset(s)."
+                 >
                     Save
                 </Button>
             </div>

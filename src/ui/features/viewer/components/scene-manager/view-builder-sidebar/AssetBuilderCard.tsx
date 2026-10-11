@@ -5,8 +5,13 @@
  */
 
 import { useState } from "react";
-import { Text, Checkbox, Collapse } from "@mantine/core";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { Text, Checkbox, Collapse, Badge, Loader } from "@mantine/core";
+import {
+    IconChevronDown,
+    IconChevronUp,
+    IconHourglass,
+    IconLoader3,
+} from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import {
     getPrioritizedRenderStrategy,
@@ -21,6 +26,7 @@ import type {
 import type { TabType } from "../../../hooks/useViewBuilder";
 import { pushInfoNotification } from "../../../../../services/NotificationService";
 import { VolumeTab } from "./volume/VolumeTab";
+import { useAppearance } from "../../../../../hooks/useAppearance";
 
 interface AssetBuilderCardProps {
     viewKey: string;
@@ -79,6 +85,9 @@ export function AssetBuilderCard({
     onAddStructureComponent,
     onDeleteStructureComponent,
 }: AssetBuilderCardProps) {
+    // Use apperance.
+    const { colorTheme } = useAppearance();
+
     // Store active tab.
     const [activeTab, setActiveTab] = useState<TabType>(() => {
         const tabFromDefinition = getPrioritizedRenderStrategy(asset.extension); // We can ignore if extension is "unknown" here as we won't even allow user to expand the card.
@@ -132,6 +141,16 @@ export function AssetBuilderCard({
                         {asset.tag}
                     </Text>
                     {asset.relativePath}
+                    {asset.processingJobIds.length > 0 && (
+                        <Badge
+                            size="xs"
+                            title="You are in developer mode."
+                            color={colorTheme.primaryColor}
+                            style={{ marginLeft: "1em" }}
+                        >
+                            Processing preview...
+                        </Badge>
+                    )}
                 </div>
                 <Checkbox
                     title={
@@ -139,10 +158,12 @@ export function AssetBuilderCard({
                             ? asset.extension === "unknown"
                                 ? `Extension is unknown, go to Assets to check and edit the asset!`
                                 : `This extension is not supported!`
+                            : asset.processingJobIds.length > 0
+                            ? "File preview is not created yet. Wait a minute, please."
                             : ""
                     }
                     checked={isSelected}
-                    disabled={!isSupported}
+                    disabled={!isSupported || asset.processingJobIds.length > 0}
                     onChange={(e) =>
                         onToggleSelect(e.currentTarget.checked, activeTab)
                     }

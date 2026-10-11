@@ -41,12 +41,13 @@ type ManagedAssetsStore = {
      * @param file file to add
      * @param relativeUrl relative URL to the asset (in this format: "volumes/first_section/", or "" for current path as relative path)
      * @param type type of asset
+     * @returns the created `ManagedAsset`, or undefined if the asset already exists
      */
     addLocalAsset: (
         file: FileData,
         relativeUrl: string,
         type: ManagedAssetType,
-    ) => boolean;
+    ) => ManagedAsset | undefined;
 
     /**
      * Adds new remote asset into the system and the Molstar inner repository.
@@ -138,6 +139,35 @@ type ManagedAssetsStore = {
      * @returns `ManagedAsset` object or undefined if asset with ID is not found
      */
     getAsset: (assetId: string) => ManagedAsset | undefined;
+
+    /**
+     * Attaches a processing job to a managed asset by appending the job ID into its `processingJobIds`.
+     * @param assetId ID of the managed asset
+     * @param jobId ID of the processing job
+     * @returns false if the asset was not found or the job is already attached, true otherwise
+     */
+    attachProcessingJob: (assetId: string, jobId: string) => boolean;
+
+    /**
+     * Detaches a processing job from a managed asset by removing the job ID from its `processingJobIds`.
+     * @param assetId ID of the managed asset
+     * @param jobId ID of the processing job
+     * @returns false if the asset was not found, true otherwise
+     */
+    detachProcessingJob: (assetId: string, jobId: string) => boolean;
+
+    /**
+     * Attaches a child asset (e.g. a downsampled preview) to a parent managed asset.
+     * @param parentAssetId ID of the parent managed asset
+     * @param childAssetId ID of the child managed asset
+     * @param kind kind of the child asset
+     * @returns false if the parent was not found or the child is already attached, true otherwise
+     */
+    attachChildAsset: (
+        parentAssetId: string,
+        childAssetId: string,
+        kind: ManagedAssetChildKind,
+    ) => boolean;
 };
 
 export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
@@ -160,7 +190,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         const result = addLocalAssetIntoMolstar(file, relativePath);
 
         if (!result) {
-            return false;
+            return undefined;
         }
 
         const entry: ManagedAsset = {
@@ -172,13 +202,15 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
             name: file.name,
             useCount: 0,
             extension: getExtensionFromFileName(file.name) || "unknown",
+            processingJobIds: [],
+            children: [],
         };
 
         const newMap = new Map(get().assets);
         newMap.set(result.url, entry);
         set({ assets: newMap });
 
-        return true;
+        return entry;
     },
 
     addRemoteAsset: (url, extension, type) => {
@@ -193,6 +225,8 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
             name: url,
             useCount: 0,
             extension: extension,
+            processingJobIds: [],
+            children: [],
         };
 
         const newMap = new Map(get().assets);
@@ -371,5 +405,70 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
             }
         }
         return undefined;
+    },
+
+    attachProcessingJob: (assetId, jobId) => {
+        const currentAssets = get().assets;
+        const existingAsset = get().getAsset(assetId);
+
+        if (!existingAsset) {
+            return false;
+        }
+
+        if (existingAsset.processingJobIds.includes(jobId)) {
+            return false;
+        }
+
+        const newMap = new Map(currentAssets);
+        newMap.set(existingAsset.asset.url, {
+            ...existingAsset,
+            processingJobIds: [...existingAsset.processingJobIds, jobId],
+        });
+
+        set({ assets: newMap });
+        return true;
+    },
+
+    detachProcessingJob: (assetId, jobId) => {
+        const existingAsset = get().getAsset(assetId);
+
+        if (!existingAsset) {
+            return false;
+        }
+
+        const newMap = new Map(get().assets);
+        newMap.set(existingAsset.asset.url, {
+            ...existingAsset,
+            processingJobIds: existingAsset.processingJobIds.filter(
+                (id) => id !== jobId,
+            ),
+        });
+
+        set({ assets: newMap });
+        return true;
+    },
+
+    attachChildAsset: (parentAssetId, childAssetId, kind) => {
+        const existingAsset = get().getAsset(parentAssetId);
+
+        if (!existingAsset) {
+            return false;
+        }
+
+        if (existingAsset.children.some((child) => child.id === childAssetId)) {
+            return false;
+        }
+
+        const newMap = new Map(get().assets);
+        newMap.set(existingAsset.asset.url, {
+            ...existingAsset,
+            children: [
+                ...existingAsset.children,
+                { id: childAssetId, kind: kind },
+            ],
+        });
+
+        set({ assets: newMap });
+        return true;
     },
 }));

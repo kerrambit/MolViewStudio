@@ -83,15 +83,32 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
 
                 // Adds local asset into asset manager.
                 assets.map((asset) => {
-                    const wasSuccessful = useManagedAssetsStore
+                    const newAsset = useManagedAssetsStore
                         .getState()
                         .addLocalAsset(asset, job.relativePath, job.assetType);
 
-                    if (!wasSuccessful) {
+                    if (!newAsset) {
                         pushErrorNotification(
                             `Asset "${job.relativePath}${asset.name}" already exists!`,
                         );
                     } else {
+                        // If this job was started for a parent asset (e.g. preview downsampling), link the new asset as its child.
+                        if (job.parentAssetId) {
+                            useManagedAssetsStore
+                                .getState()
+                                .attachChildAsset(
+                                    job.parentAssetId,
+                                    newAsset.id,
+                                    "Preview",
+                                );
+                            useManagedAssetsStore
+                                .getState()
+                                .detachProcessingJob(
+                                    job.parentAssetId,
+                                    job.jobId,
+                                );
+                        }
+
                         loggerUi.info(
                             `File "${job.file.path}" was successfully processed and new asset "${job.relativePath}${asset.name}" added.`,
                         );
@@ -119,6 +136,13 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
 
                 // Mark job as failed.
                 useProcessingStore.getState().failJob(props.jobId, error);
+
+                // Detach the failed job from the parent asset, if any, so it is not reported as still processing.
+                if (job.parentAssetId) {
+                    useManagedAssetsStore
+                        .getState()
+                        .detachProcessingJob(job.parentAssetId, props.jobId);
+                }
             },
             [props.jobId],
         ),

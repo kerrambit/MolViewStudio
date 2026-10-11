@@ -14,6 +14,7 @@ import {
 } from "./AddLocalAssetDialogueContent";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
+import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../../../../config/assetsDefinitions";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { LocalAssetsTree } from "./LocalAssetsTree";
@@ -29,8 +30,6 @@ import {
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
-import { ProcessingPropertiesDialogueContent } from "./ProcessingPropertiesDialogueContent";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../../../../config/processingDefinitions";
 
 export function Assets() {
     // Use managed assets.
@@ -97,44 +96,50 @@ export function Assets() {
                                 });
 
                             if (result) {
-                                if (!result.processAsset) {
-                                    const wasSuccessful = addLocalAsset(
-                                        result.file,
+                                for (const {
+                                    file,
+                                    offersProcessing,
+                                } of result.files) {
+                                    const newAsset = addLocalAsset(
+                                        file,
                                         result.relativePath,
                                         result.type,
                                     );
-                                    if (!wasSuccessful) {
+                                    if (!newAsset) {
                                         pushErrorNotification(
-                                            `Asset "${result.relativePath}${result.file.name}" already exists!`,
+                                            `Asset "${result.relativePath}${file.name}" already exists!`,
                                         );
-                                    }
-                                } else {
-                                    const processingProperties =
-                                        await useDialogueStore
-                                            .getState()
-                                            .showDialogue<ProcessVolumeRequestWithoutFilepaths>(
+                                    } else {
+                                        // Large volume assets which offer processing are automatically downsampled into a preview using the nearest algorithm.
+                                        const contentSizeInBytes =
+                                            typeof file.content === "string"
+                                                ? file.content.length
+                                                : file.content.byteLength;
+                                        if (
+                                            result.type === "Volume" &&
+                                            offersProcessing &&
+                                            contentSizeInBytes >
+                                                PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD
+                                        ) {
+                                            await startFileProcessing(
+                                                file,
+                                                result.relativePath,
+                                                "Volume",
                                                 {
-                                                    title: "Processing properties",
-                                                    width: "1000px",
-                                                    showCloseButton: true,
-                                                    content: (close) => (
-                                                        <ProcessingPropertiesDialogueContent
-                                                            file={result.file}
-                                                            close={close}
-                                                        />
-                                                    ),
+                                                    downsampling_strategy:
+                                                        "nearest",
+                                                    volume_serializer: "mrc",
+                                                    segmentation_mask_serializer:
+                                                        "mrc",
+                                                    segmentation_volume_serializer:
+                                                        "mrc",
+                                                    segmentation_mesh_serializer:
+                                                        "mrc",
+                                                    bundling_approach: "null",
                                                 },
+                                                newAsset.id,
                                             );
-
-                                    if (processingProperties) {
-                                        await startFileProcessing(
-                                            result.file,
-                                            result.relativePath,
-                                            result.type === "Segmentation"
-                                                ? "Segmentation"
-                                                : "Volume",
-                                            processingProperties,
-                                        );
+                                        }
                                     }
                                 }
                             }

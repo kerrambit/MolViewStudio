@@ -5,6 +5,11 @@
  */
 
 export type RenderStrategy = "volume" | "structure" | "both";
+
+/**
+ * Assets with content larger than this threshold (in bytes) are automatically downsampled into a preview using the nearest algorithm.
+ */
+export const PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD = 50 * 1024 * 1024; // TODO: define in Settings
 export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
 export type ExtensionType =
     | "map"

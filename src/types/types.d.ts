@@ -201,6 +201,8 @@ type Url = {
 
 type AssetId = string;
 
+type ProcessingJobId = string;
+
 type ManagedAssetType =
     | "Volume"
     | "Segmentation"
@@ -210,7 +212,27 @@ type ManagedAssetType =
     | "Unknown";
 
 /**
- * Object mirroring Assets as managed by Molstar Asset Manager.
+ * Kind of the child asset derived from its parent managed asset.
+ */
+type ManagedAssetChildKind = "Preview";
+
+/**
+ * Reference to a child asset derived from a parent managed asset, e.g. a downsampled preview.
+ */
+interface ManagedAssetChild {
+    /**
+     * ID of the child `ManagedAsset`.
+     */
+    id: AssetId;
+
+    /**
+     * Determines the kind of the child asset, e.g. a preview created by downsampling.
+     */
+    kind: ManagedAssetChildKind;
+}
+
+/**
+ * Object mirroring Assets as managed by Molstar Asset Manager enriched by some external information connected to preprocessing.
  */
 interface ManagedAsset {
     /**
@@ -255,4 +277,14 @@ interface ManagedAsset {
      * Determines how the data will be parsed and handled, usually mirrors extension from the `name`. Special value `unknown` tells that extension could not be detected from `name`.
      */
     extension: string;
+
+    /**
+     * IDs of processing jobs currently running for this asset (e.g. preview downsampling). Empty when idle.
+     */
+    processingJobIds: ProcessingJobId[];
+
+    /**
+     * Child assets derived from this one, each with a kind flag. Usually empty.
+     */
+    children: ManagedAssetChild[];
 }
