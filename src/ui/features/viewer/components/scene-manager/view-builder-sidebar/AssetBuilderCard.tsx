@@ -5,13 +5,8 @@
  */
 
 import { useState } from "react";
-import { Text, Checkbox, Collapse, Badge, Loader } from "@mantine/core";
-import {
-    IconChevronDown,
-    IconChevronUp,
-    IconHourglass,
-    IconLoader3,
-} from "@tabler/icons-react";
+import { Text, Checkbox, Collapse, Badge } from "@mantine/core";
+import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import {
     getPrioritizedRenderStrategy,
@@ -144,7 +139,7 @@ export function AssetBuilderCard({
                     {asset.processingJobIds.length > 0 && (
                         <Badge
                             size="xs"
-                            title="You are in developer mode."
+                            title="Preview quality asset is being proccessed at the moment."
                             color={colorTheme.primaryColor}
                             style={{ marginLeft: "1em" }}
                         >

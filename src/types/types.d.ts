@@ -279,6 +279,11 @@ interface ManagedAsset {
     extension: string;
 
     /**
+     * Hidden assets are not shown in the assets sidebar or view builder and are not exported. E.g. preview assets created by downsampling.
+     */
+    hidden: boolean;
+
+    /**
      * IDs of processing jobs currently running for this asset (e.g. preview downsampling). Empty when idle.
      */
     processingJobIds: ProcessingJobId[];

@@ -133,10 +133,12 @@ export function GlobalTooltipsAndLabelsSection({
             <Select
                 label="URI"
                 size="xs"
-                data={Array.from(assets.values()).map((asset) => ({
-                    value: asset.id,
-                    label: asset.name,
-                }))}
+                data={Array.from(assets.values())
+                    .filter((asset) => !asset.hidden)
+                    .map((asset) => ({
+                        value: asset.id,
+                        label: asset.name,
+                    }))}
                 value={data.uri}
                 placeholder="Select asset to use."
                 onChange={(val) => {

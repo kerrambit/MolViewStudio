@@ -52,7 +52,7 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
     );
 
     // State if path is valid or not.
-    const [isPathInvalid, setIsPathInvalid] = useState(true);
+    const [isPathInvalid, setIsPathInvalid] = useState(false);
 
     // Render the component.
     return (

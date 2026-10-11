@@ -110,9 +110,11 @@ export function useViewBuilder(viewKey: string) {
         UiLocalStorageService.ViewBuilder.getExpandedFiltersSection(viewKey),
     );
 
-    // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...).
+    // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...). Hidden assets (e.g. previews) are not shown.
     const assetsFilteredByType = useMemo(() => {
-        const allAssets = Array.from(assets.values());
+        const allAssets = Array.from(assets.values()).filter(
+            (asset) => !asset.hidden,
+        );
 
         if (selectedAssetFilters.length === 0) return [];
         if (selectedAssetFilters.includes("All")) return allAssets;

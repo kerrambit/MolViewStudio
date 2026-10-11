@@ -336,7 +336,9 @@ export function bindViewerMenu(): Menu {
                                 useManagedAssetsStore
                                     .getState()
                                     .assets.values(),
-                            ).filter(isManagedAssetLocal),
+                            )
+                                .filter(isManagedAssetLocal)
+                                .filter((asset) => !asset.hidden),
                         );
 
                         if (result.success) {

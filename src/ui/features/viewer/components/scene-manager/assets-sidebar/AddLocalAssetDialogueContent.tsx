@@ -58,8 +58,8 @@ export function AddLocalAssetDialogueContent({
     // State for the type of asset.
     const [assetType, setAssetType] = useState<ManagedAssetType>("Volume");
 
-    // State for up path segments for a relative path of asset.
-    const [pathSegments, setPathSegments] = useState<string[]>([]);
+    // State for up path segments for a relative path of asset. Default type is "Volume", hence the default folder.
+    const [pathSegments, setPathSegments] = useState<string[]>(["volumes"]);
 
     // State if path is valid or not.
     const [isPathInvalid, setIsPathInvalid] = useState(false);

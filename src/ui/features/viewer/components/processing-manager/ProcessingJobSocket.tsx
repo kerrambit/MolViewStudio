@@ -15,6 +15,10 @@ import {
 import { loggerUi } from "../../../../services/UiLoggingService";
 import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../../stores/processingStore";
+import {
+    getFilenameWithoutExtension,
+    getFileSizeInBytes,
+} from "../../../../utils/fileDataUtils";
 
 type ProcessingJobSocketProps = {
     jobId: string;
@@ -81,6 +85,73 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                     return;
                 }
 
+                // For preview downsampling jobs (with a parent asset), only the smallest result file is kept
+                // as a hidden preview asset, named after the original file with a preview quality suffix.
+                if (job.parentAssetId) {
+                    // Choose the smallest result file, if more were returned (e.g. multiple resolutions with r1/r2 suffixes, the smaller one is the preview).
+                    const smallest = assets.reduce((smallest, current) =>
+                        getFileSizeInBytes(current) <
+                        getFileSizeInBytes(smallest)
+                            ? current
+                            : smallest,
+                    );
+
+                    // Name the preview same as the original file, with a "(Preview quality N)" suffix. N is incremented for each existing preview of the same original.
+                    const parentAsset = useManagedAssetsStore
+                        .getState()
+                        .getAsset(job.parentAssetId);
+                    const previewQualityIndex = parentAsset
+                        ? parentAsset.children.length + 1
+                        : 1;
+                    const originalNameWithoutExtension =
+                        getFilenameWithoutExtension(job.file.name) ??
+                        job.file.name;
+                    const previewName = `${originalNameWithoutExtension} (Preview quality ${previewQualityIndex}).${smallest.extension}`;
+
+                    const previewFile: FileData = {
+                        ...smallest,
+                        name: previewName,
+                    };
+
+                    const newAsset = useManagedAssetsStore
+                        .getState()
+                        .addLocalAsset(
+                            previewFile,
+                            job.relativePath,
+                            job.assetType,
+                            true,
+                        );
+
+                    if (!newAsset) {
+                        pushErrorNotification(
+                            `Asset "${job.relativePath}${previewName}" already exists!`,
+                        );
+                    } else {
+                        useManagedAssetsStore
+                            .getState()
+                            .attachChildAsset(
+                                job.parentAssetId,
+                                newAsset.id,
+                                "Preview",
+                            );
+                        useManagedAssetsStore
+                            .getState()
+                            .detachProcessingJob(
+                                job.parentAssetId,
+                                job.jobId,
+                            );
+
+                        loggerUi.info(
+                            `File "${job.file.path}" was successfully downsampled and new preview asset "${job.relativePath}${previewName}" added.`,
+                        );
+                        pushSuccessNotification(
+                            `Preview for file "${job.file.name}" is ready!`,
+                        );
+                    }
+
+                    return;
+                }
+
                 // Adds local asset into asset manager.
                 assets.map((asset) => {
                     const newAsset = useManagedAssetsStore
@@ -92,23 +163,6 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                             `Asset "${job.relativePath}${asset.name}" already exists!`,
                         );
                     } else {
-                        // If this job was started for a parent asset (e.g. preview downsampling), link the new asset as its child.
-                        if (job.parentAssetId) {
-                            useManagedAssetsStore
-                                .getState()
-                                .attachChildAsset(
-                                    job.parentAssetId,
-                                    newAsset.id,
-                                    "Preview",
-                                );
-                            useManagedAssetsStore
-                                .getState()
-                                .detachProcessingJob(
-                                    job.parentAssetId,
-                                    job.jobId,
-                                );
-                        }
-
                         loggerUi.info(
                             `File "${job.file.path}" was successfully processed and new asset "${job.relativePath}${asset.name}" added.`,
                         );

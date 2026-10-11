@@ -39,3 +39,14 @@ export function getFilePathWithoutFile(filepath: string): string {
 export function addExtensionToFilename(filename: string, extension: string) {
     return `${filename}.${extension}`;
 }
+
+/**
+ * Computes the size of the file content in bytes.
+ * @param file file data
+ * @returns size in bytes
+ */
+export function getFileSizeInBytes(file: FileData): number {
+    return typeof file.content === "string"
+        ? file.content.length
+        : file.content.byteLength;
+}

@@ -248,6 +248,37 @@ export function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
 }
 
 /**
+ * Finds the asset that should actually be rendered for the given asset ID. If the asset has a preview child
+ * (e.g. created by downsampling), the preview is used for rendering instead of the full-quality original,
+ * so that the user only ever selects the original but views the lightweight preview.
+ * @param assets list of all assets
+ * @param assetId ID of the asset referenced in the tree
+ * @returns the asset to render, or undefined if not found
+ */
+function resolveRenderAsset(
+    assets: ManagedAsset[],
+    assetId: string,
+): ManagedAsset | undefined {
+    const matchedAsset = assets.find((a) => a.id === assetId);
+    if (!matchedAsset) {
+        return undefined;
+    }
+
+    // If there is a preview child, render it instead of the full-quality original.
+    const previewChildId = matchedAsset.children.find(
+        (child) => child.kind === "Preview",
+    )?.id;
+    if (previewChildId) {
+        const previewChild = assets.find((a) => a.id === previewChildId);
+        if (previewChild) {
+            return previewChild;
+        }
+    }
+
+    return matchedAsset;
+}
+
+/**
  * Replace asset IDs in node with arcp protocol url value.
  * @param node node
  * @param assets list of assets
@@ -262,7 +293,7 @@ export function replaceNodeIdsWithMolstarUrls(
     if (newParams) {
         if (typeof newParams.url === "string") {
             const currentId = newParams.url;
-            const matchedAsset = assets.find((a) => a.id === currentId);
+            const matchedAsset = resolveRenderAsset(assets, currentId);
 
             if (matchedAsset) {
                 newParams = {
@@ -275,7 +306,7 @@ export function replaceNodeIdsWithMolstarUrls(
             }
         } else if (typeof newParams.uri === "string") {
             const currentId = newParams.uri;
-            const matchedAsset = assets.find((a) => a.id === currentId);
+            const matchedAsset = resolveRenderAsset(assets, currentId);
 
             if (matchedAsset) {
                 newParams = {

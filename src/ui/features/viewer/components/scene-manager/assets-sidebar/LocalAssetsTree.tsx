@@ -64,10 +64,12 @@ export function LocalAssetsTree() {
         },
     });
 
-    // Memoize managed assets.
+    // Memoize managed assets. Hidden assets (e.g. previews) are not shown.
     const localAssetsTreeData = useMemo(() => {
         return buildAssetTree(
-            Array.from(assets.values()).filter(isManagedAssetLocal),
+            Array.from(assets.values())
+                .filter(isManagedAssetLocal)
+                .filter((asset) => !asset.hidden),
         );
     }, [assets]);
 

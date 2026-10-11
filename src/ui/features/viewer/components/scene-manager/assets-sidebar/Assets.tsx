@@ -60,9 +60,10 @@ export function Assets() {
                     Local
                 </Text>
 
-                {/* Render all local assets in the form of a tree. */}
-                {Array.from(assets.values()).filter(isManagedAssetLocal)
-                    .length === 0 ? (
+                {/* Render all local assets in the form of a tree. Hidden assets (e.g. previews) are not shown. */}
+                {Array.from(assets.values())
+                    .filter(isManagedAssetLocal)
+                    .filter((asset) => !asset.hidden).length === 0 ? (
                     <Text size="sm" c="dimmed" ta="center">
                         No local assets found...
                     </Text>
