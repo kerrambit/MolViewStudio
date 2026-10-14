@@ -136,16 +136,10 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                             );
                         useManagedAssetsStore
                             .getState()
-                            .detachProcessingJob(
-                                job.parentAssetId,
-                                job.jobId,
-                            );
+                            .detachProcessingJob(job.parentAssetId, job.jobId);
 
                         loggerUi.info(
                             `File "${job.file.path}" was successfully downsampled and new preview asset "${job.relativePath}${previewName}" added.`,
-                        );
-                        pushSuccessNotification(
-                            `Preview for file "${job.file.name}" is ready!`,
                         );
                     }
 
