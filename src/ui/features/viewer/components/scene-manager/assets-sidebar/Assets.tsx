@@ -14,7 +14,10 @@ import {
 } from "./AddLocalAssetDialogueContent";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
-import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../../../../config/assetsDefinitions";
+import {
+    checkRequiresProcessing,
+    PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD,
+} from "../../../../../config/assetsDefinitions";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { LocalAssetsTree } from "./LocalAssetsTree";
@@ -30,6 +33,10 @@ import {
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
+import {
+    getFilenameWithoutExtension,
+    getFileSizeInBytes,
+} from "../../../../../utils/fileDataUtils";
 
 export function Assets() {
     // Use managed assets.
@@ -101,11 +108,16 @@ export function Assets() {
                                     file,
                                     offersProcessing,
                                 } of result.files) {
+                                    const requiresProcessing =
+                                        checkRequiresProcessing(file.extension);
+
                                     const newAsset = addLocalAsset(
                                         file,
                                         result.relativePath,
                                         result.type,
+                                        requiresProcessing,
                                     );
+
                                     if (!newAsset) {
                                         pushErrorNotification(
                                             `Asset "${result.relativePath}${file.name}" already exists!`,
@@ -117,29 +129,158 @@ export function Assets() {
                                                 ? file.content.length
                                                 : file.content.byteLength;
                                         if (
-                                            result.type === "Volume" &&
-                                            offersProcessing &&
-                                            contentSizeInBytes >
-                                                PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD
+                                            (result.type === "Volume" ||
+                                                result.type ===
+                                                    "Segmentation") &&
+                                            ((offersProcessing &&
+                                                contentSizeInBytes >
+                                                    PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD) ||
+                                                requiresProcessing)
                                         ) {
-                                            await startFileProcessing(
-                                                file,
-                                                result.relativePath,
-                                                "Volume",
-                                                {
-                                                    downsampling_strategy:
-                                                        "nearest",
-                                                    volume_serializer: "mrc",
-                                                    segmentation_mask_serializer:
-                                                        "mrc",
-                                                    segmentation_volume_serializer:
-                                                        "mrc",
-                                                    segmentation_mesh_serializer:
-                                                        "mrc",
-                                                    bundling_approach: "null",
-                                                },
-                                                newAsset.id,
-                                            );
+                                            if (requiresProcessing) {
+                                                await startFileProcessing(
+                                                    file,
+                                                    result.type,
+                                                    {
+                                                        downsampling_strategy:
+                                                            "nearest", // TODO: why "null" does not work?
+                                                        volume_serializer:
+                                                            "mrc",
+                                                        segmentation_mask_serializer:
+                                                            "mrc",
+                                                        segmentation_volume_serializer:
+                                                            "mrc",
+                                                        segmentation_mesh_serializer:
+                                                            "mrc",
+                                                        bundling_approach:
+                                                            "null",
+                                                    },
+                                                    newAsset.id,
+                                                    (assets: FileData[]) => {
+                                                        if (!assets) {
+                                                            return [];
+                                                        }
+
+                                                        const biggestIndex =
+                                                            assets.reduce(
+                                                                (
+                                                                    bestIndex,
+                                                                    current,
+                                                                    currentIndex,
+                                                                ) =>
+                                                                    getFileSizeInBytes(
+                                                                        current,
+                                                                    ) >
+                                                                    getFileSizeInBytes(
+                                                                        assets[
+                                                                            bestIndex
+                                                                        ],
+                                                                    )
+                                                                        ? currentIndex
+                                                                        : bestIndex,
+                                                                0,
+                                                            );
+
+                                                        const originalNameWithoutExtension =
+                                                            getFilenameWithoutExtension(
+                                                                newAsset.name,
+                                                            ) ?? newAsset.name;
+                                                        const name = `${originalNameWithoutExtension} (Converted).${"mrc"}`;
+
+                                                        return [
+                                                            {
+                                                                assetIndex:
+                                                                    biggestIndex,
+                                                                relativePath:
+                                                                    result.relativePath,
+                                                                name: name,
+                                                                hidden: false,
+                                                                kind: "NecessaryConversion",
+                                                                notify: true,
+                                                            },
+                                                        ];
+                                                    },
+                                                );
+                                            } else {
+                                                await startFileProcessing(
+                                                    file,
+                                                    result.type,
+                                                    {
+                                                        downsampling_strategy:
+                                                            "nearest",
+                                                        volume_serializer:
+                                                            "mrc",
+                                                        segmentation_mask_serializer:
+                                                            "mrc",
+                                                        segmentation_volume_serializer:
+                                                            "mrc",
+                                                        segmentation_mesh_serializer:
+                                                            "mrc",
+                                                        bundling_approach:
+                                                            "null",
+                                                    },
+                                                    newAsset.id,
+                                                    (assets: FileData[]) => {
+                                                        if (!assets) {
+                                                            return [];
+                                                        }
+
+                                                        const smallestIndex =
+                                                            assets.reduce(
+                                                                (
+                                                                    bestIndex,
+                                                                    current,
+                                                                    currentIndex,
+                                                                ) =>
+                                                                    getFileSizeInBytes(
+                                                                        current,
+                                                                    ) <
+                                                                    getFileSizeInBytes(
+                                                                        assets[
+                                                                            bestIndex
+                                                                        ],
+                                                                    )
+                                                                        ? currentIndex
+                                                                        : bestIndex,
+                                                                0,
+                                                            );
+
+                                                        // Name the preview same as the original file, with a "(Preview quality N)" suffix. N is incremented for each existing preview of the same original.
+                                                        const parentAsset =
+                                                            newAsset;
+                                                        const previewQualityIndex =
+                                                            parentAsset
+                                                                ? parentAsset
+                                                                      .children
+                                                                      .length +
+                                                                  1
+                                                                : 1;
+                                                        const originalNameWithoutExtension =
+                                                            getFilenameWithoutExtension(
+                                                                assets[
+                                                                    smallestIndex
+                                                                ].name,
+                                                            ) ??
+                                                            assets[
+                                                                smallestIndex
+                                                            ].name;
+                                                        const previewName = `${originalNameWithoutExtension} (Preview quality ${previewQualityIndex}).${"mrc"}`;
+
+                                                        return [
+                                                            {
+                                                                assetIndex:
+                                                                    smallestIndex,
+                                                                relativePath:
+                                                                    result.relativePath,
+                                                                name: previewName,
+                                                                hidden: true,
+                                                                kind: "Preview",
+                                                                notify: false,
+                                                            },
+                                                        ];
+                                                    },
+                                                );
+                                            }
                                         }
                                     }
                                 }

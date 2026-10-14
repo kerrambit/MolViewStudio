@@ -11,14 +11,11 @@ import { webSocketEndpoints } from "../../../../api/webSocketEndpoints";
 import {
     pushErrorNotification,
     pushSuccessNotification,
+    pushWarningNotification,
 } from "../../../../services/NotificationService";
 import { loggerUi } from "../../../../services/UiLoggingService";
 import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../../stores/processingStore";
-import {
-    getFilenameWithoutExtension,
-    getFileSizeInBytes,
-} from "../../../../utils/fileDataUtils";
 
 type ProcessingJobSocketProps = {
     jobId: string;
@@ -39,10 +36,10 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 const job = useProcessingStore.getState().jobs.get(props.jobId);
                 if (!job) {
                     pushErrorNotification(
-                        `Internal error occured when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
+                        `Internal error occurred when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
                     );
                     loggerUi.error(
-                        `Internal error occured when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
+                        `Internal error occurred when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
                     );
                     return;
                 }
@@ -60,10 +57,10 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 const job = useProcessingStore.getState().jobs.get(props.jobId);
                 if (!job) {
                     pushErrorNotification(
-                        `Internal error occured when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
+                        `Internal error occurred when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
                     );
                     loggerUi.error(
-                        `Internal error occured when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
+                        `Internal error occurred when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
                     );
                     return;
                 }
@@ -85,86 +82,106 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                     return;
                 }
 
-                // For preview downsampling jobs (with a parent asset), only the smallest result file is kept
-                // as a hidden preview asset, named after the original file with a preview quality suffix.
-                if (job.parentAssetId) {
-                    // Choose the smallest result file, if more were returned (e.g. multiple resolutions with r1/r2 suffixes, the smaller one is the preview).
-                    const smallest = assets.reduce((smallest, current) =>
-                        getFileSizeInBytes(current) <
-                        getFileSizeInBytes(smallest)
-                            ? current
-                            : smallest,
+                if (!assets) {
+                    pushWarningNotification(
+                        `Processing of asset ${job.file.name} did not return any files back!`,
                     );
-
-                    // Name the preview same as the original file, with a "(Preview quality N)" suffix. N is incremented for each existing preview of the same original.
-                    const parentAsset = useManagedAssetsStore
-                        .getState()
-                        .getAsset(job.parentAssetId);
-                    const previewQualityIndex = parentAsset
-                        ? parentAsset.children.length + 1
-                        : 1;
-                    const originalNameWithoutExtension =
-                        getFilenameWithoutExtension(job.file.name) ??
-                        job.file.name;
-                    const previewName = `${originalNameWithoutExtension} (Preview quality ${previewQualityIndex}).${smallest.extension}`;
-
-                    const previewFile: FileData = {
-                        ...smallest,
-                        name: previewName,
-                    };
-
-                    const newAsset = useManagedAssetsStore
-                        .getState()
-                        .addLocalAsset(
-                            previewFile,
-                            job.relativePath,
-                            job.assetType,
-                            true,
-                        );
-
-                    if (!newAsset) {
-                        pushErrorNotification(
-                            `Asset "${job.relativePath}${previewName}" already exists!`,
-                        );
-                    } else {
-                        useManagedAssetsStore
-                            .getState()
-                            .attachChildAsset(
-                                job.parentAssetId,
-                                newAsset.id,
-                                "Preview",
-                            );
-                        useManagedAssetsStore
-                            .getState()
-                            .detachProcessingJob(job.parentAssetId, job.jobId);
-
-                        loggerUi.info(
-                            `File "${job.file.path}" was successfully downsampled and new preview asset "${job.relativePath}${previewName}" added.`,
-                        );
-                    }
-
                     return;
                 }
 
-                // Adds local asset into asset manager.
-                assets.map((asset) => {
-                    const newAsset = useManagedAssetsStore
-                        .getState()
-                        .addLocalAsset(asset, job.relativePath, job.assetType);
+                if (job.chooseAssetsFunction) {
+                    const chosenAssets = job.chooseAssetsFunction(assets);
 
-                    if (!newAsset) {
-                        pushErrorNotification(
-                            `Asset "${job.relativePath}${asset.name}" already exists!`,
-                        );
-                    } else {
-                        loggerUi.info(
-                            `File "${job.file.path}" was successfully processed and new asset "${job.relativePath}${asset.name}" added.`,
-                        );
-                        pushSuccessNotification(
-                            `File "${job.file.name}" was successfully processed and new asset "${job.relativePath}${asset.name}" added.`,
-                        );
-                    }
-                });
+                    chosenAssets.forEach(
+                        ({
+                            assetIndex,
+                            relativePath,
+                            name,
+                            hidden,
+                            kind,
+                            notify,
+                        }) => {
+                            const newAsset = useManagedAssetsStore
+                                .getState()
+                                .addLocalAsset(
+                                    { ...assets[assetIndex], name: name },
+                                    relativePath,
+                                    job.assetType,
+                                    hidden,
+                                );
+
+                            if (!newAsset) {
+                                pushErrorNotification(
+                                    `Asset "${relativePath}${name}" already exists!`,
+                                );
+                            } else {
+                                if (job.parentAssetId) {
+                                    useManagedAssetsStore
+                                        .getState()
+                                        .attachChildAsset(
+                                            job.parentAssetId,
+                                            newAsset.id,
+                                            kind,
+                                        );
+                                    useManagedAssetsStore
+                                        .getState()
+                                        .detachProcessingJob(
+                                            job.parentAssetId,
+                                            job.jobId,
+                                        );
+                                }
+
+                                loggerUi.info(
+                                    `File "${job.file.path}" was successfully processed and new asset "${relativePath}${name}" added.`,
+                                );
+                                if (notify) {
+                                    pushSuccessNotification(
+                                        `File "${job.file.name}" was successfully processed and new asset "${relativePath}${name}" added.`,
+                                    );
+                                }
+                            }
+                        },
+                    );
+                } else {
+                    assets.forEach((asset) => {
+                        const newAsset = useManagedAssetsStore
+                            .getState()
+                            .addLocalAsset(
+                                asset,
+                                asset.name,
+                                job.assetType,
+                                false,
+                            );
+
+                        if (!newAsset) {
+                            pushErrorNotification(
+                                `Asset "${asset.name}" already exists!`,
+                            );
+                        } else {
+                            if (job.parentAssetId) {
+                                useManagedAssetsStore
+                                    .getState()
+                                    .attachChildAsset(
+                                        job.parentAssetId,
+                                        newAsset.id,
+                                        "Other",
+                                    );
+                                useManagedAssetsStore
+                                    .getState()
+                                    .detachProcessingJob(
+                                        job.parentAssetId,
+                                        job.jobId,
+                                    );
+                            }
+                            loggerUi.info(
+                                `File "${job.file.path}" was successfully processed and new asset "$${asset.name}" added.`,
+                            );
+                            pushSuccessNotification(
+                                `File "${job.file.name}" was successfully processed and new asset "$${asset.name}" added.`,
+                            );
+                        }
+                    });
+                }
             },
             [props.jobId],
         ),
@@ -174,10 +191,10 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 const job = useProcessingStore.getState().jobs.get(props.jobId);
                 if (!job) {
                     pushErrorNotification(
-                        `Internal error occured when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
+                        `Internal error occurred when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
                     );
                     loggerUi.error(
-                        `Internal error occured when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
+                        `Internal error occurred when trying to handle processing web socket with invalid ID: ${props.jobId}!`,
                     );
                     return;
                 }

@@ -50,3 +50,18 @@ export function getFileSizeInBytes(file: FileData): number {
         ? file.content.length
         : file.content.byteLength;
 }
+
+export function replaceExtension(
+    filename: string | undefined,
+    newExtension: string,
+) {
+    if (!filename) return undefined;
+
+    const lastDotIndex = filename.lastIndexOf(".");
+
+    if (lastDotIndex <= 0) {
+        return `${filename}.${newExtension}`;
+    }
+
+    return `${filename.substring(0, lastDotIndex)}.${newExtension}`;
+}

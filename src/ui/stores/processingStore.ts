@@ -12,16 +12,30 @@ export type ProcessingJob = {
     jobId: ProcessingJobId;
     file: FileData;
     status: ProcessingStatus;
-    relativePath: string;
+    /**
+     * Type of asset for processing. Processed assets inherit this asset type, see `ManagedAssetType`.
+     */
     assetType: "Volume" | "Segmentation";
     stages: string[];
     resultPaths?: string[];
     errorMessage?: string;
-
     /**
      * ID of the parent managed asset this job was started for, e.g. when doing preview downsampling. Undefined for standalone jobs.
      */
     parentAssetId?: AssetId;
+
+    /**
+     * This callback is used when the job finished succefully.
+     * It expects processed assets and should return array of information about chosen assets from the processing.
+     */
+    chooseAssetsFunction?: (assets: FileData[]) => {
+        assetIndex: number;
+        relativePath: string;
+        name: string;
+        hidden: boolean;
+        kind: ManagedAssetChildKind;
+        notify: boolean;
+    }[];
 };
 
 export type ProcessingState = Map<ProcessingJobId, ProcessingJob>;
@@ -32,8 +46,15 @@ export type ProcessingStore = {
         file: FileData,
         jobId: ProcessingJobId,
         assetType: "Volume" | "Segmentation",
-        newRelativePath: string,
         parentAssetId?: AssetId,
+        chooseAssetsFunction?: (assets: FileData[]) => {
+            assetIndex: number;
+            relativePath: string;
+            name: string;
+            hidden: boolean;
+            kind: ManagedAssetChildKind;
+            notify: boolean;
+        }[],
     ) => void;
     updateJobStage: (jobId: ProcessingJobId, stage: string) => boolean;
     completeJob: (jobId: ProcessingJobId, resultPaths: string[]) => boolean;
@@ -49,8 +70,15 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         file: FileData,
         jobId: ProcessingJobId,
         assetType: "Volume" | "Segmentation",
-        newRelativePath: string,
         parentAssetId?: AssetId,
+        chooseAssetsFunction?: (assets: FileData[]) => {
+            assetIndex: number;
+            relativePath: string;
+            name: string;
+            hidden: boolean;
+            kind: ManagedAssetChildKind;
+            notify: boolean;
+        }[],
     ) => {
         const currentJobs = get().jobs;
 
@@ -59,10 +87,10 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
             jobId: jobId,
             file,
             assetType: assetType,
-            relativePath: newRelativePath,
             status: "running",
             stages: [],
             parentAssetId: parentAssetId,
+            chooseAssetsFunction: chooseAssetsFunction,
         });
         set({ jobs: newMap });
     },

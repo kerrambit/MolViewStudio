@@ -131,7 +131,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                                         message={job.resultPaths
                                             ?.map(
                                                 (path) =>
-                                                    `${job.relativePath}${path
+                                                    `${path
                                                         .split(/[\\/]/)
                                                         .pop()}`,
                                             )

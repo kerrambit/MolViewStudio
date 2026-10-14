@@ -214,7 +214,7 @@ type ManagedAssetType =
 /**
  * Kind of the child asset derived from its parent managed asset.
  */
-type ManagedAssetChildKind = "Preview";
+type ManagedAssetChildKind = "Preview" | "NecessaryConversion" | "Other";
 
 /**
  * Reference to a child asset derived from a parent managed asset, e.g. a downsampled preview.

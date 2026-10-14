@@ -138,10 +138,17 @@ export function useWorkspaceManagement() {
     const startFileProcessing = useCallback(
         async (
             fileToProcess: FileData,
-            newRelativePath: string,
             type: "Volume" | "Segmentation",
             properties: ProcessVolumeRequestWithoutFilepaths,
             parentAssetId?: AssetId,
+            chooseAssetsFunction?: (assets: FileData[]) => {
+                assetIndex: number;
+                relativePath: string;
+                name: string;
+                hidden: boolean;
+                kind: ManagedAssetChildKind;
+                notify: boolean;
+            }[],
         ) => {
             // Define temporary directory for processing of volumetric data.
             const temporaryDirectory = `${env.userDataPath}/Processing`;
@@ -163,8 +170,8 @@ export function useWorkspaceManagement() {
                                 fileToProcess,
                                 result.job_id,
                                 type,
-                                newRelativePath,
                                 parentAssetId,
+                                chooseAssetsFunction,
                             );
 
                         // Attach the job to the parent asset, if any.

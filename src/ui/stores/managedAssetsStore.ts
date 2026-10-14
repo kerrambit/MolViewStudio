@@ -41,7 +41,7 @@ type ManagedAssetsStore = {
      * @param file file to add
      * @param relativeUrl relative URL to the asset (in this format: "volumes/first_section/", or "" for current path as relative path)
      * @param type type of asset
-     * @param isHidden hidden assets are not shown in the assets sidebar or view builder and are not exported, e.g. preview assets created by downsampling
+     * @param isHidden hidden assets are not shown in the assets sidebar or view builder and are not exported, e.g. preview assets created by downsampling, default is false
      * @returns the created `ManagedAsset`, or undefined if the asset already exists
      */
     addLocalAsset: (

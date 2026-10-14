@@ -20,6 +20,7 @@ import {
     addExtensionToFilename,
     getFilenameWithoutExtension,
 } from "../../../../../utils/fileDataUtils";
+import { IconAlertTriangle } from "@tabler/icons-react";
 
 export interface AddLocalAssetDialogueFileReturnType {
     file: FileData;
@@ -66,6 +67,11 @@ export function AddLocalAssetDialogueContent({
 
     // Name can be changed only if exactly one file is chosen.
     const isSingleFile = files.length === 1;
+
+    // Check if any of the selected files require processing
+    const anyFileRequiresProcessing = files.some((file) =>
+        checkRequiresProcessing(file.extension),
+    );
 
     // Render the component.
     return (
@@ -137,7 +143,11 @@ export function AddLocalAssetDialogueContent({
             {/* Change name of the asset, only when a single file is chosen. */}
             {isSingleFile && (
                 <div
-                    style={{ display: "flex", alignItems: "center", gap: "1em" }}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1em",
+                    }}
                 >
                     <Text size="sm" style={{ minWidth: "9em" }}>
                         Change name of the asset:
@@ -226,14 +236,32 @@ export function AddLocalAssetDialogueContent({
                 </div>
             )}
 
-            {/* Save button. */}
+            {/* Warnings and Save button wrapper */}
             <div
                 style={{
                     display: "flex",
-                    justifyContent: "center",
-                    marginTop: "2em",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "2em",
+                    marginTop: "1em",
                 }}
             >
+                {anyFileRequiresProcessing && (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5em",
+                        }}
+                    >
+                        <IconAlertTriangle size={16} />
+                        <Text size="xs">
+                            Warning: processing is required for one or more
+                            selected files!
+                        </Text>
+                    </div>
+                )}
+
                 <Button
                     disabled={
                         files.length === 0 ||
@@ -243,16 +271,15 @@ export function AddLocalAssetDialogueContent({
                     onClick={() => {
                         const finalFiles: AddLocalAssetDialogueFileReturnType[] =
                             files.map((file) => {
-                                const finalFile =
-                                    isSingleFile
-                                        ? {
-                                              ...file,
-                                              name: addExtensionToFilename(
-                                                  fileName!,
-                                                  file.extension,
-                                              ),
-                                          }
-                                        : file;
+                                const finalFile = isSingleFile
+                                    ? {
+                                          ...file,
+                                          name: addExtensionToFilename(
+                                              fileName!,
+                                              file.extension,
+                                          ),
+                                      }
+                                    : file;
 
                                 return {
                                     file: finalFile,
@@ -272,7 +299,7 @@ export function AddLocalAssetDialogueContent({
                         });
                     }}
                     tooltip="Save local asset(s)."
-                 >
+                >
                     Save
                 </Button>
             </div>
