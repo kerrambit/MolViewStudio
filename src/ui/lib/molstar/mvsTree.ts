@@ -14,6 +14,7 @@ import {
     replaceNodeIdsWithMolstarUrls,
     replaceNodeIdsWithRelativePaths,
     replaceNodeUrlsWithIds,
+    resolveHiddenAssetIdsToParentAssetIds,
 } from "./mvsNode";
 import { createDefaultMVS } from "./mvs";
 
@@ -217,6 +218,31 @@ export function injectRelativePathsBasedOnAssetIdsIntoTree(
         snapshots: stateTree.snapshots.map((snapshot) => ({
             ...snapshot,
             root: replaceNodeIdsWithRelativePaths(snapshot.root, assets),
+        })),
+    };
+}
+
+/**
+ * Replaces IDs of `hidden` assets by its parent ID, if any. Assets not-`hidden` are left untouched.
+ * Useful before exporting or saving the MVS file.
+ *
+ * @param stateTree The current MVS source tree
+ * @param assets Array of currently managed assets
+ * @returns A new, immutable MVSData tree
+ */
+export function replaceHiddenAssetIdsByItsParentIdInTree(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): MVSData_States {
+    if (!assets || assets.length === 0) {
+        return stateTree;
+    }
+
+    return {
+        ...stateTree,
+        snapshots: stateTree.snapshots.map((snapshot) => ({
+            ...snapshot,
+            root: resolveHiddenAssetIdsToParentAssetIds(snapshot.root, assets),
         })),
     };
 }

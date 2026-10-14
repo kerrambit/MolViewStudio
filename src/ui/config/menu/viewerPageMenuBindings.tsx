@@ -18,6 +18,7 @@ import {
     exportStateTree,
     injectRelativePathsBasedOnAssetIdsIntoTree,
     reloadMolstarAndRestoreIndex,
+    replaceHiddenAssetIdsByItsParentIdInTree,
 } from "../../lib/molstar";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
@@ -323,22 +324,27 @@ export function bindViewerMenu(): Menu {
                     if (regime.kind === "viewing") {
                         pushInfoNotification(`Preparing files for export...`);
 
-                        const result = await exportStateTree(
-                            injectRelativePathsBasedOnAssetIdsIntoTree(
+                        const assetsArray = Array.from(
+                            useManagedAssetsStore.getState().assets.values(),
+                        );
+
+                        const treeWithOnlyParentIds =
+                            replaceHiddenAssetIdsByItsParentIdInTree(
                                 regime.history.current().stateTree,
-                                Array.from(
-                                    useManagedAssetsStore
-                                        .getState()
-                                        .assets.values(),
-                                ),
-                            ),
-                            Array.from(
-                                useManagedAssetsStore
-                                    .getState()
-                                    .assets.values(),
-                            )
+                                assetsArray,
+                            );
+
+                        const treeWithRelativePaths =
+                            injectRelativePathsBasedOnAssetIdsIntoTree(
+                                treeWithOnlyParentIds,
+                                assetsArray,
+                            );
+
+                        const result = await exportStateTree(
+                            treeWithRelativePaths,
+                            assetsArray
                                 .filter(isManagedAssetLocal)
-                                .filter((asset) => !asset.hidden),
+                                .filter((a) => !a.hidden),
                         );
 
                         if (result.success) {

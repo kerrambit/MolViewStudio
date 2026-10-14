@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Text, Checkbox, Collapse, Badge } from "@mantine/core";
+import { Text, Checkbox, Collapse, Badge, Select } from "@mantine/core";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import {
@@ -18,7 +18,7 @@ import type {
     StructureViewModel,
     VolumeViewModel,
 } from "../../../models/MvsViewModels";
-import type { TabType } from "../../../hooks/useViewBuilder";
+import type { AssetQuality, TabType } from "../../../hooks/useViewBuilder";
 import { pushInfoNotification } from "../../../../../services/NotificationService";
 import { VolumeTab } from "./volume/VolumeTab";
 import { useAppearance } from "../../../../../hooks/useAppearance";
@@ -31,8 +31,10 @@ interface AssetBuilderCardProps {
     isSelected: boolean;
     volumeViewModel: VolumeViewModel;
     structureViewModel: StructureViewModel;
+    assetQuality: AssetQuality;
     onToggleExpand: () => void;
     onToggleSelect: (checked: boolean, tabType: TabType) => void;
+    onQualityChange: (quality: AssetQuality) => void;
     onUpdateVolumeParam: (
         key: keyof VolumeViewModel,
         val: VolumeViewModel[keyof VolumeViewModel],
@@ -70,8 +72,10 @@ export function AssetBuilderCard({
     isSelected,
     volumeViewModel,
     structureViewModel,
+    assetQuality,
     onToggleExpand,
     onToggleSelect,
+    onQualityChange,
     onUpdateVolumeParam,
     onUpdateStructureParam,
     onUpdateStructureComponentParam,
@@ -147,6 +151,26 @@ export function AssetBuilderCard({
                         </Badge>
                     )}
                 </div>
+                {/* Quality combobox, shown only if the asset has child assets (e.g. a downsampled preview). */}
+                {asset.children.length > 0 && (
+                    <Select
+                        title="Choose the quality of the asset used for rendering. Preview refers to the downsampled version."
+                        size="xs"
+                        w={150}
+                        mr="sm"
+                        data={[
+                            { label: "Preview", value: "preview" },
+                            { label: "Normal (High)", value: "normal" },
+                        ]}
+                        value={assetQuality}
+                        onChange={(_value, option) =>
+                            onQualityChange(option.value as AssetQuality)
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        allowDeselect={false}
+                        comboboxProps={{ withinPortal: true, zIndex: 9999 }}
+                    />
+                )}
                 <Checkbox
                     title={
                         !isSupported

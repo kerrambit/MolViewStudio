@@ -36,7 +36,9 @@ export function ViewBuilder(props: ViewBuilderProps) {
         setSelectedAssetFilters,
         selectedAssetRelativePaths,
         setSelectedAssetRelativePaths,
-        selectedAssetIds,
+        isAssetSelected,
+        getAssetQuality,
+        handleAssetQualityChange,
         expandedAssetId,
         getVolumeViewModelForAsset,
         getStructureViewModelForAsset,
@@ -58,7 +60,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
     const firstSelectedAssetIndex =
         expandedAssetId === null
             ? assetsInView.findIndex((asset) =>
-                  selectedAssetIds.includes(asset.id),
+                  isAssetSelected(asset.id),
               )
             : assetsInView.findIndex((asset) => asset.id === expandedAssetId);
 
@@ -222,7 +224,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 asset={asset}
                                 isDark={isDark}
                                 isExpanded={expandedAssetId === asset.id}
-                                isSelected={selectedAssetIds.includes(asset.id)}
+                                isSelected={isAssetSelected(asset.id)}
                                 volumeViewModel={getVolumeViewModelForAsset(
                                     asset.id,
                                 )}
@@ -237,6 +239,13 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                         asset.id,
                                         checked,
                                         tabType,
+                                    )
+                                }
+                                assetQuality={getAssetQuality(asset.id)}
+                                onQualityChange={(quality) =>
+                                    handleAssetQualityChange(
+                                        asset.id,
+                                        quality,
                                     )
                                 }
                                 onUpdateVolumeParam={(key, val, sync) =>
