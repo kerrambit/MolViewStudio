@@ -7,19 +7,12 @@
 import { router } from "../../router/router";
 import {
     pushErrorNotification,
-    pushInfoNotification,
-    pushSuccessNotification,
     pushWarningNotification,
 } from "../../services/NotificationService";
 import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
-import {
-    clearViewer,
-    exportStateTree,
-    injectRelativePathsBasedOnAssetIdsIntoTree,
-    reloadMolstarAndRestoreIndex,
-    replaceHiddenAssetIdsByItsParentIdInTree,
-} from "../../lib/molstar";
+import { clearViewer, reloadMolstarAndRestoreIndex } from "../../lib/molstar";
+import { runExportFlow } from "../../features/workspace/services/exportService";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
     loadDefaultMVSJFile,
@@ -27,10 +20,7 @@ import {
     loadDefaultPDBFile,
 } from "../../features/viewer/services/defaultLoaderService";
 import { useRegimeStore } from "../../stores/regimeStore";
-import {
-    isManagedAssetLocal,
-    useManagedAssetsStore,
-} from "../../stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../stores/dialogueStore";
 import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
 import { useRecentFilesStore } from "../../stores/recentFilesStore";
@@ -319,44 +309,15 @@ export function bindViewerMenu(): Menu {
                         useRegimeStore.getState().regime.reset();
                     }
                 }),
-                createExportViwerMenuItem(async () => {
-                    const regime = useRegimeStore.getState().regime;
-                    if (regime.kind === "viewing") {
-                        pushInfoNotification(`Preparing files for export...`);
+                createExportViwerMenuItem(({ render }) => {
+                    const { startExportProcessing } = useWorkspaceManagement();
 
-                        const assetsArray = Array.from(
-                            useManagedAssetsStore.getState().assets.values(),
-                        );
-
-                        const treeWithOnlyParentIds =
-                            replaceHiddenAssetIdsByItsParentIdInTree(
-                                regime.history.current().stateTree,
-                                assetsArray,
-                            );
-
-                        const treeWithRelativePaths =
-                            injectRelativePathsBasedOnAssetIdsIntoTree(
-                                treeWithOnlyParentIds,
-                                assetsArray,
-                            );
-
-                        const result = await exportStateTree(
-                            treeWithRelativePaths,
-                            assetsArray
-                                .filter(isManagedAssetLocal)
-                                .filter((a) => !a.hidden),
-                        );
-
-                        if (result.success) {
-                            pushSuccessNotification(`Export ready!`);
-                        } else {
-                            pushErrorNotification(result.error.message);
-                        }
-                    } else {
-                        pushWarningNotification(
-                            `Export is currently unavailable! This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
-                        );
-                    }
+                    return render({
+                        action: async () => {
+                            await runExportFlow(startExportProcessing);
+                        },
+                        type: "direct",
+                    });
                 }),
                 createShowRawMVSTreeItemMenuItem(async () => {
                     const regime = useRegimeStore.getState().regime;

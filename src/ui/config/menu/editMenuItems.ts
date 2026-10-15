@@ -20,6 +20,7 @@ import type {
     RootMenuItem,
     MenuItem,
     Section,
+    LiveTaskType,
 } from "../../providers/MenuContext";
 
 export function createEditRootMenuItem(
@@ -86,17 +87,16 @@ export function createClearViwerMenuItem(
     };
 }
 
-export function createExportViwerMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
+export function createExportViwerMenuItem(liveTask: LiveTaskType): MenuItem {
     return {
         id: "export",
         title: "Export",
         icon: { icon: IconPackageExport, position: "left" },
         task: {
-            action: action,
+            action: () => {},
             type: "direct",
         },
+        LiveTask: liveTask,
     };
 }
 

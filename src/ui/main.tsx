@@ -16,17 +16,19 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./index.css";
 import { ProcessingJobSocketsManager } from "./features/viewer/services/ProcessingJobSocketsManager.tsx";
+import { FileMappingsLoader } from "./features/workspace/services/FileMappingsLoader.tsx";
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
-    <QueryClientProvider client={queryClient}>
-        <UserSettingsProvider>
-            <AppearanceProvider>
-                <RouterProvider router={router} />
-                <ProcessingJobSocketsManager />
-                <DialogueHost />
-            </AppearanceProvider>
-        </UserSettingsProvider>
-    </QueryClientProvider>,
+  <QueryClientProvider client={queryClient}>
+    <UserSettingsProvider>
+      <AppearanceProvider>
+        <RouterProvider router={router} />
+        <ProcessingJobSocketsManager />
+        <FileMappingsLoader />
+        <DialogueHost />
+      </AppearanceProvider>
+    </UserSettingsProvider>
+  </QueryClientProvider>
 );

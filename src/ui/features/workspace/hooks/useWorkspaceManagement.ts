@@ -234,6 +234,45 @@ export function useWorkspaceManagement() {
         [loadFileInApp],
     );
 
+    const startExportProcessing = useCallback(
+        async (
+            filePath: string,
+            isSegmentation: boolean,
+            properties: ProcessVolumeRequestWithoutFilepaths,
+        ): Promise<string | Error> => {
+            // Define temporary directory for processing of volumetric data.
+            const temporaryDirectory = `${env.userDataPath}/Processing`;
+
+            // Call the async API endpoint and wait for the job ID.
+            // Function `mutateAsync` is used on purpose: its promise belongs to the
+            // mutation itself, so it settles even if this hook's owning component
+            // (e.g. a menu LiveTask) unmounts while the request is in flight,
+            // unlike per-call callbacks passed to `mutate`.
+            try {
+                const result = await processVolume.mutateAsync({
+                    ...properties,
+                    temporary_directory: temporaryDirectory,
+                    volume_filepaths: isSegmentation ? [] : [filePath],
+                    segmentations_filepaths: isSegmentation ? [filePath] : [],
+                });
+                loggerUi.info(
+                    `Export processing job <${result.job_id}> has started.`,
+                );
+                return result.job_id;
+            } catch (err) {
+                const error = err as Error;
+                pushErrorNotification(
+                    `Processing of file <${filePath}> could not be started, because: "${error.message}"! You might need to restart the application and try processing once more.`,
+                );
+                loggerUi.error(
+                    `Processing of file <${filePath}> failed! See details: <${error.message}>.`,
+                );
+                return error;
+            }
+        },
+        [env.userDataPath, processVolume],
+    );
+
     return {
         /**
          * Functions moves the `filedata` into regime `staging`. It moves to `/viewer` page automatically.
@@ -264,5 +303,11 @@ export function useWorkspaceManagement() {
          * Function starts processing of a file. Does not change regime.
          */
         startFileProcessing,
+
+        /**
+         * Starts a single export processing job for one file and resolves with the job ID.
+         * Does not change regime.
+         */
+        startExportProcessing,
     };
 }

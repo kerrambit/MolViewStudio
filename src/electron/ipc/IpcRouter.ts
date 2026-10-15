@@ -12,6 +12,11 @@ import { isDev } from "../utils/devUtils.js";
 import { Ipc } from "../Ipc.Electron.js";
 import { logger } from "../utils/logger.js";
 import { readFiles, saveFile } from "../services/fileStorageService.js";
+import {
+    loadFileMappings,
+    removeFileMapping,
+    resolveAndStoreFileMapping,
+} from "../services/fileMappingsStorage.js";
 import { BUILD_INFO } from "../build-info.js";
 import {
     loadRecentFiles,
@@ -104,6 +109,36 @@ export function registerAllIpcHandlers(
             return await saveFile(fullFilePath, data);
         },
     );
+
+    // A request from UI to resolve a local file path for a managed asset and store the mapping.
+    Ipc.Electron.handle(
+        "resolveAndStoreFileMapping",
+        async (assetId: AssetId, originalFilePath: string) => {
+            return await resolveAndStoreFileMapping(
+                app.getPath("userData"),
+                assetId,
+                originalFilePath,
+            );
+        },
+    );
+
+    // A request from UI to read all managed asset ID -> file path mappings.
+    Ipc.Electron.handle("getFileMappings", () => {
+        try {
+            return loadFileMappings(app.getPath("userData"));
+        } catch (err) {
+            return new Error(
+                `Failed to load file mappings! Details: <${
+                    (err as Error).message
+                }>.`,
+            );
+        }
+    });
+
+    // A request from UI to remove a single managed asset mapping.
+    Ipc.Electron.handle("removeFileMapping", async (assetId: AssetId) => {
+        return await removeFileMapping(app.getPath("userData"), assetId);
+    });
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {

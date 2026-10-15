@@ -19,10 +19,17 @@ export type ProcessingJob = {
     stages: string[];
     resultPaths?: string[];
     errorMessage?: string;
+
     /**
      * ID of the parent managed asset this job was started for, e.g. when doing preview downsampling. Undefined for standalone jobs.
      */
     parentAssetId?: AssetId;
+
+    /**
+     * Purpose of the job. `asset` jobs add processed files as new managed assets when finished (default).
+     * `export` jobs are part of an export: processed files are used for the exported archive instead.
+     */
+    purpose?: "asset" | "export";
 
     /**
      * This callback is used when the job finished succefully.
@@ -55,6 +62,7 @@ export type ProcessingStore = {
             kind: ManagedAssetChildKind;
             notify: boolean;
         }[],
+        purpose?: "asset" | "export",
     ) => void;
     updateJobStage: (jobId: ProcessingJobId, stage: string) => boolean;
     completeJob: (jobId: ProcessingJobId, resultPaths: string[]) => boolean;
@@ -79,6 +87,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
             kind: ManagedAssetChildKind;
             notify: boolean;
         }[],
+        purpose?: "asset" | "export",
     ) => {
         const currentJobs = get().jobs;
 
@@ -91,6 +100,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
             stages: [],
             parentAssetId: parentAssetId,
             chooseAssetsFunction: chooseAssetsFunction,
+            purpose: purpose ?? "asset",
         });
         set({ jobs: newMap });
     },

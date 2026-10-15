@@ -32,6 +32,7 @@ import {
     isManagedAssetRemote,
     useManagedAssetsStore,
 } from "../../../../../stores/managedAssetsStore";
+import { useFileMappingsStore } from "../../../../../stores/fileMappingsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
 import {
     getFilenameWithoutExtension,
@@ -49,6 +50,11 @@ export function Assets() {
         (state) => state.editRemoteAsset,
     );
     const removeAsset = useManagedAssetsStore((state) => state.removeAsset);
+
+    // Use file mappings.
+    const resolveAndStoreMapping = useFileMappingsStore(
+        (state) => state.resolveAndStoreMapping,
+    );
 
     // Use workspace management.
     const { startFileProcessing } = useWorkspaceManagement();
@@ -123,6 +129,19 @@ export function Assets() {
                                             `Asset "${result.relativePath}${file.name}" already exists!`,
                                         );
                                     } else {
+                                        // Resolve and store the file mapping (ID -> path) for the newly created asset.
+                                        const resolvedPath =
+                                            await resolveAndStoreMapping(
+                                                newAsset.id,
+                                                file.path,
+                                            );
+
+                                        if (!resolvedPath) {
+                                            pushErrorNotification(
+                                                `Failed to store file mapping for asset "${result.relativePath}${file.name}"! Export and further processing of this asset may not work.`,
+                                            );
+                                        }
+
                                         // Large volume assets which offer processing are automatically downsampled into a preview using the nearest algorithm.
                                         const contentSizeInBytes =
                                             typeof file.content === "string"

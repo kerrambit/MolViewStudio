@@ -16,6 +16,8 @@ import {
 import { loggerUi } from "../../../../services/UiLoggingService";
 import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../../stores/processingStore";
+import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
+import { handleExportJobFinished } from "../../../workspace/services/exportService";
 
 type ProcessingJobSocketProps = {
     jobId: string;
@@ -68,6 +70,12 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 // Mark job as completed.
                 useProcessingStore.getState().completeJob(props.jobId, result);
 
+                // Export jobs continue the export flow instead of adding new managed assets.
+                if (job.purpose === "export") {
+                    await handleExportJobFinished(props.jobId);
+                    return;
+                }
+
                 // Read assets from processed volume file.
                 const assets = await window.electron.getFileData(result);
 
@@ -92,58 +100,69 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 if (job.chooseAssetsFunction) {
                     const chosenAssets = job.chooseAssetsFunction(assets);
 
-                    chosenAssets.forEach(
-                        ({
-                            assetIndex,
-                            relativePath,
-                            name,
-                            hidden,
-                            kind,
-                            notify,
-                        }) => {
-                            const newAsset = useManagedAssetsStore
+                    for (const {
+                        assetIndex,
+                        relativePath,
+                        name,
+                        hidden,
+                        kind,
+                        notify,
+                    } of chosenAssets) {
+                        const newAsset = useManagedAssetsStore
+                            .getState()
+                            .addLocalAsset(
+                                { ...assets[assetIndex], name: name },
+                                relativePath,
+                                job.assetType,
+                                hidden,
+                            );
+
+                        if (!newAsset) {
+                            pushErrorNotification(
+                                `Asset "${relativePath}${name}" already exists!`,
+                            );
+                        } else {
+                            // Resolve and store the file mapping (ID -> path) for the newly created asset.
+                            const resolvedPath = await useFileMappingsStore
                                 .getState()
-                                .addLocalAsset(
-                                    { ...assets[assetIndex], name: name },
-                                    relativePath,
-                                    job.assetType,
-                                    hidden,
+                                .resolveAndStoreMapping(
+                                    newAsset.id,
+                                    assets[assetIndex].path,
                                 );
-
-                            if (!newAsset) {
+                            if (!resolvedPath) {
                                 pushErrorNotification(
-                                    `Asset "${relativePath}${name}" already exists!`,
+                                    `Failed to store file mapping for asset "${relativePath}${name}"! Export and further processing of this asset may not work.`,
                                 );
-                            } else {
-                                if (job.parentAssetId) {
-                                    useManagedAssetsStore
-                                        .getState()
-                                        .attachChildAsset(
-                                            job.parentAssetId,
-                                            newAsset.id,
-                                            kind,
-                                        );
-                                    useManagedAssetsStore
-                                        .getState()
-                                        .detachProcessingJob(
-                                            job.parentAssetId,
-                                            job.jobId,
-                                        );
-                                }
-
-                                loggerUi.info(
-                                    `File "${job.file.path}" was successfully processed and new asset "${relativePath}${name}" added.`,
-                                );
-                                if (notify) {
-                                    pushSuccessNotification(
-                                        `File "${job.file.name}" was successfully processed and new asset "${relativePath}${name}" added.`,
-                                    );
-                                }
                             }
-                        },
-                    );
+
+                            if (job.parentAssetId) {
+                                useManagedAssetsStore
+                                    .getState()
+                                    .attachChildAsset(
+                                        job.parentAssetId,
+                                        newAsset.id,
+                                        kind,
+                                    );
+                                useManagedAssetsStore
+                                    .getState()
+                                    .detachProcessingJob(
+                                        job.parentAssetId,
+                                        job.jobId,
+                                    );
+                            }
+
+                            loggerUi.info(
+                                `File "${job.file.path}" was successfully processed and new asset "${relativePath}${name}" added.`,
+                            );
+                            if (notify) {
+                                pushSuccessNotification(
+                                    `File "${job.file.name}" was successfully processed and new asset "${relativePath}${name}" added.`,
+                                );
+                            }
+                        }
+                    }
                 } else {
-                    assets.forEach((asset) => {
+                    for (const asset of assets) {
                         const newAsset = useManagedAssetsStore
                             .getState()
                             .addLocalAsset(
@@ -158,6 +177,19 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                                 `Asset "${asset.name}" already exists!`,
                             );
                         } else {
+                            // Resolve and store the file mapping (ID -> path) for the newly created asset.
+                            const resolvedPath = await useFileMappingsStore
+                                .getState()
+                                .resolveAndStoreMapping(
+                                    newAsset.id,
+                                    asset.path,
+                                );
+                            if (!resolvedPath) {
+                                pushErrorNotification(
+                                    `Failed to store file mapping for asset "${asset.name}"! Export and further processing of this asset may not work.`,
+                                );
+                            }
+
                             if (job.parentAssetId) {
                                 useManagedAssetsStore
                                     .getState()
@@ -174,19 +206,19 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                                     );
                             }
                             loggerUi.info(
-                                `File "${job.file.path}" was successfully processed and new asset "$${asset.name}" added.`,
+                                `File "${job.file.path}" was successfully processed and new asset "${asset.name}" added.`,
                             );
                             pushSuccessNotification(
-                                `File "${job.file.name}" was successfully processed and new asset "$${asset.name}" added.`,
+                                `File "${job.file.name}" was successfully processed and new asset "${asset.name}" added.`,
                             );
                         }
-                    });
+                    }
                 }
             },
             [props.jobId],
         ),
         useCallback(
-            (error: string) => {
+            async (error: string) => {
                 // If the job does not exist, finish the handler and log the error.
                 const job = useProcessingStore.getState().jobs.get(props.jobId);
                 if (!job) {
@@ -201,6 +233,12 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
 
                 // Mark job as failed.
                 useProcessingStore.getState().failJob(props.jobId, error);
+
+                // Export jobs cancel the whole export on failure.
+                if (job.purpose === "export") {
+                    await handleExportJobFinished(props.jobId, error);
+                    return;
+                }
 
                 // Detach the failed job from the parent asset, if any, so it is not reported as still processing.
                 if (job.parentAssetId) {

@@ -93,6 +93,25 @@ electron.contextBridge.exposeInMainWorld("electron", {
         return Ipc.Ui.invoke("saveTemporaryData", data, path);
     },
 
+    resolveAndStoreFileMapping: (
+        assetId: AssetId,
+        originalFilePath: string,
+    ) => {
+        return Ipc.Ui.invoke(
+            "resolveAndStoreFileMapping",
+            assetId,
+            originalFilePath,
+        );
+    },
+
+    getFileMappings: () => {
+        return Ipc.Ui.invoke("getFileMappings");
+    },
+
+    removeFileMapping: (assetId: AssetId) => {
+        return Ipc.Ui.invoke("removeFileMapping", assetId);
+    },
+
     changeUserSettings: (settings: UserSettings) => {
         return Ipc.Ui.send("changeUserSettings", settings);
     },

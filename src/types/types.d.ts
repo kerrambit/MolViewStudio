@@ -65,6 +65,24 @@ type IpcApiChannelMap = {
         type: "invoke";
     };
 
+    resolveAndStoreFileMapping: {
+        args: [assetId: AssetId, originalFilePath: string];
+        reply: string | Error;
+        type: "invoke";
+    };
+
+    getFileMappings: {
+        args: [];
+        reply: Record<string, string> | Error;
+        type: "invoke";
+    };
+
+    removeFileMapping: {
+        args: [assetId: AssetId];
+        reply: void | Error;
+        type: "invoke";
+    };
+
     requestToOpenExternal: { args: [url: string]; reply: void; type: "send" };
 
     changeUserSettings: {
