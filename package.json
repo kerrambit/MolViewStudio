@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "npm run generate:buildinfo && npm-run-all --parallel dev:react dev:electron",
     "dev:react": "vite",
-    "dev:electron": "wait-on http://localhost:5123 && npm run transpile:electron && cross-env NODE_ENV=development electron .",
+    "dev:electron": "wait-on http://localhost:5123 && npm run transpile:electron && tsx scripts/dev-electron.ts",
     "generate:buildinfo": "tsx scripts/generate-build-info.ts",
     "generate:api:schema": "tsx scripts/generate-api-schema.ts",
     "build": "tsc -b && vite build",
@@ -54,7 +54,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "baseline-browser-mapping": "^2.10.29",
-    "cross-env": "^10.1.0",
     "electron": "^42.0.1",
     "electron-builder": "^26.8.1",
     "eslint": "^10.0.1",
