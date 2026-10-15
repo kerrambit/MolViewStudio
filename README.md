@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/kerrambit/MolViewStudio?label=release)](https://github.com/kerrambit/MolViewStudio/releases/latest)
 [![Issues](https://img.shields.io/badge/issues-welcome-green.svg)](https://github.com/kerrambit/MolViewStudio/issues)
 
-[About](#about) · [Download](#download) · [Getting Started](#getting-started) · [Development](#development) · [Contributing](#contributing)
+[About](#about) · [Download](#download) · [Development](#development) · [Contributing](#contributing) · [License](#license)
 
 </div>
 
@@ -31,21 +31,21 @@ The app ships as a self-contained Electron desktop application with a local Pyth
 
 ## Download
 
-MolView Studio is available for **Windows** and **Linux** (macOS builds coming in a future release). Grab the latest installer from the [Releases page](https://github.com/kerrambit/MolViewStudio/releases), or update in place using the app's built-in auto-update feature.
+MolView Studio is available for **Windows** and **Linux** (**macOS** builds coming in a future releases). Grab the latest installer from the [Releases page](https://github.com/kerrambit/MolViewStudio/releases), or update in place using the app's built-in auto-update feature (available only for **Windows** and **macOS** users).
 
-## Getting Started
+## Development
 
 ### Prerequisites
 
 -   [Node.js](https://nodejs.org/) (LTS)
 -   [Python 3.12](https://www.python.org/downloads/)
--   Git
+-   [Git](https://git-scm.com/)
 
 ### Install & Run
 
 **1. Build the local processing server**
 
-The server (FastAPI + `volseg-tools`) is packaged into a standalone binary with PyInstaller:
+The server (*FastAPI* + *volseg-tools*) is packaged into a standalone binary with *PyInstaller*:
 
 ```bash
 python -m pip install --upgrade pip
@@ -63,7 +63,7 @@ npm run build:server
 npm install
 ```
 
-**3. Package the app**
+**(3. Package the app)**
 
 Windows:
 
@@ -85,16 +85,13 @@ npm run dist:mac
 
 Installers are written to the `dist_electron/` output directory.
 
-## Development
-
-After building the server (see the [Build server as developer](https://github.com/kerrambit/MolViewStudio/wiki/Build-server-as-developer) wiki page), run the app in dev mode with hot reloading powered by Vite:
+**4. Local develepment**
 
 ```bash
-npm install
 npm run dev
 ```
 
-Useful scripts:
+Other useful scripts:
 
 | Script                 | Description                                              |
 | ---------------------- | -------------------------------------------------------- |
