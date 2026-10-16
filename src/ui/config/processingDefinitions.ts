@@ -10,11 +10,7 @@ import { schemas } from "../api/generated-schemas";
 export type ProcessVolumeRequest = z.infer<typeof schemas.ProcessVolumeRequest>;
 
 type StripIndexSignature<T> = {
-    [K in keyof T as string extends K
-        ? never
-        : number extends K
-        ? never
-        : K]: T[K];
+    [K in keyof T as string extends K ? never : number extends K ? never : K]: T[K];
 };
 
 type CleanProcessVolumeRequest = StripIndexSignature<ProcessVolumeRequest>;
@@ -24,9 +20,7 @@ export type ProcessVolumeRequestWithoutFilepaths = Omit<
     "temporary_directory" | "volume_filepaths" | "segmentations_filepaths"
 >;
 
-export type DownsamplingStrategy = z.infer<
-    typeof schemas.DownsamplignAlgorithmKind
->;
+export type DownsamplingStrategy = z.infer<typeof schemas.DownsamplignAlgorithmKind>;
 
 export function getDownsamplingStrategyOptions(): DownsamplingStrategy[] {
     return schemas.DownsamplignAlgorithmKind.options;
@@ -45,9 +39,9 @@ export const DOWNSAMPLING_LEVEL_TO_STRATEGY: Record<
     DownsamplingLevel,
     DownsamplingStrategy
 > = {
-    light: "tricubic",
-    medium: "trilinear",
-    strong: "nearest",
+    light: "nearest",
+    medium: "tricubic",
+    strong: "triquintic",
 };
 
 /**
@@ -67,4 +61,23 @@ export type BundlingKind = z.infer<typeof schemas.BundlingKind>;
 
 export function getBundlingKindOptions(): BundlingKind[] {
     return schemas.BundlingKind.options;
+}
+
+/**
+ * Levels of the processed volume resolution to embed into the story export.
+ * The processing pipeline emits one file per downsampling resolution
+ * (`r1`, `r2`); the chosen level maps to that index, clamped to the resolutions actually available for each asset.
+ */
+export type ExportResolutionLevel = "low" | "high";
+
+export const EXPORT_RESOLUTION_TO_INDEX: Record<ExportResolutionLevel, number> = {
+    low: 1,
+    high: 2,
+};
+
+/**
+ * Options of the export resolution levels.
+ */
+export function getExportResolutionLevelOptions(): ExportResolutionLevel[] {
+    return ["low", "high"];
 }

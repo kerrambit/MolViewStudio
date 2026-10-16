@@ -28,6 +28,7 @@ const ProcessVolumeRequest = z
     segmentation_volume_serializer: SerializerKind,
     segmentation_mesh_serializer: SerializerKind,
     bundling_approach: BundlingKind,
+    output_path: z.string().optional(),
   })
   .passthrough();
 const ProcessVolumeResponse = z

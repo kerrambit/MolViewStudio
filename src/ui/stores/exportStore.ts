@@ -5,11 +5,14 @@
  */
 
 import { create } from "zustand";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../config/processingDefinitions";
+import type {
+    ExportResolutionLevel,
+    ProcessVolumeRequestWithoutFilepaths,
+} from "../config/processingDefinitions";
 
 /**
  * State of an ongoing export. `processing` means the export processing jobs are running
- * and the final download continues automatically once all of them finish.
+ * and the final export continues automatically once all of them finish.
  */
 export type ExportStatus = "idle" | "processing";
 
@@ -21,9 +24,19 @@ type ExportStore = {
 
     /**
      * Processing properties chosen by the user for this export, e.g. the bundling approach
-     * which determines the form of the final download.
+     * which determines the form of the final export.
      */
     properties: ProcessVolumeRequestWithoutFilepaths | undefined;
+
+    /**
+     * Folder where the final export output is saved.
+     */
+    outputPath: string | undefined;
+
+    /**
+     * Resolution level of the processed volume embedded into the story export.
+     */
+    targetResolution: ExportResolutionLevel | undefined;
 
     /**
      * Number of processing jobs the export expects. The export can only continue
@@ -37,17 +50,24 @@ type ExportStore = {
     jobIds: Set<ProcessingJobId>;
 
     /**
+     * Mapping of export processing job ID to the managed asset it processes.
+     */
+    jobIdAssetIds: Map<ProcessingJobId, AssetId>;
+
+    /**
      * Begins a new export with the chosen properties, expecting `expectedJobCount` processing jobs.
      */
     beginExport: (
         properties: ProcessVolumeRequestWithoutFilepaths,
+        outputPath: string,
+        targetResolution: ExportResolutionLevel,
         expectedJobCount: number,
     ) => void;
 
     /**
      * Registers a started processing job as part of the ongoing export.
      */
-    addExportJob: (jobId: ProcessingJobId) => void;
+    addExportJob: (jobId: ProcessingJobId, assetId: AssetId) => void;
 
     /**
      * Resets the export back to idle. Called after the export finished, failed or was aborted.
@@ -58,21 +78,28 @@ type ExportStore = {
 export const useExportStore = create<ExportStore>((set) => ({
     status: "idle",
     properties: undefined,
+    outputPath: undefined,
+    targetResolution: undefined,
     expectedJobCount: 0,
     jobIds: new Set(),
+    jobIdAssetIds: new Map(),
 
-    beginExport: (properties, expectedJobCount) => {
+    beginExport: (properties, outputPath, targetResolution, expectedJobCount) => {
         set({
             status: "processing",
             properties: properties,
+            outputPath: outputPath,
+            targetResolution: targetResolution,
             expectedJobCount: expectedJobCount,
             jobIds: new Set(),
+            jobIdAssetIds: new Map(),
         });
     },
 
-    addExportJob: (jobId) => {
+    addExportJob: (jobId, assetId) => {
         set((state) => ({
             jobIds: new Set(state.jobIds).add(jobId),
+            jobIdAssetIds: new Map(state.jobIdAssetIds).set(jobId, assetId),
         }));
     },
 
@@ -80,8 +107,11 @@ export const useExportStore = create<ExportStore>((set) => ({
         set({
             status: "idle",
             properties: undefined,
+            outputPath: undefined,
+            targetResolution: undefined,
             expectedJobCount: 0,
             jobIds: new Set(),
+            jobIdAssetIds: new Map(),
         });
     },
 }));

@@ -81,6 +81,9 @@ electron.contextBridge.exposeInMainWorld("electron", {
     openFileExplorer: (multiSelections: boolean, filters: FileFilter[]) =>
         Ipc.Ui.invoke("openFileExplorer", multiSelections, filters),
 
+    selectDirectory: (defaultPath?: string) =>
+        Ipc.Ui.invoke("selectDirectory", defaultPath),
+
     getFileData: (paths: string[]) => {
         return Ipc.Ui.invoke("getFileData", paths as any);
     },

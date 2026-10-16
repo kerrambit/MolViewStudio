@@ -47,6 +47,12 @@ type IpcApiChannelMap = {
         type: "invoke";
     };
 
+    selectDirectory: {
+        args: [defaultPath?: string];
+        reply: string | null | Error;
+        type: "invoke";
+    };
+
     getFileData: {
         args: [paths: string[]];
         reply: FileData[] | Error;

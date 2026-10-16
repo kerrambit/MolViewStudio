@@ -177,6 +177,26 @@ export function registerAllIpcHandlers(
         },
     );
 
+    // UI request to open file explorer and let user select a directory.
+    Ipc.Electron.handle(
+        "selectDirectory",
+        async (defaultPath?: string) => {
+            const openDialogResult = await dialog.showOpenDialog({
+                properties: ["openDirectory", "createDirectory"],
+                defaultPath: defaultPath,
+            });
+
+            if (
+                openDialogResult.canceled ||
+                openDialogResult.filePaths.length === 0
+            ) {
+                return null;
+            }
+
+            return openDialogResult.filePaths[0];
+        },
+    );
+
     // UI can request recent files paths.
     Ipc.Electron.handleSync("getRecentFiles", () => {
         const files = loadRecentFiles(

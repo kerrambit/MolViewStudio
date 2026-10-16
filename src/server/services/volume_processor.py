@@ -82,9 +82,14 @@ class Preprocessor:
         segmentation_volume_serializer: SerializerKind,
         segmentation_mesh_serializer: SerializerKind,
         bundling_approach: BundlingKind,
+        output_path: Optional[str] = None,
     ):
         local_store_path = Path(temporary_directory) / job.id / "RawData"
-        output_path = Path(temporary_directory) / job.id / "Output"
+        output_dir = (
+            Path(output_path)
+            if output_path
+            else Path(temporary_directory) / job.id / "Output"
+        )
 
         try:
             volume_source: List[Path] = [Path(path) for path in volume_filepaths]
@@ -96,7 +101,7 @@ class Preprocessor:
                 shutil.rmtree(local_store_path, ignore_errors=True)
 
             local_store_path.mkdir(parents=True, exist_ok=True)
-            output_path.mkdir(parents=True, exist_ok=True)
+            output_dir.mkdir(parents=True, exist_ok=True)
 
             builder = volsegtools.create_builder()
             (
@@ -130,7 +135,7 @@ class Preprocessor:
                     volsegtools.DataKind.SEGMENTATION_MESH,
                     Preprocessor.get_serializer(segmentation_mesh_serializer),
                 )
-                .set_output_dir(output_path)
+                .set_output_dir(output_dir)
             )
 
             builder.set_work_dir(local_store_path)

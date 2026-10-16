@@ -45,6 +45,7 @@ async def process_volume(request: ProcessVolumeRequest):
             request.segmentation_volume_serializer,
             request.segmentation_mesh_serializer,
             request.bundling_approach,
+            request.output_path,
         )
     )
 

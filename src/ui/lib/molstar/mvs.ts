@@ -114,11 +114,15 @@ export function createMVSBlob(
  * Opens a file explorer for user to choose file location.
  * @param stateTree state tree to export (contains valid relative paths as assets)
  * @param localAssets assets
+ * @param processedFiles optional processed files (e.g. downsampled volumes) which replace the original assets by their ID
+ * @param outputPath optional folder to save the export into; when omitted, a browser download is used
  * @return Error if there is an internal error in Molstar asset cache, othewise it returns true
  */
 export async function exportStateTree(
     stateTree: MVSData,
     localAssets: ManagedAsset[],
+    processedFiles?: Map<AssetId, FileData>,
+    outputPath?: string,
 ): Promise<Result<boolean>> {
     const molstar = getMolstar();
 
@@ -128,6 +132,16 @@ export async function exportStateTree(
     // Find data (binary) for local assets (managed assets hold only virtual references to local assets which are actually stored inside Molstar' asset manager).
     for (const managedAsset of localAssets) {
         if (managedAsset.tag === "local") {
+            // Assets with a processed file use its content instead of the original one from Molstar's cache.
+            const processedFile = processedFiles?.get(managedAsset.id);
+            if (processedFile) {
+                localFiles.push({
+                    relativeUrl: `volumes/${processedFile.name}`,
+                    content: processedFile.content as Uint8Array<ArrayBuffer>,
+                });
+                continue;
+            }
+
             const targetUrl = managedAsset.asset.url;
             let foundData: Uint8Array | undefined;
             for (const wrapper of internalCache.values()) {
@@ -168,11 +182,22 @@ export async function exportStateTree(
     // Create data blob out of MVSStory.
     const blob = createMVSBlob(data);
 
-    // Let the user to download the story.
+    // Let the user to download the story or save it into the chosen output folder.
     const filename = `${
         stateTree.metadata.title ? stateTree.metadata.title : "export"
     }.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
-    download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
+    if (outputPath) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const saveResult = await window.electron.saveData(
+            arrayBuffer,
+            `${outputPath}/${filename}`,
+        );
+        if (saveResult instanceof Error) {
+            return { success: false, error: saveResult };
+        }
+    } else {
+        download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
+    }
 
     return { success: true, value: true };
 }

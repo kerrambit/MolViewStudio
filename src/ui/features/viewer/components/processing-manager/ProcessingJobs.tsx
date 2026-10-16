@@ -4,7 +4,6 @@
  * @author Marek Eibel
  */
 
-import { useEffect, useRef } from "react";
 import { Divider, Text } from "@mantine/core";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
 import { useProcessingStore } from "../../../../stores/processingStore";
@@ -20,21 +19,10 @@ export function ProcessingJobs() {
     const isWindowOpened = useWindowsStore((state) =>
         state.isWindowOpened("processing-jobs"),
     );
-    const openWindow = useWindowsStore((state) => state.openWindow);
     const closeWindow = useWindowsStore((state) => state.closeWindow);
 
     // Variables for processing sidebar.
     const jobsList = Array.from(jobs.values());
-
-    // Auto open the window once the first job arrives.
-    const hadJobs = useRef(jobsList.length > 0);
-    useEffect(() => {
-        const hasJobs = jobsList.length > 0;
-        if (hasJobs && !hadJobs.current) {
-            openWindow("processing-jobs");
-        }
-        hadJobs.current = hasJobs;
-    }, [jobsList.length, openWindow]);
 
     // Render the component.
     return (
