@@ -37,7 +37,6 @@ import {
 } from "./systemMenuItems";
 import {
     createEditRootMenuItem,
-    createGeneralEditSection,
     createClearViwerMenuItem,
     createExportViwerMenuItem,
     createShowRawMVSTreeItemMenuItem,
@@ -48,6 +47,8 @@ import {
     createRedoMenuItem,
     createHistorySection,
     createShowSourceTreeHistoryMenuItem,
+    createViewerSection,
+    createExportSection,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -207,6 +208,12 @@ export function bindViewerMenu(): Menu {
         createWindowsRootMenuItem([
             createGeneralWindowsActionsSection([
                 createToggleSceneManagerItem(() => {
+                    const regime = useRegimeStore.getState().regime;
+                    if (regime.kind === "idling") {
+                        pushWarningNotification(
+                            "Nothing to show! File format is not supported (non-MVS), or the viewer is empty.",
+                        );
+                    }
                     useWindowsStore.getState().toggleWindow("scene-manager");
                 }),
                 createToggleProcessingJobsItem(() => {
@@ -282,8 +289,26 @@ export function bindViewerMenu(): Menu {
                         updatedRegime.history.current().stateTree,
                     );
                 }),
+                createShowRawMVSTreeItemMenuItem(async () => {
+                    const regime = useRegimeStore.getState().regime;
+                    if (regime.kind === "viewing") {
+                        await useDialogueStore.getState().showDialogue({
+                            title: "MVS Tree",
+                            showCloseButton: true,
+                            width: "1000px",
+                            maxWidth: "1400px",
+                            content: (close) => (
+                                <ShowMVSTreeDialogueContent close={close} />
+                            ),
+                        });
+                    } else {
+                        pushWarningNotification(
+                            `No current state tree is available. This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
+                        );
+                    }
+                }),
             ]),
-            createGeneralEditSection([
+            createViewerSection([
                 createClearViwerMenuItem(async () => {
                     const confirmed = await useDialogueStore
                         .getState()
@@ -305,6 +330,8 @@ export function bindViewerMenu(): Menu {
                         useRegimeStore.getState().regime.reset();
                     }
                 }),
+            ]),
+            createExportSection([
                 createExportViwerMenuItem(({ render }) => {
                     const { startExportProcessing } = useWorkspaceManagement();
 
@@ -314,24 +341,6 @@ export function bindViewerMenu(): Menu {
                         },
                         type: "direct",
                     });
-                }),
-                createShowRawMVSTreeItemMenuItem(async () => {
-                    const regime = useRegimeStore.getState().regime;
-                    if (regime.kind === "viewing") {
-                        await useDialogueStore.getState().showDialogue({
-                            title: "MVS Tree",
-                            showCloseButton: true,
-                            width: "1000px",
-                            maxWidth: "1400px",
-                            content: (close) => (
-                                <ShowMVSTreeDialogueContent close={close} />
-                            ),
-                        });
-                    } else {
-                        pushWarningNotification(
-                            `No current state tree is available. This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
-                        );
-                    }
                 }),
             ]),
             createOnlyDevSection("edit-dev", "For developers", [

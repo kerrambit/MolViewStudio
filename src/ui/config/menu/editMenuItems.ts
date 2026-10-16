@@ -38,13 +38,23 @@ export function createEditRootMenuItem(
 export function createHistorySection(items: MenuItem[]): Section {
     return {
         id: "edit-history",
+        title: "History & State Management",
         items: items,
     };
 }
 
-export function createGeneralEditSection(items: MenuItem[]): Section {
+export function createViewerSection(items: MenuItem[]): Section {
     return {
-        id: "edit-general",
+        id: "edit-viewer",
+        title: "Viewer",
+        items: items,
+    };
+}
+
+export function createExportSection(items: MenuItem[]): Section {
+    return {
+        id: "edit-export",
+        title: "Export",
         items: items,
     };
 }
@@ -73,9 +83,7 @@ export function createRedoMenuItem(action: () => Promise<void>): MenuItem {
     };
 }
 
-export function createClearViwerMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
+export function createClearViwerMenuItem(action: () => Promise<void>): MenuItem {
     return {
         id: "clear-viewer",
         title: "Clear viewer",
@@ -90,19 +98,17 @@ export function createClearViwerMenuItem(
 export function createExportViwerMenuItem(liveTask: LiveTaskType): MenuItem {
     return {
         id: "export",
-        title: "Export",
+        title: "Export...",
         icon: { icon: IconPackageExport, position: "left" },
         task: {
-            action: () => { },
-            type: "direct",
+            action: () => {},
+            type: "secondary",
         },
         LiveTask: liveTask,
     };
 }
 
-export function createShowRawMVSTreeItemMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
+export function createShowRawMVSTreeItemMenuItem(action: () => Promise<void>): MenuItem {
     return {
         id: "showRawMVSTree",
         title: "Show raw MVS tree",
@@ -114,9 +120,7 @@ export function createShowRawMVSTreeItemMenuItem(
     };
 }
 
-export function createLoadDefaultPDBItemMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
+export function createLoadDefaultPDBItemMenuItem(action: () => Promise<void>): MenuItem {
     return {
         id: "load-default-pdb",
         title: "Load default PDB",
@@ -128,9 +132,7 @@ export function createLoadDefaultPDBItemMenuItem(
     };
 }
 
-export function createLoadDefaultMVSJtemMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
+export function createLoadDefaultMVSJtemMenuItem(action: () => Promise<void>): MenuItem {
     return {
         id: "load-default-mvsj",
         title: "Load default MVSJ",
@@ -142,9 +144,7 @@ export function createLoadDefaultMVSJtemMenuItem(
     };
 }
 
-export function createLoadDefaultMVSXtemMenuItem(
-    action: () => Promise<void>,
-): MenuItem {
+export function createLoadDefaultMVSXtemMenuItem(action: () => Promise<void>): MenuItem {
     return {
         id: "load-default-mvsx",
         title: "Load default MVSX",

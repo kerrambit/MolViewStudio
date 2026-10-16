@@ -5,18 +5,14 @@
  */
 
 import type { Icon, IconProps } from "@tabler/icons-react";
-import {
-    createContext,
-    type ForwardRefExoticComponent,
-    type RefAttributes,
-} from "react";
+import { createContext, type ForwardRefExoticComponent, type RefAttributes } from "react";
 
 /**
  * The action can be either:
  * - `direct`: the action is executed immediately.
- * - `secondary`: the action triggers an intermediate step,
- * such as opening a file explorer or another dialog, before
- * the actual action runs.
+ * - `secondary`: the action triggers an intermediate step, such as opening a file explorer or another dialog, before the actual action runs.
+ *
+ * For `secondary` action type, the "..." string is appened to the menu item title automatically.
  */
 export type ActionType = "direct" | "secondary";
 
@@ -79,7 +75,7 @@ export type MenuItem = {
     task: Dropdown | Action;
     /**
      * Optional reactive hook layer. If provided, this functional component
-     * overrides normal processing, allowing internal usage of useEffect or hooks.
+     * overrides normal processing (of `task` property), allowing internal usage of `useEffect` or hooks.
      */
     LiveTask?: LiveTaskType;
 };

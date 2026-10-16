@@ -118,11 +118,7 @@ function MenuListProcessor({ items, renderItem }: MenuListProcessorProps) {
                     );
                 }
 
-                return (
-                    <React.Fragment key={item.id}>
-                        {renderItem(item)}
-                    </React.Fragment>
-                );
+                return <React.Fragment key={item.id}>{renderItem(item)}</React.Fragment>;
             })}
         </>
     );
@@ -150,9 +146,10 @@ function renderSection(section: Section, index: number) {
 function renderMenuItem(item: MenuItem) {
     if ("action" in item.task) {
         const task = item.task as Action;
+        const isSecondary = task.type === "secondary";
         return (
             <MantineMenu.Item onClick={task.action} {...renderIcon(item.icon)}>
-                {`${item.title}${task.type === "secondary" ? "..." : ""}`}
+                {`${item.title}${isSecondary ? "..." : ""}`}
             </MantineMenu.Item>
         );
     }
