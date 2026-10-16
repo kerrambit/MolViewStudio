@@ -50,15 +50,9 @@ function renderTree() {
                     {renderTreeLink("Language", "general/language")}
                     <br></br>
                     {renderTreeLink("UI", "general/ui")}
-                    <br></br>
-                    {renderTreeLink("Notifications", "general/notifications")}
-                    <br></br>
-                    {renderTreeLink("Help", "general/help")}
                 </ul>
             </li>
 
-            {renderTreeLink("Account", "account")}
-            <br></br>
             {renderTreeLink("Server", "server")}
 
             <li>
@@ -78,6 +72,8 @@ function renderTree() {
                     {renderTreeLink("Per Format", "processing/per-format")}
                 </ul>
             </li>
+
+            {renderTreeLink("Export", "export")}
         </ul>
     );
 }

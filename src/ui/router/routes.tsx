@@ -15,6 +15,7 @@ import { MainLayout } from "../layouts/MainLayout.tsx";
 import ServerSettingsPage from "../pages/settings/ServerSettingsPage.tsx";
 import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
 import ViewerPageLayout from "../layouts/ViewerPageLayout.tsx";
+import ExportSettingsPage from "../pages/settings/ExportSettingsPage.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -44,24 +45,12 @@ const routes: RouteObject[] = [
                 children: [
                     { path: "language", Component: LanguageSettingsPage },
                     { path: "ui", Component: UiSettingsPage },
-                    { path: "notifications", Component: SettingsPage },
-                    { path: "help", Component: SettingsPage },
                 ],
-            },
-            {
-                path: "account",
-                Component: SettingsPage,
-                children: [{ index: true, Component: SettingsPage }],
             },
             {
                 path: "server",
                 Component: ServerSettingsPage,
                 children: [{ index: true, Component: ServerSettingsPage }],
-            },
-            {
-                path: "account",
-                Component: SettingsPage,
-                children: [{ index: true, Component: SettingsPage }],
             },
             {
                 path: "formats",
@@ -76,6 +65,11 @@ const routes: RouteObject[] = [
                     { path: "general", Component: SettingsPage },
                     { path: "per-format", Component: SettingsPage },
                 ],
+            },
+            {
+                path: "export",
+                Component: ExportSettingsPage,
+                children: [{ index: true, Component: ExportSettingsPage }],
             },
         ],
     },
