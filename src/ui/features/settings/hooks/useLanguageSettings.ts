@@ -5,14 +5,15 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { useUserSettings } from "../../../hooks/useUserSettings";
+import { useUserSettingsStore } from "../../../stores/userSettingsStore";
 
 export function useLanguageSettings() {
     // Use translation.
     const { i18n } = useTranslation();
 
     // Use user settings.
-    const { settings, setSettings } = useUserSettings();
+    const settings = useUserSettingsStore((state) => state.settings);
+    const setSettings = useUserSettingsStore((state) => state.setSettings);
 
     // Handler for changing the language.
     const changeLanguage = (newLang: "en" | "de") => {

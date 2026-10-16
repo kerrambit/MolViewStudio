@@ -28,6 +28,7 @@ import {
     replaceHiddenAssetIdsByItsParentIdInTree,
 } from "../../../lib/molstar";
 import type { useWorkspaceManagement } from "../hooks/useWorkspaceManagement";
+import { useUserSettingsStore } from "../../../stores/userSettingsStore";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -49,9 +50,9 @@ export async function runExportFlow(
         return;
     }
 
-    // Collect local Volume and Segmentation assets currently used in views.
-    // Hidden assets (e.g. previews) used in views are replaced by their parent assets.
-    const assetsToProcess = collectUsedAssetsToProcess();
+    const assetsToProcess = collectUsedAssetsToProcess(
+        useUserSettingsStore.getState().settings.export.processAllLocalAssets,
+    );
 
     // Without Volume/Segmentation assets there is nothing to process: export the
     // current story directly (MVSX with bundled used assets, plain MVSJ if none).
@@ -60,9 +61,7 @@ export async function runExportFlow(
         return;
     }
 
-    const volumeAssets = assetsToProcess.filter(
-        (asset) => asset.type === "Volume",
-    );
+    const volumeAssets = assetsToProcess.filter((asset) => asset.type === "Volume");
     const segmentationAssets = assetsToProcess.filter(
         (asset) => asset.type === "Segmentation",
     );
@@ -249,15 +248,11 @@ async function continueExportAfterProcessing(
 
     const processedFiles = Array.from(jobResults.values()).flat();
     loggerUi.info(
-        `Export processing finished with output files: <${processedFiles.join(
-            ", ",
-        )}>.`,
+        `Export processing finished with output files: <${processedFiles.join(", ")}>.`,
     );
 
     // Run the story MVSX export with the current assets.
-    const assetsArray = Array.from(
-        useManagedAssetsStore.getState().assets.values(),
-    );
+    const assetsArray = Array.from(useManagedAssetsStore.getState().assets.values());
 
     const treeWithOnlyParentIds = replaceHiddenAssetIdsByItsParentIdInTree(
         regime.history.current().stateTree,
@@ -269,12 +264,15 @@ async function continueExportAfterProcessing(
         assetsArray,
     );
 
+    const bundleAllLocalAssets =
+        useUserSettingsStore.getState().settings.export.bundleAllLocalAssets;
+
     const result = await exportStateTree(
         treeWithRelativePaths,
         assetsArray
             .filter(isManagedAssetLocal)
             .filter((a) => !a.hidden)
-            .filter((a) => a.useCount > 0),
+            .filter((a) => bundleAllLocalAssets || a.useCount > 0),
     );
 
     if (result.success) {
@@ -310,9 +308,7 @@ async function downloadProcessingOutputs(
 
     // Download the processed files (bundles or raw files) via the browser download.
     for (const file of fileData) {
-        const blob = new Blob([
-            file.content as Uint8Array<ArrayBuffer> | string,
-        ]);
+        const blob = new Blob([file.content as Uint8Array<ArrayBuffer> | string]);
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = file.name;
@@ -321,17 +317,19 @@ async function downloadProcessingOutputs(
     }
 
     pushSuccessNotification(`Export ready!`);
-    loggerUi.info(
-        `Export finished, downloaded files: <${processedFiles.join(", ")}>.`,
-    );
+    loggerUi.info(`Export finished, downloaded files: <${processedFiles.join(", ")}>.`);
 }
 
 /**
  * Collects local Volume and Segmentation assets which are currently used in views.
+ * If `shouldProcessAllLocalVolSegAssets` is set to true, we bypass the condition `asset must be used in view` and we process all Vol/Seg assets.
  * Hidden assets (e.g. previews) used in views are resolved to their parent assets.
+ *
  * @returns unique array of managed assets to process
  */
-function collectUsedAssetsToProcess(): ManagedAsset[] {
+function collectUsedAssetsToProcess(
+    shouldProcessAllLocalVolSegAssets: boolean,
+): ManagedAsset[] {
     const assets = Array.from(useManagedAssetsStore.getState().assets.values());
 
     // Map child asset ID -> parent asset, used to resolve hidden used assets to their parents.
@@ -344,14 +342,16 @@ function collectUsedAssetsToProcess(): ManagedAsset[] {
 
     const result = new Map<AssetId, ManagedAsset>();
     for (const asset of assets) {
-        if (!isManagedAssetLocal(asset) || asset.useCount <= 0) {
+        if (!isManagedAssetLocal(asset)) {
+            continue;
+        }
+
+        if (!shouldProcessAllLocalVolSegAssets && asset.useCount <= 0) {
             continue;
         }
 
         // Hidden assets (e.g. previews) are replaced by their parents before processing.
-        const target = asset.hidden
-            ? parentByChildId.get(asset.id) ?? undefined
-            : asset;
+        const target = asset.hidden ? parentByChildId.get(asset.id) ?? undefined : asset;
 
         if (!target) {
             continue;

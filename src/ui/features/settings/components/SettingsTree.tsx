@@ -55,14 +55,9 @@ function renderTree() {
 
             {renderTreeLink("Server", "server")}
 
-            <li>
-                Formats
-                <ul>
-                    {renderTreeLink("Input", "formats/input")}
-                    <br></br>
-                    {renderTreeLink("Export", "formats/export")}
-                </ul>
-            </li>
+            <br></br>
+
+            {renderTreeLink("Formats", "formats")}
 
             <li>
                 Processing

@@ -4,12 +4,12 @@
  * @author Marek Eibel
  */
 
-import { useUserSettings } from "../../hooks/useUserSettings";
+import { useUserSettingsStore } from "../../stores/userSettingsStore";
 
 export function useDomain() {
-    const userSettings = useUserSettings();
+    const serverPort = useUserSettingsStore((state) => state.settings.serverPort);
     return {
-        http: `http://localhost:${userSettings.settings.serverPort}`,
-        ws: `ws://localhost:${userSettings.settings.serverPort}`,
+        http: `http://localhost:${serverPort}`,
+        ws: `ws://localhost:${serverPort}`,
     };
 }

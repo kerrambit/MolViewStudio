@@ -186,6 +186,10 @@ type UserSettings = {
         | "sky"
         | "emerald"
         | "amber";
+    export: {
+        bundleAllLocalAssets: boolean;
+        processAllLocalAssets: boolean;
+    };
 };
 
 type TranslateFunction = TFunction<"translation", undefined>;

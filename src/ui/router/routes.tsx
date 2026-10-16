@@ -54,10 +54,8 @@ const routes: RouteObject[] = [
             },
             {
                 path: "formats",
-                children: [
-                    { path: "input", Component: SettingsPage },
-                    { path: "export", Component: SettingsPage },
-                ],
+                Component: SettingsPage,
+                children: [{ index: true, Component: SettingsPage }],
             },
             {
                 path: "processing",

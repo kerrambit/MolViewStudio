@@ -7,12 +7,13 @@
 import { Stack, Paper, Group, Badge, Divider, Alert } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { ServerStatus } from "../../system/components/server-status/ServerStatus";
-import { useUserSettings } from "../../../hooks/useUserSettings";
+import { useUserSettingsStore } from "../../../stores/userSettingsStore";
 
 export function ServerSettingsContent() {
     // Use settings.
-    const userSettings = useUserSettings();
-    const { preferredServerPort, serverPort } = userSettings.settings;
+    const { preferredServerPort, serverPort } = useUserSettingsStore(
+        (state) => state.settings,
+    );
 
     // Server might be running on different than preferred port.
     const isUsingAlternativePort = preferredServerPort !== serverPort;

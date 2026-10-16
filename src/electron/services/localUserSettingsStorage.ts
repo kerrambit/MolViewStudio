@@ -7,17 +7,22 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { logger } from "../utils/logger.js";
 
+const DEFAULT_SETTINGS: UserSettings = {
+    lang: "en",
+    preferredServerPort: 41050,
+    serverPort: 41050,
+    colorTheme: "charcoal",
+    colorScheme: "light",
+    export: {
+        bundleAllLocalAssets: false,
+        processAllLocalAssets: false,
+    },
+};
+
 export function loadUserSettings(
     userDataPath: string,
     userSettingsFile: string,
 ): UserSettings {
-    const defaultSettings: UserSettings = {
-        lang: "en",
-        preferredServerPort: 41050,
-        serverPort: 41050,
-        colorTheme: "charcoal",
-        colorScheme: "light",
-    };
     try {
         if (!existsSync(userDataPath)) {
             mkdirSync(userDataPath, { recursive: true });
@@ -25,21 +30,21 @@ export function loadUserSettings(
 
         if (existsSync(userSettingsFile)) {
             const content = readFileSync(userSettingsFile, "utf-8");
-            return { ...defaultSettings, ...JSON.parse(content) };
+            return { ...DEFAULT_SETTINGS, ...JSON.parse(content) };
         }
 
         writeFileSync(
             userSettingsFile,
-            JSON.stringify(defaultSettings, null, 2),
+            JSON.stringify(DEFAULT_SETTINGS, null, 2),
             "utf-8",
         );
 
-        return defaultSettings;
+        return DEFAULT_SETTINGS;
     } catch (err) {
         logger.warn(
             `Failed to load user settings! Default values will be used. Details: <${err}>.`,
         );
-        return defaultSettings;
+        return DEFAULT_SETTINGS;
     }
 }
 
@@ -56,11 +61,7 @@ export function saveUserSettings(
         // We do not store (actual) server port, only preferred server port.
         const { ...settingsToSave } = settings;
 
-        writeFileSync(
-            userSettingsFile,
-            JSON.stringify(settingsToSave, null, 2),
-            "utf-8",
-        );
+        writeFileSync(userSettingsFile, JSON.stringify(settingsToSave, null, 2), "utf-8");
     } catch (err) {
         logger.error(`Failed to save user settings! Details: <${err}>.`);
     }
