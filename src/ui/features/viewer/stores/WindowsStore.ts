@@ -9,7 +9,7 @@ import { create } from "zustand";
 /**
  * Windows (sidebars, panels, ...) in the viewer page, which can be opened/closed in the viewer.
  */
-export type ViewerWindowId = "processing-jobs";
+export type ViewerWindowId = "processing-jobs" | "scene-manager";
 
 export type WindowsStore = {
     /**
@@ -24,7 +24,7 @@ export type WindowsStore = {
 };
 
 export const useWindowsStore = create<WindowsStore>((set, get) => ({
-    openedWindows: new Set(),
+    openedWindows: new Set<ViewerWindowId>(["scene-manager"]),
 
     isWindowOpened: (windowId) => get().openedWindows.has(windowId),
 

@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { IconEye, IconEyeClosed } from "@tabler/icons-react";
+import { IconLayoutSidebar } from "@tabler/icons-react";
 import type {
     Action,
     Dropdown,
@@ -33,14 +33,23 @@ export function createGeneralWindowsActionsSection(items: MenuItem[]): Section {
     };
 }
 
-export function createToggleProcessingJobsItem(
-    isWindowOpened: boolean,
-    action: () => void,
-): MenuItem {
+export function createToggleProcessingJobsItem(action: () => void): MenuItem {
     return {
         id: "toggle-processing-jobs",
-        title: isWindowOpened ? "Hide Processing Jobs" : "Show Processing Jobs",
-        icon: { icon: isWindowOpened ? IconEyeClosed : IconEye, position: "left" },
+        title: "Toggle Processing Jobs",
+        icon: { icon: IconLayoutSidebar, position: "left" },
+        task: {
+            action: action,
+            type: "direct",
+        },
+    };
+}
+
+export function createToggleSceneManagerItem(action: () => void): MenuItem {
+    return {
+        id: "toggle-scene-manager",
+        title: "Toggle Scene Manager",
+        icon: { icon: IconLayoutSidebar, position: "left" },
         task: {
             action: action,
             type: "direct",

@@ -59,18 +59,17 @@ export function ViewBuilder(props: ViewBuilderProps) {
     // Computes index of first selected asset in the list, otherwise -1.
     const firstSelectedAssetIndex =
         expandedAssetId === null
-            ? assetsInView.findIndex((asset) =>
-                  isAssetSelected(asset.id),
-              )
+            ? assetsInView.findIndex((asset) => isAssetSelected(asset.id))
             : assetsInView.findIndex((asset) => asset.id === expandedAssetId);
 
     // Render the component.
     return (
         <div
             style={{
+                gap: ".5em",
+                padding: ".5em",
                 display: "flex",
                 flexDirection: "column",
-                padding: "0.5em",
             }}
         >
             <div
@@ -120,12 +119,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
             <Collapse expanded={areFiltersExpanded}>
                 <MultiSelect
                     label="Select asset type filters"
-                    data={[
-                        "All",
-                        "Local assets",
-                        "Remote assets",
-                        ...getAllExtensions(),
-                    ]}
+                    data={["All", "Local assets", "Remote assets", ...getAllExtensions()]}
                     value={selectedAssetFilters}
                     onChange={(filters) => {
                         setSelectedAssetFilters(filters);
@@ -212,9 +206,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                 <AutoScrollList
                     list={assetsInView}
                     activeIndex={
-                        firstSelectedAssetIndex === -1
-                            ? 0
-                            : firstSelectedAssetIndex
+                        firstSelectedAssetIndex === -1 ? 0 : firstSelectedAssetIndex
                     }
                     renderItem={(asset) => {
                         return (
@@ -225,28 +217,17 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 isDark={isDark}
                                 isExpanded={expandedAssetId === asset.id}
                                 isSelected={isAssetSelected(asset.id)}
-                                volumeViewModel={getVolumeViewModelForAsset(
-                                    asset.id,
-                                )}
+                                volumeViewModel={getVolumeViewModelForAsset(asset.id)}
                                 structureViewModel={getStructureViewModelForAsset(
                                     asset.id,
                                 )}
-                                onToggleExpand={() =>
-                                    toggleExpandAsset(asset.id)
-                                }
+                                onToggleExpand={() => toggleExpandAsset(asset.id)}
                                 onToggleSelect={(checked, tabType) =>
-                                    handleAssetToggle(
-                                        asset.id,
-                                        checked,
-                                        tabType,
-                                    )
+                                    handleAssetToggle(asset.id, checked, tabType)
                                 }
                                 assetQuality={getAssetQuality(asset.id)}
                                 onQualityChange={(quality) =>
-                                    handleAssetQualityChange(
-                                        asset.id,
-                                        quality,
-                                    )
+                                    handleAssetQualityChange(asset.id, quality)
                                 }
                                 onUpdateVolumeParam={(key, val, sync) =>
                                     updateVolumeViewModelForAsset(
@@ -298,10 +279,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                     )
                                 }
                                 onAddStructureComponent={() =>
-                                    addStructureComponentForAsset(
-                                        asset.id,
-                                        true,
-                                    )
+                                    addStructureComponentForAsset(asset.id, true)
                                 }
                                 onDeleteStructureComponent={(component) =>
                                     deleteStructureComponentForAsset(

@@ -61,6 +61,7 @@ import {
 import {
     createGeneralWindowsActionsSection,
     createToggleProcessingJobsItem,
+    createToggleSceneManagerItem,
     createWindowsRootMenuItem,
 } from "./windowsMenuItems";
 import {
@@ -205,12 +206,12 @@ export function bindViewerMenu(): Menu {
         ]),
         createWindowsRootMenuItem([
             createGeneralWindowsActionsSection([
-                createToggleProcessingJobsItem(
-                    useWindowsStore.getState().isWindowOpened("processing-jobs"),
-                    () => {
-                        useWindowsStore.getState().toggleWindow("processing-jobs");
-                    },
-                ),
+                createToggleSceneManagerItem(() => {
+                    useWindowsStore.getState().toggleWindow("scene-manager");
+                }),
+                createToggleProcessingJobsItem(() => {
+                    useWindowsStore.getState().toggleWindow("processing-jobs");
+                }),
             ]),
         ]),
         createEditRootMenuItem([
