@@ -25,7 +25,7 @@ import type {
 
 export function createEditRootMenuItem(
     task: Dropdown | Action,
-    priority: Priority = 2,
+    priority: Priority = 3,
 ): RootMenuItem {
     return {
         id: "edit",
@@ -93,7 +93,7 @@ export function createExportViwerMenuItem(liveTask: LiveTaskType): MenuItem {
         title: "Export",
         icon: { icon: IconPackageExport, position: "left" },
         task: {
-            action: () => {},
+            action: () => { },
             type: "direct",
         },
         LiveTask: liveTask,
