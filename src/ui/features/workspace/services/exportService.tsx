@@ -35,6 +35,7 @@ import {
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import type { useWorkspaceManagement } from "../hooks/useWorkspaceManagement";
 import { useUserSettingsStore } from "../../../stores/userSettingsStore";
+import { checkOffersProcessing } from "../../../config/assetsDefinitions";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -60,16 +61,19 @@ export async function runExportFlow(
         useUserSettingsStore.getState().settings.export.processAllLocalAssets,
     );
 
-    const volumeAssets = assetsToProcess.filter((asset) => asset.type === "Volume");
+    const volumeAssets = assetsToProcess.filter(
+        (asset) => asset.type === "Volume" && checkOffersProcessing(asset.extension),
+    );
     const segmentationAssets = assetsToProcess.filter(
-        (asset) => asset.type === "Segmentation",
+        (asset) =>
+            asset.type === "Segmentation" && checkOffersProcessing(asset.extension),
     );
 
     // Let the user choose processing properties and the output folder.
     const exportProperties = await useDialogueStore
         .getState()
         .showDialogue<ExportProcessingProperties>({
-            title: "Export processing properties",
+            title: "Export properties",
             width: "1000px",
             showCloseButton: true,
             content: (close) => (
@@ -310,10 +314,7 @@ async function continueExportAfterProcessing(
         ...treeWithOnlyParentIds,
         snapshots: treeWithOnlyParentIds.snapshots.map((snapshot) => ({
             ...snapshot,
-            root: substituteAssetDownloadsInNode(
-                snapshot.root,
-                processedFilesByAssetId,
-            ),
+            root: substituteAssetDownloadsInNode(snapshot.root, processedFilesByAssetId),
         })),
     };
 
@@ -437,7 +438,7 @@ function collectUsedAssetsToProcess(
 
     const result = new Map<AssetId, ManagedAsset>();
     for (const asset of assets) {
-        if (!isManagedAssetLocal(asset)) {
+        if (!isManagedAssetLocal(asset) || !checkOffersProcessing(asset.extension)) {
             continue;
         }
 

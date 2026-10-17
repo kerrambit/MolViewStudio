@@ -25,6 +25,7 @@ import { useAppearance } from "../../../../../hooks/useAppearance";
 import { useEnvironment } from "../../../../../hooks/useEnvironment";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 import { Button } from "../../../../../components/common/button/Button";
+import { useExportSettings } from "../../../../settings/hooks/useExportSettings";
 
 /**
  * Result of the export processing properties dialogue.
@@ -71,6 +72,11 @@ export function ProcessingPropertiesDialogueContent({
     // Use environment.
     const { userDataPath } = useEnvironment();
 
+    // Use export settings.
+    const {
+        currentExportSettings: { showAdvancedExportOptions },
+    } = useExportSettings();
+
     // Simple downsampling level state.
     const [downsamplingLevel, setDownsamplingLevel] =
         useState<DownsamplingLevel>("medium");
@@ -97,8 +103,8 @@ export function ProcessingPropertiesDialogueContent({
     // Expanded states.
     const [isVolumeExpanded, setVolumeExpanded] = useState(false);
     const [isSegmentationExpanded, setSegmentationExpanded] = useState(false);
+    const [isBundlingExpanded, setBundlingExpanded] = useState(false);
     const [isOutputExpanded, setOutputExpanded] = useState(true);
-    const [isBundlingExpanded, setBundlingExpanded] = useState(true);
 
     // The effective downsampling strategy: the advanced strategy overrides the simple level once touched.
     const effectiveDownsamplingStrategy = isAdvancedExpanded
@@ -114,7 +120,7 @@ export function ProcessingPropertiesDialogueContent({
     // Generate summary text based on current options.
     const summaryText =
         (volumeAssets.length === 0
-            ? `No volume sources will be processed.\n\n`
+            ? `No volume sources to processing were found.\n\n`
             : `The volume source${
                   volumeAssets.length > 1 ? "s" : ""
               } ${volumeAssetsNames} will be downsampled using the "${effectiveDownsamplingStrategy}" strategy, serialized into the "mrc" format and the "${targetResolution}" resolution version will be embedded into the story export.\n\n`) +
@@ -122,7 +128,7 @@ export function ProcessingPropertiesDialogueContent({
             ? `The segmentation source${
                   segmentationAssets.length > 1 ? "s" : ""
               } ${segmentationAssetsNames} will be serialized into the "mrc" format.\n\n`
-            : ``) +
+            : `No segmentation sources for processing were found.\n\n`) +
         (bundlingStrategy === "mvsx"
             ? `The output will be bundled into MVSX archive(s), ready to be opened directly in the viewer.`
             : bundlingStrategy === "null"
@@ -225,61 +231,67 @@ export function ProcessingPropertiesDialogueContent({
                                         }}
                                     />
 
-                                    <Select
-                                        label="Volume resolution:"
-                                        data={resolutionLevelOptions}
-                                        value={targetResolution}
-                                        allowDeselect={false}
-                                        onChange={(value) =>
-                                            setTargetResolution(
-                                                value as ExportResolutionLevel,
-                                            )
-                                        }
-                                        placeholder="Select a resolution..."
-                                        size="sm"
-                                        comboboxProps={{
-                                            withinPortal: true,
-                                            zIndex: 10000,
-                                        }}
-                                    />
+                                    {showAdvancedExportOptions && (
+                                        <Select
+                                            label="Volume resolution:"
+                                            data={resolutionLevelOptions}
+                                            value={targetResolution}
+                                            allowDeselect={false}
+                                            onChange={(value) =>
+                                                setTargetResolution(
+                                                    value as ExportResolutionLevel,
+                                                )
+                                            }
+                                            placeholder="Select a resolution..."
+                                            size="sm"
+                                            comboboxProps={{
+                                                withinPortal: true,
+                                                zIndex: 10000,
+                                            }}
+                                        />
+                                    )}
 
                                     {/* Advanced options. */}
-                                    <CollapseTrigger
-                                        title={"Advanced options"}
-                                        titleTextSize="sm"
-                                        expanded={isAdvancedExpanded}
-                                        onClick={() => {
-                                            setAdvancedExpanded((prev) => !prev);
-                                        }}
-                                    />
-
-                                    <Collapse expanded={isAdvancedExpanded}>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: "1em",
+                                    {showAdvancedExportOptions && (
+                                        <CollapseTrigger
+                                            title={"Advanced options"}
+                                            titleTextSize="sm"
+                                            expanded={isAdvancedExpanded}
+                                            onClick={() => {
+                                                setAdvancedExpanded((prev) => !prev);
                                             }}
-                                        >
-                                            <Select
-                                                label="Downsampling strategy:"
-                                                data={downsamplingStrategyOptions}
-                                                value={advancedStrategy}
-                                                allowDeselect={false}
-                                                onChange={(value) =>
-                                                    setAdvancedStrategy(
-                                                        value as DownsamplingStrategy,
-                                                    )
-                                                }
-                                                placeholder="Select a strategy..."
-                                                size="sm"
-                                                comboboxProps={{
-                                                    withinPortal: true,
-                                                    zIndex: 10000,
+                                        />
+                                    )}
+
+                                    {showAdvancedExportOptions && (
+                                        <Collapse expanded={isAdvancedExpanded}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: "1em",
                                                 }}
-                                            />
-                                        </div>
-                                    </Collapse>
+                                            >
+                                                <Select
+                                                    label="Downsampling strategy:"
+                                                    data={downsamplingStrategyOptions}
+                                                    value={advancedStrategy}
+                                                    allowDeselect={false}
+                                                    onChange={(value) =>
+                                                        setAdvancedStrategy(
+                                                            value as DownsamplingStrategy,
+                                                        )
+                                                    }
+                                                    placeholder="Select a strategy..."
+                                                    size="sm"
+                                                    comboboxProps={{
+                                                        withinPortal: true,
+                                                        zIndex: 10000,
+                                                    }}
+                                                />
+                                            </div>
+                                        </Collapse>
+                                    )}
                                     <Divider mt="sm" />
                                 </div>
                             </Collapse>
@@ -334,43 +346,45 @@ export function ProcessingPropertiesDialogueContent({
                     )}
 
                     {/* Bundling block. */}
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        <CollapseTrigger
-                            title={"Bundling"}
-                            titleTextSize="lg"
-                            expanded={isBundlingExpanded}
-                            onClick={() => {
-                                setBundlingExpanded((prev) => !prev);
-                            }}
-                        />
-
-                        <Collapse expanded={isBundlingExpanded}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "1em",
-                                    padding: "0.5em 0 0 0",
+                    {showAdvancedExportOptions && (
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                            <CollapseTrigger
+                                title={"Bundling"}
+                                titleTextSize="lg"
+                                expanded={isBundlingExpanded}
+                                onClick={() => {
+                                    setBundlingExpanded((prev) => !prev);
                                 }}
-                            >
-                                <Select
-                                    label="Bundling:"
-                                    data={bundlingOptions}
-                                    value={bundlingStrategy}
-                                    allowDeselect={false}
-                                    onChange={(value) =>
-                                        setBundlingStrategy(value as BundlingKind)
-                                    }
-                                    placeholder="Select a bundling strategy..."
-                                    size="sm"
-                                    comboboxProps={{
-                                        withinPortal: true,
-                                        zIndex: 10000,
+                            />
+
+                            <Collapse expanded={isBundlingExpanded}>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "1em",
+                                        padding: "0.5em 0 0 0",
                                     }}
-                                />
-                            </div>
-                        </Collapse>
-                    </div>
+                                >
+                                    <Select
+                                        label="Bundling:"
+                                        data={bundlingOptions}
+                                        value={bundlingStrategy}
+                                        allowDeselect={false}
+                                        onChange={(value) =>
+                                            setBundlingStrategy(value as BundlingKind)
+                                        }
+                                        placeholder="Select a bundling strategy..."
+                                        size="sm"
+                                        comboboxProps={{
+                                            withinPortal: true,
+                                            zIndex: 10000,
+                                        }}
+                                    />
+                                </div>
+                            </Collapse>
+                        </div>
+                    )}
 
                     {/* Output block. */}
                     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -404,6 +418,7 @@ export function ProcessingPropertiesDialogueContent({
                                     </Text>
                                     <UnstyledTextInput
                                         value={outputPath}
+                                        tooltip={outputPath}
                                         enabled={false}
                                         style={{ flexGrow: 1 }}
                                     />

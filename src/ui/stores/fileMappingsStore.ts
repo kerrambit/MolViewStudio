@@ -31,6 +31,21 @@ type FileMappingsStore = {
     ) => Promise<string | undefined>;
 
     /**
+     * Stores the data of a managed asset (e.g. extracted from an MVSX archive) into
+     * `Processing/Files` and persists the mapping. Used when there is no original
+     * file on disk.
+     * @param assetId ID of the newly created managed asset
+     * @param data content of the asset
+     * @param extension extension of the asset without dot, e.g. "mrc"
+     * @returns resolved path, or undefined when the mapping could not be created
+     */
+    storeMappingFromData: (
+        assetId: AssetId,
+        data: ArrayBuffer,
+        extension: string,
+    ) => Promise<string | undefined>;
+
+    /**
      * Removes a mapping for given asset ID.
      */
     removeMapping: (assetId: AssetId) => Promise<void>;
@@ -66,6 +81,27 @@ export const useFileMappingsStore = create<FileMappingsStore>((set, get) => ({
         if (result instanceof Error) {
             loggerUi.error(
                 `Failed to resolve file mapping for asset <${assetId}>! Details: <${result.message}>.`,
+            );
+            return undefined;
+        }
+
+        set((state) => ({
+            mappings: { ...state.mappings, [assetId]: result },
+        }));
+
+        return result;
+    },
+
+    storeMappingFromData: async (assetId, data, extension) => {
+        const result = await window.electron.storeFileMappingFromData(
+            assetId,
+            data,
+            extension,
+        );
+
+        if (result instanceof Error) {
+            loggerUi.error(
+                `Failed to store file mapping for asset <${assetId}>! Details: <${result.message}>.`,
             );
             return undefined;
         }

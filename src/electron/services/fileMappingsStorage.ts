@@ -20,7 +20,7 @@ const FILE_MAPPINGS_FILENAME = "fileMappings.json";
  * inside `Processing/Files` in the user data folder and the copy is used as the mapped path.
  * Bigger files are referenced by their original path.
  */
-const FILE_COPY_SIZE_THRESHOLD = 100 * 1024 * 1024;
+const FILE_COPY_SIZE_THRESHOLD = 250 * 1024 * 1024;
 
 /**
  * Reads the file mappings JSON from the user data folder.
@@ -38,9 +38,7 @@ export function loadFileMappings(userDataPath: string): Record<string, string> {
  * @param mappingsFilePath path of the `fileMappings.json` file
  * @returns record of asset ID -> resolved file path, empty record on any read or parse error
  */
-function loadFileMappingsFromFile(
-    mappingsFilePath: string,
-): Record<string, string> {
+function loadFileMappingsFromFile(mappingsFilePath: string): Record<string, string> {
     try {
         if (!existsSync(mappingsFilePath)) {
             return {};
@@ -75,9 +73,7 @@ export async function saveFileMappings(
     userDataPath: string,
     mappings: Record<string, string>,
 ): Promise<void | Error> {
-    const contentBuffer = new TextEncoder().encode(
-        JSON.stringify(mappings, null, 2),
-    );
+    const contentBuffer = new TextEncoder().encode(JSON.stringify(mappings, null, 2));
     return await saveFile(
         path.join(userDataPath, "Processing", FILE_MAPPINGS_FILENAME),
         contentBuffer.buffer as ArrayBuffer,
@@ -104,11 +100,7 @@ export async function resolveAndStoreFileMapping(
 
         let resolvedPath = originalFilePath;
         if (isSmallFile) {
-            const filesDirectory = path.join(
-                userDataPath,
-                "Processing",
-                "Files",
-            );
+            const filesDirectory = path.join(userDataPath, "Processing", "Files");
             resolvedPath = path.join(
                 filesDirectory,
                 `${assetId}${path.extname(originalFilePath)}`,
@@ -134,6 +126,55 @@ export async function resolveAndStoreFileMapping(
         );
         return new Error(
             `Failed to resolve file mapping for asset <${assetId}>! Details: <${
+                (err as Error).message
+            }>.`,
+        );
+    }
+}
+
+/**
+ * Stores the data of a managed asset (e.g. extracted from an MVSX archive) as a file
+ * inside `Processing/Files` and adds the mapping. Used when there is no original
+ * file on disk, unlike `resolveAndStoreFileMapping`.
+ * @param userDataPath path of the user data folder
+ * @param assetId ID of the managed asset
+ * @param data content of the asset
+ * @param extension extension of the asset without dot, e.g. "mrc" (may be empty)
+ * @returns resolved absolute path the asset is stored under, or `Error`
+ */
+export async function storeFileMappingFromData(
+    userDataPath: string,
+    assetId: AssetId,
+    data: ArrayBuffer,
+    extension: string,
+): Promise<string | Error> {
+    try {
+        const filesDirectory = path.join(userDataPath, "Processing", "Files");
+        const ext = extension && extension !== "unknown" ? `.${extension}` : "";
+        const resolvedPath = path.join(filesDirectory, `${assetId}${ext}`);
+
+        // Write the asset data into `Processing/Files` named by the asset ID.
+        await mkdir(filesDirectory, { recursive: true });
+        const writeResult = await saveFile(resolvedPath, data);
+        if (writeResult instanceof Error) {
+            return writeResult;
+        }
+
+        const mappings = loadFileMappings(userDataPath);
+        mappings[assetId] = resolvedPath;
+
+        const saveResult = await saveFileMappings(userDataPath, mappings);
+        if (saveResult instanceof Error) {
+            return saveResult;
+        }
+
+        return resolvedPath;
+    } catch (err) {
+        logger.error(
+            `Failed to store file mapping for asset <${assetId}>! Details: <${err}>.`,
+        );
+        return new Error(
+            `Failed to store file mapping for asset <${assetId}>! Details: <${
                 (err as Error).message
             }>.`,
         );

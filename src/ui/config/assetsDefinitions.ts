@@ -4,21 +4,19 @@
  * @author Marek Eibel
  */
 
+/**
+ * Asset can be rendered using Molstar viewer in a view as `structure`, `volume`, or both.
+ */
 export type RenderStrategy = "volume" | "structure" | "both";
+
+export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
+
+export type ExtensionType = "map" | "cif" | "mcif" | "mmcif" | "bcif" | "ccp4" | "mrc";
 
 /**
  * Assets with content larger than this threshold (in bytes) are automatically downsampled into a preview using the nearest algorithm.
  */
 export const PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD = 50 * 1024 * 1024; // TODO: define in Settings
-export type ParserType = "map" | "bcif" | "mmcif"; // export type ParseFormatT = 'mmcif' | 'bcif' | 'pdb' | 'pdbqt' | 'gro' | 'xyz' | 'mol' | 'sdf' | 'mol2' | 'lammpstrj' | 'xtc' | 'nctraj' | 'dcd' | 'trr' | 'psf' | 'prmtop' | 'top' | 'map' | 'dx' | 'dxbin';
-export type ExtensionType =
-    | "map"
-    | "cif"
-    | "mcif"
-    | "mmcif"
-    | "bcif"
-    | "ccp4"
-    | "mrc";
 
 export interface AssetDefinition {
     extension: string;
@@ -102,10 +100,7 @@ export function getAllSupportedAssets() {
 
 export function getAllSupportedAssetsParsers(): Record<string, string> {
     return Object.fromEntries(
-        Object.entries(SUPPORTED_ASSETS).map(([key, asset]) => [
-            key,
-            asset.parser,
-        ]),
+        Object.entries(SUPPORTED_ASSETS).map(([key, asset]) => [key, asset.parser]),
     );
 }
 

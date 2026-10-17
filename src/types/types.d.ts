@@ -77,6 +77,12 @@ type IpcApiChannelMap = {
         type: "invoke";
     };
 
+    storeFileMappingFromData: {
+        args: [assetId: AssetId, data: ArrayBuffer, extension: string];
+        reply: string | Error;
+        type: "invoke";
+    };
+
     getFileMappings: {
         args: [];
         reply: Record<string, string> | Error;
@@ -195,6 +201,7 @@ type UserSettings = {
     export: {
         bundleAllLocalAssets: boolean;
         processAllLocalAssets: boolean;
+        showAdvancedExportOptions: boolean;
     };
 };
 

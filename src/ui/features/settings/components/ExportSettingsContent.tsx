@@ -9,10 +9,15 @@ import { useExportSettings } from "../hooks/useExportSettings";
 
 export function ExportSettingsContent() {
     const {
-        currentExportSettings: { bundleAllLocalAssets, processAllLocalAssets },
+        currentExportSettings: {
+            bundleAllLocalAssets,
+            processAllLocalAssets,
+            showAdvancedExportOptions,
+        },
         setBundleAllLocalAssets,
         setProcessAllLocalAssets,
-        setExportSettings,
+        setBundleAndProcessAllLocalAssetsExportSettings,
+        setShowAdvancedExportOptions,
     } = useExportSettings();
 
     // Render the component.
@@ -26,8 +31,16 @@ export function ExportSettingsContent() {
 
             <Stack gap="md">
                 <Checkbox
+                    label="Show all advanced options in Export dialogue"
+                    checked={showAdvancedExportOptions}
+                    onChange={(event) =>
+                        setShowAdvancedExportOptions(event.currentTarget.checked)
+                    }
+                />
+
+                <Checkbox
                     label="Bundle all local assets even if unused in views"
-                    description="Forces the export to include every local asset in the workspace directory, bypassing the active dependency check."
+                    description="Forces the export to include every (Volume/Segementation) local asset in the workspace."
                     checked={bundleAllLocalAssets}
                     onChange={(event) =>
                         setBundleAllLocalAssets(event.currentTarget.checked)
@@ -35,12 +48,12 @@ export function ExportSettingsContent() {
                 />
 
                 <Checkbox
-                    label="Process all local (Volume/Segementation) assets even if unused in views"
-                    description="Gives users the possibility to process every (Volume/Segementation) local asset in the workspace directory, bypassing the active dependency check. Checks 'Bundle all local assets even if unused in views'."
+                    label="Process all local assets even if unused in views"
+                    description="Forces the export to process every (Volume/Segementation) local asset in the workspace."
                     checked={processAllLocalAssets}
                     onChange={(event) => {
                         if (event.currentTarget.checked) {
-                            setExportSettings(true, true);
+                            setBundleAndProcessAllLocalAssetsExportSettings(true, true);
                         } else {
                             setProcessAllLocalAssets(false);
                         }

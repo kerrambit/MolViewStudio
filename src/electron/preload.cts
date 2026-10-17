@@ -107,6 +107,19 @@ electron.contextBridge.exposeInMainWorld("electron", {
         );
     },
 
+    storeFileMappingFromData: (
+        assetId: AssetId,
+        data: ArrayBuffer,
+        extension: string,
+    ) => {
+        return Ipc.Ui.invoke(
+            "storeFileMappingFromData",
+            assetId,
+            data,
+            extension,
+        );
+    },
+
     getFileMappings: () => {
         return Ipc.Ui.invoke("getFileMappings");
     },

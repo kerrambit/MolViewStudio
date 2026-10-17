@@ -16,6 +16,7 @@ import {
     loadFileMappings,
     removeFileMapping,
     resolveAndStoreFileMapping,
+    storeFileMappingFromData,
 } from "../services/fileMappingsStorage.js";
 import { BUILD_INFO } from "../build-info.js";
 import {
@@ -118,6 +119,19 @@ export function registerAllIpcHandlers(
                 app.getPath("userData"),
                 assetId,
                 originalFilePath,
+            );
+        },
+    );
+
+    // A request from UI to store data of a managed asset (e.g. extracted from an MVSX archive) and add the mapping.
+    Ipc.Electron.handle(
+        "storeFileMappingFromData",
+        async (assetId: AssetId, data: ArrayBuffer, extension: string) => {
+            return await storeFileMappingFromData(
+                app.getPath("userData"),
+                assetId,
+                data,
+                extension,
             );
         },
     );

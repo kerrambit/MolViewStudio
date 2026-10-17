@@ -33,6 +33,29 @@ export async function serializeMVSXAssets(): Promise<SerializedAssets> {
 }
 
 /**
+ * Reads the data of a static (local) asset from Molstar's asset manager cache.
+ * @param url `arcp` URL of the asset
+ * @returns file data, or undefined when the asset was not found in the cache
+ */
+export async function getFileDataFromMolstarAsset(
+    url: string,
+): Promise<Uint8Array | undefined> {
+    const molstar = getMolstar();
+
+    for (const wrapper of molstar.managers.asset.assets) {
+        if (
+            Asset.isUrl(wrapper.asset) &&
+            wrapper.asset.url === url &&
+            wrapper.isStatic
+        ) {
+            return new Uint8Array(await wrapper.file.arrayBuffer());
+        }
+    }
+
+    return undefined;
+}
+
+/**
  * Add new local asset into Molstar asset manager.
  * @param file file
  * @param relativePath e.g. "volumes/seg/"

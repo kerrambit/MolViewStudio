@@ -18,6 +18,7 @@ import { useEnvironment } from "../../../hooks/useEnvironment";
 import {
     clearViewer,
     createBlankMVSDataAsString,
+    getFileDataFromMolstarAsset,
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../../lib/molstar";
@@ -25,6 +26,7 @@ import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
+import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../../config/processingDefinitions";
 
 export function useWorkspaceManagement() {
@@ -98,9 +100,30 @@ export function useWorkspaceManagement() {
 
             // Clears all managed assets and then register local assets in ManagedAssetsProvider.
             useManagedAssetsStore.getState().clearAssets();
-            result.assets.forEach((a) => {
+            for (const a of result.assets) {
                 useManagedAssetsStore.getState().addAsset(a);
-            });
+
+                // Local assets bundled inside the loaded file (e.g. MVSX archive) have no
+                // original file on disk: store their data and add the file mapping, so they
+                // can be processed/exported later.
+                if (a.tag === "local" && typeof a.asset?.url === "string") {
+                    const data = await getFileDataFromMolstarAsset(a.asset.url);
+                    if (data) {
+                        const resolvedPath = await useFileMappingsStore
+                            .getState()
+                            .storeMappingFromData(
+                                a.id,
+                                data.buffer as ArrayBuffer,
+                                a.extension,
+                            );
+                        if (!resolvedPath) {
+                            pushErrorNotification(
+                                `Failed to store file mapping for asset "${a.name}"! Export and further processing of this asset may not work.`,
+                            );
+                        }
+                    }
+                }
+            }
 
             // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
             const stateTree = injectAssetIdsIntoTree(

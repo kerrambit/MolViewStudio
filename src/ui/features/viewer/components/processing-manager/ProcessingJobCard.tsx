@@ -62,7 +62,11 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                     alignItems: "flex-start",
                 }}
             >
-                <Text size="md" fw={700}>
+                <Text
+                    size="md"
+                    fw={700}
+                    title={`This processing was carried out for purpose of new ${job.purpose}.`}
+                >
                     {job.file.name}
                 </Text>
                 <CollapseTrigger
@@ -109,9 +113,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
 
                 {/* Running job. */}
                 {job.status === "running" && (
-                    <Loader
-                        color={colorScheme === "dark" ? "white" : "black"}
-                    />
+                    <Loader color={colorScheme === "dark" ? "white" : "black"} />
                 )}
 
                 {/* Successful job. */}
@@ -130,10 +132,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                                         title="Processed files"
                                         message={job.resultPaths
                                             ?.map(
-                                                (path) =>
-                                                    `${path
-                                                        .split(/[\\/]/)
-                                                        .pop()}`,
+                                                (path) => `${path.split(/[\\/]/).pop()}`,
                                             )
                                             .join(", ")}
                                     />
@@ -180,7 +179,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                 >
                     <Button
                         size="small"
-                        variant="secondary"
+                        variant="ghost"
                         tooltip="Clears the finsihed job. Cannot be shown again!"
                         onClick={() => clearJob(job.jobId)}
                     >

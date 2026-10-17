@@ -11,13 +11,13 @@ export function useExportSettings() {
     const settings = useUserSettingsStore((state) => state.settings);
     const setSettings = useUserSettingsStore((state) => state.setSettings);
 
-    const setExportSettings = (
+    const setBundleAndProcessAllLocalAssetsExportSettings = (
         bundleAllLocalAssets: boolean,
         processAllLocalAssets: boolean,
     ) => {
         setSettings({
             ...settings,
-            export: { bundleAllLocalAssets, processAllLocalAssets },
+            export: { ...settings.export, bundleAllLocalAssets, processAllLocalAssets },
         });
     };
 
@@ -35,10 +35,18 @@ export function useExportSettings() {
         });
     };
 
+    const setShowAdvancedExportOptions = (showAdvancedExportOptions: boolean) => {
+        setSettings({
+            ...settings,
+            export: { ...settings.export, showAdvancedExportOptions },
+        });
+    };
+
     return {
         currentExportSettings: settings.export,
         setBundleAllLocalAssets,
         setProcessAllLocalAssets,
-        setExportSettings,
+        setBundleAndProcessAllLocalAssetsExportSettings,
+        setShowAdvancedExportOptions,
     };
 }

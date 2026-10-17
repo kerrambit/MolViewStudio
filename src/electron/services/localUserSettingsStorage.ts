@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     export: {
         bundleAllLocalAssets: false,
         processAllLocalAssets: false,
+        showAdvancedExportOptions: false,
     },
 };
 
