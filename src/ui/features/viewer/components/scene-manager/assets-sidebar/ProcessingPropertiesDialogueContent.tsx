@@ -512,7 +512,7 @@ export function ProcessingPropertiesDialogueContent({
                                 opacity: 0.6,
                                 cursor: "help",
                             }}
-                            title={`This dialogue sets properties for the current processing.\nInitial settings can be changed in the Settings.`}
+                            title={`This dialogue sets properties for the current export.\nInitial settings can be changed in the Settings.`}
                         />
                     </Group>
 
