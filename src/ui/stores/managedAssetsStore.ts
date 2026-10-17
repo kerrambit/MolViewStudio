@@ -52,16 +52,30 @@ type ManagedAssetsStore = {
     ) => ManagedAsset | undefined;
 
     /**
+     * Adds new local asset into the system and the Molstar inner repository.
+     *
+     * @param file file to add
+     * @param relativeUrl relative URL to the asset (in this format: "volumes/first_section/", or "" for current path as relative path)
+     * @param name explicit name (`data.bcif`) with an extension
+     * @param type type of asset
+     * @param isHidden hidden assets are not shown in the assets sidebar or view builder and are not exported, e.g. preview assets created by downsampling, default is false
+     * @returns the created `ManagedAsset`, or undefined if the asset already exists
+     */
+    addLocalAssetWithExplicitName: (
+        file: FileData,
+        relativeUrl: string,
+        name: string,
+        type: ManagedAssetType,
+        isHidden?: boolean,
+    ) => ManagedAsset | undefined;
+
+    /**
      * Adds new remote asset into the system and the Molstar inner repository.
      * @param url url, e.g. https://molstar.org/mol-view-spec-docs/files/1h9t.mvsx.
      * @param extension dermines the extension of the data
      * @param type type of asset
      */
-    addRemoteAsset: (
-        url: string,
-        extension: string,
-        type: ManagedAssetType,
-    ) => void;
+    addRemoteAsset: (url: string, extension: string, type: ManagedAssetType) => void;
 
     /**
      * Edits existing remote asset.
@@ -216,6 +230,34 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         return entry;
     },
 
+    addLocalAssetWithExplicitName: (file, relativePath, name, type, isHidden = false) => {
+        const result = addLocalAssetIntoMolstar(file, relativePath, name);
+
+        if (!result) {
+            return undefined;
+        }
+
+        const entry: ManagedAsset = {
+            id: crypto.randomUUID(),
+            asset: result.asset,
+            type: type,
+            relativePath: `${relativePath.replace(/\/+$/, "")}/${name}`,
+            tag: "local",
+            name: name,
+            useCount: 0,
+            extension: getExtensionFromFileName(name) || "unknown",
+            hidden: isHidden,
+            processingJobIds: [],
+            children: [],
+        };
+
+        const newMap = new Map(get().assets);
+        newMap.set(result.url, entry);
+        set({ assets: newMap });
+
+        return entry;
+    },
+
     addRemoteAsset: (url, extension, type) => {
         const { asset } = addRemoteAssetIntoMolstar(url);
 
@@ -294,12 +336,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         return true;
     },
 
-    editLocalAsset: (
-        url,
-        newFilenameWithExtension,
-        newRelativePath,
-        newType,
-    ) => {
+    editLocalAsset: (url, newFilenameWithExtension, newRelativePath, newType) => {
         const currentAssets = get().assets;
 
         if (!currentAssets.has(url)) return false;
@@ -443,9 +480,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         const newMap = new Map(get().assets);
         newMap.set(existingAsset.asset.url, {
             ...existingAsset,
-            processingJobIds: existingAsset.processingJobIds.filter(
-                (id) => id !== jobId,
-            ),
+            processingJobIds: existingAsset.processingJobIds.filter((id) => id !== jobId),
         });
 
         set({ assets: newMap });
@@ -466,10 +501,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
         const newMap = new Map(get().assets);
         newMap.set(existingAsset.asset.url, {
             ...existingAsset,
-            children: [
-                ...existingAsset.children,
-                { id: childAssetId, kind: kind },
-            ],
+            children: [...existingAsset.children, { id: childAssetId, kind: kind }],
         });
 
         set({ assets: newMap });

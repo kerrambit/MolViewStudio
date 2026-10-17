@@ -8,7 +8,7 @@ import { create } from "zustand";
 import type {
     ExportResolutionLevel,
     ProcessVolumeRequestWithoutFilepaths,
-} from "../config/processingDefinitions";
+} from "../../../../config/processingDefinitions";
 
 /**
  * State of an ongoing export. `processing` means the export processing jobs are running

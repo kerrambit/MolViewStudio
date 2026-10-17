@@ -12,7 +12,6 @@ import {
 import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
 import { clearViewer, reloadMolstarAndRestoreIndex } from "../../lib/molstar";
-import { runExportFlow } from "../../features/workspace/services/exportService";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
     loadDefaultMVSJFile,
@@ -80,6 +79,7 @@ import type { Menu, LiveMenuRenderProps, Dropdown } from "../../providers/MenuCo
 import { useProcessingStore } from "../../stores/processingStore";
 import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/components/ShowSourceTreeHistoryDialogueContent";
 import { useWindowsStore } from "../../features/viewer/stores/WindowsStore";
+import { runExportFlow } from "../../features/viewer/export/services/exportService";
 
 export function bindViewerMenu(): Menu {
     return [

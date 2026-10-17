@@ -71,8 +71,8 @@ export function getBundlingKindOptions(): BundlingKind[] {
 export type ExportResolutionLevel = "low" | "high";
 
 export const EXPORT_RESOLUTION_TO_INDEX: Record<ExportResolutionLevel, number> = {
-    low: 1,
     high: 2,
+    low: 1,
 };
 
 /**

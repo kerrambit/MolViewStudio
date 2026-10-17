@@ -4,38 +4,44 @@
  * @author Marek Eibel
  */
 
-import { useDialogueStore } from "../../../stores/dialogueStore";
-import { useExportStore } from "../../../stores/exportStore";
-import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
+import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
+import { checkOffersProcessing } from "../../../../config/assetsDefinitions";
 import {
-    isManagedAssetLocal,
-    useManagedAssetsStore,
-} from "../../../stores/managedAssetsStore";
-import { useProcessingStore } from "../../../stores/processingStore";
-import { useRegimeStore } from "../../../stores/regimeStore";
+    type ProcessVolumeRequestWithoutFilepaths,
+    EXPORT_RESOLUTION_TO_INDEX,
+} from "../../../../config/processingDefinitions";
 import {
+    replaceHiddenAssetIdsByItsParentIdInTree,
+    substituteAssetDownloadsInNode,
+    injectRelativePathsBasedOnAssetIdsIntoTree,
+    exportStateTree,
+} from "../../../../lib/molstar";
+import {
+    pushWarningNotification,
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
-    pushWarningNotification,
-} from "../../../services/NotificationService";
-import { loggerUi } from "../../../services/UiLoggingService";
-import { ProcessingPropertiesDialogueContent } from "../../viewer/components/scene-manager/assets-sidebar/ProcessingPropertiesDialogueContent";
-import type { ExportProcessingProperties } from "../../viewer/components/scene-manager/assets-sidebar/ProcessingPropertiesDialogueContent";
+} from "../../../../services/NotificationService";
+import { loggerUi } from "../../../../services/UiLoggingService";
+import { useDialogueStore } from "../../../../stores/dialogueStore";
+import { useExportStore } from "../stores/exportStore";
+import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
 import {
-    EXPORT_RESOLUTION_TO_INDEX,
-    type ProcessVolumeRequestWithoutFilepaths,
-} from "../../../config/processingDefinitions";
+    isManagedAssetLocal,
+    useManagedAssetsStore,
+} from "../../../../stores/managedAssetsStore";
+import { useProcessingStore } from "../../../../stores/processingStore";
+import { useRegimeStore } from "../../../../stores/regimeStore";
+import { useUserSettingsStore } from "../../../../stores/userSettingsStore";
+import type { useWorkspaceManagement } from "../../../workspace/hooks/useWorkspaceManagement";
 import {
-    exportStateTree,
-    injectRelativePathsBasedOnAssetIdsIntoTree,
-    replaceHiddenAssetIdsByItsParentIdInTree,
-    substituteAssetDownloadsInNode,
-} from "../../../lib/molstar";
-import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import type { useWorkspaceManagement } from "../hooks/useWorkspaceManagement";
-import { useUserSettingsStore } from "../../../stores/userSettingsStore";
-import { checkOffersProcessing } from "../../../config/assetsDefinitions";
+    ExportDialogueContent,
+    type ExportDialogueResultType,
+} from "../components/ExportDialogueContent";
+import {
+    getFilePathWithoutFile,
+    replaceFileExtension,
+} from "../../../../utils/fileDataUtils";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -72,12 +78,12 @@ export async function runExportFlow(
     // Let the user choose processing properties and the output folder.
     const exportProperties = await useDialogueStore
         .getState()
-        .showDialogue<ExportProcessingProperties>({
-            title: "Export properties",
+        .showDialogue<ExportDialogueResultType>({
+            title: "Export",
             width: "1000px",
             showCloseButton: true,
             content: (close) => (
-                <ProcessingPropertiesDialogueContent
+                <ExportDialogueContent
                     volumeAssets={volumeAssets}
                     segmentationAssets={segmentationAssets}
                     close={close}
@@ -92,6 +98,7 @@ export async function runExportFlow(
     // Without Volume/Segmentation assets there is nothing to process: export the
     // current story directly (MVSX with bundled used assets, plain MVSJ if none).
     if (assetsToProcess.length === 0) {
+        console.log(">>> Continue with export, nothing to process.");
         useExportStore
             .getState()
             .beginExport(
@@ -118,6 +125,7 @@ export async function runExportFlow(
         }
     }
 
+    // If we cannot resolve some assets (no ID in file mappings, we stop the export.)
     if (unmappedAssetNames.length > 0) {
         pushErrorNotification(
             `Cannot process asset${
@@ -138,9 +146,7 @@ export async function runExportFlow(
 
     // For MVSX bundling the story archive is built by the UI itself: the server
     // runs with raw output (no bundling, internal directory) and the UI embeds
-    // the processed files into the final export.mvsx saved into the chosen folder.
-    // For other bundling approaches the server writes its output directly into
-    // the chosen folder.
+    // the processed files into the final `.mvsx` archive saved into the chosen folder.
     const isMvsxBundling = exportProperties.properties.bundling_approach === "mvsx";
     const serverProperties: ProcessVolumeRequestWithoutFilepaths = {
         ...exportProperties.properties,
@@ -170,7 +176,7 @@ export async function runExportFlow(
 
         if (jobId instanceof Error) {
             pushErrorNotification(
-                `Export was cancelled, because: "${jobId.message}"! You might need to restart the application and try once more.`,
+                `Export was cancelled! You might need to restart the application and try once more.`,
             );
             loggerUi.error(
                 `Export processing failed to start! See details: <${jobId.message}>.`,
@@ -247,9 +253,27 @@ export async function handleExportJobFinished(
     const jobResults = new Map<ProcessingJobId, string[]>();
     for (const id of exportState.jobIds) {
         const job = jobs.get(id);
-        if (job?.resultPaths) {
-            jobResults.set(id, job.resultPaths);
+        if (!job) {
+            pushErrorNotification(
+                `Internal error occurred when trying to handle finished export processing job with invalid ID: ${id}!`,
+            );
+            loggerUi.error(
+                `Internal error occurred when trying to handle finished export processing job with invalid ID: ${id}!`,
+            );
+            continue;
         }
+
+        if (!job.resultPaths || job.resultPaths.length <= 0) {
+            pushWarningNotification(
+                `No output files were produced for "${job.file.name}"! Will use original non-downsampled version.`,
+            );
+            loggerUi.warn(
+                `No output files were produced for (export) processing job <${id}>!`,
+            );
+            continue;
+        }
+
+        jobResults.set(id, job.resultPaths);
     }
 
     await continueExportAfterProcessing(jobResults);
@@ -261,7 +285,7 @@ export async function handleExportJobFinished(
  * `mvsx` exports the story as MVSX archive built by the UI with the processed
  * volumes embedded; other approaches were already written into the output
  * folder by the processing server itself.
- * @param jobResults map of processing job ID → result paths of processed files
+ * @param jobResults map of processing job ID -> result paths of processed files
  */
 async function continueExportAfterProcessing(
     jobResults: Map<ProcessingJobId, string[]>,
@@ -271,8 +295,7 @@ async function continueExportAfterProcessing(
     const outputPath = exportState.outputPath!;
     const filepath = exportState.filename;
 
-    // For any bundling other than MVSX, the server already wrote its output
-    // into the chosen folder: the export is finished.
+    // For any bundling other than MVSX, the server already wrote its output into the chosen folder: the export is finished.
     if (bundling !== "mvsx") {
         const processedFiles = Array.from(jobResults.values()).flat();
         loggerUi.info(
@@ -300,7 +323,12 @@ async function continueExportAfterProcessing(
     );
 
     // Pick the processed file matching the chosen target resolution for each asset.
-    const processedFilesByAssetId = await collectProcessedFilesByAssetId(jobResults);
+    const processedFilesByAsset = await collectProcessedFilesByAssetId(jobResults);
+
+    console.log(
+        "Map where first ID is from raw file and second is ID of procesed asset:",
+        processedFilesByAsset,
+    );
 
     // Run the story MVSX export with the current assets.
     const assetsArray = Array.from(useManagedAssetsStore.getState().assets.values());
@@ -310,31 +338,38 @@ async function continueExportAfterProcessing(
         assetsArray,
     );
 
-    // Replace download nodes of processed assets by their processed files (URL and parse format).
+    // Replace download node IDs of original unprocessed assets with IDs of referenced processed assets.
     const treeWithSubstitutes: MVSData_States = {
         ...treeWithOnlyParentIds,
         snapshots: treeWithOnlyParentIds.snapshots.map((snapshot) => ({
             ...snapshot,
-            root: substituteAssetDownloadsInNode(snapshot.root, processedFilesByAssetId),
+            root: substituteAssetDownloadsInNode(
+                snapshot.root,
+                processedFilesByAsset,
+                assetsArray,
+            ),
         })),
     };
+
+    console.log("treeWithSubstitutes", treeWithSubstitutes);
 
     const treeWithRelativePaths = injectRelativePathsBasedOnAssetIdsIntoTree(
         treeWithSubstitutes,
         assetsArray,
     );
 
+    console.log(treeWithRelativePaths);
+    console.log(assetsArray);
+
     const bundleAllLocalAssets =
         useUserSettingsStore.getState().settings.export.bundleAllLocalAssets;
 
     const result = await exportStateTree(
         treeWithRelativePaths,
-        assetsArray
-            .filter(isManagedAssetLocal)
-            .filter((a) => !a.hidden)
-            .filter((a) => bundleAllLocalAssets || a.useCount > 0),
+        treeWithSubstitutes,
+        bundleAllLocalAssets,
+        assetsArray.filter(isManagedAssetLocal),
         filepath,
-        processedFilesByAssetId,
         outputPath,
     );
 
@@ -356,7 +391,7 @@ async function continueExportAfterProcessing(
  */
 async function collectProcessedFilesByAssetId(
     jobResults: Map<ProcessingJobId, string[]>,
-): Promise<Map<AssetId, FileData>> {
+): Promise<Map<AssetId, AssetId>> {
     const exportState = useExportStore.getState();
     const targetResolution = exportState.targetResolution ?? "high";
     const targetIndex = EXPORT_RESOLUTION_TO_INDEX[targetResolution];
@@ -366,15 +401,21 @@ async function collectProcessedFilesByAssetId(
         return new Map();
     }
 
+    // TODO: we do not full `FileData` object here
     const filesData = await window.electron.getFileData(processedFiles);
     if (filesData instanceof Error) {
         loggerUi.error(
             `Unable to read processed export files [${processedFiles}]! Details: <${filesData.message}>.`,
         );
+        pushErrorNotification(
+            `Unable to read processed export files [${processedFiles}]! Will use original non-downsampled version of files.`,
+        );
         return new Map();
     }
 
-    const processedFilesByAssetId = new Map<AssetId, FileData>();
+    const assets = Array.from(useManagedAssetsStore.getState().assets.values());
+
+    const processedFilesByAssetId = new Map<AssetId, AssetId>();
     for (const [jobId, resultPaths] of jobResults) {
         const assetId = exportState.jobIdAssetIds.get(jobId);
         if (!assetId) {
@@ -386,7 +427,7 @@ async function collectProcessedFilesByAssetId(
             continue;
         }
 
-        // Parse the resolution index from the `..._r{N}_...` filename pattern.
+        // Parse the resolution index from the `r{N}` filename pattern.
         const resolutionOf = (file: FileData): number | undefined => {
             const match = file.name.match(/_r(\d+)_/);
             return match ? parseInt(match[1], 10) : undefined;
@@ -412,7 +453,32 @@ async function collectProcessedFilesByAssetId(
                 );
         }
 
-        processedFilesByAssetId.set(assetId, chosenFile);
+        const managedAsset = assets.find((a) => a.id === assetId);
+        if (!managedAsset) {
+            loggerUi.error(`Managed asset with ID <${assetId}> was not found!`);
+            pushErrorNotification(`Internal error occured!`);
+            continue;
+        }
+
+        const newManagedAsset = useManagedAssetsStore
+            .getState()
+            .addLocalAssetWithExplicitName(
+                chosenFile,
+                getFilePathWithoutFile(managedAsset.relativePath),
+                replaceFileExtension(managedAsset.name, chosenFile.extension),
+                managedAsset.type,
+                true,
+            );
+
+        if (!newManagedAsset) {
+            continue;
+        }
+
+        useFileMappingsStore
+            .getState()
+            .resolveAndStoreMapping(newManagedAsset.id, chosenFile.path);
+
+        processedFilesByAssetId.set(managedAsset.id, newManagedAsset.id);
     }
 
     return processedFilesByAssetId;

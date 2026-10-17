@@ -18,20 +18,20 @@ import {
     type ExportResolutionLevel,
     type ProcessVolumeRequestWithoutFilepaths,
     type SerializerKind,
-} from "../../../../../config/processingDefinitions";
+} from "../../../../config/processingDefinitions";
 import { IconHelpOctagonFilled } from "@tabler/icons-react";
-import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
-import { useAppearance } from "../../../../../hooks/useAppearance";
-import { useEnvironment } from "../../../../../hooks/useEnvironment";
-import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
-import { Button } from "../../../../../components/common/button/Button";
-import { useExportSettings } from "../../../../settings/hooks/useExportSettings";
-import { useRegimeStore } from "../../../../../stores/regimeStore";
+import { UnstyledTextInput } from "../../../../components/common/input/UnstyledTextInput";
+import { useAppearance } from "../../../../hooks/useAppearance";
+import { useEnvironment } from "../../../../hooks/useEnvironment";
+import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
+import { Button } from "../../../../components/common/button/Button";
+import { useExportSettings } from "../../../settings/hooks/useExportSettings";
+import { useRegimeStore } from "../../../../stores/regimeStore";
 
 /**
  * Result of the export processing properties dialogue.
  */
-export interface ExportProcessingProperties {
+export interface ExportDialogueResultType {
     /**
      * Processing properties sent to the processing server.
      */
@@ -53,7 +53,7 @@ export interface ExportProcessingProperties {
     targetResolution: ExportResolutionLevel;
 }
 
-interface ProcessingPropertiesDialogueContentProps {
+interface ExportDialogueContentProps {
     /**
      * Local assets of type `Volume` which will be processed.
      */
@@ -64,14 +64,14 @@ interface ProcessingPropertiesDialogueContentProps {
      */
     segmentationAssets: ManagedAsset[];
 
-    close: (value?: ExportProcessingProperties) => void;
+    close: (value?: ExportDialogueResultType) => void;
 }
 
-export function ProcessingPropertiesDialogueContent({
+export function ExportDialogueContent({
     volumeAssets,
     segmentationAssets,
     close,
-}: ProcessingPropertiesDialogueContentProps) {
+}: ExportDialogueContentProps) {
     // Use apperance.
     const { colorScheme } = useAppearance();
 

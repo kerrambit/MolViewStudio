@@ -17,6 +17,7 @@ import {
     type VolumeViewModel,
 } from "../../features/viewer/models/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
+import { getParser } from "../../config/assetsDefinitions";
 
 /**
  * Creates a deep copy of `node`.
@@ -163,6 +164,38 @@ export function removeNodeFromTree(rootNode: MVSTree, assetIdToRemove: string) {
             return true;
         }),
     };
+}
+
+/**
+ * Traverses an MVS node and its children and collects IDs of managed assets
+ * referenced from `url` or `uri` parameters.
+ * @param node node (state tree root or any of its descendants)
+ * @param knownIds IDs of assets we are interested in
+ * @param found accumulator, used by the recursion
+ * @returns set of referenced asset IDs
+ */
+export function collectReferencedAssetIdsFromNode(
+    node: any,
+    knownIds: Set<string>,
+    found: Set<string> = new Set(),
+): Set<string> {
+    const params = node?.params;
+    if (params) {
+        if (typeof params.url === "string" && knownIds.has(params.url)) {
+            found.add(params.url);
+        }
+        if (typeof params.uri === "string" && knownIds.has(params.uri)) {
+            found.add(params.uri);
+        }
+    }
+
+    if (Array.isArray(node?.children)) {
+        for (const child of node.children) {
+            collectReferencedAssetIdsFromNode(child, knownIds, found);
+        }
+    }
+
+    return found;
 }
 
 /**
@@ -402,6 +435,60 @@ export function replaceNodeIdsWithRelativePaths(node: any, assets: ManagedAsset[
 }
 
 /**
+ * Replace download node IDs of original unprocessed assets with IDs of referenced processed assets.
+ * Checks also `format` of `download` node, so it matched to processed asset extension.
+ * @param node node
+ * @param processedFiles map, where key is unprocessed asset ID, and value is processed asset ID
+ * @param assets assets
+ * @returns modified value
+ */
+export function substituteAssetDownloadsInNode(
+    node: any,
+    processedFiles: Map<AssetId, AssetId>,
+    assets: ManagedAsset[],
+): any {
+    let newNode = node;
+
+    if (node.kind === "download" && typeof node.params?.url === "string") {
+        const entry = [...processedFiles].find(([id]) => id === node.params.url);
+        if (entry) {
+            let newUrl = entry[1];
+            newNode = {
+                ...node,
+                params: {
+                    ...node.params,
+                    url: newUrl,
+                },
+                children: (node.children || []).map((child: any) =>
+                    child.kind === "parse"
+                        ? {
+                              ...child,
+                              params: {
+                                  ...child.params,
+                                  format: getParser(
+                                      assets.find((a) => a.id === entry[1])?.extension!,
+                                  ),
+                              },
+                          }
+                        : child,
+                ),
+            };
+        }
+    }
+
+    if (Array.isArray(newNode.children) && newNode.children.length > 0) {
+        newNode = {
+            ...newNode,
+            children: newNode.children.map((child: any) =>
+                substituteAssetDownloadsInNode(child, processedFiles, assets),
+            ),
+        };
+    }
+
+    return newNode;
+}
+
+/**
  * Traverses an MVS node and its children immutably.
  * For any `download` node whose `url` matches an asset ID with a processed file,
  * replaces the URL with the processed file's archive path and fixes the child
@@ -411,49 +498,48 @@ export function replaceNodeIdsWithRelativePaths(node: any, assets: ManagedAsset[
  * @param processedFiles map of managed asset ID -> processed file
  * @returns modified node
  */
-export function substituteAssetDownloadsInNode(
-    node: any,
-    processedFiles: Map<AssetId, FileData>,
-): any {
-    let newNode = node;
+// export function substituteAssetDownloadsInNode(
+//     node: any,
+//     processedFiles: Map<ManagedAsset, FileData>,
+// ): any {
+//     let newNode = node;
 
-    if (
-        node.kind === "download" &&
-        typeof node.params?.url === "string" &&
-        processedFiles.has(node.params.url)
-    ) {
-        const processedFile = processedFiles.get(node.params.url)!;
-        newNode = {
-            ...node,
-            params: {
-                ...node.params,
-                url: `volumes/${processedFile.name}`,
-            },
-            children: (node.children || []).map((child: any) =>
-                child.kind === "parse"
-                    ? {
-                          ...child,
-                          params: {
-                              ...child.params,
-                              format: "map",
-                          },
-                      }
-                    : child,
-            ),
-        };
-    }
+//     if (node.kind === "download" && typeof node.params?.url === "string") {
+//         const entry = [...processedFiles].find(([asset]) => asset.id === node.params.url);
+//         if (entry) {
+//             const processedFile = processedFiles.get(node.params.url)!;
+//             newNode = {
+//                 ...node,
+//                 params: {
+//                     ...node.params,
+//                     url: `volumes/${processedFile.name}`,
+//                 },
+//                 children: (node.children || []).map((child: any) =>
+//                     child.kind === "parse"
+//                         ? {
+//                               ...child,
+//                               params: {
+//                                   ...child.params,
+//                                   format: "map",
+//                               },
+//                           }
+//                         : child,
+//                 ),
+//             };
+//         }
+//     }
 
-    if (Array.isArray(newNode.children) && newNode.children.length > 0) {
-        newNode = {
-            ...newNode,
-            children: newNode.children.map((child: any) =>
-                substituteAssetDownloadsInNode(child, processedFiles),
-            ),
-        };
-    }
+//     if (Array.isArray(newNode.children) && newNode.children.length > 0) {
+//         newNode = {
+//             ...newNode,
+//             children: newNode.children.map((child: any) =>
+//                 substituteAssetDownloadsInNode(child, processedFiles),
+//             ),
+//         };
+//     }
 
-    return newNode;
-}
+//     return newNode;
+// }
 
 /**
  * Builds a full `download` node (download -> parse -> structure -> ...) from

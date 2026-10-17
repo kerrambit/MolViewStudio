@@ -51,10 +51,7 @@ export function getFileSizeInBytes(file: FileData): number {
         : file.content.byteLength;
 }
 
-export function replaceExtension(
-    filename: string | undefined,
-    newExtension: string,
-) {
+export function replaceExtension(filename: string | undefined, newExtension: string) {
     if (!filename) return undefined;
 
     const lastDotIndex = filename.lastIndexOf(".");
@@ -64,4 +61,29 @@ export function replaceExtension(
     }
 
     return `${filename.substring(0, lastDotIndex)}.${newExtension}`;
+}
+
+/**
+ * Replaces the extension of a file path, keeping the directory and file name as they are.
+ * Works with both "/" and "\" separators. If the file has no extension, the new one is appended.
+ *
+ * @example
+ * replaceFileExtension("relative path\\filename.mrc", "zip"); // "relative path\\filename.zip"
+ * replaceFileExtension("assets/maps/file.tar.gz", ".bin");    // "assets/maps/file.tar.bin"
+ */
+export function replaceFileExtension(filepath: string, newExtension: string): string {
+    const extension = newExtension.replace(/^\./, "");
+
+    const lastSeparatorIndex = Math.max(
+        filepath.lastIndexOf("/"),
+        filepath.lastIndexOf("\\"),
+    );
+    const lastDotIndex = filepath.lastIndexOf(".");
+
+    // A dot counts as an extension only if it is in the file name (after the last separator)
+    // and is not the first character of it (so ".gitignore" is treated as having no extension).
+    const hasExtension = lastDotIndex > lastSeparatorIndex + 1;
+    const base = hasExtension ? filepath.substring(0, lastDotIndex) : filepath;
+
+    return extension ? `${base}.${extension}` : base;
 }

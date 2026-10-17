@@ -10,7 +10,7 @@ import {
     useProcessingStore,
     type ProcessingJob,
 } from "../../../../stores/processingStore";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
 import { useDialogueStore } from "../../../../stores/dialogueStore";
 import { ErrorDialogueContent } from "../../../../components/common/dialogue/ErrorDialogueContent";
 import { useAppearance } from "../../../../hooks/useAppearance";
@@ -30,6 +30,12 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
     // Use processing.
     const clearJob = useProcessingStore((state) => state.clearJob);
     const isJobActive = job.status === "running";
+
+    // Derived job outcome flags.
+    const hasResultFiles = (job.resultPaths?.length ?? 0) > 0;
+    const isSuccess = job.status === "success" && hasResultFiles;
+    const isWarning = job.status === "success" && !hasResultFiles;
+    const isError = job.status === "error";
 
     const [isStagesListExpanded, setStagesListExpanded] = useState(
         UiLocalStorageService.ProcessingJobs.getJobExpandedState(job.jobId),
@@ -112,12 +118,12 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                 </Collapse>
 
                 {/* Running job. */}
-                {job.status === "running" && (
+                {isJobActive && (
                     <Loader color={colorScheme === "dark" ? "white" : "black"} />
                 )}
 
                 {/* Successful job. */}
-                {job.status === "success" && (
+                {isSuccess && (
                     <IconCheck
                         className="processingJob__icon greenGlow"
                         title="Show processed files."
@@ -144,8 +150,32 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                     />
                 )}
 
+                {/* Job finished without errors, but produced no files. */}
+                {isWarning && (
+                    <IconAlertTriangle
+                        className="processingJob__icon yellowGlow"
+                        title="Show warning details."
+                        onClick={async () => {
+                            await useDialogueStore.getState().showDialogue({
+                                title: `Processing warning of file ${job.file.name}`,
+                                width: "600px",
+                                showCloseButton: true,
+                                content: (close) => (
+                                    <SimpleDialogueContent
+                                        close={close}
+                                        title="No output files"
+                                        message={`Processing of "${job.file.name}" finished, but no output files were produced. Please check the input file and the processing settings, then try again.`}
+                                    />
+                                ),
+                            });
+                        }}
+                        color="gold"
+                        size={"3em"}
+                    />
+                )}
+
                 {/* Failed job. */}
-                {job.status === "error" && (
+                {isError && (
                     <IconX
                         className="processingJob__icon redGlow"
                         title="Show error details."
@@ -180,7 +210,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                     <Button
                         size="small"
                         variant="ghost"
-                        tooltip="Clears the finsihed job. Cannot be shown again!"
+                        tooltip="Clears the finished job. Cannot be shown again!"
                         onClick={() => clearJob(job.jobId)}
                     >
                         Clear finished job

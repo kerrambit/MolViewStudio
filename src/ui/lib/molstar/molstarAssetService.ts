@@ -43,11 +43,7 @@ export async function getFileDataFromMolstarAsset(
     const molstar = getMolstar();
 
     for (const wrapper of molstar.managers.asset.assets) {
-        if (
-            Asset.isUrl(wrapper.asset) &&
-            wrapper.asset.url === url &&
-            wrapper.isStatic
-        ) {
+        if (Asset.isUrl(wrapper.asset) && wrapper.asset.url === url && wrapper.isStatic) {
             return new Uint8Array(await wrapper.file.arrayBuffer());
         }
     }
@@ -59,14 +55,21 @@ export async function getFileDataFromMolstarAsset(
  * Add new local asset into Molstar asset manager.
  * @param file file
  * @param relativePath e.g. "volumes/seg/"
+ * @param name optional name to set the name explicily, if undefined, name is taken as `file.name`
  * @returns `undefined` if there if already asset present
  */
-export function addLocalAssetIntoMolstar(file: FileData, relativePath: string) {
+export function addLocalAssetIntoMolstar(
+    file: FileData,
+    relativePath: string,
+    name?: string,
+) {
     const molstar = getMolstar();
 
+    const resolvedName = name ?? file.name;
+
     const fullPath = relativePath
-        ? `${relativePath.replace(/\/+$/, "")}/${file.name}`
-        : file.name;
+        ? `${relativePath.replace(/\/+$/, "")}/${resolvedName}`
+        : resolvedName;
 
     const url = arcpUri(generateArchiveID(), fullPath);
     const asset = Asset.getUrlAsset(molstar.managers.asset, url);
@@ -75,7 +78,7 @@ export function addLocalAssetIntoMolstar(file: FileData, relativePath: string) {
         return undefined;
     }
 
-    const browserFile = new File([file.content], file.name, {
+    const browserFile = new File([file.content], resolvedName, {
         type: file.binary ? "application/octet-stream" : "text/plain",
     });
 

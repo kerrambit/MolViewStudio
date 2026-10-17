@@ -43,12 +43,8 @@ export function Assets() {
     // Use managed assets.
     const assets = useManagedAssetsStore((state) => state.assets);
     const addLocalAsset = useManagedAssetsStore((state) => state.addLocalAsset);
-    const addRemoteAsset = useManagedAssetsStore(
-        (state) => state.addRemoteAsset,
-    );
-    const editRemoteAsset = useManagedAssetsStore(
-        (state) => state.editRemoteAsset,
-    );
+    const addRemoteAsset = useManagedAssetsStore((state) => state.addRemoteAsset);
+    const editRemoteAsset = useManagedAssetsStore((state) => state.editRemoteAsset);
     const removeAsset = useManagedAssetsStore((state) => state.removeAsset);
 
     // Use file mappings.
@@ -103,19 +99,15 @@ export function Assets() {
                                     width: "800px",
                                     showCloseButton: true,
                                     content: (close) => (
-                                        <AddLocalAssetDialogueContent
-                                            close={close}
-                                        />
+                                        <AddLocalAssetDialogueContent close={close} />
                                     ),
                                 });
 
                             if (result) {
-                                for (const {
-                                    file,
-                                    offersProcessing,
-                                } of result.files) {
-                                    const requiresProcessing =
-                                        checkRequiresProcessing(file.extension);
+                                for (const { file, offersProcessing } of result.files) {
+                                    const requiresProcessing = checkRequiresProcessing(
+                                        file.extension,
+                                    );
 
                                     const newAsset = addLocalAsset(
                                         file,
@@ -130,11 +122,10 @@ export function Assets() {
                                         );
                                     } else {
                                         // Resolve and store the file mapping (ID -> path) for the newly created asset.
-                                        const resolvedPath =
-                                            await resolveAndStoreMapping(
-                                                newAsset.id,
-                                                file.path,
-                                            );
+                                        const resolvedPath = await resolveAndStoreMapping(
+                                            newAsset.id,
+                                            file.path,
+                                        );
 
                                         if (!resolvedPath) {
                                             pushErrorNotification(
@@ -149,8 +140,7 @@ export function Assets() {
                                                 : file.content.byteLength;
                                         if (
                                             (result.type === "Volume" ||
-                                                result.type ===
-                                                    "Segmentation") &&
+                                                result.type === "Segmentation") &&
                                             ((offersProcessing &&
                                                 contentSizeInBytes >
                                                     PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD) ||
@@ -161,18 +151,15 @@ export function Assets() {
                                                     file,
                                                     result.type,
                                                     {
-                                                        downsampling_strategy:
-                                                            "nearest", // TODO: why "null" does not work?
-                                                        volume_serializer:
-                                                            "mrc",
+                                                        downsampling_strategy: "nearest",
+                                                        volume_serializer: "mrc",
                                                         segmentation_mask_serializer:
                                                             "mrc",
                                                         segmentation_volume_serializer:
                                                             "mrc",
                                                         segmentation_mesh_serializer:
                                                             "mrc",
-                                                        bundling_approach:
-                                                            "null",
+                                                        bundling_approach: "null",
                                                     },
                                                     newAsset.id,
                                                     (assets: FileData[]) => {
@@ -180,6 +167,7 @@ export function Assets() {
                                                             return [];
                                                         }
 
+                                                        // TODO: use more intelligent using EXPORT_RESOLUTION_TO_INDEX
                                                         const biggestIndex =
                                                             assets.reduce(
                                                                 (
@@ -191,9 +179,7 @@ export function Assets() {
                                                                         current,
                                                                     ) >
                                                                     getFileSizeInBytes(
-                                                                        assets[
-                                                                            bestIndex
-                                                                        ],
+                                                                        assets[bestIndex],
                                                                     )
                                                                         ? currentIndex
                                                                         : bestIndex,
@@ -208,8 +194,7 @@ export function Assets() {
 
                                                         return [
                                                             {
-                                                                assetIndex:
-                                                                    biggestIndex,
+                                                                assetIndex: biggestIndex,
                                                                 relativePath:
                                                                     result.relativePath,
                                                                 name: name,
@@ -225,18 +210,15 @@ export function Assets() {
                                                     file,
                                                     result.type,
                                                     {
-                                                        downsampling_strategy:
-                                                            "nearest",
-                                                        volume_serializer:
-                                                            "mrc",
+                                                        downsampling_strategy: "nearest",
+                                                        volume_serializer: "mrc",
                                                         segmentation_mask_serializer:
                                                             "mrc",
                                                         segmentation_volume_serializer:
                                                             "mrc",
                                                         segmentation_mesh_serializer:
                                                             "mrc",
-                                                        bundling_approach:
-                                                            "null",
+                                                        bundling_approach: "null",
                                                     },
                                                     newAsset.id,
                                                     (assets: FileData[]) => {
@@ -244,6 +226,7 @@ export function Assets() {
                                                             return [];
                                                         }
 
+                                                        // TODO: use more intelligent using EXPORT_RESOLUTION_TO_INDEX
                                                         const smallestIndex =
                                                             assets.reduce(
                                                                 (
@@ -255,9 +238,7 @@ export function Assets() {
                                                                         current,
                                                                     ) <
                                                                     getFileSizeInBytes(
-                                                                        assets[
-                                                                            bestIndex
-                                                                        ],
+                                                                        assets[bestIndex],
                                                                     )
                                                                         ? currentIndex
                                                                         : bestIndex,
@@ -265,30 +246,23 @@ export function Assets() {
                                                             );
 
                                                         // Name the preview same as the original file, with a "(Preview quality N)" suffix. N is incremented for each existing preview of the same original.
-                                                        const parentAsset =
-                                                            newAsset;
+                                                        const parentAsset = newAsset;
                                                         const previewQualityIndex =
                                                             parentAsset
-                                                                ? parentAsset
-                                                                      .children
-                                                                      .length +
-                                                                  1
+                                                                ? parentAsset.children
+                                                                      .length + 1
                                                                 : 1;
                                                         const originalNameWithoutExtension =
                                                             getFilenameWithoutExtension(
-                                                                assets[
-                                                                    smallestIndex
-                                                                ].name,
+                                                                assets[smallestIndex]
+                                                                    .name,
                                                             ) ??
-                                                            assets[
-                                                                smallestIndex
-                                                            ].name;
+                                                            assets[smallestIndex].name;
                                                         const previewName = `${originalNameWithoutExtension} (Preview quality ${previewQualityIndex}).${"mrc"}`;
 
                                                         return [
                                                             {
-                                                                assetIndex:
-                                                                    smallestIndex,
+                                                                assetIndex: smallestIndex,
                                                                 relativePath:
                                                                     result.relativePath,
                                                                 name: previewName,
@@ -320,8 +294,7 @@ export function Assets() {
                 </Text>
 
                 {/* Info text if no remote assets are found. */}
-                {Array.from(assets.values()).filter(isManagedAssetRemote)
-                    .length === 0 ? (
+                {Array.from(assets.values()).filter(isManagedAssetRemote).length === 0 ? (
                     <Text size="sm" c="dimmed" ta="center">
                         No remote assets found...
                     </Text>
@@ -335,8 +308,7 @@ export function Assets() {
                         .filter(isManagedAssetRemote)
                         .map((asset) => {
                             // Asset might has `unknown` extension and we must force user to fix the extension in the dialogue window.
-                            const hasUnknownExtension =
-                                asset.extension === "unknown";
+                            const hasUnknownExtension = asset.extension === "unknown";
 
                             // The same for asset type.
                             const hasUnknownType = asset.type === "Unknown";
@@ -369,8 +341,7 @@ export function Assets() {
                                     titleSize="sm"
                                     tooltip={asset.asset.url}
                                     leftComponent={
-                                        hasUnknownExtension ||
-                                        hasUnknownType ? (
+                                        hasUnknownExtension || hasUnknownType ? (
                                             <div
                                                 title={warningText}
                                                 style={{
@@ -399,48 +370,37 @@ export function Assets() {
                                         <>
                                             <EditActionIcon
                                                 onClick={async () => {
-                                                    const originalUrl =
-                                                        asset.asset.url;
-                                                    const result =
-                                                        await useDialogueStore
-                                                            .getState()
-                                                            .showDialogue<AddRemoteAssetDialogueReturnType>(
-                                                                {
-                                                                    title: "Edit remote asset",
-                                                                    width: "800px",
-                                                                    showCloseButton:
-                                                                        true,
-                                                                    content: (
-                                                                        close,
-                                                                    ) => (
-                                                                        <AddRemoteAssetDialogueContent
-                                                                            url={
-                                                                                asset
-                                                                                    .asset
-                                                                                    .url
-                                                                            }
-                                                                            extension={
-                                                                                asset.extension ===
-                                                                                "unknown"
-                                                                                    ? undefined
-                                                                                    : asset.extension
-                                                                            }
-                                                                            type={
-                                                                                asset.type
-                                                                            }
-                                                                            close={
-                                                                                close
-                                                                            }
-                                                                        />
-                                                                    ),
-                                                                },
-                                                            );
+                                                    const originalUrl = asset.asset.url;
+                                                    const result = await useDialogueStore
+                                                        .getState()
+                                                        .showDialogue<AddRemoteAssetDialogueReturnType>(
+                                                            {
+                                                                title: "Edit remote asset",
+                                                                width: "800px",
+                                                                showCloseButton: true,
+                                                                content: (close) => (
+                                                                    <AddRemoteAssetDialogueContent
+                                                                        url={
+                                                                            asset.asset
+                                                                                .url
+                                                                        }
+                                                                        extension={
+                                                                            asset.extension ===
+                                                                            "unknown"
+                                                                                ? undefined
+                                                                                : asset.extension
+                                                                        }
+                                                                        type={asset.type}
+                                                                        close={close}
+                                                                    />
+                                                                ),
+                                                            },
+                                                        );
 
                                                     if (result) {
                                                         if (
                                                             result.url &&
-                                                            result.url.trim() !==
-                                                                ""
+                                                            result.url.trim() !== ""
                                                         ) {
                                                             editRemoteAsset(
                                                                 originalUrl,
@@ -454,34 +414,22 @@ export function Assets() {
                                             ></EditActionIcon>
                                             <DeleteActionIcon
                                                 onClick={async () => {
-                                                    const result =
-                                                        await useDialogueStore
-                                                            .getState()
-                                                            .showDialogue<boolean>(
-                                                                {
-                                                                    title: "Delete Confirmation",
-                                                                    width: "550px",
-                                                                    showCloseButton:
-                                                                        true,
-                                                                    content: (
-                                                                        close,
-                                                                    ) => (
-                                                                        <DeleteAssetDialogueContent
-                                                                            assetName={
-                                                                                asset.name
-                                                                            }
-                                                                            close={
-                                                                                close
-                                                                            }
-                                                                        />
-                                                                    ),
-                                                                },
-                                                            );
+                                                    const result = await useDialogueStore
+                                                        .getState()
+                                                        .showDialogue<boolean>({
+                                                            title: "Delete Confirmation",
+                                                            width: "550px",
+                                                            showCloseButton: true,
+                                                            content: (close) => (
+                                                                <DeleteAssetDialogueContent
+                                                                    assetName={asset.name}
+                                                                    close={close}
+                                                                />
+                                                            ),
+                                                        });
 
                                                     if (result) {
-                                                        removeAsset(
-                                                            asset.asset.url,
-                                                        );
+                                                        removeAsset(asset.asset.url);
                                                     }
                                                 }}
                                                 tooltip={
@@ -504,9 +452,8 @@ export function Assets() {
                         display: "flex",
                         justifyContent: "center",
                         marginTop:
-                            Array.from(assets.values()).filter(
-                                isManagedAssetRemote,
-                            ).length === 0
+                            Array.from(assets.values()).filter(isManagedAssetRemote)
+                                .length === 0
                                 ? "0.5em"
                                 : "1em",
                         gap: "0.5em",
@@ -518,21 +465,19 @@ export function Assets() {
                         onClick={async () => {
                             const result = await useDialogueStore
                                 .getState()
-                                .showDialogue<AddRemoteAssetDialogueReturnType>(
-                                    {
-                                        title: "Add remote asset",
-                                        width: "800px",
-                                        showCloseButton: true,
-                                        content: (close) => (
-                                            <AddRemoteAssetDialogueContent
-                                                url={undefined}
-                                                extension={undefined}
-                                                type={undefined}
-                                                close={close}
-                                            />
-                                        ),
-                                    },
-                                );
+                                .showDialogue<AddRemoteAssetDialogueReturnType>({
+                                    title: "Add remote asset",
+                                    width: "800px",
+                                    showCloseButton: true,
+                                    content: (close) => (
+                                        <AddRemoteAssetDialogueContent
+                                            url={undefined}
+                                            extension={undefined}
+                                            type={undefined}
+                                            close={close}
+                                        />
+                                    ),
+                                });
 
                             if (result) {
                                 if (result.url && result.url.trim() !== "") {

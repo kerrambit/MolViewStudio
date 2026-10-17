@@ -17,12 +17,13 @@ import { loggerUi } from "../../../../services/UiLoggingService";
 import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../../../stores/processingStore";
 import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
-import { handleExportJobFinished } from "../../../workspace/services/exportService";
+import { handleExportJobFinished } from "../../export/services/exportService";
 
 type ProcessingJobSocketProps = {
     jobId: string;
 };
 
+// TODO: insted of baking the logic here for `onDone` handler (see `job.purpose` type), we should provide a hander when startint the processing
 export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
     // Use domain and choose correct websocket endpoint.
     const domain = useDomain().ws;
@@ -32,6 +33,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
     useProcessingSocket(
         domain + websocketEndpoint,
         websocketEndpoint,
+        // On progres.
         useCallback(
             (stage: string) => {
                 // If the job does not exist, finish the handler and log the error.
@@ -47,12 +49,11 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 }
 
                 // Update the job stage.
-                useProcessingStore
-                    .getState()
-                    .updateJobStage(props.jobId, stage);
+                useProcessingStore.getState().updateJobStage(props.jobId, stage);
             },
             [props.jobId],
         ),
+        // On done.
         useCallback(
             async (result: string[]) => {
                 // If the job does not exist, finish the handler and log the error.
@@ -145,10 +146,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                                     );
                                 useManagedAssetsStore
                                     .getState()
-                                    .detachProcessingJob(
-                                        job.parentAssetId,
-                                        job.jobId,
-                                    );
+                                    .detachProcessingJob(job.parentAssetId, job.jobId);
                             }
 
                             loggerUi.info(
@@ -165,12 +163,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                     for (const asset of assets) {
                         const newAsset = useManagedAssetsStore
                             .getState()
-                            .addLocalAsset(
-                                asset,
-                                asset.name,
-                                job.assetType,
-                                false,
-                            );
+                            .addLocalAsset(asset, asset.name, job.assetType, false);
 
                         if (!newAsset) {
                             pushErrorNotification(
@@ -180,10 +173,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                             // Resolve and store the file mapping (ID -> path) for the newly created asset.
                             const resolvedPath = await useFileMappingsStore
                                 .getState()
-                                .resolveAndStoreMapping(
-                                    newAsset.id,
-                                    asset.path,
-                                );
+                                .resolveAndStoreMapping(newAsset.id, asset.path);
                             if (!resolvedPath) {
                                 pushErrorNotification(
                                     `Failed to store file mapping for asset "${asset.name}"! Export and further processing of this asset may not work.`,
@@ -200,10 +190,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                                     );
                                 useManagedAssetsStore
                                     .getState()
-                                    .detachProcessingJob(
-                                        job.parentAssetId,
-                                        job.jobId,
-                                    );
+                                    .detachProcessingJob(job.parentAssetId, job.jobId);
                             }
                             loggerUi.info(
                                 `File "${job.file.path}" was successfully processed and new asset "${asset.name}" added.`,
@@ -217,6 +204,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
             },
             [props.jobId],
         ),
+        // On error.
         useCallback(
             async (error: string) => {
                 // If the job does not exist, finish the handler and log the error.

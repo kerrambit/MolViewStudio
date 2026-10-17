@@ -15,6 +15,7 @@ import {
     replaceNodeIdsWithRelativePaths,
     replaceNodeUrlsWithIds,
     resolveHiddenAssetIdsToParentAssetIds,
+    collectReferencedAssetIdsFromNode,
 } from "./mvsNode";
 import { createDefaultMVS } from "./mvs";
 
@@ -24,10 +25,7 @@ import { createDefaultMVS } from "./mvs";
  * @param index index of the snapshot to copy, the copy will be pushed to the array as last elemenet
  * @returns if index is out of range, it returns original state tree and undefined instead of new copy, otherwise it returns updated state tree and the copy of snapshot itself
  */
-export function createCopyOfSnapshotInTree(
-    stateTree: MVSData_States,
-    index: number,
-) {
+export function createCopyOfSnapshotInTree(stateTree: MVSData_States, index: number) {
     if (index >= stateTree.snapshots.length || index < 0) {
         return { updatedTree: stateTree, newSnapshot: undefined };
     }
@@ -62,10 +60,7 @@ export function createCopyOfSnapshotInTree(
  * @param index of snapshot to remove
  * @returns both the new state tree and the removed snapshot if index is valid, otherwise unchanged tree and undefined
  */
-export function removeSnapshotFromTree(
-    stateTree: MVSData_States,
-    index: number,
-) {
+export function removeSnapshotFromTree(stateTree: MVSData_States, index: number) {
     if (index < 0 || index >= stateTree.snapshots.length) {
         return {
             updatedTree: stateTree,
@@ -114,8 +109,7 @@ export function convertStateTreeFromSingleToMultipleKind(
         kind: "multiple",
         metadata: {
             title: stateTree.metadata.title,
-            version:
-                stateTree.metadata.version || `${MVSData.SupportedVersion}`,
+            version: stateTree.metadata.version || `${MVSData.SupportedVersion}`,
             timestamp: stateTree.metadata.timestamp,
             description: stateTree.metadata.description,
             description_format: stateTree.metadata.description_format,
@@ -133,9 +127,7 @@ export function convertStateTreeFromSingleToMultipleKind(
  * @param stateTree state tree to fix
  * @returns new fixed state tree
  */
-export function ensureAllSnapshotsHaveKeys(
-    stateTree: MVSData_States,
-): MVSData_States {
+export function ensureAllSnapshotsHaveKeys(stateTree: MVSData_States): MVSData_States {
     const needsFixing = stateTree.snapshots.some((snap) => !snap.metadata.key);
     if (!needsFixing) return stateTree;
 
@@ -245,6 +237,30 @@ export function replaceHiddenAssetIdsByItsParentIdInTree(
             root: resolveHiddenAssetIdsToParentAssetIds(snapshot.root, assets),
         })),
     };
+}
+
+/**
+ * Collects IDs of managed assets referenced from `url` or `uri` parameters in all snapshots of the state tree.
+ * @param stateTree state tree with assets referenced by ManagedAsset IDs
+ * @param assets assets whose IDs we are looking for
+ * @returns set of IDs of the assets used by the state tree
+ */
+export function collectReferencedAssetIds(
+    stateTree: MVSData_States,
+    assets: ManagedAsset[],
+): Set<string> {
+    const used = new Set<string>();
+    if (!assets || assets.length === 0) {
+        return used;
+    }
+
+    const knownIds = new Set(assets.map((asset) => asset.id));
+
+    for (const snapshot of stateTree.snapshots) {
+        collectReferencedAssetIdsFromNode(snapshot.root, knownIds, used);
+    }
+
+    return used;
 }
 
 /**
