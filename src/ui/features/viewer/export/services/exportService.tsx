@@ -98,7 +98,6 @@ export async function runExportFlow(
     // Without Volume/Segmentation assets there is nothing to process: export the
     // current story directly (MVSX with bundled used assets, plain MVSJ if none).
     if (assetsToProcess.length === 0) {
-        console.log(">>> Continue with export, nothing to process.");
         useExportStore
             .getState()
             .beginExport(
@@ -325,11 +324,6 @@ async function continueExportAfterProcessing(
     // Pick the processed file matching the chosen target resolution for each asset.
     const processedFilesByAsset = await collectProcessedFilesByAssetId(jobResults);
 
-    console.log(
-        "Map where first ID is from raw file and second is ID of procesed asset:",
-        processedFilesByAsset,
-    );
-
     // Run the story MVSX export with the current assets.
     const assetsArray = Array.from(useManagedAssetsStore.getState().assets.values());
 
@@ -351,15 +345,10 @@ async function continueExportAfterProcessing(
         })),
     };
 
-    console.log("treeWithSubstitutes", treeWithSubstitutes);
-
     const treeWithRelativePaths = injectRelativePathsBasedOnAssetIdsIntoTree(
         treeWithSubstitutes,
         assetsArray,
     );
-
-    console.log(treeWithRelativePaths);
-    console.log(assetsArray);
 
     const bundleAllLocalAssets =
         useUserSettingsStore.getState().settings.export.bundleAllLocalAssets;
