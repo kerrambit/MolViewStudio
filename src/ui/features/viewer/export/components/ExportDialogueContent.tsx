@@ -10,12 +10,10 @@ import {
     getBundlingKindOptions,
     getDownsamplingLevelOptions,
     getDownsamplingStrategyOptions,
-    getExportResolutionLevelOptions,
     DOWNSAMPLING_LEVEL_TO_STRATEGY,
     type BundlingKind,
     type DownsamplingLevel,
     type DownsamplingStrategy,
-    type ExportResolutionLevel,
     type ProcessVolumeRequestWithoutFilepaths,
     type SerializerKind,
 } from "../../../../config/processingDefinitions";
@@ -27,6 +25,10 @@ import { CollapseTrigger } from "../../../../components/common/collapse-trigger/
 import { Button } from "../../../../components/common/button/Button";
 import { useExportSettings } from "../../../settings/hooks/useExportSettings";
 import { useRegimeStore } from "../../../../stores/regimeStore";
+import {
+    getResolutionLevelOptions,
+    type ResolutionLevel,
+} from "../../../processing/resolution/domain/ResolutionLevel";
 
 /**
  * Result of the export processing properties dialogue.
@@ -50,7 +52,7 @@ export interface ExportDialogueResultType {
     /**
      * Resolution level of the processed volume embedded into the story export.
      */
-    targetResolution: ExportResolutionLevel;
+    targetResolution: ResolutionLevel;
 }
 
 interface ExportDialogueContentProps {
@@ -99,9 +101,8 @@ export function ExportDialogueContent({
     const bundlingOptions = getBundlingKindOptions();
 
     // Resolution of the processed volume embedded into the story export.
-    const [targetResolution, setTargetResolution] =
-        useState<ExportResolutionLevel>("high");
-    const resolutionLevelOptions = getExportResolutionLevelOptions();
+    const [targetResolution, setTargetResolution] = useState<ResolutionLevel>("high");
+    const resolutionLevelOptions = getResolutionLevelOptions();
 
     // Output folder state, defaults to the user's Exports folder.
     const [outputPath, setOutputPath] = useState<string>(`${userDataPath}/Exports`);
@@ -254,7 +255,7 @@ export function ExportDialogueContent({
                                             allowDeselect={false}
                                             onChange={(value) =>
                                                 setTargetResolution(
-                                                    value as ExportResolutionLevel,
+                                                    value as ResolutionLevel,
                                                 )
                                             }
                                             placeholder="Select a resolution..."

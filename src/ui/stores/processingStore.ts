@@ -8,6 +8,12 @@ import { create } from "zustand";
 
 export type ProcessingStatus = "running" | "success" | "error";
 
+/**
+ * Purpose of the job. `asset` jobs add processed files as new managed assets when finished (default).
+ * `export` jobs are part of an export: processed files are used for the exported archive instead.
+ */
+export type ProcessingJobPurpose = "asset" | "export";
+
 export type ProcessingJob = {
     jobId: ProcessingJobId;
     file: FileData;
@@ -25,11 +31,7 @@ export type ProcessingJob = {
      */
     parentAssetId?: AssetId;
 
-    /**
-     * Purpose of the job. `asset` jobs add processed files as new managed assets when finished (default).
-     * `export` jobs are part of an export: processed files are used for the exported archive instead.
-     */
-    purpose?: "asset" | "export";
+    purpose?: ProcessingJobPurpose;
 
     /**
      * This callback is used when the job finished succefully.
@@ -54,6 +56,7 @@ export type ProcessingStore = {
         jobId: ProcessingJobId,
         assetType: "Volume" | "Segmentation",
         parentAssetId?: AssetId,
+        purpose?: "asset" | "export",
         chooseAssetsFunction?: (assets: FileData[]) => {
             assetIndex: number;
             relativePath: string;
@@ -62,7 +65,6 @@ export type ProcessingStore = {
             kind: ManagedAssetChildKind;
             notify: boolean;
         }[],
-        purpose?: "asset" | "export",
     ) => void;
     updateJobStage: (jobId: ProcessingJobId, stage: string) => boolean;
     completeJob: (jobId: ProcessingJobId, resultPaths: string[]) => boolean;
@@ -79,6 +81,7 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
         jobId: ProcessingJobId,
         assetType: "Volume" | "Segmentation",
         parentAssetId?: AssetId,
+        purpose?: "asset" | "export",
         chooseAssetsFunction?: (assets: FileData[]) => {
             assetIndex: number;
             relativePath: string;
@@ -87,7 +90,6 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
             kind: ManagedAssetChildKind;
             notify: boolean;
         }[],
-        purpose?: "asset" | "export",
     ) => {
         const currentJobs = get().jobs;
 

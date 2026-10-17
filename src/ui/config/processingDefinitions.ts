@@ -62,22 +62,3 @@ export type BundlingKind = z.infer<typeof schemas.BundlingKind>;
 export function getBundlingKindOptions(): BundlingKind[] {
     return schemas.BundlingKind.options;
 }
-
-/**
- * Levels of the processed volume resolution to embed into the story export.
- * The processing pipeline emits one file per downsampling resolution
- * (`r1`, `r2`); the chosen level maps to that index, clamped to the resolutions actually available for each asset.
- */
-export type ExportResolutionLevel = "low" | "high";
-
-export const EXPORT_RESOLUTION_TO_INDEX: Record<ExportResolutionLevel, number> = {
-    high: 2,
-    low: 1,
-};
-
-/**
- * Options of the export resolution levels.
- */
-export function getExportResolutionLevelOptions(): ExportResolutionLevel[] {
-    return ["low", "high"];
-}

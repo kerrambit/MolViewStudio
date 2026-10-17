@@ -6,10 +6,7 @@
 
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { checkOffersProcessing } from "../../../../config/assetsDefinitions";
-import {
-    type ProcessVolumeRequestWithoutFilepaths,
-    EXPORT_RESOLUTION_TO_INDEX,
-} from "../../../../config/processingDefinitions";
+import { type ProcessVolumeRequestWithoutFilepaths } from "../../../../config/processingDefinitions";
 import {
     replaceHiddenAssetIdsByItsParentIdInTree,
     substituteAssetDownloadsInNode,
@@ -42,6 +39,7 @@ import {
     getFilePathWithoutFile,
     replaceFileExtension,
 } from "../../../../utils/fileDataUtils";
+import { pickFileByResolution } from "../../../processing/resolution/domain/pickFileByResolution";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -198,8 +196,8 @@ export async function runExportFlow(
             jobId,
             asset.type === "Segmentation" ? "Segmentation" : "Volume",
             undefined,
-            undefined,
             "export",
+            undefined,
         );
 
         useExportStore.getState().addExportJob(jobId, asset.id);
@@ -383,7 +381,6 @@ async function collectProcessedFilesByAssetId(
 ): Promise<Map<AssetId, AssetId>> {
     const exportState = useExportStore.getState();
     const targetResolution = exportState.targetResolution ?? "high";
-    const targetIndex = EXPORT_RESOLUTION_TO_INDEX[targetResolution];
 
     const processedFiles = Array.from(jobResults.values()).flat();
     if (processedFiles.length === 0) {
@@ -416,31 +413,8 @@ async function collectProcessedFilesByAssetId(
             continue;
         }
 
-        // Parse the resolution index from the `r{N}` filename pattern.
-        const resolutionOf = (file: FileData): number | undefined => {
-            const match = file.name.match(/_r(\d+)_/);
-            return match ? parseInt(match[1], 10) : undefined;
-        };
-
-        const availableResolutions = files
-            .map(resolutionOf)
-            .filter((resolution): resolution is number => resolution !== undefined);
-
-        // Pick the resolution closest to the chosen target, clamped to the available range.
-        let chosenFile: FileData;
-        if (availableResolutions.length === 0) {
-            chosenFile = files[0];
-        } else {
-            const clampedIndex = Math.min(targetIndex, Math.max(...availableResolutions));
-            chosenFile =
-                files.find((file) => resolutionOf(file) === clampedIndex) ??
-                files.reduce((best, current) =>
-                    Math.abs((resolutionOf(current) ?? 0) - clampedIndex) <
-                    Math.abs((resolutionOf(best) ?? 0) - clampedIndex)
-                        ? current
-                        : best,
-                );
-        }
+        const chosenFile =
+            pickFileByResolution<FileData>(files, targetResolution) ?? files[0];
 
         const managedAsset = assets.find((a) => a.id === assetId);
         if (!managedAsset) {
@@ -449,6 +423,7 @@ async function collectProcessedFilesByAssetId(
             continue;
         }
 
+        // Register processed export file as new ManagedAsset and store in file mappings.
         const newManagedAsset = useManagedAssetsStore
             .getState()
             .addLocalAssetWithExplicitName(

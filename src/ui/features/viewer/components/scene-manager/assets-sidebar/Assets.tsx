@@ -14,10 +14,7 @@ import {
 } from "./AddLocalAssetDialogueContent";
 import { pushErrorNotification } from "../../../../../services/NotificationService";
 import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
-import {
-    checkRequiresProcessing,
-    PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD,
-} from "../../../../../config/assetsDefinitions";
+import { checkRequiresProcessing } from "../../../../../config/assetsDefinitions";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { LocalAssetsTree } from "./LocalAssetsTree";
@@ -38,6 +35,12 @@ import {
     getFilenameWithoutExtension,
     getFileSizeInBytes,
 } from "../../../../../utils/fileDataUtils";
+import { useCallback } from "react";
+import { loggerUi } from "../../../../../services/UiLoggingService";
+import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../../../processing/preview/domain/constants";
+import { pickFileIndexByResolution } from "../../../../processing/resolution/domain/pickFileByResolution";
+import { getHighestPossibleResolution } from "../../../../processing/resolution/domain/ResolutionLevel";
+import { useStartPreviewFileProcessing } from "../../../../processing/preview/hooks/useStartPreviewFileProcessing";
 
 export function Assets() {
     // Use managed assets.
@@ -54,6 +57,121 @@ export function Assets() {
 
     // Use workspace management.
     const { startFileProcessing } = useWorkspaceManagement();
+
+    // Use preview.
+    const { startPreviewFileProcessing } = useStartPreviewFileProcessing();
+
+    // Opens a dialogue to add local assets and processes the chosen files.
+    const handleAddLocalAsset = useCallback(async () => {
+        const result = await useDialogueStore
+            .getState()
+            .showDialogue<AddLocalAssetDialogueReturnType>({
+                title: "Add local asset",
+                width: "800px",
+                showCloseButton: true,
+                content: (close) => <AddLocalAssetDialogueContent close={close} />,
+            });
+
+        if (!result) {
+            return;
+        }
+
+        for (const { file, offersProcessing } of result.files) {
+            const requiresProcessing = checkRequiresProcessing(file.extension);
+
+            // Add new managed asset.
+            const newAsset = addLocalAsset(
+                file,
+                result.relativePath,
+                result.type,
+                requiresProcessing,
+            );
+
+            if (!newAsset) {
+                pushErrorNotification(
+                    `Asset "${result.relativePath}${file.name}" already exists!`,
+                );
+                continue;
+            }
+
+            // Resolve and store the file mapping for the newly created asset.
+            const resolvedPath = await resolveAndStoreMapping(newAsset.id, file.path);
+            if (!resolvedPath) {
+                pushErrorNotification(
+                    `Failed to store file mapping for asset "${result.relativePath}${file.name}"! Export and further processing of this asset may not work.`,
+                );
+                loggerUi.error(
+                    `Failed to store file mapping for asset "${result.relativePath}${file.name}"!`,
+                );
+            }
+
+            // Large volume assets which offer processing are automatically downsampled into a preview using the nearest algorithm.
+            const contentSizeInBytes = getFileSizeInBytes(file);
+            const isProcessableType =
+                result.type === "Volume" || result.type === "Segmentation";
+
+            const shouldProcess =
+                isProcessableType &&
+                ((offersProcessing &&
+                    contentSizeInBytes > PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD) ||
+                    requiresProcessing);
+
+            if (!shouldProcess) {
+                continue;
+            }
+
+            // TODO: handler for this case
+            if (requiresProcessing) {
+                // Necessary conversion.
+                await startFileProcessing(
+                    file,
+                    result.type === "Segmentation" ? "Segmentation" : "Volume",
+                    {
+                        downsampling_strategy: "nearest",
+                        volume_serializer: "mrc",
+                        segmentation_mask_serializer: "mrc",
+                        segmentation_volume_serializer: "mrc",
+                        segmentation_mesh_serializer: "mrc",
+                        bundling_approach: "null",
+                    },
+                    newAsset.id,
+                    "asset",
+                    (outputFiles: FileData[]) => {
+                        if (!outputFiles || outputFiles.length === 0) {
+                            return [];
+                        }
+
+                        const biggestIndex = pickFileIndexByResolution(
+                            outputFiles,
+                            getHighestPossibleResolution(),
+                        );
+
+                        const originalNameWithoutExtension =
+                            getFilenameWithoutExtension(newAsset.name) ?? newAsset.name;
+                        const name = `${originalNameWithoutExtension} (Converted).mrc`;
+
+                        return [
+                            {
+                                assetIndex: biggestIndex,
+                                relativePath: result.relativePath,
+                                name: name,
+                                hidden: false,
+                                kind: "NecessaryConversion",
+                                notify: true,
+                            },
+                        ];
+                    },
+                );
+            } else {
+                await startPreviewFileProcessing(
+                    file,
+                    result.type === "Segmentation" ? "Segmentation" : "Volume",
+                    newAsset,
+                    result.relativePath,
+                );
+            }
+        }
+    }, [addLocalAsset, resolveAndStoreMapping, startFileProcessing]);
 
     // Render the component.
     return (
@@ -91,194 +209,7 @@ export function Assets() {
                     <Button
                         variant="primary"
                         size="medium"
-                        onClick={async () => {
-                            const result = await useDialogueStore
-                                .getState()
-                                .showDialogue<AddLocalAssetDialogueReturnType>({
-                                    title: "Add local asset",
-                                    width: "800px",
-                                    showCloseButton: true,
-                                    content: (close) => (
-                                        <AddLocalAssetDialogueContent close={close} />
-                                    ),
-                                });
-
-                            if (result) {
-                                for (const { file, offersProcessing } of result.files) {
-                                    const requiresProcessing = checkRequiresProcessing(
-                                        file.extension,
-                                    );
-
-                                    const newAsset = addLocalAsset(
-                                        file,
-                                        result.relativePath,
-                                        result.type,
-                                        requiresProcessing,
-                                    );
-
-                                    if (!newAsset) {
-                                        pushErrorNotification(
-                                            `Asset "${result.relativePath}${file.name}" already exists!`,
-                                        );
-                                    } else {
-                                        // Resolve and store the file mapping (ID -> path) for the newly created asset.
-                                        const resolvedPath = await resolveAndStoreMapping(
-                                            newAsset.id,
-                                            file.path,
-                                        );
-
-                                        if (!resolvedPath) {
-                                            pushErrorNotification(
-                                                `Failed to store file mapping for asset "${result.relativePath}${file.name}"! Export and further processing of this asset may not work.`,
-                                            );
-                                        }
-
-                                        // Large volume assets which offer processing are automatically downsampled into a preview using the nearest algorithm.
-                                        const contentSizeInBytes =
-                                            typeof file.content === "string"
-                                                ? file.content.length
-                                                : file.content.byteLength;
-                                        if (
-                                            (result.type === "Volume" ||
-                                                result.type === "Segmentation") &&
-                                            ((offersProcessing &&
-                                                contentSizeInBytes >
-                                                    PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD) ||
-                                                requiresProcessing)
-                                        ) {
-                                            if (requiresProcessing) {
-                                                await startFileProcessing(
-                                                    file,
-                                                    result.type,
-                                                    {
-                                                        downsampling_strategy: "nearest",
-                                                        volume_serializer: "mrc",
-                                                        segmentation_mask_serializer:
-                                                            "mrc",
-                                                        segmentation_volume_serializer:
-                                                            "mrc",
-                                                        segmentation_mesh_serializer:
-                                                            "mrc",
-                                                        bundling_approach: "null",
-                                                    },
-                                                    newAsset.id,
-                                                    (assets: FileData[]) => {
-                                                        if (!assets) {
-                                                            return [];
-                                                        }
-
-                                                        // TODO: use more intelligent using EXPORT_RESOLUTION_TO_INDEX
-                                                        const biggestIndex =
-                                                            assets.reduce(
-                                                                (
-                                                                    bestIndex,
-                                                                    current,
-                                                                    currentIndex,
-                                                                ) =>
-                                                                    getFileSizeInBytes(
-                                                                        current,
-                                                                    ) >
-                                                                    getFileSizeInBytes(
-                                                                        assets[bestIndex],
-                                                                    )
-                                                                        ? currentIndex
-                                                                        : bestIndex,
-                                                                0,
-                                                            );
-
-                                                        const originalNameWithoutExtension =
-                                                            getFilenameWithoutExtension(
-                                                                newAsset.name,
-                                                            ) ?? newAsset.name;
-                                                        const name = `${originalNameWithoutExtension} (Converted).${"mrc"}`;
-
-                                                        return [
-                                                            {
-                                                                assetIndex: biggestIndex,
-                                                                relativePath:
-                                                                    result.relativePath,
-                                                                name: name,
-                                                                hidden: false,
-                                                                kind: "NecessaryConversion",
-                                                                notify: true,
-                                                            },
-                                                        ];
-                                                    },
-                                                );
-                                            } else {
-                                                await startFileProcessing(
-                                                    file,
-                                                    result.type,
-                                                    {
-                                                        downsampling_strategy: "nearest",
-                                                        volume_serializer: "mrc",
-                                                        segmentation_mask_serializer:
-                                                            "mrc",
-                                                        segmentation_volume_serializer:
-                                                            "mrc",
-                                                        segmentation_mesh_serializer:
-                                                            "mrc",
-                                                        bundling_approach: "null",
-                                                    },
-                                                    newAsset.id,
-                                                    (assets: FileData[]) => {
-                                                        if (!assets) {
-                                                            return [];
-                                                        }
-
-                                                        // TODO: use more intelligent using EXPORT_RESOLUTION_TO_INDEX
-                                                        const smallestIndex =
-                                                            assets.reduce(
-                                                                (
-                                                                    bestIndex,
-                                                                    current,
-                                                                    currentIndex,
-                                                                ) =>
-                                                                    getFileSizeInBytes(
-                                                                        current,
-                                                                    ) <
-                                                                    getFileSizeInBytes(
-                                                                        assets[bestIndex],
-                                                                    )
-                                                                        ? currentIndex
-                                                                        : bestIndex,
-                                                                0,
-                                                            );
-
-                                                        // Name the preview same as the original file, with a "(Preview quality N)" suffix. N is incremented for each existing preview of the same original.
-                                                        const parentAsset = newAsset;
-                                                        const previewQualityIndex =
-                                                            parentAsset
-                                                                ? parentAsset.children
-                                                                      .length + 1
-                                                                : 1;
-                                                        const originalNameWithoutExtension =
-                                                            getFilenameWithoutExtension(
-                                                                assets[smallestIndex]
-                                                                    .name,
-                                                            ) ??
-                                                            assets[smallestIndex].name;
-                                                        const previewName = `${originalNameWithoutExtension} (Preview quality ${previewQualityIndex}).${"mrc"}`;
-
-                                                        return [
-                                                            {
-                                                                assetIndex: smallestIndex,
-                                                                relativePath:
-                                                                    result.relativePath,
-                                                                name: previewName,
-                                                                hidden: true,
-                                                                kind: "Preview",
-                                                                notify: false,
-                                                            },
-                                                        ];
-                                                    },
-                                                );
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }}
+                        onClick={handleAddLocalAsset}
                         tooltip="Open dialogue to add new local asset."
                     >
                         Add...

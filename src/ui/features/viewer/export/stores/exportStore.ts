@@ -5,10 +5,8 @@
  */
 
 import { create } from "zustand";
-import type {
-    ExportResolutionLevel,
-    ProcessVolumeRequestWithoutFilepaths,
-} from "../../../../config/processingDefinitions";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../../config/processingDefinitions";
+import type { ResolutionLevel } from "../../../processing/resolution/domain/ResolutionLevel";
 
 /**
  * State of an ongoing export. `processing` means the export processing jobs are running
@@ -38,7 +36,7 @@ type ExportStore = {
     /**
      * Resolution level of the processed volume embedded into the story export.
      */
-    targetResolution: ExportResolutionLevel | undefined;
+    targetResolution: ResolutionLevel | undefined;
 
     /**
      * Number of processing jobs the export expects. The export can only continue
@@ -63,7 +61,7 @@ type ExportStore = {
         properties: ProcessVolumeRequestWithoutFilepaths,
         outputPath: string,
         filename: string,
-        targetResolution: ExportResolutionLevel,
+        targetResolution: ResolutionLevel,
         expectedJobCount: number,
     ) => void;
 

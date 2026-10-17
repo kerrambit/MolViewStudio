@@ -24,7 +24,10 @@ import {
 } from "../../../lib/molstar";
 import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
-import { useProcessingStore } from "../../../stores/processingStore";
+import {
+    useProcessingStore,
+    type ProcessingJobPurpose,
+} from "../../../stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
 import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../../config/processingDefinitions";
@@ -57,89 +60,79 @@ export function useWorkspaceManagement() {
         } else {
             // Log errors.
             loggerUi.error(`Error occured: <${fileData.message}>!`);
-            pushErrorNotification(
-                `Error occured! Details: {${fileData.message}}.`,
-            );
+            pushErrorNotification(`Error occured! Details: {${fileData.message}}.`);
         }
     }, []);
 
-    const openFileInViewer = useCallback(
-        async (logImportingInformation: boolean) => {
-            // Open file in viewer only if the regime is in `staging` and we know we have data to open in a viewer.
-            const regime = useRegimeStore.getState().regime;
-            if (regime.kind !== "staging") {
-                return;
-            }
+    const openFileInViewer = useCallback(async (logImportingInformation: boolean) => {
+        // Open file in viewer only if the regime is in `staging` and we know we have data to open in a viewer.
+        const regime = useRegimeStore.getState().regime;
+        if (regime.kind !== "staging") {
+            return;
+        }
 
-            // Import started.
-            if (logImportingInformation)
-                pushInfoNotification("Import started.");
+        // Import started.
+        if (logImportingInformation) pushInfoNotification("Import started.");
 
-            // Load the file and handle errors and undefined result.
-            const result = await loadFromFile(regime.stagedFile);
-            if (result instanceof Error) {
-                pushErrorNotification(
-                    `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
-                );
-                loggerUi.error(
-                    `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
-                );
-                useManagedAssetsStore.getState().clearAssets();
-                regime.reset();
-                await clearViewer();
-                return;
-            } else if (result === undefined) {
-                pushInfoNotification(
-                    "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
-                );
-                useManagedAssetsStore.getState().clearAssets();
-                regime.reset();
-                await clearViewer(false);
-                return;
-            }
-
-            // Clears all managed assets and then register local assets in ManagedAssetsProvider.
+        // Load the file and handle errors and undefined result.
+        const result = await loadFromFile(regime.stagedFile);
+        if (result instanceof Error) {
+            pushErrorNotification(
+                `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+            );
+            loggerUi.error(
+                `File "${regime.stagedFile.path}" could not be loaded in the Molstar viewer! Details: "${result.message}".`,
+            );
             useManagedAssetsStore.getState().clearAssets();
-            for (const a of result.assets) {
-                useManagedAssetsStore.getState().addAsset(a);
+            regime.reset();
+            await clearViewer();
+            return;
+        } else if (result === undefined) {
+            pushInfoNotification(
+                "No views were found for this type of file. You can only view structure in the Molstar viewer. You cannot create views or export data. Try to load valid MVS file next time.",
+            );
+            useManagedAssetsStore.getState().clearAssets();
+            regime.reset();
+            await clearViewer(false);
+            return;
+        }
 
-                // Local assets bundled inside the loaded file (e.g. MVSX archive) have no
-                // original file on disk: store their data and add the file mapping, so they
-                // can be processed/exported later.
-                if (a.tag === "local" && typeof a.asset?.url === "string") {
-                    const data = await getFileDataFromMolstarAsset(a.asset.url);
-                    if (data) {
-                        const resolvedPath = await useFileMappingsStore
-                            .getState()
-                            .storeMappingFromData(
-                                a.id,
-                                data.buffer as ArrayBuffer,
-                                a.extension,
-                            );
-                        if (!resolvedPath) {
-                            pushErrorNotification(
-                                `Failed to store file mapping for asset "${a.name}"! Export and further processing of this asset may not work.`,
-                            );
-                        }
+        // Clears all managed assets and then register local assets in ManagedAssetsProvider.
+        useManagedAssetsStore.getState().clearAssets();
+        for (const a of result.assets) {
+            useManagedAssetsStore.getState().addAsset(a);
+
+            // Local assets bundled inside the loaded file (e.g. MVSX archive) have no
+            // original file on disk: store their data and add the file mapping, so they
+            // can be processed/exported later.
+            if (a.tag === "local" && typeof a.asset?.url === "string") {
+                const data = await getFileDataFromMolstarAsset(a.asset.url);
+                if (data) {
+                    const resolvedPath = await useFileMappingsStore
+                        .getState()
+                        .storeMappingFromData(
+                            a.id,
+                            data.buffer as ArrayBuffer,
+                            a.extension,
+                        );
+                    if (!resolvedPath) {
+                        pushErrorNotification(
+                            `Failed to store file mapping for asset "${a.name}"! Export and further processing of this asset may not work.`,
+                        );
                     }
                 }
             }
+        }
 
-            // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
-            const stateTree = injectAssetIdsIntoTree(
-                result.stateTree,
-                result.assets,
-            );
+        // Replace existing local relative paths or remote links with an ID of inserted managed asset in all views.
+        const stateTree = injectAssetIdsIntoTree(result.stateTree, result.assets);
 
-            // Set the regime with new assets and state tree.
-            regime.viewFile(regime.stagedFile, result.sourceUrl, stateTree);
+        // Set the regime with new assets and state tree.
+        regime.viewFile(regime.stagedFile, result.sourceUrl, stateTree);
 
-            // Import ended.
-            if (logImportingInformation)
-                pushSuccessNotification("Import ended!");
-        },
-        [],
-    );
+        // Import ended.
+        if (logImportingInformation) pushSuccessNotification("Import ended!");
+    }, []);
 
     const openFileExplorerAndLoadFileInApp = useCallback(async () => {
         // Opends file explorer and let user to choose the file.
@@ -164,6 +157,7 @@ export function useWorkspaceManagement() {
             type: "Volume" | "Segmentation",
             properties: ProcessVolumeRequestWithoutFilepaths,
             parentAssetId?: AssetId,
+            purpose?: ProcessingJobPurpose,
             chooseAssetsFunction?: (assets: FileData[]) => {
                 assetIndex: number;
                 relativePath: string;
@@ -194,6 +188,7 @@ export function useWorkspaceManagement() {
                                 result.job_id,
                                 type,
                                 parentAssetId,
+                                purpose,
                                 chooseAssetsFunction,
                             );
 
@@ -201,16 +196,11 @@ export function useWorkspaceManagement() {
                         if (parentAssetId) {
                             useManagedAssetsStore
                                 .getState()
-                                .attachProcessingJob(
-                                    parentAssetId,
-                                    result.job_id,
-                                );
+                                .attachProcessingJob(parentAssetId, result.job_id);
                         }
 
                         // Log the job start.
-                        loggerUi.info(
-                            `Processing job <${result.job_id}> has started.`,
-                        );
+                        loggerUi.info(`Processing job <${result.job_id}> has started.`);
                     },
                     onError: (err) => {
                         pushErrorNotification(
@@ -278,9 +268,7 @@ export function useWorkspaceManagement() {
                     volume_filepaths: isSegmentation ? [] : [filePath],
                     segmentations_filepaths: isSegmentation ? [filePath] : [],
                 });
-                loggerUi.info(
-                    `Export processing job <${result.job_id}> has started.`,
-                );
+                loggerUi.info(`Export processing job <${result.job_id}> has started.`);
                 return result.job_id;
             } catch (err) {
                 const error = err as Error;
