@@ -33,6 +33,8 @@ type ExportStore = {
      */
     outputPath: string | undefined;
 
+    filename: string;
+
     /**
      * Resolution level of the processed volume embedded into the story export.
      */
@@ -60,6 +62,7 @@ type ExportStore = {
     beginExport: (
         properties: ProcessVolumeRequestWithoutFilepaths,
         outputPath: string,
+        filename: string,
         targetResolution: ExportResolutionLevel,
         expectedJobCount: number,
     ) => void;
@@ -79,16 +82,24 @@ export const useExportStore = create<ExportStore>((set) => ({
     status: "idle",
     properties: undefined,
     outputPath: undefined,
+    filename: "export",
     targetResolution: undefined,
     expectedJobCount: 0,
     jobIds: new Set(),
     jobIdAssetIds: new Map(),
 
-    beginExport: (properties, outputPath, targetResolution, expectedJobCount) => {
+    beginExport: (
+        properties,
+        outputPath,
+        filename,
+        targetResolution,
+        expectedJobCount,
+    ) => {
         set({
             status: "processing",
             properties: properties,
             outputPath: outputPath,
+            filename: filename,
             targetResolution: targetResolution,
             expectedJobCount: expectedJobCount,
             jobIds: new Set(),

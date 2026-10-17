@@ -10,11 +10,7 @@ import {
     type MVSData_States,
     type Snapshot,
 } from "molstar/lib/extensions/mvs/mvs-data";
-import {
-    type DownloadAsset,
-    type LoadMVSXFileResult,
-    type ViewMetadata,
-} from "./types";
+import { type DownloadAsset, type LoadMVSXFileResult, type ViewMetadata } from "./types";
 import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { type Result } from "../../../types/Result";
 import { getMolstar } from "./instance";
@@ -28,10 +24,7 @@ import { Asset } from "molstar/lib/mol-util/assets";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { buildRenderTreeForMolstar } from "./mvsTree";
 import { checkMolstarAfterLoading } from "./core";
-import {
-    getExtensionFromFileName,
-    getExtensionFromUrl,
-} from "../../utils/fileDataUtils";
+import { getExtensionFromFileName, getExtensionFromUrl } from "../../utils/fileDataUtils";
 import { isExtensionSupported } from "../../config/assetsDefinitions";
 
 /**
@@ -71,9 +64,7 @@ export async function createMVSArchive(
 
     // Encode all files.
     const files: Record<string, Uint8Array<ArrayBuffer>> = {
-        "index.mvsj": encoder.encode(
-            JSON.stringify(index),
-        ) as Uint8Array<ArrayBuffer>,
+        "index.mvsj": encoder.encode(JSON.stringify(index)) as Uint8Array<ArrayBuffer>,
     };
 
     for (const asset of assets) {
@@ -94,11 +85,7 @@ export async function createMVSArchive(
  * @returns blob of data
  */
 export function createMVSBlob(
-    data:
-        | string
-        | MVSData
-        | Uint8Array<ArrayBuffer>
-        | Uint8Array<ArrayBufferLike>,
+    data: string | MVSData | Uint8Array<ArrayBuffer> | Uint8Array<ArrayBufferLike>,
 ): Blob {
     return data instanceof Uint8Array
         ? new Blob([data as Uint8Array<ArrayBuffer>], {
@@ -121,6 +108,7 @@ export function createMVSBlob(
 export async function exportStateTree(
     stateTree: MVSData,
     localAssets: ManagedAsset[],
+    filepath: string,
     processedFiles?: Map<AssetId, FileData>,
     outputPath?: string,
 ): Promise<Result<boolean>> {
@@ -150,9 +138,7 @@ export async function exportStateTree(
                     wrapper.asset.url === targetUrl &&
                     wrapper.isStatic
                 ) {
-                    foundData = new Uint8Array(
-                        await wrapper.file.arrayBuffer(),
-                    );
+                    foundData = new Uint8Array(await wrapper.file.arrayBuffer());
                     break;
                 }
             }
@@ -183,9 +169,7 @@ export async function exportStateTree(
     const blob = createMVSBlob(data);
 
     // Let the user to download the story or save it into the chosen output folder.
-    const filename = `${
-        stateTree.metadata.title ? stateTree.metadata.title : "export"
-    }.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+    const filename = `${filepath}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
     if (outputPath) {
         const arrayBuffer = await blob.arrayBuffer();
         const saveResult = await window.electron.saveData(
@@ -235,9 +219,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
 
-        const cameraNode = root.children?.find(
-            (node) => node.kind === "camera",
-        );
+        const cameraNode = root.children?.find((node) => node.kind === "camera");
 
         type CameraParams = {
             target: [number, number, number] | Vec3;
@@ -248,9 +230,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
         const cameraParams = cameraNode?.params as CameraParams | undefined;
         const currentState = getCameraState() || getDefaultCameraState();
 
-        const canvasNode = root.children?.find(
-            (node) => node.kind === "canvas",
-        );
+        const canvasNode = root.children?.find((node) => node.kind === "canvas");
 
         type CanvasParams = {
             background_color: string;
@@ -473,9 +453,7 @@ async function _loadMVSXFile(
             isFile: true,
         }); // TODO: use my own addLocalAssetIntoMolstar?
 
-        const getAssetTypeBasedOnRelativePath = (
-            path: string,
-        ): ManagedAssetType => {
+        const getAssetTypeBasedOnRelativePath = (path: string): ManagedAssetType => {
             const normalizedPath = path.toLowerCase();
 
             if (normalizedPath.startsWith("volumes/")) {
@@ -506,8 +484,7 @@ async function _loadMVSXFile(
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
             useCount: usedInAnyView ? 1 : 0,
             extension:
-                getExtensionFromFileName(path.split("/").pop() ?? path) ||
-                "unknown",
+                getExtensionFromFileName(path.split("/").pop() ?? path) || "unknown",
             hidden: false,
             processingJobIds: [],
             children: [],
@@ -714,11 +691,7 @@ export async function reloadMolstarAndRestoreIndex(
 
     // Build and load the tree.
     const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
-    const result = await loadMVSIntoMolstar(
-        renderTree,
-        undefined,
-        currentIndex,
-    );
+    const result = await loadMVSIntoMolstar(renderTree, undefined, currentIndex);
 
     setMolstarReloading(false);
 

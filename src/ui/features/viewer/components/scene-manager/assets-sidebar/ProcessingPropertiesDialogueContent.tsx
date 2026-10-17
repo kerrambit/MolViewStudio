@@ -26,6 +26,7 @@ import { useEnvironment } from "../../../../../hooks/useEnvironment";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 import { Button } from "../../../../../components/common/button/Button";
 import { useExportSettings } from "../../../../settings/hooks/useExportSettings";
+import { useRegimeStore } from "../../../../../stores/regimeStore";
 
 /**
  * Result of the export processing properties dialogue.
@@ -40,6 +41,11 @@ export interface ExportProcessingProperties {
      * Folder where the final export output is saved.
      */
     outputPath: string;
+
+    /**
+     * Filename of the final export.
+     */
+    filename: string;
 
     /**
      * Resolution level of the processed volume embedded into the story export.
@@ -139,6 +145,15 @@ export function ProcessingPropertiesDialogueContent({
                       : "ZIP archives per resolution"
               }. Note that archived files cannot be added into views directly after processing.`) +
         `\n\nThe export will be saved into "${outputPath}".`;
+
+    // Story title..
+    const regime = useRegimeStore((state) => state.regime);
+    if (regime.kind !== "viewing") {
+        return null;
+    }
+    const [filename, setFilename] = useState<string | undefined>(
+        regime.history.current().stateTree.metadata.title ?? "export",
+    );
 
     // Render the component.
     return (
@@ -402,7 +417,7 @@ export function ProcessingPropertiesDialogueContent({
                                 style={{
                                     display: "flex",
                                     flexDirection: "column",
-                                    gap: "1em",
+                                    gap: ".25em",
                                     padding: "0.5em 0 0 0",
                                 }}
                             >
@@ -440,6 +455,38 @@ export function ProcessingPropertiesDialogueContent({
                                     >
                                         Browse...
                                     </Button>
+                                </div>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "1em",
+                                    }}
+                                >
+                                    <Text size="sm" fw={600} style={{ minWidth: "1em" }}>
+                                        Name:
+                                    </Text>
+                                    <UnstyledTextInput
+                                        value={filename}
+                                        tooltip={filename}
+                                        enabled={true}
+                                        onBlur={(value) => {
+                                            if (value) {
+                                                setFilename(value);
+                                            } else {
+                                                setFilename("");
+                                            }
+                                        }}
+                                        onValueChange={(value) => {
+                                            if (value) {
+                                                setFilename(value);
+                                            } else {
+                                                setFilename("");
+                                            }
+                                        }}
+                                        canBeEmpty={false}
+                                        style={{ flexGrow: 1 }}
+                                    />
                                 </div>
                             </div>
                         </Collapse>
@@ -503,6 +550,7 @@ export function ProcessingPropertiesDialogueContent({
                 <Button
                     variant="primary"
                     size="medium"
+                    disabled={!filename}
                     onClick={() => {
                         close({
                             properties: {
@@ -514,6 +562,7 @@ export function ProcessingPropertiesDialogueContent({
                                 bundling_approach: bundlingStrategy,
                             } as ProcessVolumeRequestWithoutFilepaths,
                             outputPath: outputPath,
+                            filename: filename?.trim() ?? "export",
                             targetResolution: targetResolution,
                         });
                     }}

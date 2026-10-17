@@ -97,6 +97,7 @@ export async function runExportFlow(
             .beginExport(
                 exportProperties.properties,
                 exportProperties.outputPath,
+                exportProperties.filename,
                 exportProperties.targetResolution,
                 0,
             );
@@ -154,6 +155,7 @@ export async function runExportFlow(
         .beginExport(
             exportProperties.properties,
             exportProperties.outputPath,
+            exportProperties.filename,
             exportProperties.targetResolution,
             mappedAssets.length,
         );
@@ -222,9 +224,7 @@ export async function handleExportJobFinished(
 
     // If any export job failed, cancel the whole export.
     if (error) {
-        pushErrorNotification(
-            `Export was cancelled because processing failed! Details: <${error}>.`,
-        );
+        pushErrorNotification(`Export was cancelled because processing failed!`);
         loggerUi.error(`Export processing job <${jobId}> failed: <${error}>.`);
         exportState.resetExport();
         return;
@@ -269,6 +269,7 @@ async function continueExportAfterProcessing(
     const exportState = useExportStore.getState();
     const bundling = exportState.properties?.bundling_approach ?? "mvsx";
     const outputPath = exportState.outputPath!;
+    const filepath = exportState.filename;
 
     // For any bundling other than MVSX, the server already wrote its output
     // into the chosen folder: the export is finished.
@@ -332,6 +333,7 @@ async function continueExportAfterProcessing(
             .filter(isManagedAssetLocal)
             .filter((a) => !a.hidden)
             .filter((a) => bundleAllLocalAssets || a.useCount > 0),
+        filepath,
         processedFilesByAssetId,
         outputPath,
     );
@@ -348,9 +350,9 @@ async function continueExportAfterProcessing(
 /**
  * Reads the processed files of all export jobs and picks, per processed asset,
  * the file matching the chosen target resolution (clamped to the resolutions
- * actually available). Expects `..._r{N}_...` naming produced by the mrc serializer.
- * @param jobResults map of processing job ID → result paths of processed files
- * @returns map of managed asset ID → chosen processed file
+ * actually available). Expects `..._r{N}_...` naming produced by the serializer.
+ * @param jobResults map of processing job ID -> result paths of processed files
+ * @returns map of managed asset ID -> chosen processed file
  */
 async function collectProcessedFilesByAssetId(
     jobResults: Map<ProcessingJobId, string[]>,
