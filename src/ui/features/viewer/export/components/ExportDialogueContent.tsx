@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Collapse, Group, List, Select, Text } from "@mantine/core";
+import { Collapse, Group, List, Select, Text, Checkbox } from "@mantine/core";
 import { IconFileDescription, IconHelpCircle } from "@tabler/icons-react";
 import { UnstyledTextInput } from "../../../../components/common/input/UnstyledTextInput";
 import { useEnvironment } from "../../../../hooks/useEnvironment";
@@ -92,6 +92,9 @@ export function ExportDialogueContent({
     // Use regime (story title is used as the default filename).
     const regime = useRegimeStore((state) => state.regime);
 
+    // Downsampling toggle state (used without advanced export options).
+    const [enableDownsampling, setEnableDownsampling] = useState(true);
+
     // Simple downsampling level state (used without advanced export options).
     const [downsamplingLevel, setDownsamplingLevel] =
         useState<DownsamplingLevel>("medium");
@@ -137,10 +140,14 @@ export function ExportDialogueContent({
         return null;
     }
 
-    // The effective downsampling strategy: chosen directly with advanced export options, otherwise derived from the simple level.
+    // The effective downsampling strategy:
+    // Chosen directly with advanced export options. Otherwise, if enabled, derived from the simple level.
+    // If disabled in simple mode, fallback to "null".
     const effectiveDownsamplingStrategy = showAdvancedExportOptions
         ? downsamplingStrategy
-        : DOWNSAMPLING_LEVEL_TO_STRATEGY[downsamplingLevel];
+        : enableDownsampling
+        ? DOWNSAMPLING_LEVEL_TO_STRATEGY[downsamplingLevel]
+        : "null";
 
     // Names of the assets to be processed, used in the summary text.
     const volumeAssetsNames = volumeAssets.map((asset) => `"${asset.name}"`).join(", ");
@@ -162,7 +169,10 @@ export function ExportDialogueContent({
                             {volumeAssetsNames}
                         </List.Item>
                         <List.Item>
-                            <b>Downsampling strategy:</b> {effectiveDownsamplingStrategy}
+                            <b>Downsampling strategy:</b>{" "}
+                            {effectiveDownsamplingStrategy === "null"
+                                ? "None"
+                                : effectiveDownsamplingStrategy}
                         </List.Item>
                         <List.Item>
                             <b>Embedded resolution:</b> {targetResolution}
@@ -225,18 +235,18 @@ export function ExportDialogueContent({
                         {showAdvancedExportOptions ? (
                             <>
                                 <List.Item>
-                                    <b>Downsampling strategy</b> - the algorithm used to
+                                    <b>Downsampling strategy:</b> the algorithm used to
                                     downsample the volume.
                                 </List.Item>
                                 <List.Item>
-                                    <b>Volume resolution</b> - which processed resolution
+                                    <b>Volume resolution:</b> which processed resolution
                                     level is embedded into the story. If it is not
                                     available, the closest one is used.
                                 </List.Item>
                             </>
                         ) : (
                             <List.Item>
-                                <b>Downsampling quality</b> - the smaller the quality, the
+                                <b>Downsampling quality:</b> the smaller the quality, the
                                 smaller (and faster to load) the exported volume.
                             </List.Item>
                         )}
@@ -264,10 +274,10 @@ export function ExportDialogueContent({
                 </Text>
                 <List size="sm" spacing={4}>
                     <List.Item>
-                        <b>Output folder</b> - where the final export is saved.
+                        <b>Output folder:</b> where the final export is saved.
                     </List.Item>
                     <List.Item>
-                        <b>Filename</b> - name of the exported <code>.mvsx</code> file,
+                        <b>Filename:</b> name of the exported <code>.mvsx</code> file,
                         defaults to the story title.
                     </List.Item>
                 </List>
@@ -337,6 +347,7 @@ export function ExportDialogueContent({
                                             display: "flex",
                                             alignItems: "center",
                                             gap: "1em",
+                                            marginBottom: ".5em",
                                         }}
                                     >
                                         <Text
@@ -393,23 +404,42 @@ export function ExportDialogueContent({
                                             />
                                         </>
                                     ) : (
-                                        <Select
-                                            label="Downsampling quality:"
-                                            data={downsamplingLevelOptions}
-                                            value={downsamplingLevel}
-                                            allowDeselect={false}
-                                            onChange={(value) =>
-                                                setDownsamplingLevel(
-                                                    value as DownsamplingLevel,
-                                                )
-                                            }
-                                            placeholder="Select downsampling..."
-                                            size="sm"
-                                            comboboxProps={{
-                                                withinPortal: true,
-                                                zIndex: 10000,
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: ".5em",
                                             }}
-                                        />
+                                        >
+                                            <Checkbox
+                                                label="Downsample volume"
+                                                checked={enableDownsampling}
+                                                onChange={(e) =>
+                                                    setEnableDownsampling(
+                                                        e.currentTarget.checked,
+                                                    )
+                                                }
+                                                size="sm"
+                                            />
+                                            <Select
+                                                label="Downsampling quality:"
+                                                data={downsamplingLevelOptions}
+                                                value={downsamplingLevel}
+                                                allowDeselect={false}
+                                                onChange={(value) =>
+                                                    setDownsamplingLevel(
+                                                        value as DownsamplingLevel,
+                                                    )
+                                                }
+                                                placeholder="Select downsampling..."
+                                                size="sm"
+                                                disabled={!enableDownsampling}
+                                                comboboxProps={{
+                                                    withinPortal: true,
+                                                    zIndex: 10000,
+                                                }}
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             </Collapse>
