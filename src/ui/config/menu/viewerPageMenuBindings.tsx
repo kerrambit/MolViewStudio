@@ -7,7 +7,6 @@
 import { router } from "../../router/router";
 import {
     pushErrorNotification,
-    pushInfoNotification,
     pushWarningNotification,
 } from "../../services/NotificationService";
 import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
