@@ -5,14 +5,14 @@
  */
 
 import { useCallback } from "react";
-import { useWorkspaceManagement } from "../../../workspace/hooks/useWorkspaceManagement";
 import { pickFileIndexByResolution } from "../../resolution/domain/pickFileByResolution";
 import { getLowestPossibleResolution } from "../../resolution/domain/ResolutionLevel";
 import { getFilenameWithoutExtension } from "../../../../utils/fileDataUtils";
+import { useStartFileProcessing } from "./useStartFileProcessing";
 
 export function useStartPreviewFileProcessing() {
-    // Use workspace.
-    const { startFileProcessing } = useWorkspaceManagement();
+    // Use file processing.
+    const { startFileProcessing } = useStartFileProcessing();
 
     const startPreviewFileProcessing = useCallback(
         async (

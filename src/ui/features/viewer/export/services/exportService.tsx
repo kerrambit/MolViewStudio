@@ -29,7 +29,6 @@ import {
 import { useProcessingStore } from "../../../processing/stores/processingStore";
 import { useRegimeStore } from "../../../../stores/regimeStore";
 import { useUserSettingsStore } from "../../../../stores/userSettingsStore";
-import type { useWorkspaceManagement } from "../../../workspace/hooks/useWorkspaceManagement";
 import {
     ExportDialogueContent,
     type ExportDialogueResultType,
@@ -41,6 +40,7 @@ import {
 import { pickFileByResolution } from "../../../processing/resolution/domain/pickFileByResolution";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/volume/api/ProcessVolumeRequest";
 import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
+import type { useStartFileProcessingForExport } from "../../../processing/preview/hooks/useStartFileProcessingForExport";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -51,7 +51,7 @@ import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
  */
 export async function runExportFlow(
     startExportProcessing: ReturnType<
-        typeof useWorkspaceManagement
+        typeof useStartFileProcessingForExport
     >["startExportProcessing"],
 ): Promise<void> {
     const regime = useRegimeStore.getState().regime;

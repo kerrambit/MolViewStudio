@@ -13,8 +13,6 @@ import {
     pushInfoNotification,
     pushSuccessNotification,
 } from "../../../services/NotificationService";
-import { useProcessVolume } from "../../processing/volume/api/useProcessVolume";
-import { useEnvironment } from "../../../hooks/useEnvironment";
 import {
     clearViewer,
     createBlankMVSDataAsString,
@@ -24,19 +22,10 @@ import {
 } from "../../../lib/molstar";
 import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
-import { useProcessingStore } from "../../processing/stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
 import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../processing/volume/api/ProcessVolumeRequest";
-import type { ProcessingJobPurpose } from "../../processing/domain/ProcessingJob";
 
 export function useWorkspaceManagement() {
-    // Use environment.
-    const env = useEnvironment();
-
-    // Use processing.
-    const processVolume = useProcessVolume();
-
     const loadFileInApp = useCallback(async (fileData: FileData[] | Error) => {
         if (!(fileData instanceof Error)) {
             if (fileData.length > 0) {
@@ -149,71 +138,6 @@ export function useWorkspaceManagement() {
             });
     }, [loadFileInApp]);
 
-    const startFileProcessing = useCallback(
-        async (
-            fileToProcess: FileData,
-            type: "Volume" | "Segmentation",
-            properties: ProcessVolumeRequestWithoutFilepaths,
-            purpose: ProcessingJobPurpose,
-            parentAssetId?: AssetId,
-            chooseAssetsFunction?: (assets: FileData[]) => {
-                assetIndex: number;
-                relativePath: string;
-                name: string;
-                hidden: boolean;
-                kind: ManagedAssetChildKind;
-                notify: boolean;
-            }[],
-        ) => {
-            // Define temporary directory for processing of volumetric data.
-            const temporaryDirectory = `${env.userDataPath}/Processing`;
-
-            // Call async API endpoint.
-            processVolume.mutate(
-                {
-                    ...properties,
-                    temporary_directory: temporaryDirectory,
-                    volume_filepaths: [fileToProcess.path],
-                    segmentations_filepaths: [],
-                },
-                {
-                    onSuccess: async (result) => {
-                        // Start processing job.
-                        useProcessingStore
-                            .getState()
-                            .startJob(
-                                fileToProcess,
-                                result.job_id,
-                                type,
-                                purpose,
-                                parentAssetId,
-                                chooseAssetsFunction,
-                            );
-
-                        // Attach the job to the parent asset, if any.
-                        if (parentAssetId) {
-                            useManagedAssetsStore
-                                .getState()
-                                .attachProcessingJob(parentAssetId, result.job_id);
-                        }
-
-                        // Log the job start.
-                        loggerUi.info(`Processing job <${result.job_id}> has started.`);
-                    },
-                    onError: (err) => {
-                        pushErrorNotification(
-                            `Processing of file "${fileToProcess.name}" could not be started, because: "${err.message}"! You might need to restart the application and try processing once more.`,
-                        );
-                        loggerUi.error(
-                            `Processing of file "${fileToProcess.path}" failed! See details: <${err.message}>.`,
-                        );
-                    },
-                },
-            );
-        },
-        [env.userDataPath, processVolume],
-    );
-
     const createNewProjectInApp = useCallback(() => {
         // Creates blank MVS of multiple kind.
         const fileContentString = createBlankMVSDataAsString();
@@ -245,43 +169,6 @@ export function useWorkspaceManagement() {
         [loadFileInApp],
     );
 
-    const startExportProcessing = useCallback(
-        async (
-            filePath: string,
-            isSegmentation: boolean,
-            properties: ProcessVolumeRequestWithoutFilepaths,
-        ): Promise<string | Error> => {
-            // Define temporary directory for processing of volumetric data.
-            const temporaryDirectory = `${env.userDataPath}/Processing`;
-
-            // Call the async API endpoint and wait for the job ID.
-            // Function `mutateAsync` is used on purpose: its promise belongs to the
-            // mutation itself, so it settles even if this hook's owning component
-            // (e.g. a menu LiveTask) unmounts while the request is in flight,
-            // unlike per-call callbacks passed to `mutate`.
-            try {
-                const result = await processVolume.mutateAsync({
-                    ...properties,
-                    temporary_directory: temporaryDirectory,
-                    volume_filepaths: isSegmentation ? [] : [filePath],
-                    segmentations_filepaths: isSegmentation ? [filePath] : [],
-                });
-                loggerUi.info(`Export processing job <${result.job_id}> has started.`);
-                return result.job_id;
-            } catch (err) {
-                const error = err as Error;
-                pushErrorNotification(
-                    `Processing of file <${filePath}> could not be started, because: "${error.message}"! You might need to restart the application and try processing once more.`,
-                );
-                loggerUi.error(
-                    `Processing of file <${filePath}> failed! See details: <${error.message}>.`,
-                );
-                return error;
-            }
-        },
-        [env.userDataPath, processVolume],
-    );
-
     return {
         /**
          * Functions moves the `filedata` into regime `staging`. It moves to `/viewer` page automatically.
@@ -307,16 +194,5 @@ export function useWorkspaceManagement() {
          * Function moves regime from `staging` into `viewing`.
          */
         openFileInViewer,
-
-        /**
-         * Function starts processing of a file. Does not change regime.
-         */
-        startFileProcessing,
-
-        /**
-         * Starts a single export processing job for one file and resolves with the job ID.
-         * Does not change regime.
-         */
-        startExportProcessing,
     };
 }

@@ -12,8 +12,10 @@ import {
     AddLocalAssetDialogueContent,
     type AddLocalAssetDialogueReturnType,
 } from "./AddLocalAssetDialogueContent";
-import { pushErrorNotification } from "../../../../../services/NotificationService";
-import { useWorkspaceManagement } from "../../../../workspace/hooks/useWorkspaceManagement";
+import {
+    pushErrorNotification,
+    pushInfoNotification,
+} from "../../../../../services/NotificationService";
 import { checkRequiresProcessing } from "../../../../../config/assetsDefinitions";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
@@ -31,16 +33,17 @@ import {
 } from "../../../../../stores/managedAssetsStore";
 import { useFileMappingsStore } from "../../../../../stores/fileMappingsStore";
 import { useDialogueStore } from "../../../../../stores/dialogueStore";
-import {
-    getFilenameWithoutExtension,
-    getFileSizeInBytes,
-} from "../../../../../utils/fileDataUtils";
+import { getFileSizeInBytes } from "../../../../../utils/fileDataUtils";
 import { useCallback } from "react";
 import { loggerUi } from "../../../../../services/UiLoggingService";
 import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../../../processing/preview/domain/constants";
-import { pickFileIndexByResolution } from "../../../../processing/resolution/domain/pickFileByResolution";
-import { getHighestPossibleResolution } from "../../../../processing/resolution/domain/ResolutionLevel";
 import { useStartPreviewFileProcessing } from "../../../../processing/preview/hooks/useStartPreviewFileProcessing";
+import { useStartFileProcessing } from "../../../../processing/preview/hooks/useStartFileProcessing";
+import { useStartFileRequiredProcessing } from "../../../../processing/preview/hooks/useStartFileRequiredProcessing";
+import {
+    MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES,
+    MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES_AS_STRING,
+} from "../../../../processing/domain/constants";
 
 export function Assets() {
     // Use managed assets.
@@ -55,8 +58,9 @@ export function Assets() {
         (state) => state.resolveAndStoreMapping,
     );
 
-    // Use workspace management.
-    const { startFileProcessing } = useWorkspaceManagement();
+    // Use processing.
+    const { startFileProcessing } = useStartFileProcessing();
+    const { startFileRequiredProcessing } = useStartFileRequiredProcessing();
 
     // Use preview.
     const { startPreviewFileProcessing } = useStartPreviewFileProcessing();
@@ -107,6 +111,17 @@ export function Assets() {
 
             // Large volume assets which offer processing are automatically downsampled into a preview using the nearest algorithm.
             const contentSizeInBytes = getFileSizeInBytes(file);
+
+            if (
+                contentSizeInBytes < MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES &&
+                requiresProcessing
+            ) {
+                pushInfoNotification(
+                    `File "${file.name}" requires processing, but its size is too small (< ${MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES_AS_STRING}) to use standart processing. Therefore, the file will be skipped.`,
+                );
+                continue;
+            }
+
             const isProcessableType =
                 result.type === "Volume" || result.type === "Segmentation";
 
@@ -120,47 +135,12 @@ export function Assets() {
                 continue;
             }
 
-            // TODO: handler for this case
             if (requiresProcessing) {
-                // Necessary conversion.
-                await startFileProcessing(
+                await startFileRequiredProcessing(
                     file,
                     result.type === "Segmentation" ? "Segmentation" : "Volume",
-                    {
-                        downsampling_strategy: "nearest",
-                        volume_serializer: "mrc",
-                        segmentation_mask_serializer: "mrc",
-                        segmentation_volume_serializer: "mrc",
-                        segmentation_mesh_serializer: "mrc",
-                        bundling_approach: "null",
-                    },
-                    "Asset",
-                    newAsset.id,
-                    (outputFiles: FileData[]) => {
-                        if (!outputFiles || outputFiles.length === 0) {
-                            return [];
-                        }
-
-                        const biggestIndex = pickFileIndexByResolution(
-                            outputFiles,
-                            getHighestPossibleResolution(),
-                        );
-
-                        const originalNameWithoutExtension =
-                            getFilenameWithoutExtension(newAsset.name) ?? newAsset.name;
-                        const name = `${originalNameWithoutExtension} (Converted).mrc`;
-
-                        return [
-                            {
-                                assetIndex: biggestIndex,
-                                relativePath: result.relativePath,
-                                name: name,
-                                hidden: false,
-                                kind: "NecessaryConversion",
-                                notify: true,
-                            },
-                        ];
-                    },
+                    newAsset,
+                    result.relativePath,
                 );
             } else {
                 await startPreviewFileProcessing(

@@ -20,7 +20,7 @@ import {
     addExtensionToFilename,
     getFilenameWithoutExtension,
 } from "../../../../../utils/fileDataUtils";
-import { IconAlertTriangle } from "@tabler/icons-react";
+import { WarningMessage } from "../../../../../components/common/messages/WarningMessage";
 
 export interface AddLocalAssetDialogueFileReturnType {
     file: FileData;
@@ -101,9 +101,7 @@ export function AddLocalAssetDialogueContent({
 
                                 if (result.length === 1) {
                                     setFilename(
-                                        getFilenameWithoutExtension(
-                                            result[0].name,
-                                        ),
+                                        getFilenameWithoutExtension(result[0].name),
                                     );
                                 }
                             }
@@ -179,13 +177,7 @@ export function AddLocalAssetDialogueContent({
                 <Text size="sm">Type of asset:</Text>
                 <Select
                     title=""
-                    data={[
-                        "Volume",
-                        "Segmentation",
-                        "Structure",
-                        "Annotation",
-                        "Other",
-                    ]}
+                    data={["Volume", "Segmentation", "Structure", "Annotation", "Other"]}
                     value={assetType}
                     onChange={(type) => {
                         if (type) {
@@ -254,11 +246,11 @@ export function AddLocalAssetDialogueContent({
                             gap: "0.5em",
                         }}
                     >
-                        <IconAlertTriangle size={16} />
-                        <Text size="xs">
-                            Warning: processing is required for one or more
-                            selected files!
-                        </Text>
+                        <WarningMessage
+                            text={
+                                "Processing is required for one or more selected files! Properties for the conversion can be set in Settings."
+                            }
+                        ></WarningMessage>
                     </div>
                 )}
 

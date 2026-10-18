@@ -7,7 +7,7 @@
 import asyncio
 import shutil
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import volsegtools
 
@@ -150,6 +150,13 @@ class Preprocessor:
 
             if downsampling_strategy == DownsamplignAlgorithmKind.TRIQUINTIC:
                 builder.add_post_process_step(volsegtools.SmoothingStep())
+
+            if downsampling_strategy == DownsamplignAlgorithmKind.NULL:
+                builder.keep_original(True)
+
+            builder._threshold = volsegtools.Bytes(
+                "5KB"
+            )  # Set lower file size threshold to 5KB.
 
             loop = asyncio.get_event_loop()
 
