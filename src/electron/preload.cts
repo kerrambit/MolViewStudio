@@ -75,14 +75,15 @@ electron.contextBridge.exposeInMainWorld("electron", {
         return Ipc.Ui.send("requestToOpenExternal", url);
     },
 
-    requestToOpenUserDataFolder: () =>
-        Ipc.Ui.invoke("requestToOpenUserDataFolder"),
+    requestToOpenUserDataFolder: () => Ipc.Ui.invoke("requestToOpenUserDataFolder"),
 
     openFileExplorer: (multiSelections: boolean, filters: FileFilter[]) =>
         Ipc.Ui.invoke("openFileExplorer", multiSelections, filters),
 
     selectDirectory: (defaultPath?: string) =>
         Ipc.Ui.invoke("selectDirectory", defaultPath),
+
+    checkFilesExist: (paths: string[]) => Ipc.Ui.invoke("checkFilesExist", paths as any),
 
     getFileData: (paths: string[]) => {
         return Ipc.Ui.invoke("getFileData", paths as any);
@@ -96,15 +97,8 @@ electron.contextBridge.exposeInMainWorld("electron", {
         return Ipc.Ui.invoke("saveTemporaryData", data, path);
     },
 
-    resolveAndStoreFileMapping: (
-        assetId: AssetId,
-        originalFilePath: string,
-    ) => {
-        return Ipc.Ui.invoke(
-            "resolveAndStoreFileMapping",
-            assetId,
-            originalFilePath,
-        );
+    resolveAndStoreFileMapping: (assetId: AssetId, originalFilePath: string) => {
+        return Ipc.Ui.invoke("resolveAndStoreFileMapping", assetId, originalFilePath);
     },
 
     storeFileMappingFromData: (
@@ -112,12 +106,7 @@ electron.contextBridge.exposeInMainWorld("electron", {
         data: ArrayBuffer,
         extension: string,
     ) => {
-        return Ipc.Ui.invoke(
-            "storeFileMappingFromData",
-            assetId,
-            data,
-            extension,
-        );
+        return Ipc.Ui.invoke("storeFileMappingFromData", assetId, data, extension);
     },
 
     getFileMappings: () => {

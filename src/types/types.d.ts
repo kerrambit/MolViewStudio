@@ -53,6 +53,12 @@ type IpcApiChannelMap = {
         type: "invoke";
     };
 
+    checkFilesExist: {
+        args: [paths: string[]];
+        reply: boolean[] | Error;
+        type: "invoke";
+    };
+
     getFileData: {
         args: [paths: string[]];
         reply: FileData[] | Error;

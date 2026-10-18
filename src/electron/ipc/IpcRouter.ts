@@ -7,6 +7,7 @@
 import { app, BrowserWindow, dialog, shell } from "electron";
 import path from "path";
 import os from "os";
+import fs from "fs";
 import { saveUserSettings } from "../services/localUserSettingsStorage.js";
 import { isDev } from "../utils/devUtils.js";
 import { Ipc } from "../Ipc.Electron.js";
@@ -19,10 +20,7 @@ import {
     storeFileMappingFromData,
 } from "../services/fileMappingsStorage.js";
 import { BUILD_INFO } from "../build-info.js";
-import {
-    loadRecentFiles,
-    writeRecentFiles,
-} from "../services/recentFilesStorage.js";
+import { loadRecentFiles, writeRecentFiles } from "../services/recentFilesStorage.js";
 import { AutoUpdater } from "../AutoUpdater.js";
 
 // TODO: devide the indivudal handlers to more grouped folders such as "ipc/file" etc.
@@ -89,6 +87,15 @@ export function registerAllIpcHandlers(
         return;
     });
 
+    // A request from UI to check if filepaths exist.
+    Ipc.Electron.handle("checkFilesExist", (paths: string[]) => {
+        const result: boolean[] = [];
+        paths.forEach((path) => {
+            result.push(fs.existsSync(path));
+        });
+        return result;
+    });
+
     // A request from UI to load file data from given array of paths.
     Ipc.Electron.handle("getFileData", (paths: string[]) => {
         return readFiles(paths);
@@ -103,10 +110,7 @@ export function registerAllIpcHandlers(
     Ipc.Electron.handle(
         "saveTemporaryData",
         async (data: ArrayBuffer, relativePath: string) => {
-            const fullFilePath = path.join(
-                app.getPath("userData"),
-                relativePath,
-            );
+            const fullFilePath = path.join(app.getPath("userData"), relativePath);
             return await saveFile(fullFilePath, data);
         },
     );
@@ -142,9 +146,7 @@ export function registerAllIpcHandlers(
             return loadFileMappings(app.getPath("userData"));
         } catch (err) {
             return new Error(
-                `Failed to load file mappings! Details: <${
-                    (err as Error).message
-                }>.`,
+                `Failed to load file mappings! Details: <${(err as Error).message}>.`,
             );
         }
     });
@@ -156,11 +158,7 @@ export function registerAllIpcHandlers(
 
     // If there is a change of settings coming from UI, we have to update menu, and store changes.
     Ipc.Electron.on("changeUserSettings", (settings: UserSettings) => {
-        saveUserSettings(
-            paths.userDataPath,
-            paths.userSettingsFilePath,
-            settings,
-        );
+        saveUserSettings(paths.userDataPath, paths.userSettingsFilePath, settings);
         logger.info(`User settings has been saved.`);
     });
 
@@ -180,10 +178,7 @@ export function registerAllIpcHandlers(
                 filters: filters,
             });
 
-            if (
-                openDialogResult.canceled ||
-                openDialogResult.filePaths.length === 0
-            ) {
+            if (openDialogResult.canceled || openDialogResult.filePaths.length === 0) {
                 return [];
             }
 
@@ -192,34 +187,23 @@ export function registerAllIpcHandlers(
     );
 
     // UI request to open file explorer and let user select a directory.
-    Ipc.Electron.handle(
-        "selectDirectory",
-        async (defaultPath?: string) => {
-            const openDialogResult = await dialog.showOpenDialog({
-                properties: ["openDirectory", "createDirectory"],
-                defaultPath: defaultPath,
-            });
+    Ipc.Electron.handle("selectDirectory", async (defaultPath?: string) => {
+        const openDialogResult = await dialog.showOpenDialog({
+            properties: ["openDirectory", "createDirectory"],
+            defaultPath: defaultPath,
+        });
 
-            if (
-                openDialogResult.canceled ||
-                openDialogResult.filePaths.length === 0
-            ) {
-                return null;
-            }
+        if (openDialogResult.canceled || openDialogResult.filePaths.length === 0) {
+            return null;
+        }
 
-            return openDialogResult.filePaths[0];
-        },
-    );
+        return openDialogResult.filePaths[0];
+    });
 
     // UI can request recent files paths.
     Ipc.Electron.handleSync("getRecentFiles", () => {
-        const files = loadRecentFiles(
-            paths.userDataPath,
-            paths.recentFilesFilePath,
-        );
-        logger.info(
-            `Recent files has been loaded from <${paths.recentFilesFilePath}>.`,
-        );
+        const files = loadRecentFiles(paths.userDataPath, paths.recentFilesFilePath);
+        logger.info(`Recent files has been loaded from <${paths.recentFilesFilePath}>.`);
         return files;
     });
 
@@ -229,16 +213,12 @@ export function registerAllIpcHandlers(
             paths.userDataPath,
             paths.recentFilesFilePath,
         );
-        const updatedFiles = [
-            path,
-            ...currentFiles.filter((p) => p !== path),
-        ].slice(0, 10); // TODO: set the limit in Settings
+        const updatedFiles = [path, ...currentFiles.filter((p) => p !== path)].slice(
+            0,
+            10,
+        ); // TODO: set the limit in Settings
 
-        writeRecentFiles(
-            paths.userDataPath,
-            paths.recentFilesFilePath,
-            updatedFiles,
-        );
+        writeRecentFiles(paths.userDataPath, paths.recentFilesFilePath, updatedFiles);
     });
 
     Ipc.Electron.handle("checkForUpdates", async () => {

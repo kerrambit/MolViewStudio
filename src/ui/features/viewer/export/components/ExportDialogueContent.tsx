@@ -31,6 +31,7 @@ import {
 import type { SerializerKind } from "../../../processing/serializer/config/SerializerKind";
 import { WarningMessage } from "../../../../components/common/messages/WarningMessage";
 import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
+import { FileOverrideWarningMessage } from "./FileOverrideWarningMessage";
 
 /**
  * Result of the export processing properties dialogue.
@@ -505,7 +506,7 @@ export function ExportDialogueContent({
                                     }
                                     if (selected) {
                                         UiLocalStorageService.Export.setOutputDirectory(
-                                            outputPath,
+                                            selected,
                                         );
                                         setOutputPath(selected);
                                     }
@@ -604,6 +605,11 @@ export function ExportDialogueContent({
                     ></WarningMessage>
                 </div>
             )}
+
+            <FileOverrideWarningMessage
+                outputPath={outputPath}
+                filename={filename ?? "export"}
+            />
 
             {/* Actions. */}
             <Group justify="center" mt="xl">
