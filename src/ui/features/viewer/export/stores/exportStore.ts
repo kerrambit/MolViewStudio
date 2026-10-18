@@ -5,8 +5,9 @@
  */
 
 import { create } from "zustand";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../../../config/processingDefinitions";
 import type { ResolutionLevel } from "../../../processing/resolution/domain/ResolutionLevel";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/volume/api/ProcessVolumeRequest";
+import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
 
 /**
  * State of an ongoing export. `processing` means the export processing jobs are running

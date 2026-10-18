@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import { schemas } from "../api/generated-schemas";
+import type { schemas } from "../../api/generated-schemas";
 
 export type ProcessVolumeRequest = z.infer<typeof schemas.ProcessVolumeRequest>;
 
@@ -27,21 +27,3 @@ export type ProcessVolumeRequestWithoutFilepathsAndBundlingApproach = Omit<
     | "segmentations_filepaths"
     | "bundling_approach"
 >;
-
-export type DownsamplingStrategy = z.infer<typeof schemas.DownsamplignAlgorithmKind>;
-
-export function getDownsamplingStrategyOptions(): DownsamplingStrategy[] {
-    return schemas.DownsamplignAlgorithmKind.options;
-}
-
-export type SerializerKind = z.infer<typeof schemas.SerializerKind>;
-
-export function getSerializerKindOptions(): SerializerKind[] {
-    return schemas.SerializerKind.options;
-}
-
-export type BundlingKind = z.infer<typeof schemas.BundlingKind>;
-
-export function getBundlingKindOptions(): BundlingKind[] {
-    return schemas.BundlingKind.options;
-}

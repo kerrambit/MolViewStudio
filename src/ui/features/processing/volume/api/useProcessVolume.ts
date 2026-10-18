@@ -5,14 +5,14 @@
  */
 
 import { useMutation } from "@tanstack/react-query";
-import { loggerUi } from "../../services/UiLoggingService";
-import { useApiClient } from "./useApiClient";
-import { handleApiResponseError } from "../utils/handleApiResponseError";
-import type { ProcessVolumeRequest } from "../../config/processingDefinitions";
+import { loggerUi } from "../../../../services/UiLoggingService";
+import { handleApiResponseError } from "../../../../api/utils/handleApiResponseError";
+import type { ProcessVolumeRequest } from "./ProcessVolumeRequest";
+import { useProcessingApiClient } from "../../api/hooks/useProcessingApiClient";
 
 export function useProcessVolume() {
     // Use API client.
-    const { apiClient, endpoints, methods } = useApiClient();
+    const { apiClient, endpoints, methods } = useProcessingApiClient();
 
     return useMutation({
         mutationFn: async (args: ProcessVolumeRequest) => {

@@ -4,9 +4,9 @@
  * @author Marek Eibel
  */
 
-import { useUserSettingsStore } from "../../stores/userSettingsStore";
+import { useUserSettingsStore } from "../../../../stores/userSettingsStore";
 
-export function useDomain() {
+export function useProcessingDomain() {
     const serverPort = useUserSettingsStore((state) => state.settings.serverPort);
     return {
         http: `http://localhost:${serverPort}`,

@@ -76,7 +76,7 @@ import {
 } from "./helpMenuItems";
 import { createSettingsRootMenuItem } from "./settingsRootMenuItem";
 import type { Menu, LiveMenuRenderProps, Dropdown } from "../../providers/MenuContext";
-import { useProcessingStore } from "../../stores/processingStore";
+import { useProcessingStore } from "../../features/processing/stores/processingStore";
 import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/components/ShowSourceTreeHistoryDialogueContent";
 import { useWindowsStore } from "../../features/viewer/stores/WindowsStore";
 import { runExportFlow } from "../../features/viewer/export/services/exportService";

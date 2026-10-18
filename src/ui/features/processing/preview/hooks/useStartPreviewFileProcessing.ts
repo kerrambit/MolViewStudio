@@ -32,8 +32,8 @@ export function useStartPreviewFileProcessing() {
                     segmentation_mesh_serializer: "mrc",
                     bundling_approach: "null",
                 },
+                "Asset",
                 asset.id,
-                "asset",
                 (outputFiles: FileData[]) => {
                     if (!outputFiles || outputFiles.length === 0) {
                         return [];

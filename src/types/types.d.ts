@@ -234,9 +234,7 @@ type Url = {
     headers?: Record<string, string>;
 };
 
-type AssetId = string;
-
-type ProcessingJobId = string;
+type AssetId = string; // TODO: rename to ManagedAssetId
 
 type ManagedAssetType =
     | "Volume"

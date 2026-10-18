@@ -5,8 +5,8 @@
  */
 
 import { useMemo } from "react";
-import { useProcessingStore } from "../../../stores/processingStore";
-import { ProcessingJobSocket } from "../components/processing-manager/ProcessingJobSocket";
+import { useProcessingStore } from "../../stores/processingStore";
+import { ProcessingJobSocket } from "../componets/ProcessingJobSocket";
 
 export function ProcessingJobSocketsManager() {
     const jobs = useProcessingStore((state) => state.jobs);
@@ -14,7 +14,7 @@ export function ProcessingJobSocketsManager() {
     const activeJobIds = useMemo(
         () =>
             Array.from(jobs.values())
-                .filter((j) => j.status === "running")
+                .filter((j) => j.status === "Running")
                 .map((j) => j.jobId),
         [jobs],
     );

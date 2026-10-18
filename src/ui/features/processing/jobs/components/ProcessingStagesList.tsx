@@ -44,8 +44,7 @@ export function ProcessingStagesList({
                 originalName: stage,
                 displayName,
                 key: `${stage}-${index}`,
-                isActive:
-                    stage === currentStage || displayName === currentStage,
+                isActive: stage === currentStage || displayName === currentStage,
             };
         });
     }, [stages, currentStage]);

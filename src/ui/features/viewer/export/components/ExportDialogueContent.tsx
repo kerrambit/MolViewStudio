@@ -5,14 +5,8 @@
  */
 
 import { useState } from "react";
-import { Collapse, Divider, Group, Select, Text, Textarea } from "@mantine/core";
-import {
-    getDownsamplingStrategyOptions,
-    type DownsamplingStrategy,
-    type SerializerKind,
-    type ProcessVolumeRequestWithoutFilepathsAndBundlingApproach,
-} from "../../../../config/processingDefinitions";
-import { IconHelpOctagonFilled } from "@tabler/icons-react";
+import { Collapse, Group, List, Select, Text, Textarea } from "@mantine/core";
+
 import { UnstyledTextInput } from "../../../../components/common/input/UnstyledTextInput";
 import { useAppearance } from "../../../../hooks/useAppearance";
 import { useEnvironment } from "../../../../hooks/useEnvironment";
@@ -29,6 +23,12 @@ import {
     getDownsamplingLevelOptions,
     type DownsamplingLevel,
 } from "../../../processing/downsampling/config/DownsamplingLevel";
+import type { ProcessVolumeRequestWithoutFilepathsAndBundlingApproach } from "../../../processing/volume/api/ProcessVolumeRequest";
+import {
+    getDownsamplingStrategyOptions,
+    type DownsamplingStrategy,
+} from "../../../processing/downsampling/config/DownsamplingStrategy";
+import type { SerializerKind } from "../../../processing/serializer/config/SerializerKind";
 
 /**
  * Result of the export processing properties dialogue.
@@ -85,6 +85,9 @@ export function ExportDialogueContent({
         currentExportSettings: { showAdvancedExportOptions },
     } = useExportSettings();
 
+    // Use regime (story title is used as the default filename).
+    const regime = useRegimeStore((state) => state.regime);
+
     // Simple downsampling level state.
     const [downsamplingLevel, setDownsamplingLevel] =
         useState<DownsamplingLevel>("medium");
@@ -103,12 +106,28 @@ export function ExportDialogueContent({
     // Output folder state, defaults to the user's Exports folder.
     const [outputPath, setOutputPath] = useState<string>(`${userDataPath}/Exports`);
 
+    // Filename state, defaults to the story title.
+    const [filename, setFilename] = useState<string | undefined>(
+        regime.kind === "viewing"
+            ? regime.history.current().stateTree.metadata.title ?? "export"
+            : "export",
+    );
+
     // Expanded states.
     const [isVolumeExpanded, setVolumeExpanded] = useState(true);
     const [isSegmentationExpanded, setSegmentationExpanded] = useState(false);
+    const [isHelpExpanded, setHelpExpanded] = useState(false);
 
-    // The effective downsampling strategy: the advanced strategy overrides the simple level once touched.
-    const effectiveDownsamplingStrategy = isAdvancedExpanded
+    // All hooks are called above, so it is safe to bail out here.
+    if (regime.kind !== "viewing") {
+        return null;
+    }
+
+    // Advanced mode: the full list of strategies replaces the simple downsampling quality select.
+    const isAdvancedMode = showAdvancedExportOptions && isAdvancedExpanded;
+
+    // The effective downsampling strategy: in advanced mode the chosen strategy is used, otherwise the one derived from the simple level.
+    const effectiveDownsamplingStrategy = isAdvancedMode
         ? advancedStrategy
         : DOWNSAMPLING_LEVEL_TO_STRATEGY[downsamplingLevel];
 
@@ -117,15 +136,6 @@ export function ExportDialogueContent({
     const segmentationAssetsNames = segmentationAssets
         .map((asset) => `"${asset.name}"`)
         .join(", ");
-
-    // Story title.
-    const regime = useRegimeStore((state) => state.regime);
-    if (regime.kind !== "viewing") {
-        return null;
-    }
-    const [filename, setFilename] = useState<string | undefined>(
-        regime.history.current().stateTree.metadata.title ?? "export",
-    );
 
     // Generate summary text based on current options.
     const summaryText =
@@ -141,6 +151,83 @@ export function ExportDialogueContent({
             : "") +
         `The output will be bundled into MVSX archive, ready to be opened directly in the viewer.` +
         `\n\nThe export will be saved into "${outputPath}/${filename}.mvsx".`;
+
+    // Formatted help content.
+    const helpContent = (
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75em",
+                maxHeight: "16em",
+                overflowY: "auto",
+                paddingTop: "0.5em",
+                paddingRight: "0.5em",
+            }}
+        >
+            <Text size="sm">
+                This dialogue sets properties for the current export. Initial settings can
+                be changed in the Settings.
+            </Text>
+
+            {volumeAssets.length > 0 && (
+                <div>
+                    <Text size="sm" fw={700}>
+                        Volume
+                    </Text>
+                    <List size="sm" spacing={4}>
+                        <List.Item>
+                            <b>Downsampling quality</b> - the smaller the quality, the
+                            smaller (and faster to load) the exported volume.
+                        </List.Item>
+                        {showAdvancedExportOptions && (
+                            <>
+                                <List.Item>
+                                    <b>Volume resolution</b> - which processed resolution
+                                    level is embedded into the story. If it is not
+                                    available, the closest one is used.
+                                </List.Item>
+                                <List.Item>
+                                    <b>Advanced options</b> - choose the downsampling
+                                    strategy directly. While expanded, it replaces the
+                                    quality select.
+                                </List.Item>
+                            </>
+                        )}
+                    </List>
+                </div>
+            )}
+
+            {segmentationAssets.length > 0 && (
+                <div>
+                    <Text size="sm" fw={700}>
+                        Segmentation
+                    </Text>
+                    <List size="sm" spacing={4}>
+                        <List.Item>
+                            Segmentation sources are only serialized into the "mrc"
+                            format, they are not downsampled.
+                        </List.Item>
+                    </List>
+                </div>
+            )}
+
+            <div>
+                <Text size="sm" fw={700}>
+                    Output
+                </Text>
+                <List size="sm" spacing={4}>
+                    <List.Item>
+                        <b>Output folder</b> - where the final export is saved.
+                    </List.Item>
+                    <List.Item>
+                        <b>Filename</b> - name of the exported <code>.mvsx</code> file,
+                        defaults to the story title.
+                    </List.Item>
+                </List>
+            </div>
+        </div>
+    );
 
     // Render the component.
     return (
@@ -209,23 +296,26 @@ export function ExportDialogueContent({
                                         />
                                     </div>
 
-                                    <Select
-                                        label="Downsampling quality:"
-                                        data={downsamplingLevelOptions}
-                                        value={downsamplingLevel}
-                                        allowDeselect={false}
-                                        onChange={(value) =>
-                                            setDownsamplingLevel(
-                                                value as DownsamplingLevel,
-                                            )
-                                        }
-                                        placeholder="Select downsampling..."
-                                        size="sm"
-                                        comboboxProps={{
-                                            withinPortal: true,
-                                            zIndex: 10000,
-                                        }}
-                                    />
+                                    {/* Simple quality select, hidden when the advanced strategy select is in use. */}
+                                    {!isAdvancedMode && (
+                                        <Select
+                                            label="Downsampling quality:"
+                                            data={downsamplingLevelOptions}
+                                            value={downsamplingLevel}
+                                            allowDeselect={false}
+                                            onChange={(value) =>
+                                                setDownsamplingLevel(
+                                                    value as DownsamplingLevel,
+                                                )
+                                            }
+                                            placeholder="Select downsampling..."
+                                            size="sm"
+                                            comboboxProps={{
+                                                withinPortal: true,
+                                                zIndex: 10000,
+                                            }}
+                                        />
+                                    )}
 
                                     {showAdvancedExportOptions && (
                                         <Select
@@ -433,38 +523,43 @@ export function ExportDialogueContent({
                         gap: "0.5em",
                     }}
                 >
-                    <Group gap="xs" justify="space-between" align="center">
-                        <Text size="sm" fw={600}>
-                            Summary
-                        </Text>
-                        <IconHelpOctagonFilled
-                            style={{
-                                opacity: 0.6,
-                                cursor: "help",
-                            }}
-                            title={`This dialogue sets properties for the current export.\nInitial settings can be changed in the Settings.`}
-                        />
-                    </Group>
+                    <Text size="sm" fw={600}>
+                        Summary
+                    </Text>
 
-                    <Textarea
-                        value={summaryText}
-                        readOnly
-                        styles={{
-                            root: { height: "100%" },
-                            wrapper: { height: "100%" },
-                            input: {
-                                height: "100%",
-                                borderRadius: "6px",
-                                backgroundColor:
-                                    colorScheme === "dark"
-                                        ? "var(--color-dark-ui-component-mantine)"
-                                        : "var(--color-light-ui-component-mantine)",
-                                color: "var(--input-color)",
-                                border: "none",
-                            },
+                    {/* The summary takes all the remaining space of the column. */}
+                    <div style={{ flex: 1, minHeight: "10em" }}>
+                        <Textarea
+                            value={summaryText}
+                            readOnly
+                            styles={{
+                                root: { height: "100%" },
+                                wrapper: { height: "100%" },
+                                input: {
+                                    height: "100%",
+                                    borderRadius: "6px",
+                                    backgroundColor:
+                                        colorScheme === "dark"
+                                            ? "var(--color-dark-ui-component-mantine)"
+                                            : "var(--color-light-ui-component-mantine)",
+                                    color: "var(--input-color)",
+                                    border: "none",
+                                },
+                            }}
+                            style={{ height: "100%" }}
+                        />
+                    </div>
+
+                    {/* Collapsible help. */}
+                    <CollapseTrigger
+                        title={"Help"}
+                        titleTextSize="sm"
+                        expanded={isHelpExpanded}
+                        onClick={() => {
+                            setHelpExpanded((prev) => !prev);
                         }}
-                        style={{ height: "100%" }}
                     />
+                    <Collapse expanded={isHelpExpanded}>{helpContent}</Collapse>
                 </div>
             </div>
 

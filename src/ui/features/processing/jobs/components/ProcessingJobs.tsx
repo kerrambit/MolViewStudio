@@ -5,11 +5,11 @@
  */
 
 import { Divider, Text } from "@mantine/core";
-import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
-import { useProcessingStore } from "../../../../stores/processingStore";
-import { useWindowsStore } from "../../stores/WindowsStore";
-import { ProcessingJobCard } from "./ProcessingJobCard";
 import { CloseActionIcon } from "../../../../components/common/actionables/actions-icons/CloseActionIcon";
+import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
+import { useWindowsStore } from "../../../viewer/stores/WindowsStore";
+import { useProcessingStore } from "../../stores/processingStore";
+import { ProcessingJobCard } from "./ProcessingJobCard";
 
 export function ProcessingJobs() {
     // Use processing.

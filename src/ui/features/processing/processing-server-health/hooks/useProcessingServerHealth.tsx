@@ -5,25 +5,21 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { useApiClient } from "./useApiClient";
-import { handleApiResponseError } from "../utils/handleApiResponseError";
+import { handleApiResponseError } from "../../../../api/utils/handleApiResponseError";
+import { useProcessingApiClient } from "../../api/hooks/useProcessingApiClient";
 
-export function useServerStatus() {
+export function useProcessingServerHealth() {
     // Use API client.
-    const { apiClient, endpoints, methods } = useApiClient();
+    const { apiClient, endpoints, methods } = useProcessingApiClient();
 
     return useQuery({
-        queryKey: ["serverStatus"],
+        queryKey: ["health"],
         queryFn: async () => {
             try {
                 await apiClient.health();
                 return true;
             } catch (error) {
-                handleApiResponseError(
-                    error,
-                    endpoints["health"],
-                    methods["health"],
-                );
+                handleApiResponseError(error, endpoints["health"], methods["health"]);
 
                 throw error;
             }

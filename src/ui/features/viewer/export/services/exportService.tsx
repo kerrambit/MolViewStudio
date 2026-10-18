@@ -6,7 +6,6 @@
 
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
 import { checkOffersProcessing } from "../../../../config/assetsDefinitions";
-import { type ProcessVolumeRequestWithoutFilepaths } from "../../../../config/processingDefinitions";
 import {
     replaceHiddenAssetIdsByItsParentIdInTree,
     substituteAssetDownloadsInNode,
@@ -27,7 +26,7 @@ import {
     isManagedAssetLocal,
     useManagedAssetsStore,
 } from "../../../../stores/managedAssetsStore";
-import { useProcessingStore } from "../../../../stores/processingStore";
+import { useProcessingStore } from "../../../processing/stores/processingStore";
 import { useRegimeStore } from "../../../../stores/regimeStore";
 import { useUserSettingsStore } from "../../../../stores/userSettingsStore";
 import type { useWorkspaceManagement } from "../../../workspace/hooks/useWorkspaceManagement";
@@ -40,6 +39,8 @@ import {
     replaceFileExtension,
 } from "../../../../utils/fileDataUtils";
 import { pickFileByResolution } from "../../../processing/resolution/domain/pickFileByResolution";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/volume/api/ProcessVolumeRequest";
+import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -192,8 +193,8 @@ export async function runExportFlow(
             },
             jobId,
             asset.type === "Segmentation" ? "Segmentation" : "Volume",
+            "Export",
             undefined,
-            "export",
             undefined,
         );
 
@@ -236,7 +237,7 @@ export async function handleExportJobFinished(
         exportState.jobIds.size >= exportState.expectedJobCount &&
         Array.from(exportState.jobIds).every((id) => {
             const job = jobs.get(id);
-            return job !== undefined && job.status !== "running";
+            return job !== undefined && job.status !== "Running";
         });
 
     if (!allFinished) {

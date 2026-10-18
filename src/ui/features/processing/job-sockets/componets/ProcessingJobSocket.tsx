@@ -5,9 +5,7 @@
  */
 
 import { useCallback } from "react";
-import { useDomain } from "../../../../api/hooks/useDomain";
-import { useProcessingSocket } from "../../../../api/hooks/useProcessVolumeWebSocket";
-import { webSocketEndpoints } from "../../../../api/webSocketEndpoints";
+import { useProcessVolumeSocket } from "../../volume/api/useProcessVolumeSocket";
 import {
     pushErrorNotification,
     pushSuccessNotification,
@@ -15,24 +13,19 @@ import {
 } from "../../../../services/NotificationService";
 import { loggerUi } from "../../../../services/UiLoggingService";
 import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
-import { useProcessingStore } from "../../../../stores/processingStore";
+import { useProcessingStore } from "../../stores/processingStore";
 import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
-import { handleExportJobFinished } from "../../export/services/exportService";
+import { handleExportJobFinished } from "../../../viewer/export/services/exportService";
 
 type ProcessingJobSocketProps = {
     jobId: string;
 };
 
-// TODO: insted of baking the logic here for `onDone` handler (see `job.purpose` type), we should provide a hander when startint the processing
+// TODO: insted of baking the logic here for `onDone` handler (see `job.purpose` type), we should provide a hanlder when starting the processing
 export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
-    // Use domain and choose correct websocket endpoint.
-    const domain = useDomain().ws;
-    const websocketEndpoint = webSocketEndpoints.process_volume(props.jobId);
-
     // Use the web socket hook for volume processing.
-    useProcessingSocket(
-        domain + websocketEndpoint,
-        websocketEndpoint,
+    useProcessVolumeSocket(
+        props.jobId,
         // On progres.
         useCallback(
             (stage: string) => {
@@ -72,7 +65,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 useProcessingStore.getState().completeJob(props.jobId, result);
 
                 // Export jobs continue the export flow instead of adding new managed assets.
-                if (job.purpose === "export") {
+                if (job.purpose === "Export") {
                     await handleExportJobFinished(props.jobId);
                     return;
                 }
@@ -223,7 +216,7 @@ export function ProcessingJobSocket(props: ProcessingJobSocketProps) {
                 useProcessingStore.getState().failJob(props.jobId, error);
 
                 // Export jobs cancel the whole export on failure.
-                if (job.purpose === "export") {
+                if (job.purpose === "Export") {
                     await handleExportJobFinished(props.jobId, error);
                     return;
                 }

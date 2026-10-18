@@ -13,7 +13,7 @@ import {
     pushInfoNotification,
     pushSuccessNotification,
 } from "../../../services/NotificationService";
-import { useProcessVolume } from "../../../api/hooks/useProcessVolume";
+import { useProcessVolume } from "../../processing/volume/api/useProcessVolume";
 import { useEnvironment } from "../../../hooks/useEnvironment";
 import {
     clearViewer,
@@ -24,13 +24,11 @@ import {
 } from "../../../lib/molstar";
 import { useRegimeStore } from "../../../stores/regimeStore";
 import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
-import {
-    useProcessingStore,
-    type ProcessingJobPurpose,
-} from "../../../stores/processingStore";
+import { useProcessingStore } from "../../processing/stores/processingStore";
 import { useRecentFilesStore } from "../../../stores/recentFilesStore";
 import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../../config/processingDefinitions";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../processing/volume/api/ProcessVolumeRequest";
+import type { ProcessingJobPurpose } from "../../processing/domain/ProcessingJob";
 
 export function useWorkspaceManagement() {
     // Use environment.
@@ -156,8 +154,8 @@ export function useWorkspaceManagement() {
             fileToProcess: FileData,
             type: "Volume" | "Segmentation",
             properties: ProcessVolumeRequestWithoutFilepaths,
+            purpose: ProcessingJobPurpose,
             parentAssetId?: AssetId,
-            purpose?: ProcessingJobPurpose,
             chooseAssetsFunction?: (assets: FileData[]) => {
                 assetIndex: number;
                 relativePath: string;
@@ -187,8 +185,8 @@ export function useWorkspaceManagement() {
                                 fileToProcess,
                                 result.job_id,
                                 type,
-                                parentAssetId,
                                 purpose,
+                                parentAssetId,
                                 chooseAssetsFunction,
                             );
 

@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import type { DownsamplingStrategy } from "../../../../config/processingDefinitions";
+import type { DownsamplingStrategy } from "./DownsamplingStrategy";
 
 /**
  * Simple downsampling levels offered in the processing dialogue. The full list of strategies

@@ -6,9 +6,9 @@
 
 import { useEffect } from "react";
 import { useWebSocket } from "react-use-websocket/dist/lib/use-websocket";
-
 import { z } from "zod";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../../../services/UiLoggingService";
+import { useProcessingApiClient } from "../../api/hooks/useProcessingApiClient";
 
 const ProcessVolumeProgressMessageSchema = z.object({
     stage: z.string(),
@@ -16,31 +16,32 @@ const ProcessVolumeProgressMessageSchema = z.object({
     result: z.string().array().nullable().optional(),
 });
 
-type ProcessVolumeProgressMessage = z.infer<
-    typeof ProcessVolumeProgressMessageSchema
->;
+type ProcessVolumeProgressMessage = z.infer<typeof ProcessVolumeProgressMessageSchema>;
 
-export function useProcessingSocket(
-    websocketUrl: string | null,
-    websocketEndpoint: string,
+export function useProcessVolumeSocket(
+    jobId: string,
     onProgress: (stage: string) => void,
     onDone: (result: string[]) => void,
     onError: (error: string) => void,
 ) {
-    const { lastJsonMessage, readyState } = useWebSocket(websocketUrl, {
-        share: false,
-        shouldReconnect: () => true,
-    });
+    const { webSocketsMethods, webSocketEndpoints } = useProcessingApiClient();
+
+    const { lastJsonMessage, readyState } = useWebSocket(
+        webSocketsMethods.process_volume(jobId),
+        {
+            share: false,
+            shouldReconnect: () => true,
+        },
+    );
 
     useEffect(() => {
         if (lastJsonMessage === null) return;
 
-        const parsed =
-            ProcessVolumeProgressMessageSchema.safeParse(lastJsonMessage);
+        const parsed = ProcessVolumeProgressMessageSchema.safeParse(lastJsonMessage);
 
         if (!parsed.success) {
             loggerUi.websockets.parserError(
-                websocketEndpoint,
+                webSocketEndpoints.process_volume(jobId),
                 parsed.error.message,
             );
             return;
@@ -58,7 +59,13 @@ export function useProcessingSocket(
         }
 
         onProgress(message.stage);
-    }, [lastJsonMessage, websocketEndpoint, onDone, onError, onProgress]);
+    }, [
+        lastJsonMessage,
+        webSocketEndpoints.process_volume(jobId),
+        onDone,
+        onError,
+        onProgress,
+    ]);
 
     return { readyState };
 }

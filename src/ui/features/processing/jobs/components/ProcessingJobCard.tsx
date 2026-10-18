@@ -4,23 +4,21 @@
  * @author Marek Eibel
  */
 
+import { useState } from "react";
 import { Collapse, Loader, Text } from "@mantine/core";
-import { Button } from "../../../../components/common/button/Button";
-import {
-    useProcessingStore,
-    type ProcessingJob,
-} from "../../../../stores/processingStore";
 import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
-import { useDialogueStore } from "../../../../stores/dialogueStore";
+import { Button } from "../../../../components/common/button/Button";
+import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
 import { ErrorDialogueContent } from "../../../../components/common/dialogue/ErrorDialogueContent";
-import { useAppearance } from "../../../../hooks/useAppearance";
 import { SimpleDialogueContent } from "../../../../components/common/dialogue/SimpleDialogueContent";
+import { useAppearance } from "../../../../hooks/useAppearance";
+import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
+import { useDialogueStore } from "../../../../stores/dialogueStore";
+import type { ProcessingJob } from "../../domain/ProcessingJob";
+import { useProcessingStore } from "../../stores/processingStore";
+import { ProcessingStagesList } from "./ProcessingStagesList";
 
 import "./ProcessingJobCard.css";
-import { ProcessingStagesList } from "./ProcessingStagesList";
-import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
-import { useState } from "react";
-import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
 
 export type ProcessingJobCardProps = {
     job: ProcessingJob;
@@ -29,13 +27,13 @@ export type ProcessingJobCardProps = {
 export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
     // Use processing.
     const clearJob = useProcessingStore((state) => state.clearJob);
-    const isJobActive = job.status === "running";
+    const isJobActive = job.status === "Running";
 
     // Derived job outcome flags.
     const hasResultFiles = (job.resultPaths?.length ?? 0) > 0;
-    const isSuccess = job.status === "success" && hasResultFiles;
-    const isWarning = job.status === "success" && !hasResultFiles;
-    const isError = job.status === "error";
+    const isSuccess = job.status === "Success" && hasResultFiles;
+    const isWarning = job.status === "Success" && !hasResultFiles;
+    const isError = job.status === "Error";
 
     const [isStagesListExpanded, setStagesListExpanded] = useState(
         UiLocalStorageService.ProcessingJobs.getJobExpandedState(job.jobId),
@@ -71,7 +69,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                 <Text
                     size="md"
                     fw={700}
-                    title={`This processing was carried out for purpose of new ${job.purpose}.`}
+                    title={`Purpose of this processing was: "${job.purpose}".`}
                 >
                     {job.file.name}
                 </Text>
@@ -113,7 +111,7 @@ export function ProcessingJobCard({ job }: ProcessingJobCardProps) {
                                 ? job.stages.at(job.stages.length - 1)
                                 : undefined
                         }
-                        isJobFinished={job.status !== "running"}
+                        isJobFinished={job.status !== "Running"}
                     />
                 </Collapse>
 
