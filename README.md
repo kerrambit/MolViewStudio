@@ -31,7 +31,7 @@ The app ships as a self-contained Electron desktop application with a local Pyth
 
 ## Download
 
-MolView Studio is available for **Windows** and **Linux** (**macOS** builds coming in a future releases). Grab the latest installer from the [Releases page](https://github.com/kerrambit/MolViewStudio/releases), or update in place using the app's built-in auto-update feature (available only for **Windows** and **macOS** users).
+MolView Studio is available for **Windows** and **Linux** (**macOS** builds coming in a future releases). Grab the latest installer from the [Releases page](https://github.com/kerrambit/MolViewStudio/releases), or update in place using the app's built-in auto-update feature!
 
 ## Development
 
@@ -45,7 +45,7 @@ MolView Studio is available for **Windows** and **Linux** (**macOS** builds comi
 
 **1. Build the local processing server**
 
-The server (*FastAPI* + *volseg-tools*) is packaged into a standalone binary with *PyInstaller*:
+The server (_FastAPI_ + _volseg-tools_) is packaged into a standalone binary with _PyInstaller_:
 
 ```bash
 python -m pip install --upgrade pip
