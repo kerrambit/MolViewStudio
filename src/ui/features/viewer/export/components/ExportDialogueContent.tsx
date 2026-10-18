@@ -7,10 +7,7 @@
 import { useState } from "react";
 import { Collapse, Divider, Group, Select, Text, Textarea } from "@mantine/core";
 import {
-    getDownsamplingLevelOptions,
     getDownsamplingStrategyOptions,
-    DOWNSAMPLING_LEVEL_TO_STRATEGY,
-    type DownsamplingLevel,
     type DownsamplingStrategy,
     type SerializerKind,
     type ProcessVolumeRequestWithoutFilepathsAndBundlingApproach,
@@ -27,6 +24,11 @@ import {
     getResolutionLevelOptions,
     type ResolutionLevel,
 } from "../../../processing/resolution/domain/ResolutionLevel";
+import {
+    DOWNSAMPLING_LEVEL_TO_STRATEGY,
+    getDownsamplingLevelOptions,
+    type DownsamplingLevel,
+} from "../../../processing/downsampling/config/DownsamplingLevel";
 
 /**
  * Result of the export processing properties dialogue.
@@ -102,9 +104,8 @@ export function ExportDialogueContent({
     const [outputPath, setOutputPath] = useState<string>(`${userDataPath}/Exports`);
 
     // Expanded states.
-    const [isVolumeExpanded, setVolumeExpanded] = useState(false);
+    const [isVolumeExpanded, setVolumeExpanded] = useState(true);
     const [isSegmentationExpanded, setSegmentationExpanded] = useState(false);
-    const [isOutputExpanded, setOutputExpanded] = useState(true);
 
     // The effective downsampling strategy: the advanced strategy overrides the simple level once touched.
     const effectiveDownsamplingStrategy = isAdvancedExpanded
@@ -117,21 +118,6 @@ export function ExportDialogueContent({
         .map((asset) => `"${asset.name}"`)
         .join(", ");
 
-    // Generate summary text based on current options.
-    const summaryText =
-        (volumeAssets.length === 0
-            ? `No volume sources to processing were found.\n\n`
-            : `The volume source${
-                  volumeAssets.length > 1 ? "s" : ""
-              } ${volumeAssetsNames} will be downsampled using the "${effectiveDownsamplingStrategy}" strategy, serialized into the "mrc" format and the "${targetResolution}" resolution version will be embedded into the story export.\n\n`) +
-        (segmentationAssets.length > 0
-            ? `The segmentation source${
-                  segmentationAssets.length > 1 ? "s" : ""
-              } ${segmentationAssetsNames} will be serialized into the "mrc" format.\n\n`
-            : `No segmentation sources for processing were found.\n\n`) +
-        `The output will be bundled into MVSX archive(s), ready to be opened directly in the viewer.` +
-        `\n\nThe export will be saved into "${outputPath}".`;
-
     // Story title.
     const regime = useRegimeStore((state) => state.regime);
     if (regime.kind !== "viewing") {
@@ -141,20 +127,24 @@ export function ExportDialogueContent({
         regime.history.current().stateTree.metadata.title ?? "export",
     );
 
+    // Generate summary text based on current options.
+    const summaryText =
+        (volumeAssets.length === 0
+            ? ""
+            : `The volume source${
+                  volumeAssets.length > 1 ? "s" : ""
+              } ${volumeAssetsNames} will be downsampled using the "${effectiveDownsamplingStrategy}" strategy, serialized into the "mrc" format and the "${targetResolution}" resolution version will be embedded into the story export.\n\n`) +
+        (segmentationAssets.length > 0
+            ? `The segmentation source${
+                  segmentationAssets.length > 1 ? "s" : ""
+              } ${segmentationAssetsNames} will be serialized into the "mrc" format.\n\n`
+            : "") +
+        `The output will be bundled into MVSX archive, ready to be opened directly in the viewer.` +
+        `\n\nThe export will be saved into "${outputPath}/${filename}.mvsx".`;
+
     // Render the component.
     return (
         <div>
-            {/* Header. */}
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "end",
-                    alignItems: "center",
-                    marginBottom: "0.5em",
-                }}
-            ></div>
-
             {/* Main body. */}
             <div
                 style={{
@@ -168,13 +158,18 @@ export function ExportDialogueContent({
                     style={{
                         display: "flex",
                         flexDirection: "column",
-                        flex: 1,
+                        flex: 1.35,
                         gap: "1em",
                     }}
                 >
                     {/* Volume block. */}
                     {volumeAssets.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column" }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
                             <CollapseTrigger
                                 title={"Volume"}
                                 titleTextSize="lg"
@@ -189,8 +184,8 @@ export function ExportDialogueContent({
                                     style={{
                                         display: "flex",
                                         flexDirection: "column",
-                                        gap: "1em",
-                                        padding: "0.5em 0 0 0",
+                                        gap: ".25em",
+                                        paddingTop: ".5em",
                                     }}
                                 >
                                     <div
@@ -249,6 +244,9 @@ export function ExportDialogueContent({
                                                 withinPortal: true,
                                                 zIndex: 10000,
                                             }}
+                                            style={{
+                                                paddingBottom: ".75em",
+                                            }}
                                         />
                                     )}
 
@@ -270,7 +268,7 @@ export function ExportDialogueContent({
                                                 style={{
                                                     display: "flex",
                                                     flexDirection: "column",
-                                                    gap: "1em",
+                                                    gap: ".25em",
                                                 }}
                                             >
                                                 <Select
@@ -293,7 +291,6 @@ export function ExportDialogueContent({
                                             </div>
                                         </Collapse>
                                     )}
-                                    <Divider mt="sm" />
                                 </div>
                             </Collapse>
                         </div>
@@ -301,7 +298,12 @@ export function ExportDialogueContent({
 
                     {/* Segmentation block. */}
                     {segmentationAssets.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column" }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
                             <CollapseTrigger
                                 title={"Segmentation"}
                                 titleTextSize="lg"
@@ -316,8 +318,8 @@ export function ExportDialogueContent({
                                     style={{
                                         display: "flex",
                                         flexDirection: "column",
-                                        gap: "1em",
-                                        padding: "0.5em 0 0 0",
+                                        gap: ".25em",
+                                        paddingTop: ".5em",
                                     }}
                                 >
                                     <div
@@ -341,100 +343,84 @@ export function ExportDialogueContent({
                                         />
                                     </div>
                                 </div>
-                                <Divider mt="sm" />
                             </Collapse>
                         </div>
                     )}
 
                     {/* Output block. */}
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        <CollapseTrigger
-                            title={"Output"}
-                            titleTextSize="lg"
-                            expanded={isOutputExpanded}
-                            onClick={() => {
-                                setOutputExpanded((prev) => !prev);
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: ".25em",
+                        }}
+                    >
+                        <Text size="lg">Output</Text>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "1em",
                             }}
-                        />
-
-                        <Collapse expanded={isOutputExpanded}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: ".25em",
-                                    padding: "0.5em 0 0 0",
+                        >
+                            <Text size="sm" fw={600} style={{ minWidth: "1em" }}>
+                                Output folder:
+                            </Text>
+                            <UnstyledTextInput
+                                value={outputPath}
+                                tooltip={outputPath}
+                                enabled={false}
+                                style={{ flexGrow: 1 }}
+                            />
+                            <Button
+                                variant="ghost"
+                                size="small"
+                                onClick={async () => {
+                                    const selected =
+                                        await window.electron.selectDirectory(outputPath);
+                                    if (selected instanceof Error) {
+                                        return;
+                                    }
+                                    if (selected) {
+                                        setOutputPath(selected);
+                                    }
                                 }}
                             >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "1em",
-                                    }}
-                                >
-                                    <Text size="sm" fw={600} style={{ minWidth: "1em" }}>
-                                        Output folder:
-                                    </Text>
-                                    <UnstyledTextInput
-                                        value={outputPath}
-                                        tooltip={outputPath}
-                                        enabled={false}
-                                        style={{ flexGrow: 1 }}
-                                    />
-                                    <Button
-                                        variant="ghost"
-                                        size="small"
-                                        onClick={async () => {
-                                            const selected =
-                                                await window.electron.selectDirectory(
-                                                    outputPath,
-                                                );
-                                            if (selected instanceof Error) {
-                                                return;
-                                            }
-                                            if (selected) {
-                                                setOutputPath(selected);
-                                            }
-                                        }}
-                                    >
-                                        Browse...
-                                    </Button>
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "1em",
-                                    }}
-                                >
-                                    <Text size="sm" fw={600} style={{ minWidth: "1em" }}>
-                                        Name:
-                                    </Text>
-                                    <UnstyledTextInput
-                                        value={filename}
-                                        tooltip={filename}
-                                        enabled={true}
-                                        onBlur={(value) => {
-                                            if (value) {
-                                                setFilename(value);
-                                            } else {
-                                                setFilename("");
-                                            }
-                                        }}
-                                        onValueChange={(value) => {
-                                            if (value) {
-                                                setFilename(value);
-                                            } else {
-                                                setFilename("");
-                                            }
-                                        }}
-                                        canBeEmpty={false}
-                                        style={{ flexGrow: 1 }}
-                                    />
-                                </div>
-                            </div>
-                        </Collapse>
+                                Browse...
+                            </Button>
+                        </div>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "1em",
+                            }}
+                        >
+                            <Text size="sm" fw={600} style={{ minWidth: "1em" }}>
+                                Filename:
+                            </Text>
+                            <UnstyledTextInput
+                                value={filename}
+                                tooltip={filename}
+                                enabled={true}
+                                onBlur={(value) => {
+                                    if (value) {
+                                        setFilename(value);
+                                    } else {
+                                        setFilename("");
+                                    }
+                                }}
+                                onValueChange={(value) => {
+                                    if (value) {
+                                        setFilename(value);
+                                    } else {
+                                        setFilename("");
+                                    }
+                                }}
+                                canBeEmpty={false}
+                                style={{ flexGrow: 1 }}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -444,12 +430,11 @@ export function ExportDialogueContent({
                         display: "flex",
                         flexDirection: "column",
                         flex: 1,
-                        minHeight: "10em",
                         gap: "0.5em",
                     }}
                 >
                     <Group gap="xs" justify="space-between" align="center">
-                        <Text size="sm" fw={700}>
+                        <Text size="sm" fw={600}>
                             Summary
                         </Text>
                         <IconHelpOctagonFilled
@@ -485,16 +470,12 @@ export function ExportDialogueContent({
 
             {/* Actions. */}
             <Group justify="center" mt="xl">
-                <Button
-                    variant="secondary"
-                    size="medium"
-                    onClick={() => close(undefined)}
-                >
+                <Button variant="secondary" size="small" onClick={() => close(undefined)}>
                     Close
                 </Button>
                 <Button
                     variant="primary"
-                    size="medium"
+                    size="small"
                     disabled={!filename}
                     onClick={() => {
                         close({

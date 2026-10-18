@@ -38,9 +38,7 @@ interface ViewOptionsDialogueContentProps {
     close: (value?: ViewOptionsDialogueContentReturnType) => void;
 }
 
-export function ViewOptionsDialogueContent(
-    props: ViewOptionsDialogueContentProps,
-) {
+export function ViewOptionsDialogueContent(props: ViewOptionsDialogueContentProps) {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
 
@@ -52,18 +50,16 @@ export function ViewOptionsDialogueContent(
         if (regime.kind !== "viewing") return null;
         return regime.history
             .current()
-            .stateTree.snapshots.find(
-                (snap) => snap.metadata.key === props.viewKey,
-            );
+            .stateTree.snapshots.find((snap) => snap.metadata.key === props.viewKey);
     }, [regime, props.viewKey]);
 
     // All view properies in the View Option dialogue.
     const [lingerDuration, setLingerDuration] = useState<number>(
         view?.metadata.linger_duration_ms ?? 5000,
     );
-    const [transitionDuration, setTransitionDuration] = useState<
-        number | undefined
-    >(view?.metadata.transition_duration_ms);
+    const [transitionDuration, setTransitionDuration] = useState<number | undefined>(
+        view?.metadata.transition_duration_ms,
+    );
     const [canvasColor, setCanvasColor] = useState<HexColor | undefined>(
         props.backgroundColor as HexColor,
     );
@@ -77,11 +73,8 @@ export function ViewOptionsDialogueContent(
 
         return props.captureScreenshot;
     });
-    const [descriptionFormat, setDescriptionFormat] = useState<
-        "plaintext" | "markdown"
-    >(
-        (view?.metadata.description_format as "plaintext" | "markdown") ??
-            "markdown",
+    const [descriptionFormat, setDescriptionFormat] = useState<"plaintext" | "markdown">(
+        (view?.metadata.description_format as "plaintext" | "markdown") ?? "markdown",
     );
     const [description, setDescription] = useState<string | undefined>(
         view?.metadata.description,
@@ -115,9 +108,7 @@ export function ViewOptionsDialogueContent(
                         <Text size="sm">Linger duration in miliseconds:</Text>
                         <NumberInput
                             value={lingerDuration}
-                            onChange={(val) =>
-                                setLingerDuration(Number(val) || 5000)
-                            }
+                            onChange={(val) => setLingerDuration(Number(val) || 5000)}
                             size="sm"
                             style={{ width: "140px" }}
                             hideControls
@@ -130,14 +121,10 @@ export function ViewOptionsDialogueContent(
                             justifyContent: "space-between",
                         }}
                     >
-                        <Text size="sm">
-                            Transition duration in miliseconds:
-                        </Text>
+                        <Text size="sm">Transition duration in miliseconds:</Text>
                         <NumberInput
                             value={transitionDuration}
-                            onChange={(val) =>
-                                setTransitionDuration(Number(val) || 0)
-                            }
+                            onChange={(val) => setTransitionDuration(Number(val) || 0)}
                             size="sm"
                             style={{ width: "140px" }}
                             hideControls
@@ -230,6 +217,7 @@ export function ViewOptionsDialogueContent(
                             wrapper: { height: "100%" },
                             input: {
                                 height: "100%",
+                                borderRadius: "6px",
                                 backgroundColor:
                                     colorScheme === "dark"
                                         ? "var(--color-dark-ui-component-mantine)"
@@ -267,9 +255,7 @@ export function ViewOptionsDialogueContent(
                             <ReactMarkdown>{description}</ReactMarkdown>
                         </Typography>
                     ) : (
-                        <Text style={{ whiteSpace: "pre-wrap" }}>
-                            {description}
-                        </Text>
+                        <Text style={{ whiteSpace: "pre-wrap" }}>{description}</Text>
                     )}
                 </div>
             </div>
