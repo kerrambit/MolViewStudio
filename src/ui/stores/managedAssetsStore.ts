@@ -13,6 +13,7 @@ import {
     replaceAssetRelativePathFromMolstar,
 } from "../lib/molstar";
 import { getExtensionFromFileName } from "../utils/fileDataUtils";
+import { loggerUi } from "../services/UiLoggingService";
 
 export function isManagedAssetLocal(managedAsset: ManagedAsset): boolean {
     return managedAsset.tag === "local";
@@ -437,6 +438,7 @@ export const useManagedAssetsStore = create<ManagedAssetsStore>((set, get) => ({
 
     clearAssets: () => {
         set({ assets: new Map() });
+        loggerUi.debug("Managed assets were cleared.");
     },
 
     getAsset: (assetId) => {

@@ -62,6 +62,13 @@ export async function runExportFlow(
         return;
     }
 
+    if (useExportStore.getState().status === "processing") {
+        pushWarningNotification(
+            "One export is already running! Try once again after the first export is finished.",
+        );
+        return;
+    }
+
     const assetsToProcess = collectUsedAssetsToProcess(
         useUserSettingsStore.getState().settings.export.processAllLocalAssets,
     );

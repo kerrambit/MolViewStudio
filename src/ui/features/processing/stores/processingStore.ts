@@ -11,6 +11,7 @@ import type {
     ProcessingJobPurpose,
     ProcessingResultAssetType,
 } from "../domain/ProcessingJob";
+import { loggerUi } from "../../../services/UiLoggingService";
 
 export type ProcessingState = Map<ProcessingJobId, ProcessingJob>;
 
@@ -148,5 +149,6 @@ export const useProcessingStore = create<ProcessingStore>((set, get) => ({
 
     clearAllJobs: () => {
         set({ jobs: new Map() });
+        loggerUi.debug("Processing jobs were cleared.");
     },
 }));

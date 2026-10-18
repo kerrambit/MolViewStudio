@@ -7,6 +7,7 @@
 import { router } from "../../router/router";
 import {
     pushErrorNotification,
+    pushInfoNotification,
     pushWarningNotification,
 } from "../../services/NotificationService";
 import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
@@ -80,6 +81,7 @@ import { useProcessingStore } from "../../features/processing/stores/processingS
 import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/components/ShowSourceTreeHistoryDialogueContent";
 import { useWindowsStore } from "../../features/viewer/stores/WindowsStore";
 import { runExportFlow } from "../../features/viewer/export/services/exportService";
+import { useExportStore } from "../../features/viewer/export/stores/exportStore";
 
 export function bindViewerMenu(): Menu {
     return [
@@ -90,6 +92,13 @@ export function bindViewerMenu(): Menu {
 
                     return render({
                         action: async () => {
+                            if (useExportStore.getState().status === "processing") {
+                                pushWarningNotification(
+                                    "New project cannot be created as export is running. Try once again after export is finished.",
+                                );
+                                return;
+                            }
+
                             const confirmed = await useDialogueStore
                                 .getState()
                                 .showDialogue<boolean>({
@@ -102,7 +111,15 @@ export function bindViewerMenu(): Menu {
                                         />
                                     ),
                                 });
-                            if (confirmed) createNewProjectInApp();
+
+                            if (confirmed) {
+                                useManagedAssetsStore.getState().clearAssets();
+                                useProcessingStore.getState().clearAllJobs();
+                                useRegimeStore.getState().regime.reset();
+                                await clearViewer();
+
+                                createNewProjectInApp();
+                            }
                         },
                         type: "direct",
                     });
@@ -111,8 +128,16 @@ export function bindViewerMenu(): Menu {
             createFileImportSection([
                 createOpenFileInViewerMenuItem(({ render }: LiveMenuRenderProps) => {
                     const { openFileExplorerAndLoadFileInApp } = useWorkspaceManagement();
+
                     return render({
                         action: async () => {
+                            if (useExportStore.getState().status === "processing") {
+                                pushWarningNotification(
+                                    "File cannot be opened as export is running. Try once again after export is finished.",
+                                );
+                                return;
+                            }
+
                             const confirmed = await useDialogueStore
                                 .getState()
                                 .showDialogue<boolean>({
@@ -125,7 +150,14 @@ export function bindViewerMenu(): Menu {
                                         />
                                     ),
                                 });
-                            if (confirmed) openFileExplorerAndLoadFileInApp();
+                            if (confirmed) {
+                                useManagedAssetsStore.getState().clearAssets();
+                                useProcessingStore.getState().clearAllJobs();
+                                useRegimeStore.getState().regime.reset();
+                                await clearViewer();
+
+                                openFileExplorerAndLoadFileInApp();
+                            }
                         },
                         type: "secondary",
                     });
@@ -150,6 +182,16 @@ export function bindViewerMenu(): Menu {
                                     task: {
                                         type: "direct",
                                         action: async () => {
+                                            if (
+                                                useExportStore.getState().status ===
+                                                "processing"
+                                            ) {
+                                                pushWarningNotification(
+                                                    "File cannot be opened as export is running. Try once again after export is finished.",
+                                                );
+                                                return;
+                                            }
+
                                             const confirmed = await useDialogueStore
                                                 .getState()
                                                 .showDialogue<boolean>({
@@ -162,8 +204,18 @@ export function bindViewerMenu(): Menu {
                                                         />
                                                     ),
                                                 });
-                                            if (confirmed)
+                                            if (confirmed) {
+                                                useManagedAssetsStore
+                                                    .getState()
+                                                    .clearAssets();
+                                                useProcessingStore
+                                                    .getState()
+                                                    .clearAllJobs();
+                                                useRegimeStore.getState().regime.reset();
+                                                await clearViewer();
+
                                                 await loadRecentFileInApp(path);
+                                            }
                                         },
                                     },
                                 })),
@@ -310,6 +362,13 @@ export function bindViewerMenu(): Menu {
             ]),
             createViewerSection([
                 createClearViwerMenuItem(async () => {
+                    if (useExportStore.getState().status === "processing") {
+                        pushWarningNotification(
+                            "Viewer cannot be cleared as export is running! Try once again after export is finished.",
+                        );
+                        return;
+                    }
+
                     const confirmed = await useDialogueStore
                         .getState()
                         .showDialogue<boolean>({
@@ -408,6 +467,13 @@ export function bindViewerMenu(): Menu {
         createHelpRootMenuItem([
             createHomePageSection([
                 createHomePageMenuItem(async () => {
+                    if (useExportStore.getState().status === "processing") {
+                        pushWarningNotification(
+                            "Home page cannot be opened as export is running. Try once again after export is finished.",
+                        );
+                        return;
+                    }
+
                     const confirmed = await useDialogueStore
                         .getState()
                         .showDialogue<boolean>({
@@ -420,7 +486,13 @@ export function bindViewerMenu(): Menu {
                                 />
                             ),
                         });
+
                     if (confirmed) {
+                        useManagedAssetsStore.getState().clearAssets();
+                        useProcessingStore.getState().clearAllJobs();
+                        useRegimeStore.getState().regime.reset();
+                        await clearViewer();
+
                         router.navigate("/home");
                     }
                 }),

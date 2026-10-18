@@ -6,6 +6,7 @@
 
 import { create } from "zustand";
 import type React from "react";
+import { loggerUi } from "../services/UiLoggingService";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface DialogueProps<ReturnValueType = any> {
@@ -40,8 +41,9 @@ export const useDialogueStore = create<DialogueStore>((set, get) => ({
     stack: [],
 
     showDialogue: (options) => {
+        const id = crypto.randomUUID();
+        loggerUi.info(`Dialogue <${id}> (with title: <${options.title}>) was shown.`);
         return new Promise((resolve) => {
-            const id = crypto.randomUUID();
             set((state) => ({
                 stack: [
                     ...state.stack,
@@ -56,5 +58,8 @@ export const useDialogueStore = create<DialogueStore>((set, get) => ({
         const dialogue = get().stack.find((d) => d.id === id);
         dialogue?.resolve(value);
         set((state) => ({ stack: state.stack.filter((d) => d.id !== id) }));
+        loggerUi.info(
+            `Dialogue <${id}> (with title: <${dialogue?.options.title}>) was closed.`,
+        );
     },
 }));
