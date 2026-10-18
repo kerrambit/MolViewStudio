@@ -20,6 +20,14 @@ export type ProcessVolumeRequestWithoutFilepaths = Omit<
     "temporary_directory" | "volume_filepaths" | "segmentations_filepaths"
 >;
 
+export type ProcessVolumeRequestWithoutFilepathsAndBundlingApproach = Omit<
+    CleanProcessVolumeRequest,
+    | "temporary_directory"
+    | "volume_filepaths"
+    | "segmentations_filepaths"
+    | "bundling_approach"
+>;
+
 export type DownsamplingStrategy = z.infer<typeof schemas.DownsamplignAlgorithmKind>;
 
 export function getDownsamplingStrategyOptions(): DownsamplingStrategy[] {

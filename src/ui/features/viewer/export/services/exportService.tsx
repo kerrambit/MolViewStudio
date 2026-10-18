@@ -93,13 +93,21 @@ export async function runExportFlow(
         return;
     }
 
+    // For MVSX bundling the story archive is built by the UI itself: the server
+    // runs with raw output (no bundling, internal directory) and the UI embeds
+    // the processed files into the final `.mvsx` archive saved into the chosen folder.
+    const serverProperties: ProcessVolumeRequestWithoutFilepaths = {
+        ...exportProperties.properties,
+        ...{ bundling_approach: "null", output_path: undefined },
+    };
+
     // Without Volume/Segmentation assets there is nothing to process: export the
     // current story directly (MVSX with bundled used assets, plain MVSJ if none).
     if (assetsToProcess.length === 0) {
         useExportStore
             .getState()
             .beginExport(
-                exportProperties.properties,
+                serverProperties,
                 exportProperties.outputPath,
                 exportProperties.filename,
                 exportProperties.targetResolution,
@@ -141,22 +149,11 @@ export async function runExportFlow(
         return;
     }
 
-    // For MVSX bundling the story archive is built by the UI itself: the server
-    // runs with raw output (no bundling, internal directory) and the UI embeds
-    // the processed files into the final `.mvsx` archive saved into the chosen folder.
-    const isMvsxBundling = exportProperties.properties.bundling_approach === "mvsx";
-    const serverProperties: ProcessVolumeRequestWithoutFilepaths = {
-        ...exportProperties.properties,
-        ...(isMvsxBundling
-            ? { bundling_approach: "null", output_path: undefined }
-            : { output_path: exportProperties.outputPath }),
-    };
-
     // Begin the export and start one processing job per asset, using the resolved paths from file mappings.
     useExportStore
         .getState()
         .beginExport(
-            exportProperties.properties,
+            serverProperties,
             exportProperties.outputPath,
             exportProperties.filename,
             exportProperties.targetResolution,
@@ -278,32 +275,14 @@ export async function handleExportJobFinished(
 
 /**
  * Continues the export once all export processing jobs have finished successfully.
- * The form of the final export honors the bundling approach chosen by the user:
- * `mvsx` exports the story as MVSX archive built by the UI with the processed
- * volumes embedded; other approaches were already written into the output
- * folder by the processing server itself.
  * @param jobResults map of processing job ID -> result paths of processed files
  */
 async function continueExportAfterProcessing(
     jobResults: Map<ProcessingJobId, string[]>,
 ): Promise<void> {
     const exportState = useExportStore.getState();
-    const bundling = exportState.properties?.bundling_approach ?? "mvsx";
     const outputPath = exportState.outputPath!;
     const filepath = exportState.filename;
-
-    // For any bundling other than MVSX, the server already wrote its output into the chosen folder: the export is finished.
-    if (bundling !== "mvsx") {
-        const processedFiles = Array.from(jobResults.values()).flat();
-        loggerUi.info(
-            `Export finished, output files written into <${outputPath}>: <${processedFiles.join(
-                ", ",
-            )}>.`,
-        );
-        pushSuccessNotification(`Export ready! Saved into "${outputPath}".`);
-        exportState.resetExport();
-        return;
-    }
 
     const regime = useRegimeStore.getState().regime;
     if (regime.kind !== "viewing") {

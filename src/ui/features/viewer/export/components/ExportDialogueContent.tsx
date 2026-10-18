@@ -7,15 +7,13 @@
 import { useState } from "react";
 import { Collapse, Divider, Group, Select, Text, Textarea } from "@mantine/core";
 import {
-    getBundlingKindOptions,
     getDownsamplingLevelOptions,
     getDownsamplingStrategyOptions,
     DOWNSAMPLING_LEVEL_TO_STRATEGY,
-    type BundlingKind,
     type DownsamplingLevel,
     type DownsamplingStrategy,
-    type ProcessVolumeRequestWithoutFilepaths,
     type SerializerKind,
+    type ProcessVolumeRequestWithoutFilepathsAndBundlingApproach,
 } from "../../../../config/processingDefinitions";
 import { IconHelpOctagonFilled } from "@tabler/icons-react";
 import { UnstyledTextInput } from "../../../../components/common/input/UnstyledTextInput";
@@ -37,7 +35,7 @@ export interface ExportDialogueResultType {
     /**
      * Processing properties sent to the processing server.
      */
-    properties: ProcessVolumeRequestWithoutFilepaths;
+    properties: ProcessVolumeRequestWithoutFilepathsAndBundlingApproach;
 
     /**
      * Folder where the final export output is saved.
@@ -96,10 +94,6 @@ export function ExportDialogueContent({
         useState<DownsamplingStrategy>("tricubic");
     const downsamplingStrategyOptions = getDownsamplingStrategyOptions();
 
-    // Bundling strategy state, MVSX is the default.
-    const [bundlingStrategy, setBundlingStrategy] = useState<BundlingKind>("mvsx");
-    const bundlingOptions = getBundlingKindOptions();
-
     // Resolution of the processed volume embedded into the story export.
     const [targetResolution, setTargetResolution] = useState<ResolutionLevel>("high");
     const resolutionLevelOptions = getResolutionLevelOptions();
@@ -110,7 +104,6 @@ export function ExportDialogueContent({
     // Expanded states.
     const [isVolumeExpanded, setVolumeExpanded] = useState(false);
     const [isSegmentationExpanded, setSegmentationExpanded] = useState(false);
-    const [isBundlingExpanded, setBundlingExpanded] = useState(false);
     const [isOutputExpanded, setOutputExpanded] = useState(true);
 
     // The effective downsampling strategy: the advanced strategy overrides the simple level once touched.
@@ -136,18 +129,10 @@ export function ExportDialogueContent({
                   segmentationAssets.length > 1 ? "s" : ""
               } ${segmentationAssetsNames} will be serialized into the "mrc" format.\n\n`
             : `No segmentation sources for processing were found.\n\n`) +
-        (bundlingStrategy === "mvsx"
-            ? `The output will be bundled into MVSX archive(s), ready to be opened directly in the viewer.`
-            : bundlingStrategy === "null"
-            ? `The output will be kept as raw serialized files, without any bundling. This allows you to easily add individual files to different views and work with them directly after processing.`
-            : `The output will be bundled into ${
-                  bundlingStrategy === "zip"
-                      ? "a ZIP archive"
-                      : "ZIP archives per resolution"
-              }. Note that archived files cannot be added into views directly after processing.`) +
+        `The output will be bundled into MVSX archive(s), ready to be opened directly in the viewer.` +
         `\n\nThe export will be saved into "${outputPath}".`;
 
-    // Story title..
+    // Story title.
     const regime = useRegimeStore((state) => state.regime);
     if (regime.kind !== "viewing") {
         return null;
@@ -361,47 +346,6 @@ export function ExportDialogueContent({
                         </div>
                     )}
 
-                    {/* Bundling block. */}
-                    {showAdvancedExportOptions && (
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                            <CollapseTrigger
-                                title={"Bundling"}
-                                titleTextSize="lg"
-                                expanded={isBundlingExpanded}
-                                onClick={() => {
-                                    setBundlingExpanded((prev) => !prev);
-                                }}
-                            />
-
-                            <Collapse expanded={isBundlingExpanded}>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "1em",
-                                        padding: "0.5em 0 0 0",
-                                    }}
-                                >
-                                    <Select
-                                        label="Bundling:"
-                                        data={bundlingOptions}
-                                        value={bundlingStrategy}
-                                        allowDeselect={false}
-                                        onChange={(value) =>
-                                            setBundlingStrategy(value as BundlingKind)
-                                        }
-                                        placeholder="Select a bundling strategy..."
-                                        size="sm"
-                                        comboboxProps={{
-                                            withinPortal: true,
-                                            zIndex: 10000,
-                                        }}
-                                    />
-                                </div>
-                            </Collapse>
-                        </div>
-                    )}
-
                     {/* Output block. */}
                     <div style={{ display: "flex", flexDirection: "column" }}>
                         <CollapseTrigger
@@ -560,8 +504,7 @@ export function ExportDialogueContent({
                                 segmentation_mask_serializer: "mrc" as SerializerKind,
                                 segmentation_volume_serializer: "mrc" as SerializerKind,
                                 segmentation_mesh_serializer: "mrc" as SerializerKind,
-                                bundling_approach: bundlingStrategy,
-                            } as ProcessVolumeRequestWithoutFilepaths,
+                            } as ProcessVolumeRequestWithoutFilepathsAndBundlingApproach,
                             outputPath: outputPath,
                             filename: filename?.trim() ?? "export",
                             targetResolution: targetResolution,
