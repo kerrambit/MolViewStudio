@@ -5,12 +5,18 @@
  */
 
 import { useCallback } from "react";
-import { useStartFileProcessing } from "./useStartFileProcessing";
+import { useStartFileProcessing } from "../../../hooks/useStartFileProcessing";
 import { pickFileIndexByResolution } from "../../resolution/domain/pickFileByResolution";
 import { getHighestPossibleResolution } from "../../resolution/domain/ResolutionLevel";
 import { getFilenameWithoutExtension } from "../../../../utils/fileDataUtils";
+import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
+import { checkRequiresProcessing } from "../../../assets/domain/assetsDefinitions";
+import { loggerUi } from "../../../../services/UiLoggingService";
 
 export function useStartFileRequiredProcessing() {
+    // Use processing settings.
+    const { getPerFormatProcessingSettings } = useProcessingSettings();
+
     // Use processing.
     const { startFileProcessing } = useStartFileProcessing();
 
@@ -21,11 +27,23 @@ export function useStartFileRequiredProcessing() {
             asset: ManagedAsset,
             relativePath: string,
         ) => {
+            if (!checkRequiresProcessing(file.extension)) {
+                loggerUi.warn(
+                    `Processing for file <${file.name}> won't be run, as the format does not require processing.`,
+                );
+                return;
+            }
+
+            // Per-format settings of the preview processing.
+            const requireSetting = getPerFormatProcessingSettings(
+                file.extension,
+            ).requireProcessing;
+
             await startFileProcessing(
                 file,
                 type === "Segmentation" ? "Segmentation" : "Volume",
                 {
-                    downsampling_strategy: "null",
+                    downsampling_strategy: requireSetting.downsamplingStrategy,
                     volume_serializer: "mrc",
                     segmentation_mask_serializer: "mrc",
                     segmentation_volume_serializer: "mrc",
@@ -61,7 +79,7 @@ export function useStartFileRequiredProcessing() {
                 },
             );
         },
-        [],
+        [getPerFormatProcessingSettings, startFileProcessing],
     );
 
     return {

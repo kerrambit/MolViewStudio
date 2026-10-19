@@ -6,8 +6,8 @@
 
 import { create } from "zustand";
 import type { ResolutionLevel } from "../../../processing/resolution/domain/ResolutionLevel";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/volume/api/ProcessVolumeRequest";
 import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/api/volume/ProcessVolumeRequest";
 
 /**
  * State of an ongoing export. `processing` means the export processing jobs are running
@@ -25,6 +25,7 @@ type ExportStore = {
      * Processing properties chosen by the user for this export, e.g. the bundling approach
      * which determines the form of the final export.
      */
+    // TODO: code smell, we do not want to use directly api request, create facade object
     properties: ProcessVolumeRequestWithoutFilepaths | undefined;
 
     /**
@@ -58,6 +59,7 @@ type ExportStore = {
     /**
      * Begins a new export with the chosen properties, expecting `expectedJobCount` processing jobs.
      */
+    // TODO: code smell, we do not want to use directly api request, create facade object
     beginExport: (
         properties: ProcessVolumeRequestWithoutFilepaths,
         outputPath: string,

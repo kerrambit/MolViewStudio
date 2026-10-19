@@ -5,7 +5,7 @@
  */
 
 import type { MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import { checkOffersProcessing } from "../../../../config/assetsDefinitions";
+import { checkOffersProcessing } from "../../../assets/domain/assetsDefinitions";
 import {
     replaceHiddenAssetIdsByItsParentIdInTree,
     substituteAssetDownloadsInNode,
@@ -38,9 +38,10 @@ import {
     replaceFileExtension,
 } from "../../../../utils/fileDataUtils";
 import { pickFileByResolution } from "../../../processing/resolution/domain/pickFileByResolution";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/volume/api/ProcessVolumeRequest";
 import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
-import type { useStartFileProcessingForExport } from "../../../processing/preview/hooks/useStartFileProcessingForExport";
+import type { useStartFileProcessingForExport } from "../../../processing/export/hooks/useStartFileProcessingForExport";
+import { useWindowsStore } from "../../stores/WindowsStore";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/api/volume/ProcessVolumeRequest";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled
@@ -104,6 +105,7 @@ export async function runExportFlow(
     // For MVSX bundling the story archive is built by the UI itself: the server
     // runs with raw output (no bundling, internal directory) and the UI embeds
     // the processed files into the final `.mvsx` archive saved into the chosen folder.
+    // TODO: code smell, we do not want to use directly api request, create facade object
     const serverProperties: ProcessVolumeRequestWithoutFilepaths = {
         ...exportProperties.properties,
         ...{ bundling_approach: "null", output_path: undefined },
@@ -167,6 +169,8 @@ export async function runExportFlow(
             exportProperties.targetResolution,
             mappedAssets.length,
         );
+
+    useWindowsStore.getState().openWindow("processing-jobs");
 
     for (const asset of mappedAssets) {
         const path = getPath(asset.id)!;

@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     serverPort: 41050,
     colorTheme: "charcoal",
     colorScheme: "light",
+    // TODO: we should not hard-coded `export` properties here but left them undefined and make `constants.ts` in `features/export/domain`
     export: {
         bundleAllLocalAssets: false,
         processAllLocalAssets: false,

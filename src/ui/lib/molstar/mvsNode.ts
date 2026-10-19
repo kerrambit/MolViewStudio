@@ -17,7 +17,7 @@ import {
     type VolumeViewModel,
 } from "../../features/viewer/models/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
-import { getParser } from "../../config/assetsDefinitions";
+import { getParser } from "../../features/assets/domain/assetsDefinitions";
 
 /**
  * Creates a deep copy of `node`.

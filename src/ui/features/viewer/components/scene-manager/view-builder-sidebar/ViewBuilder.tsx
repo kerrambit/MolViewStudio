@@ -13,7 +13,7 @@ import { UiLocalStorageService } from "../../../../../services/UiLocalStorageSer
 import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 import { useAppearance } from "../../../../../hooks/useAppearance";
-import { getAllExtensions } from "../../../../../config/assetsDefinitions";
+import { getAllExtensions } from "../../../../assets/domain/assetsDefinitions";
 
 interface ViewBuilderProps {
     viewKey: string;

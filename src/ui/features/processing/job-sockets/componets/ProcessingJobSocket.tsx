@@ -5,7 +5,6 @@
  */
 
 import { useCallback } from "react";
-import { useProcessVolumeSocket } from "../../volume/api/useProcessVolumeSocket";
 import {
     pushErrorNotification,
     pushSuccessNotification,
@@ -16,6 +15,7 @@ import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
 import { useProcessingStore } from "../../stores/processingStore";
 import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
 import { handleExportJobFinished } from "../../../viewer/export/services/exportService";
+import { useProcessVolumeSocket } from "../../api/volume/useProcessVolumeSocket";
 
 type ProcessingJobSocketProps = {
     jobId: string;

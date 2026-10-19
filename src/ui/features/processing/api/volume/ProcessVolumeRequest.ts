@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import type { schemas } from "../../api/generated-schemas";
+import type { schemas } from "../generated-schemas";
 
 export type ProcessVolumeRequest = z.infer<typeof schemas.ProcessVolumeRequest>;
 

@@ -11,7 +11,7 @@ import { SegmentedController } from "../../../../../components/common/segmented-
 import {
     getPrioritizedRenderStrategy,
     isExtensionSupported,
-} from "../../../../../config/assetsDefinitions";
+} from "../../../../assets/domain/assetsDefinitions";
 import { StructureTab } from "./structure/StructureTab";
 import type {
     ComponentEntry,
@@ -183,17 +183,11 @@ export function AssetBuilderCard({
                     }
                     checked={isSelected}
                     disabled={!isSupported || asset.processingJobIds.length > 0}
-                    onChange={(e) =>
-                        onToggleSelect(e.currentTarget.checked, activeTab)
-                    }
+                    onChange={(e) => onToggleSelect(e.currentTarget.checked, activeTab)}
                     onClick={(e) => e.stopPropagation()}
                     mr="sm"
                 />
-                {isExpanded ? (
-                    <IconChevronUp size={16} />
-                ) : (
-                    <IconChevronDown size={16} />
-                )}
+                {isExpanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
             </div>
 
             <Collapse expanded={isExpanded && isSupported}>
@@ -240,9 +234,7 @@ export function AssetBuilderCard({
                                 onUpdateStructureComponentFields
                             }
                             onAddStructureComponent={onAddStructureComponent}
-                            onDeleteStructureComponent={
-                                onDeleteStructureComponent
-                            }
+                            onDeleteStructureComponent={onDeleteStructureComponent}
                         ></StructureTab>
                     )}
 

@@ -5,14 +5,14 @@
  */
 
 import { useCallback } from "react";
-import { useEnvironment } from "../../../../hooks/useEnvironment";
-import { pushErrorNotification } from "../../../../services/NotificationService";
-import { loggerUi } from "../../../../services/UiLoggingService";
-import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
-import type { ProcessingJobPurpose } from "../../domain/ProcessingJob";
-import { useProcessingStore } from "../../stores/processingStore";
-import type { ProcessVolumeRequestWithoutFilepaths } from "../../volume/api/ProcessVolumeRequest";
-import { useProcessVolume } from "../../volume/api/useProcessVolume";
+import { useEnvironment } from "../../hooks/useEnvironment";
+import { pushErrorNotification } from "../../services/NotificationService";
+import { loggerUi } from "../../services/UiLoggingService";
+import { useManagedAssetsStore } from "../../stores/managedAssetsStore";
+import type { ProcessingJobPurpose } from "../processing/domain/ProcessingJob";
+import { useProcessingStore } from "../processing/stores/processingStore";
+import { useProcessVolume } from "../processing/api/volume/useProcessVolume";
+import type { ProcessVolumeRequestWithoutFilepaths } from "../processing/api/volume/ProcessVolumeRequest";
 
 export function useStartFileProcessing() {
     // Use environment.
@@ -21,6 +21,7 @@ export function useStartFileProcessing() {
     // Use processing.
     const processVolume = useProcessVolume();
 
+    // TODO: code smell, we do not want to use directly api request, create facade object
     const startFileProcessing = useCallback(
         async (
             fileToProcess: FileData,

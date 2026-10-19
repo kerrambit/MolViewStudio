@@ -16,7 +16,7 @@ import {
     pushErrorNotification,
     pushInfoNotification,
 } from "../../../../../services/NotificationService";
-import { checkRequiresProcessing } from "../../../../../config/assetsDefinitions";
+import { checkRequiresProcessing } from "../../../../assets/domain/assetsDefinitions";
 import { ActionableList } from "../../../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../../../components/common/actionables/ActionableListItem";
 import { LocalAssetsTree } from "./LocalAssetsTree";
@@ -38,8 +38,8 @@ import { useCallback } from "react";
 import { loggerUi } from "../../../../../services/UiLoggingService";
 import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../../../processing/preview/domain/constants";
 import { useStartPreviewFileProcessing } from "../../../../processing/preview/hooks/useStartPreviewFileProcessing";
-import { useStartFileProcessing } from "../../../../processing/preview/hooks/useStartFileProcessing";
-import { useStartFileRequiredProcessing } from "../../../../processing/preview/hooks/useStartFileRequiredProcessing";
+import { useStartFileProcessing } from "../../../../hooks/useStartFileProcessing";
+import { useStartFileRequiredProcessing } from "../../../../processing/require/hooks/useStartFileRequiredProcessing";
 import {
     MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES,
     MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES_AS_STRING,
@@ -88,7 +88,7 @@ export function Assets() {
                 file,
                 result.relativePath,
                 result.type,
-                requiresProcessing,
+                !!requiresProcessing,
             );
 
             if (!newAsset) {

@@ -16,6 +16,8 @@ import ServerSettingsPage from "../pages/settings/ServerSettingsPage.tsx";
 import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
 import ViewerPageLayout from "../layouts/ViewerPageLayout.tsx";
 import ExportSettingsPage from "../pages/settings/ExportSettingsPage.tsx";
+import ProcessingGeneralSettingsPage from "../pages/settings/ProcessingGeneralSettingsPage.tsx";
+import ProcessingPerFormatSettingsPage from "../pages/settings/ProcessingPerFormatSettingsPage.tsx";
 
 const routes: RouteObject[] = [
     {
@@ -60,8 +62,8 @@ const routes: RouteObject[] = [
             {
                 path: "processing",
                 children: [
-                    { path: "general", Component: SettingsPage },
-                    { path: "per-format", Component: SettingsPage },
+                    { path: "general", Component: ProcessingGeneralSettingsPage },
+                    { path: "per-format", Component: ProcessingPerFormatSettingsPage },
                 ],
             },
             {

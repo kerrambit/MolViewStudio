@@ -209,6 +209,28 @@ type UserSettings = {
         processAllLocalAssets: boolean;
         showAdvancedExportOptions: boolean;
     };
+    processing?: {
+        global: {
+            exportProcessing: {
+                downsamplingStrategy: string;
+                resolution: string;
+            };
+        };
+        perFormat: {
+            extension: string;
+            requireProcessing: {
+                downsamplingStrategy: string;
+            };
+            previewProcessing: {
+                downsamplingStrategy: string;
+                resolution: string;
+            };
+            exportProcessing: {
+                downsamplingStrategy: string;
+                resolution: string;
+            };
+        }[];
+    };
 };
 
 type TranslateFunction = TFunction<"translation", undefined>;

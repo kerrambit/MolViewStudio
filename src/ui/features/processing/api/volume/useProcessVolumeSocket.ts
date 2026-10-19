@@ -7,8 +7,8 @@
 import { useEffect } from "react";
 import { useWebSocket } from "react-use-websocket/dist/lib/use-websocket";
 import { z } from "zod";
+import { useProcessingApiClient } from "../hooks/useProcessingApiClient";
 import { loggerUi } from "../../../../services/UiLoggingService";
-import { useProcessingApiClient } from "../../api/hooks/useProcessingApiClient";
 
 const ProcessVolumeProgressMessageSchema = z.object({
     stage: z.string(),

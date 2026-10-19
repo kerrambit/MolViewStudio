@@ -6,11 +6,16 @@
 
 import { useCallback } from "react";
 import { pickFileIndexByResolution } from "../../resolution/domain/pickFileByResolution";
-import { getLowestPossibleResolution } from "../../resolution/domain/ResolutionLevel";
+import { useStartFileProcessing } from "../../../hooks/useStartFileProcessing";
 import { getFilenameWithoutExtension } from "../../../../utils/fileDataUtils";
-import { useStartFileProcessing } from "./useStartFileProcessing";
+import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
+import { checkOffersProcessing } from "../../../assets/domain/assetsDefinitions";
+import { loggerUi } from "../../../../services/UiLoggingService";
 
 export function useStartPreviewFileProcessing() {
+    // Use processing settings.
+    const { getPerFormatProcessingSettings } = useProcessingSettings();
+
     // Use file processing.
     const { startFileProcessing } = useStartFileProcessing();
 
@@ -21,11 +26,23 @@ export function useStartPreviewFileProcessing() {
             asset: ManagedAsset,
             relativePath: string,
         ) => {
+            if (!checkOffersProcessing(file.extension)) {
+                loggerUi.warn(
+                    `File preview processing for file <${file.name}> is not possible, as the format does not support processing.`,
+                );
+                return;
+            }
+
+            // Per-format settings of the preview processing.
+            const previewSettings = getPerFormatProcessingSettings(
+                file.extension,
+            ).previewProcessing;
+
             await startFileProcessing(
                 file,
                 assetType,
                 {
-                    downsampling_strategy: "nearest",
+                    downsampling_strategy: previewSettings.downsamplingStrategy,
                     volume_serializer: "mrc",
                     segmentation_mask_serializer: "mrc",
                     segmentation_volume_serializer: "mrc",
@@ -41,7 +58,7 @@ export function useStartPreviewFileProcessing() {
 
                     const smallestIndex = pickFileIndexByResolution(
                         outputFiles,
-                        getLowestPossibleResolution(),
+                        previewSettings.resolution,
                     );
 
                     // Name the preview same as the original file, with a "(Preview quality N)" suffix. N is incremented for each existing preview of the same original.
@@ -64,7 +81,7 @@ export function useStartPreviewFileProcessing() {
                 },
             );
         },
-        [startFileProcessing],
+        [getPerFormatProcessingSettings, startFileProcessing],
     );
 
     return { startPreviewFileProcessing };

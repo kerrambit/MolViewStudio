@@ -25,7 +25,7 @@ import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { buildRenderTreeForMolstar } from "./mvsTree";
 import { checkMolstarAfterLoading } from "./core";
 import { getExtensionFromFileName, getExtensionFromUrl } from "../../utils/fileDataUtils";
-import { isExtensionSupported } from "../../config/assetsDefinitions";
+import { isExtensionSupported } from "../../features/assets/domain/assetsDefinitions";
 import { collectReferencedAssetIds } from "./mvsTree";
 
 /**

@@ -15,7 +15,6 @@ export const RESOLUTION_LEVEL_TO_INDEX: Record<ResolutionLevel, number> = {
     high: 1,
     low: 2,
 };
-
 /**
  * Options of the resolution levels.
  */

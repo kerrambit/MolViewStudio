@@ -10,7 +10,7 @@ import {
     getAllExtensions,
     isExtensionSupported,
     type ExtensionType,
-} from "../../../../../config/assetsDefinitions";
+} from "../../../../assets/domain/assetsDefinitions";
 import { Button } from "../../../../../components/common/button/Button";
 import { getExtensionFromUrl } from "../../../../../utils/fileDataUtils";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
@@ -28,9 +28,7 @@ interface AddRemoteAssetDialogueContentProps {
     type: ManagedAssetType | undefined;
 }
 
-export function AddRemoteAssetDialogueContent(
-    props: AddRemoteAssetDialogueContentProps,
-) {
+export function AddRemoteAssetDialogueContent(props: AddRemoteAssetDialogueContentProps) {
     // Storing current remote url in UI and its extension.
     const [remoteUrl, setRemoteUrl] = useState<string | undefined>(props.url);
     const [remoteUrlExtension, setRemoteUrlExtension] = useState<
@@ -38,9 +36,7 @@ export function AddRemoteAssetDialogueContent(
     >(props.extension as ExtensionType | undefined);
 
     // State for the type of asset.
-    const [assetType, setAssetType] = useState<ManagedAssetType | undefined>(
-        props.type,
-    );
+    const [assetType, setAssetType] = useState<ManagedAssetType | undefined>(props.type);
 
     // Fucntions which checks if the value is valid Url.
     const isUrlValid = (value: string) => {
@@ -89,9 +85,7 @@ export function AddRemoteAssetDialogueContent(
                             }
 
                             if (isExtensionSupported(extension)) {
-                                setRemoteUrlExtension(
-                                    extension as ExtensionType,
-                                );
+                                setRemoteUrlExtension(extension as ExtensionType);
                             } else {
                                 setRemoteUrlExtension(undefined);
                             }
@@ -107,9 +101,7 @@ export function AddRemoteAssetDialogueContent(
                             }
 
                             if (isExtensionSupported(extension)) {
-                                setRemoteUrlExtension(
-                                    extension as ExtensionType,
-                                );
+                                setRemoteUrlExtension(extension as ExtensionType);
                             } else {
                                 setRemoteUrlExtension(undefined);
                             }
@@ -164,13 +156,7 @@ export function AddRemoteAssetDialogueContent(
                 <Text size="sm">Type of asset:</Text>
                 <Select
                     title=""
-                    data={[
-                        "Volume",
-                        "Segmentation",
-                        "Structure",
-                        "Annotation",
-                        "Other",
-                    ]}
+                    data={["Volume", "Segmentation", "Structure", "Annotation", "Other"]}
                     value={assetType}
                     placeholder="N/A"
                     onChange={(type) => {

@@ -13,6 +13,8 @@ import { CollapseTrigger } from "../../../../components/common/collapse-trigger/
 import { CollapsibleBlock } from "../../../../components/common/collapsible-block/CollapsibleBlock";
 import { Button } from "../../../../components/common/button/Button";
 import { useExportSettings } from "../../../settings/hooks/useExportSettings";
+import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
+import { resolveExportProcessingSettings } from "../../../settings/domain/resolveProcessingSettings";
 import { useRegimeStore } from "../../../../stores/regimeStore";
 import {
     getResolutionLevelOptions,
@@ -23,7 +25,6 @@ import {
     getDownsamplingLevelOptions,
     type DownsamplingLevel,
 } from "../../../processing/downsampling/config/DownsamplingLevel";
-import type { ProcessVolumeRequestWithoutFilepathsAndBundlingApproach } from "../../../processing/volume/api/ProcessVolumeRequest";
 import {
     getDownsamplingStrategyOptions,
     type DownsamplingStrategy,
@@ -32,6 +33,7 @@ import type { SerializerKind } from "../../../processing/serializer/config/Seria
 import { WarningMessage } from "../../../../components/common/messages/WarningMessage";
 import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
 import { FileOverrideWarningMessage } from "./FileOverrideWarningMessage";
+import type { ProcessVolumeRequestWithoutFilepathsAndBundlingApproach } from "../../../processing/api/volume/ProcessVolumeRequest";
 
 /**
  * Result of the export processing properties dialogue.
@@ -40,6 +42,7 @@ export interface ExportDialogueResultType {
     /**
      * Processing properties sent to the processing server.
      */
+    // TODO: code smell, we do not want to use directly api request, create facade object
     properties: ProcessVolumeRequestWithoutFilepathsAndBundlingApproach;
 
     /**
@@ -89,24 +92,55 @@ export function ExportDialogueContent({
         },
     } = useExportSettings();
 
+    // Use processing settings.
+    const { getProcessignSettings } = useProcessingSettings();
+
     // Use regime (story title is used as the default filename).
     const regime = useRegimeStore((state) => state.regime);
 
-    // Downsampling toggle state (used without advanced export options).
-    const [enableDownsampling, setEnableDownsampling] = useState(true);
+    // Extensions of all assets processed by the export. When they all share a single
+    // extension, the per-format settings of that extension are used, otherwise the global ones.
+    const effectiveExportProcessing = resolveExportProcessingSettings(
+        getProcessignSettings(),
+        [...volumeAssets, ...segmentationAssets].map((asset) => asset.extension),
+    );
 
-    // Simple downsampling level state (used without advanced export options).
-    const [downsamplingLevel, setDownsamplingLevel] =
-        useState<DownsamplingLevel>("medium");
+    // Downsampling toggle state (used without advanced export options).
+    // It starts unchecked if the loaded setting is "null".
+    const [enableDownsampling, setEnableDownsampling] = useState(
+        effectiveExportProcessing.downsamplingMethod !== "null",
+    );
+
+    // Check if the configured downsampling method maps to a simple "quality" level
+    // If not (e.g. "smoothing"), we will show the full strategy select even in simple mode
+    const [isStrategySimple] = useState<boolean>(() =>
+        (Object.values(DOWNSAMPLING_LEVEL_TO_STRATEGY) as string[]).includes(
+            effectiveExportProcessing.downsamplingMethod,
+        ),
+    );
+
+    // Simple downsampling level state (used without advanced export options),
+    // derived from the effective strategy when it maps to one of the simple levels.
+    const initialDownsamplingLevel =
+        (Object.keys(DOWNSAMPLING_LEVEL_TO_STRATEGY) as DownsamplingLevel[]).find(
+            (level) =>
+                DOWNSAMPLING_LEVEL_TO_STRATEGY[level] ===
+                effectiveExportProcessing.downsamplingMethod,
+        ) ?? "medium";
+    const [downsamplingLevel, setDownsamplingLevel] = useState<DownsamplingLevel>(
+        initialDownsamplingLevel,
+    );
     const downsamplingLevelOptions = getDownsamplingLevelOptions();
 
-    // Downsampling strategy state (used with advanced export options).
+    // Downsampling strategy state (used with advanced export options or when isStrategySimple is false).
     const [downsamplingStrategy, setDownsamplingStrategy] =
-        useState<DownsamplingStrategy>("tricubic");
+        useState<DownsamplingStrategy>(effectiveExportProcessing.downsamplingMethod);
     const downsamplingStrategyOptions = getDownsamplingStrategyOptions();
 
     // Resolution of the processed volume embedded into the story export.
-    const [targetResolution, setTargetResolution] = useState<ResolutionLevel>("high");
+    const [targetResolution, setTargetResolution] = useState<ResolutionLevel>(
+        effectiveExportProcessing.resolution,
+    );
     const resolutionLevelOptions = getResolutionLevelOptions();
 
     // Output folder state, defaults to the user's Exports folder.
@@ -141,12 +175,14 @@ export function ExportDialogueContent({
     }
 
     // The effective downsampling strategy:
-    // Chosen directly with advanced export options. Otherwise, if enabled, derived from the simple level.
+    // Chosen directly with advanced export options. Otherwise, if enabled, derived from the simple level or strategy select.
     // If disabled in simple mode, fallback to "null".
     const effectiveDownsamplingStrategy = showAdvancedExportOptions
         ? downsamplingStrategy
         : enableDownsampling
-        ? DOWNSAMPLING_LEVEL_TO_STRATEGY[downsamplingLevel]
+        ? isStrategySimple
+            ? DOWNSAMPLING_LEVEL_TO_STRATEGY[downsamplingLevel]
+            : downsamplingStrategy
         : "null";
 
     // Names of the assets to be processed, used in the summary text.
@@ -421,24 +457,45 @@ export function ExportDialogueContent({
                                                 }
                                                 size="sm"
                                             />
-                                            <Select
-                                                label="Downsampling quality:"
-                                                data={downsamplingLevelOptions}
-                                                value={downsamplingLevel}
-                                                allowDeselect={false}
-                                                onChange={(value) =>
-                                                    setDownsamplingLevel(
-                                                        value as DownsamplingLevel,
-                                                    )
-                                                }
-                                                placeholder="Select downsampling..."
-                                                size="sm"
-                                                disabled={!enableDownsampling}
-                                                comboboxProps={{
-                                                    withinPortal: true,
-                                                    zIndex: 10000,
-                                                }}
-                                            />
+                                            {isStrategySimple ? (
+                                                <Select
+                                                    label="Downsampling quality:"
+                                                    data={downsamplingLevelOptions}
+                                                    value={downsamplingLevel}
+                                                    allowDeselect={false}
+                                                    onChange={(value) =>
+                                                        setDownsamplingLevel(
+                                                            value as DownsamplingLevel,
+                                                        )
+                                                    }
+                                                    placeholder="Select downsampling..."
+                                                    size="sm"
+                                                    disabled={!enableDownsampling}
+                                                    comboboxProps={{
+                                                        withinPortal: true,
+                                                        zIndex: 10000,
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Select
+                                                    label="Downsampling strategy:"
+                                                    data={downsamplingStrategyOptions}
+                                                    value={downsamplingStrategy}
+                                                    allowDeselect={false}
+                                                    onChange={(value) =>
+                                                        setDownsamplingStrategy(
+                                                            value as DownsamplingStrategy,
+                                                        )
+                                                    }
+                                                    placeholder="Select a strategy..."
+                                                    size="sm"
+                                                    disabled={!enableDownsampling}
+                                                    comboboxProps={{
+                                                        withinPortal: true,
+                                                        zIndex: 10000,
+                                                    }}
+                                                />
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -658,7 +715,7 @@ export function ExportDialogueContent({
                                 segmentation_mask_serializer: "mrc" as SerializerKind,
                                 segmentation_volume_serializer: "mrc" as SerializerKind,
                                 segmentation_mesh_serializer: "mrc" as SerializerKind,
-                            } as ProcessVolumeRequestWithoutFilepathsAndBundlingApproach,
+                            } as ProcessVolumeRequestWithoutFilepathsAndBundlingApproach, // TODO: code smell, we do not want to use directly api request, create facade object
                             outputPath: outputPath,
                             filename: filename?.trim() ?? "export",
                             targetResolution: targetResolution,

@@ -12,7 +12,7 @@ import { getFilePathWithoutFile } from "../../../utils/fileDataUtils";
 import {
     getAllSupportedAssetsParsers,
     getParser,
-} from "../../../config/assetsDefinitions";
+} from "../../assets/domain/assetsDefinitions";
 import {
     addStructureNodeToTree,
     addVolumeNodeToTree,
@@ -66,9 +66,7 @@ export function useViewBuilder(viewKey: string) {
         return regime.kind === "viewing"
             ? regime.history
                   .current()
-                  .stateTree.snapshots.find(
-                      (snap) => snap.metadata.key === viewKey,
-                  )
+                  .stateTree.snapshots.find((snap) => snap.metadata.key === viewKey)
             : null;
     }, [regime, viewKey]);
 
@@ -112,12 +110,9 @@ export function useViewBuilder(viewKey: string) {
     );
 
     // Current selected asset relative paths.
-    const [selectedAssetRelativePaths, setSelectedAssetRelativePaths] =
-        useState<string[]>(
-            UiLocalStorageService.ViewBuilder.getAssetFolders(viewKey) ?? [
-                "All",
-            ],
-        );
+    const [selectedAssetRelativePaths, setSelectedAssetRelativePaths] = useState<
+        string[]
+    >(UiLocalStorageService.ViewBuilder.getAssetFolders(viewKey) ?? ["All"]);
 
     const [areFiltersExpanded, setAreFiltersExpanded] = useState(
         UiLocalStorageService.ViewBuilder.getExpandedFiltersSection(viewKey),
@@ -125,9 +120,7 @@ export function useViewBuilder(viewKey: string) {
 
     // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...). Hidden assets (e.g. previews) are not shown.
     const assetsFilteredByType = useMemo(() => {
-        const allAssets = Array.from(assets.values()).filter(
-            (asset) => !asset.hidden,
-        );
+        const allAssets = Array.from(assets.values()).filter((asset) => !asset.hidden);
 
         if (selectedAssetFilters.length === 0) return [];
         if (selectedAssetFilters.includes("All")) return allAssets;
@@ -135,9 +128,7 @@ export function useViewBuilder(viewKey: string) {
         const hasLocationFilters = selectedAssetFilters.some(
             (f) => f === "Local assets" || f === "Remote assets",
         );
-        const hasExtensionFilters = selectedAssetFilters.some((f) =>
-            f.startsWith("."),
-        );
+        const hasExtensionFilters = selectedAssetFilters.some((f) => f.startsWith("."));
 
         return allAssets.filter((asset) => {
             let matchesLocation = !hasLocationFilters;
@@ -157,9 +148,7 @@ export function useViewBuilder(viewKey: string) {
             let matchesExtension = !hasExtensionFilters;
             if (hasExtensionFilters) {
                 matchesExtension = selectedAssetFilters.some(
-                    (ext) =>
-                        asset.extension.toLowerCase() ===
-                        ext.slice(1).toLowerCase(),
+                    (ext) => asset.extension.toLowerCase() === ext.slice(1).toLowerCase(),
                 );
             }
 
@@ -225,9 +214,7 @@ export function useViewBuilder(viewKey: string) {
             const fallback: VolumeViewModel = {
                 ...DEFAULT_VOLUME_VIEW_MODEL,
                 format:
-                    getParser(
-                        getAsset(renderAssetId)?.extension || "unknown",
-                    ) || "N/A",
+                    getParser(getAsset(renderAssetId)?.extension || "unknown") || "N/A",
             };
 
             if (!view) {
@@ -251,9 +238,7 @@ export function useViewBuilder(viewKey: string) {
             const fallback: StructureViewModel = {
                 ...DEFAULT_STRUCTURE_VIEW_MODEL,
                 format:
-                    getParser(
-                        getAsset(renderAssetId)?.extension || "unknown",
-                    ) || "N/A",
+                    getParser(getAsset(renderAssetId)?.extension || "unknown") || "N/A",
             };
 
             if (!view) {
@@ -295,31 +280,27 @@ export function useViewBuilder(viewKey: string) {
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(renderAssetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getVolumeNode(renderAssetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getVolumeNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    renderAssetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             // Update regime.
@@ -373,31 +354,27 @@ export function useViewBuilder(viewKey: string) {
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(renderAssetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(renderAssetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    renderAssetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             // Update regime.
@@ -459,31 +436,27 @@ export function useViewBuilder(viewKey: string) {
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(renderAssetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(renderAssetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    renderAssetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             // Update regime history
@@ -598,31 +571,27 @@ export function useViewBuilder(viewKey: string) {
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(renderAssetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(renderAssetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    renderAssetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             regime.commitStateTree(
@@ -681,31 +650,27 @@ export function useViewBuilder(viewKey: string) {
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(renderAssetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(renderAssetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    renderAssetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             regime.commitStateTree(
@@ -765,9 +730,7 @@ export function useViewBuilder(viewKey: string) {
 
         // Swap the selected ID to the new render asset ID, so selection stays consistent with the tree.
         setSelectedAssetIds((prev) =>
-            prev.map((id) =>
-                id === previousRenderAssetId ? renderAssetId : id,
-            ),
+            prev.map((id) => (id === previousRenderAssetId ? renderAssetId : id)),
         );
 
         // Only re-render if the asset is selected.
@@ -800,21 +763,19 @@ export function useViewBuilder(viewKey: string) {
         // Replace the download node in the tree.
         const updatedTree: MVSData_States = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === viewKey) {
-                        return {
-                            ...snap,
-                            root: replaceAssetNodeInRoot(
-                                snap.root,
-                                previousRenderAssetId,
-                                newNode,
-                            ),
-                        };
-                    }
-                    return snap;
-                }),
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === viewKey) {
+                    return {
+                        ...snap,
+                        root: replaceAssetNodeInRoot(
+                            snap.root,
+                            previousRenderAssetId,
+                            newNode,
+                        ),
+                    };
+                }
+                return snap;
+            }),
         };
 
         // Update regime.
@@ -852,9 +813,7 @@ export function useViewBuilder(viewKey: string) {
         if (isChecked) {
             newSelectedIds = [...selectedAssetIds, renderAssetId];
         } else {
-            newSelectedIds = selectedAssetIds.filter(
-                (id) => id !== renderAssetId,
-            );
+            newSelectedIds = selectedAssetIds.filter((id) => id !== renderAssetId);
         }
 
         // Inform managed asset manager this given asset count was increased/decreased.
@@ -877,51 +836,42 @@ export function useViewBuilder(viewKey: string) {
         // Create updated state tree.
         const updatedTree: MVSData_States = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === viewKey) {
-                        let newRoot;
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === viewKey) {
+                    let newRoot;
 
-                        if (isChecked) {
-                            if (tabType === "volume") {
-                                // Get changes from our view model.
-                                const volumeModel =
-                                    getVolumeViewModelForAsset(
-                                        toggledParentAssetId,
-                                    );
+                    if (isChecked) {
+                        if (tabType === "volume") {
+                            // Get changes from our view model.
+                            const volumeModel =
+                                getVolumeViewModelForAsset(toggledParentAssetId);
 
-                                // New root.
-                                newRoot = addVolumeNodeToTree(
-                                    snap.root,
-                                    renderAssetId,
-                                    volumeModel,
-                                );
-                            } else {
-                                // Get changes from our view model.
-                                const volumeModel =
-                                    getStructureViewModelForAsset(
-                                        toggledParentAssetId,
-                                    );
-
-                                // New root.
-                                newRoot = addStructureNodeToTree(
-                                    snap.root,
-                                    renderAssetId,
-                                    volumeModel,
-                                );
-                            }
-                        } else {
-                            newRoot = removeNodeFromTree(
+                            // New root.
+                            newRoot = addVolumeNodeToTree(
                                 snap.root,
                                 renderAssetId,
+                                volumeModel,
+                            );
+                        } else {
+                            // Get changes from our view model.
+                            const volumeModel =
+                                getStructureViewModelForAsset(toggledParentAssetId);
+
+                            // New root.
+                            newRoot = addStructureNodeToTree(
+                                snap.root,
+                                renderAssetId,
+                                volumeModel,
                             );
                         }
-
-                        return { ...snap, root: newRoot };
+                    } else {
+                        newRoot = removeNodeFromTree(snap.root, renderAssetId);
                     }
-                    return snap;
-                }),
+
+                    return { ...snap, root: newRoot };
+                }
+                return snap;
+            }),
         };
 
         // Update regime.

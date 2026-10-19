@@ -13,7 +13,7 @@ import { pushWarningNotification } from "../../../../../services/NotificationSer
 import {
     checkOffersProcessing,
     checkRequiresProcessing,
-} from "../../../../../config/assetsDefinitions";
+} from "../../../../assets/domain/assetsDefinitions";
 import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
 import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
 import {
@@ -275,10 +275,10 @@ export function AddLocalAssetDialogueContent({
 
                                 return {
                                     file: finalFile,
-                                    offersProcessing: checkOffersProcessing(
+                                    offersProcessing: !!checkOffersProcessing(
                                         file.extension,
                                     ),
-                                    requiresProcessing: checkRequiresProcessing(
+                                    requiresProcessing: !!checkRequiresProcessing(
                                         file.extension,
                                     ),
                                 };

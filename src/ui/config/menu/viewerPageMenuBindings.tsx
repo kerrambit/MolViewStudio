@@ -81,7 +81,7 @@ import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/comp
 import { useWindowsStore } from "../../features/viewer/stores/WindowsStore";
 import { runExportFlow } from "../../features/viewer/export/services/exportService";
 import { useExportStore } from "../../features/viewer/export/stores/exportStore";
-import { useStartFileProcessingForExport } from "../../features/processing/preview/hooks/useStartFileProcessingForExport";
+import { useStartFileProcessingForExport } from "../../features/processing/export/hooks/useStartFileProcessingForExport";
 
 export function bindViewerMenu(): Menu {
     return [
