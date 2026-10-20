@@ -9,13 +9,13 @@ import { Divider, Text } from "@mantine/core";
 import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
 import { StoryOptions } from "./story-options/StoryOptions";
-import { Assets } from "./assets-sidebar/Assets";
 import { Views } from "./views-sidebar/Views";
 import { ViewBuilder } from "./view-builder-sidebar/ViewBuilder";
 import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
 import { useRegimeStore } from "../../../../stores/regimeStore";
 import { useWindowsStore } from "../../stores/WindowsStore";
 import { CloseActionIcon } from "../../../../components/common/actionables/actions-icons/CloseActionIcon";
+import { Assets } from "../../../assets/components/Assets";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;

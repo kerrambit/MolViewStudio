@@ -6,21 +6,21 @@
 
 import { useState } from "react";
 import { Loader, Select, Text } from "@mantine/core";
-import { AllFiles } from "../../../../../../types/fileFilters";
-import { Button } from "../../../../../components/common/button/Button";
-import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
-import { pushWarningNotification } from "../../../../../services/NotificationService";
+import { Button } from "../../../components/common/button/Button";
 import {
     checkOffersProcessing,
     checkRequiresProcessing,
-} from "../../../../assets/domain/assetsDefinitions";
-import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
-import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
+} from "../domain/assetsDefinitions";
+import { AllFiles } from "../../../../types/fileFilters";
+import { UnstyledTextInput } from "../../../components/common/input/UnstyledTextInput";
+import { WarningMessage } from "../../../components/common/messages/WarningMessage";
+import { PathSegmentsBuilder } from "../../../components/common/path-segments-builder/PathSegmentsBuilder";
+import { compileFinalPath } from "../../../components/common/path-segments-builder/utils/compileFinalPath";
+import { pushWarningNotification } from "../../../services/NotificationService";
 import {
-    addExtensionToFilename,
     getFilenameWithoutExtension,
-} from "../../../../../utils/fileDataUtils";
-import { WarningMessage } from "../../../../../components/common/messages/WarningMessage";
+    addExtensionToFilename,
+} from "../../../utils/fileDataUtils";
 
 export interface AddLocalAssetDialogueFileReturnType {
     file: FileData;

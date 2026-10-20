@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { Button } from "../../../../../components/common/button/Button";
+import { Button } from "../../../components/common/button/Button";
 
 interface DeleteAssetDialogueContentProps {
     assetName: string;
@@ -19,13 +19,13 @@ export function DeleteAssetDialogueContent({
     return (
         <>
             <p style={{ marginBottom: "1rem" }}>
-                Are you sure you want to delete the asset{" "}
-                <b>{`'${assetName}'`}</b>? This action cannot be undone!
+                Are you sure you want to delete the asset <b>{`'${assetName}'`}</b>? This
+                action cannot be undone!
                 <br />
                 <br />
-                Note that undoing later changes could bring back a view that
-                used to reference this asset — since the asset itself won't be
-                restored, that view would be left with a broken reference.
+                Note that undoing later changes could bring back a view that used to
+                reference this asset — since the asset itself won't be restored, that view
+                would be left with a broken reference.
             </p>
 
             <div

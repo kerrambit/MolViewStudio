@@ -6,15 +6,15 @@
 
 import { useState } from "react";
 import { Select, Text } from "@mantine/core";
-import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
-import { Button } from "../../../../../components/common/button/Button";
-import { PathSegmentsBuilder } from "../../../../../components/common/path-segments-builder/PathSegmentsBuilder";
-import { compileFinalPath } from "../../../../../components/common/path-segments-builder/utils/compileFinalPath";
+import { UnstyledTextInput } from "../../../components/common/input/UnstyledTextInput";
+import { PathSegmentsBuilder } from "../../../components/common/path-segments-builder/PathSegmentsBuilder";
+import { compileFinalPath } from "../../../components/common/path-segments-builder/utils/compileFinalPath";
 import {
+    getFilenameWithoutExtension,
     addExtensionToFilename,
     getExtensionFromFileName,
-    getFilenameWithoutExtension,
-} from "../../../../../utils/fileDataUtils";
+} from "../../../utils/fileDataUtils";
+import { Button } from "../../../components/common/button/Button";
 
 export interface EditAssetDialogueReturnType {
     relativePath: string;
@@ -45,10 +45,7 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
 
     // State for up path segments for a relative path of asset.
     const [pathSegments, setPathSegments] = useState<string[]>(
-        [...props.pathSegments, "", "", ""].slice(
-            0,
-            MAXIMUM_NUMBER_OF_PATH_SEGMENTS,
-        ),
+        [...props.pathSegments, "", "", ""].slice(0, MAXIMUM_NUMBER_OF_PATH_SEGMENTS),
     );
 
     // State if path is valid or not.
@@ -99,13 +96,7 @@ export function EditAssetDialogueContent(props: EditAssetDialogueContentProps) {
                 <Text size="sm">Type of asset:</Text>
                 <Select
                     title=""
-                    data={[
-                        "Volume",
-                        "Segmentation",
-                        "Structure",
-                        "Annotation",
-                        "Other",
-                    ]}
+                    data={["Volume", "Segmentation", "Structure", "Annotation", "Other"]}
                     value={assetType}
                     onChange={(type) => {
                         if (type) {

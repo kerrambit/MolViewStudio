@@ -6,14 +6,14 @@
 
 import { Text, Select } from "@mantine/core";
 import { useState } from "react";
+import { Button } from "../../../components/common/button/Button";
+import { UnstyledTextInput } from "../../../components/common/input/UnstyledTextInput";
+import { getExtensionFromUrl } from "../../../utils/fileDataUtils";
 import {
-    getAllExtensions,
-    isExtensionSupported,
     type ExtensionType,
-} from "../../../../assets/domain/assetsDefinitions";
-import { Button } from "../../../../../components/common/button/Button";
-import { getExtensionFromUrl } from "../../../../../utils/fileDataUtils";
-import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
+    isExtensionSupported,
+    getAllExtensions,
+} from "../domain/assetsDefinitions";
 
 export interface AddRemoteAssetDialogueReturnType {
     url: string;
