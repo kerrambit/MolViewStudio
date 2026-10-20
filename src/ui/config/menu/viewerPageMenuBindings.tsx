@@ -462,6 +462,16 @@ export function bindViewerMenu(): Menu {
             ]),
         ]),
         createSettingsRootMenuItem(() => {
+            if (
+                Array.from(useProcessingStore.getState().jobs.values()).some(
+                    (p) => p.status === "Running",
+                )
+            ) {
+                pushWarningNotification(
+                    "Settings cannot be opened as processing job is running. Try once again after job is finished.",
+                );
+                return;
+            }
             router.navigate("/settings");
         }),
         createHelpRootMenuItem([
