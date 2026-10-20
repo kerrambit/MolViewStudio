@@ -55,11 +55,6 @@ const routes: RouteObject[] = [
                 children: [{ index: true, Component: ServerSettingsPage }],
             },
             {
-                path: "formats",
-                Component: SettingsPage,
-                children: [{ index: true, Component: SettingsPage }],
-            },
-            {
                 path: "processing",
                 children: [
                     { path: "general", Component: ProcessingGeneralSettingsPage },

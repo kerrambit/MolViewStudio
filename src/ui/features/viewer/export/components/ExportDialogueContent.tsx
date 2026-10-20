@@ -722,7 +722,7 @@ export function ExportDialogueContent({
                         });
                     }}
                 >
-                    Start processing
+                    Start exporting
                 </Button>
             </Group>
         </div>

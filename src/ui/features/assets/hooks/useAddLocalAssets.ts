@@ -16,12 +16,18 @@ import {
     pushInfoNotification,
 } from "../../../services/NotificationService";
 import { loggerUi } from "../../../services/UiLoggingService";
-import { getFileSizeInBytes } from "../../../utils/fileDataUtils";
+import {
+    getFilenameWithoutExtension,
+    getFileSizeInBytes,
+} from "../../../utils/fileDataUtils";
 import {
     MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES,
     MINIMAL_FILE_SIZE_TO_PROCESS_IN_BYTES_AS_STRING,
 } from "../../processing/domain/constants";
 import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../processing/preview/domain/constants";
+import { useProcessingSettings } from "../../settings/hooks/useProcessingSettings";
+import { pickFileIndexByResolution } from "../../processing/resolution/domain/pickFileByResolution";
+import { useWindowsStore } from "../../viewer/stores/WindowsStore";
 
 export function useAddLocalAssets() {
     // Use managed assets.
@@ -37,6 +43,9 @@ export function useAddLocalAssets() {
     const { startFileRequiredProcessing } = useStartFileRequiredProcessing();
     const { startPreviewFileProcessing } = useStartPreviewFileProcessing();
 
+    // Use processing settings.
+    const { getPerFormatProcessingSettings } = useProcessingSettings();
+
     // Opens a dialogue to add local assets and processes the chosen files.
     const handleAddLocalAssets = useCallback(
         async (result: AddLocalAssetDialogueReturnType) => {
@@ -46,7 +55,7 @@ export function useAddLocalAssets() {
                     file,
                     result.relativePath,
                     result.type,
-                    !!requiresProcessing,
+                    requiresProcessing || result.onLoadProcessing,
                 );
 
                 if (!newAsset) {
@@ -87,13 +96,60 @@ export function useAddLocalAssets() {
                     isProcessableType &&
                     ((offersProcessing &&
                         contentSizeInBytes > PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD) ||
-                        requiresProcessing);
+                        requiresProcessing ||
+                        result.onLoadProcessing);
 
                 if (!shouldProcess) {
                     continue;
                 }
 
-                if (requiresProcessing) {
+                // On load processing has biggest priority.
+                if (result.onLoadProcessing) {
+                    await startFileProcessing(
+                        file,
+                        result.type === "Segmentation" ? "Segmentation" : "Volume",
+                        {
+                            downsampling_strategy: getPerFormatProcessingSettings(
+                                file.extension,
+                            ).exportProcessing.downsamplingStrategy,
+                            volume_serializer: "mrc",
+                            segmentation_mask_serializer: "mrc",
+                            segmentation_volume_serializer: "mrc",
+                            segmentation_mesh_serializer: "mrc",
+                            bundling_approach: "null",
+                        },
+                        "Asset",
+                        newAsset.id,
+                        (outputFiles: FileData[]) => {
+                            if (!outputFiles || outputFiles.length === 0) {
+                                return [];
+                            }
+
+                            const chosenIndex = pickFileIndexByResolution(
+                                outputFiles,
+                                getPerFormatProcessingSettings(file.extension)
+                                    .exportProcessing.resolution,
+                            );
+
+                            const originalNameWithoutExtension =
+                                getFilenameWithoutExtension(file.name) ?? file.name;
+                            const name = `${originalNameWithoutExtension}.mrc`;
+
+                            return [
+                                {
+                                    assetIndex: chosenIndex,
+                                    relativePath: result.relativePath,
+                                    name: name,
+                                    hidden: false,
+                                    kind: "NecessaryConversion",
+                                    notify: true,
+                                },
+                            ];
+                        },
+                    );
+
+                    useWindowsStore.getState().openWindow("processing-jobs");
+                } else if (requiresProcessing) {
                     await startFileRequiredProcessing(
                         file,
                         result.type === "Segmentation" ? "Segmentation" : "Volume",
@@ -110,7 +166,14 @@ export function useAddLocalAssets() {
                 }
             }
         },
-        [addLocalAsset, resolveAndStoreMapping, startFileProcessing],
+        [
+            addLocalAsset,
+            resolveAndStoreMapping,
+            startFileProcessing,
+            startFileRequiredProcessing,
+            startPreviewFileProcessing,
+            getPerFormatProcessingSettings,
+        ],
     );
 
     return { handleAddLocalAssets };

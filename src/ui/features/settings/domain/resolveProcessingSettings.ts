@@ -20,6 +20,7 @@ import {
     DEFAULT_PREVIEW_DOWNSAMPLING_STRATEGY,
     DEFAULT_PREVIEW_RESOLUTION_LEVEL,
 } from "../../processing/preview/domain/constants";
+import { ENABLE_ON_LOAD_PROCESSING } from "../../processing/domain/constants";
 
 export function resolveProcessingSettings(
     settings?: UserSettings["processing"],
@@ -27,6 +28,7 @@ export function resolveProcessingSettings(
     if (settings) {
         return {
             global: {
+                onLoadProcessing: settings.global.onLoadProcessing,
                 exportProcessing: {
                     downsamplingStrategy: parseDownsamplingStrategy(
                         settings.global.exportProcessing.downsamplingStrategy,
@@ -72,6 +74,7 @@ export function resolveProcessingSettings(
 
     return {
         global: {
+            onLoadProcessing: ENABLE_ON_LOAD_PROCESSING,
             exportProcessing: {
                 downsamplingStrategy: DEFAULT_EXPORT_DOWNSAMPLING_STRATEGY,
                 resolution: DEFAULT_EXPORT_RESOLUTION_LEVEL,

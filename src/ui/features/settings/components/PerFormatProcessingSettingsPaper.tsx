@@ -113,12 +113,12 @@ export function PerFormatProcessingSettingsPaper({
                 <Divider mt="sm" />
 
                 <Text fw={500} size="xl">
-                    Export processing
+                    Export & On-Load processing
                 </Text>
 
                 <Select
                     label="Downsampling method"
-                    description="Used when the export processes only files of this format."
+                    description="Used when the export processes only files of this format. Or when working with Process-On-Load workflow (see Settings - Processing)."
                     data={downsamplingMethodOptions}
                     value={entry.exportProcessing.downsamplingStrategy}
                     allowDeselect={false}

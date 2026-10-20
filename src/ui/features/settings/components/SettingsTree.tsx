@@ -57,8 +57,6 @@ function renderTree() {
 
             <br></br>
 
-            {renderTreeLink("Formats", "formats")}
-
             <li>
                 Processing
                 <ul>

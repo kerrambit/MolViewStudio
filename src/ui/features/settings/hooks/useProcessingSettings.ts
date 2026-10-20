@@ -27,6 +27,7 @@ export function useProcessingSettings() {
     };
 
     const setGlobalExportProcessingSettings = (
+        onLoadProcessing: boolean,
         downsamplingStrategy: DownsamplingStrategy,
         resolution: ResolutionLevel,
     ) => {
@@ -35,6 +36,7 @@ export function useProcessingSettings() {
             processing: {
                 ...processingSettings,
                 global: {
+                    onLoadProcessing: onLoadProcessing,
                     exportProcessing: {
                         downsamplingStrategy,
                         resolution,

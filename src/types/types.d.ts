@@ -211,6 +211,7 @@ type UserSettings = {
     };
     processing?: {
         global: {
+            onLoadProcessing: boolean;
             exportProcessing: {
                 downsamplingStrategy: string;
                 resolution: string;

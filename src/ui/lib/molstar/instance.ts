@@ -5,6 +5,7 @@
  */
 
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
+import { loggerUi } from "../../services/UiLoggingService";
 
 /**
  * Instance of `PluginUIContext`.
@@ -16,7 +17,10 @@ let molstarInstance: PluginUIContext | undefined;
  * @returns PluginUIContext (Molstar) object
  */
 export function getMolstar(): PluginUIContext {
-    if (!molstarInstance) throw new Error("Molstar is not initialized!");
+    if (!molstarInstance) {
+        loggerUi.error("Molstar is not initialized!");
+        throw new Error("Molstar is not initialized!");
+    }
     return molstarInstance;
 }
 

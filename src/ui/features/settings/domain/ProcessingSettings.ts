@@ -9,6 +9,7 @@ import type { ResolutionLevel } from "../../processing/resolution/domain/Resolut
 
 export type ProcessingSettings = {
     global: {
+        onLoadProcessing: boolean;
         exportProcessing: {
             downsamplingStrategy: DownsamplingStrategy;
             resolution: ResolutionLevel;

@@ -21,6 +21,7 @@ import {
     getFilenameWithoutExtension,
     addExtensionToFilename,
 } from "../../../utils/fileDataUtils";
+import { useProcessingSettings } from "../../settings/hooks/useProcessingSettings";
 
 export interface AddLocalAssetDialogueFileReturnType {
     file: FileData;
@@ -32,6 +33,7 @@ export interface AddLocalAssetDialogueReturnType {
     files: AddLocalAssetDialogueFileReturnType[];
     type: ManagedAssetType;
     relativePath: string;
+    onLoadProcessing: boolean;
 }
 
 interface AddLocalAssetDialogueContentProps {
@@ -44,6 +46,8 @@ const ALLOW_FILES_MULTISELECTION = true;
 export function AddLocalAssetDialogueContent({
     close,
 }: AddLocalAssetDialogueContentProps) {
+    const { getGlobalProcessingSettings } = useProcessingSettings();
+
     // State if any file is loading at the moment.
     const [fileLoading, setFileLoading] = useState(false);
 
@@ -72,6 +76,9 @@ export function AddLocalAssetDialogueContent({
     const anyFileRequiresProcessing = files.some((file) =>
         checkRequiresProcessing(file.extension),
     );
+
+    // Check if the app is set to process all files right after loading.
+    const onLoadProcessing = getGlobalProcessingSettings().onLoadProcessing;
 
     // Render the component.
     return (
@@ -238,7 +245,7 @@ export function AddLocalAssetDialogueContent({
                     marginTop: "1em",
                 }}
             >
-                {anyFileRequiresProcessing && (
+                {anyFileRequiresProcessing && !onLoadProcessing && (
                     <div
                         style={{
                             display: "flex",
@@ -249,6 +256,38 @@ export function AddLocalAssetDialogueContent({
                         <WarningMessage
                             text={
                                 "Processing is required for one or more selected files! Properties for the conversion can be set in Settings."
+                            }
+                        ></WarningMessage>
+                    </div>
+                )}
+
+                {onLoadProcessing && !anyFileRequiresProcessing && (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5em",
+                        }}
+                    >
+                        <WarningMessage
+                            text={
+                                "On-Load-Processing is enabled, so all files will be processed. Properties for the processing can be set in Settings."
+                            }
+                        ></WarningMessage>
+                    </div>
+                )}
+
+                {onLoadProcessing && anyFileRequiresProcessing && (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5em",
+                        }}
+                    >
+                        <WarningMessage
+                            text={
+                                "On-Load-Processing is enabled, so all files will be processed. Some files require processing anyway. In both cases, the On-Load-Processing settings override the export processing settings."
                             }
                         ></WarningMessage>
                     </div>
@@ -288,6 +327,7 @@ export function AddLocalAssetDialogueContent({
                             files: finalFiles,
                             type: assetType,
                             relativePath: compileFinalPath(pathSegments),
+                            onLoadProcessing: onLoadProcessing,
                         });
                     }}
                     tooltip="Save local asset(s)."
