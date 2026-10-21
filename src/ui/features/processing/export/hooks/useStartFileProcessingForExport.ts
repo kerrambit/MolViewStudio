@@ -5,19 +5,17 @@
  */
 
 import { useCallback } from "react";
-import { useEnvironment } from "../../../../hooks/useEnvironment";
 import { pushErrorNotification } from "../../../../services/NotificationService";
 import { loggerUi } from "../../../../services/UiLoggingService";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../api/volume/ProcessVolumeRequest";
 import { useProcessVolume } from "../../api/volume/useProcessVolume";
+import { useProcessingTemporaryDirectory } from "../../temporary_directory/hooks/useProcessingTemporaryDirectory";
 
 ``;
 export function useStartFileProcessingForExport() {
-    // Use environment.
-    const env = useEnvironment();
-
     // Use processing.
     const processVolume = useProcessVolume();
+    const { getProcessingTemporaryDirectory } = useProcessingTemporaryDirectory();
 
     // TODO: code smell, we do not want to use directly api request, create facade object
     const startExportProcessing = useCallback(
@@ -26,7 +24,7 @@ export function useStartFileProcessingForExport() {
             isSegmentation: boolean,
             properties: ProcessVolumeRequestWithoutFilepaths,
         ): Promise<string | Error> => {
-            const temporaryDirectory = `${env.userDataPath}/Processing`;
+            const temporaryDirectory = getProcessingTemporaryDirectory();
 
             try {
                 const result = await processVolume.mutateAsync({
@@ -48,7 +46,7 @@ export function useStartFileProcessingForExport() {
                 return error;
             }
         },
-        [env.userDataPath, processVolume],
+        [getProcessingTemporaryDirectory, processVolume],
     );
 
     return {

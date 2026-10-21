@@ -103,6 +103,10 @@ class Preprocessor:
             local_store_path.mkdir(parents=True, exist_ok=True)
             output_dir.mkdir(parents=True, exist_ok=True)
 
+            # Create a marker file identifying proper Procesing temporary folder.
+            MARKER = ".volsegstudio-processing"
+            (Path(temporary_directory) / MARKER).touch(exist_ok=True)
+
             builder = volsegtools.create_builder()
             (
                 builder.add_volume_converter(volsegtools.MRCConverter())

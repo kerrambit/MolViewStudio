@@ -12,6 +12,7 @@ import { AppearanceProvider } from "./providers/AppearanceProvider.tsx";
 import { DialogueHost } from "./components/common/dialogue/DialogueHost.tsx";
 import { ProcessingJobSocketsManager } from "./features/processing/job-sockets/services/ProcessingJobSocketsManager.tsx";
 import { FileMappingsLoader } from "./features/workspace/services/FileMappingsLoader.tsx";
+import { ProcessingTemporaryDirectoryManager } from "./features/processing/temporary_directory/services/ProcessingTemporaryDirectoryManager.ts";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
@@ -24,6 +25,7 @@ createRoot(document.getElementById("root")!).render(
         <AppearanceProvider>
             <RouterProvider router={router} />
             <ProcessingJobSocketsManager />
+            <ProcessingTemporaryDirectoryManager />
             <FileMappingsLoader />
             <DialogueHost />
         </AppearanceProvider>

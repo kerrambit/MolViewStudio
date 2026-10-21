@@ -28,6 +28,7 @@ const ProcessVolumeRequest = z
         segmentation_volume_serializer: SerializerKind,
         segmentation_mesh_serializer: SerializerKind,
         bundling_approach: BundlingKind,
+        output_path: z.union([z.string(), z.null()]).optional(),
     })
     .passthrough();
 const ProcessVolumeResponse = z
@@ -52,6 +53,24 @@ const ProcessedVolumeResponse = z
     .passthrough();
 const ErrorDetail = z.object({ error: z.string() }).passthrough();
 const ProcessVolumeError = z.object({ detail: ErrorDetail }).passthrough();
+const CleanupRequest = z
+    .object({
+        path: z.string(),
+        remove_directory: z.boolean().optional().default(false),
+        dry_run: z.boolean().optional().default(false),
+    })
+    .passthrough();
+const CleanupResponse = z
+    .object({
+        path: z.string(),
+        dry_run: z.boolean(),
+        files_found: z.number().int(),
+        bytes_found: z.number().int(),
+        files_deleted: z.number().int(),
+        bytes_freed: z.number().int(),
+        errors: z.array(z.string()),
+    })
+    .passthrough();
 
 export const schemas = {
     DownsamplignAlgorithmKind,
@@ -65,6 +84,8 @@ export const schemas = {
     ProcessedVolumeResponse,
     ErrorDetail,
     ProcessVolumeError,
+    CleanupRequest,
+    CleanupResponse,
 };
 
 const endpoints = makeApi([
@@ -74,6 +95,27 @@ const endpoints = makeApi([
         alias: "health",
         requestFormat: "json",
         response: z.unknown(),
+    },
+    {
+        method: "post",
+        path: "/maintenance/cleanup",
+        alias: "cleanup",
+        requestFormat: "json",
+        parameters: [
+            {
+                name: "body",
+                type: "Body",
+                schema: CleanupRequest,
+            },
+        ],
+        response: CleanupResponse,
+        errors: [
+            {
+                status: 422,
+                description: `Validation Error`,
+                schema: HTTPValidationError,
+            },
+        ],
     },
     {
         method: "post",
