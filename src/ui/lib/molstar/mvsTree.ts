@@ -82,6 +82,40 @@ export function removeSnapshotFromTree(stateTree: MVSData_States, index: number)
 }
 
 /**
+ * Moves a snapshot one position up (`direction = -1`) or down (`direction = 1`) in the state tree.
+ *
+ * @param stateTree state tree
+ * @param index index of the snapshot to move
+ * @param direction -1 to move the snapshot up, 1 to move it down
+ * @returns if the index (or the target index) is out of range, it returns the original state tree and undefined, otherwise it returns the updated state tree and the moved snapshot itself
+ */
+export function moveSnapshotInTree(
+    stateTree: MVSData_States,
+    index: number,
+    direction: -1 | 1,
+) {
+    const targetIndex = index + direction;
+
+    if (
+        index < 0 ||
+        index >= stateTree.snapshots.length ||
+        targetIndex < 0 ||
+        targetIndex >= stateTree.snapshots.length
+    ) {
+        return { updatedTree: stateTree, movedSnapshot: undefined };
+    }
+
+    const snapshots = [...stateTree.snapshots];
+    const [movedSnapshot] = snapshots.splice(index, 1);
+    snapshots.splice(targetIndex, 0, movedSnapshot);
+
+    return {
+        updatedTree: { ...stateTree, snapshots },
+        movedSnapshot,
+    };
+}
+
+/**
  * Converts `multiple` kind to `single` kind by adding new `view`.
  * @param stateTree `single` state tree to convert
  * @returns `multiple` state tree with one view (snapshot)

@@ -131,6 +131,38 @@ export function removeSnapshotInManager(index: number): Result<null> {
 }
 
 /**
+ * Moves an existing snapshot in the Molstar's snapshot manager one position up or down.
+ * @param index index of the snapshot to move
+ * @param direction -1 to move the snapshot up, 1 to move it down
+ * @returns if there is error, result with `Error` is returned, otherwise null
+ */
+export function moveSnapshotInManager(index: number, direction: -1 | 1): Result<null> {
+    const molstar = getMolstar();
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    molstar.managers.snapshot.move(entry.snapshot.id, direction);
+
+    return { success: true, value: null };
+}
+
+/**
  * Update existing snapshot in the Molstar's snapshot manager.
  * @param index index of the snapshot to update
  * @param description new description

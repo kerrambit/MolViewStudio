@@ -24,6 +24,7 @@ export function Views(props: ViewsProps) {
         handleCreateView,
         handleDeleteView,
         handleCopyView,
+        handleMoveView,
         handleCameraSave,
         handleBackgroundColorChange,
         handleTitleChange,
@@ -61,15 +62,14 @@ export function Views(props: ViewsProps) {
                                 key={view.key}
                                 index={index}
                                 metadata={view}
+                                canMoveUp={index > 0}
+                                canMoveDown={index < viewItems.length - 1}
+                                onMoveUp={() => handleMoveView(index, view, -1)}
+                                onMoveDown={() => handleMoveView(index, view, 1)}
                                 onDelete={() => handleDeleteView(index, view)}
                                 onCopy={() => handleCopyView(index)}
                                 onCameraSave={(camera, thumbnail) =>
-                                    handleCameraSave(
-                                        index,
-                                        view,
-                                        camera,
-                                        thumbnail,
-                                    )
+                                    handleCameraSave(index, view, camera, thumbnail)
                                 }
                                 onBackgrounColorChange={(color) =>
                                     handleBackgroundColorChange(view, color)
@@ -88,9 +88,7 @@ export function Views(props: ViewsProps) {
                                 index={index}
                                 title={view.title}
                                 thumbnail={view.thumbnail}
-                                onClick={() =>
-                                    handleSelectActiveView(index, view)
-                                }
+                                onClick={() => handleSelectActiveView(index, view)}
                             />
                         )
                     }

@@ -4,16 +4,19 @@
  * @author Marek Eibel
  */
 
-import { Button } from "../../../../../components/common/button/Button";
+import { ActionIcon, Badge, Button, Divider, Group, Stack, Tooltip } from "@mantine/core";
+import {
+    IconCamera,
+    IconChevronDown,
+    IconChevronUp,
+    IconCopy,
+    IconSettings,
+    IconTools,
+    IconTrash,
+} from "@tabler/icons-react";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { buildCSSClassString } from "../../../../../utils/cssClassBuilder";
-import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
-import { ChevronUpActionIcon } from "../../../../../components/common/actionables/actions-icons/ChevronUpActionIcon";
-import { ChevronDownActionIcon } from "../../../../../components/common/actionables/actions-icons/ChevronDownActionIcon";
-import { CopyActionIcon } from "../../../../../components/common/actionables/actions-icons/CopyActionIcon";
-import { ActionableTile } from "../../../../../components/common/actionables/ActionableTile";
 import { Thumbnail } from "../../../../../components/common/thumbnail/Thumbnail";
-import { pushWarningNotification } from "../../../../../services/NotificationService";
 import { CameraStatus } from "./CameraStatus";
 import { CameraTextInputGroup } from "./CameraTextInputGroup";
 import type {
@@ -29,6 +32,8 @@ import "./ViewCard.css";
 export interface ViewCardProps {
     metadata: ViewMetadata;
     index: number;
+    canMoveUp?: boolean;
+    canMoveDown?: boolean;
     onClick?: () => void;
     onOpenBuilder?: (key: string) => void;
     onOpenOptions?: (key: string) => void;
@@ -55,79 +60,91 @@ export function ViewCard(props: ViewCardProps) {
     } = useViewCard(props);
 
     // CSS class builder depends on the active property of view card.
-    const viewCardClasses = buildCSSClassString([
-        "viewCard",
-        "viewCard--active",
-    ]);
+    const viewCardClasses = buildCSSClassString(["viewCard", "viewCard--active"]);
 
     // Render the component.
     return (
-        <div className={viewCardClasses} style={{ gap: "0.5em" }}>
+        <div className={viewCardClasses}>
             {/* Header. */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0.5em 1em",
-                    borderBottom: "1px solid var(--color-grey-light)",
-                }}
+            <Group
+                justify="space-between"
+                wrap="nowrap"
+                gap="xs"
+                w="100%"
+                px="sm"
+                pt="xs"
             >
-                <UnstyledTextInput
-                    value={currentName}
-                    placeholder="Enter title for view"
-                    tooltip={currentName}
-                    enabled={true}
-                    onValueChange={(newName) => {
-                        handleTitleUpdate(newName, false);
-                    }}
-                    onBlur={(newName) => {
-                        handleTitleUpdate(newName, true);
-                    }}
-                    bold={true}
-                />
+                <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+                    <Badge size="sm" variant="light" circle style={{ flexShrink: 0 }}>
+                        {props.index + 1}
+                    </Badge>
+                    <UnstyledTextInput
+                        value={currentName}
+                        placeholder="Enter title for view"
+                        tooltip={currentName}
+                        enabled={true}
+                        onValueChange={(newName) => {
+                            handleTitleUpdate(newName, false);
+                        }}
+                        onBlur={(newName) => {
+                            handleTitleUpdate(newName, true);
+                        }}
+                        bold={true}
+                        style={{ flex: 1, minWidth: 0 }}
+                    />
+                </Group>
 
                 {/* Header actions. */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.3em",
-                    }}
-                >
-                    <ChevronDownActionIcon
-                        tooltip="Move this view down."
-                        onClick={() => {
-                            pushWarningNotification(
-                                "Change of order of views is not implemented yet!",
-                            );
-                        }}
-                    />
-                    <ChevronUpActionIcon
-                        tooltip="Move this view up."
-                        onClick={() => {
-                            pushWarningNotification(
-                                "Change of order of views is not implemented yet!",
-                            );
-                        }}
-                    />
-                    <DeleteActionIcon
-                        tooltip="Delete this view."
-                        onClick={() => props.onDelete?.()}
-                    />
-                </div>
-            </div>
+                <Group gap={4} wrap="nowrap">
+                    <Tooltip label="Move this view up." withArrow>
+                        <ActionIcon
+                            variant="subtle"
+                            size="sm"
+                            disabled={props.canMoveUp === false}
+                            onClick={() => props.onMoveUp?.()}
+                            aria-label="Move this view up."
+                        >
+                            <IconChevronUp size={16} stroke={1.75} />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Move this view down." withArrow>
+                        <ActionIcon
+                            variant="subtle"
+                            size="sm"
+                            disabled={props.canMoveDown === false}
+                            onClick={() => props.onMoveDown?.()}
+                            aria-label="Move this view down."
+                        >
+                            <IconChevronDown size={16} stroke={1.75} />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Create copy of this view." withArrow>
+                        <ActionIcon
+                            variant="subtle"
+                            size="sm"
+                            onClick={() => props.onCopy?.()}
+                            aria-label="Create copy of this view."
+                        >
+                            <IconCopy size={16} stroke={1.75} />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Delete this view." withArrow>
+                        <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            size="sm"
+                            onClick={() => props.onDelete?.()}
+                            aria-label="Delete this view."
+                        >
+                            <IconTrash size={16} stroke={1.75} />
+                        </ActionIcon>
+                    </Tooltip>
+                </Group>
+            </Group>
 
             {/* Thumbnail. */}
             {props.metadata.thumbnail && (
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        paddingBottom: "1em",
-                        paddingTop: "1em",
-                    }}
-                >
+                <Group justify="center" w="100%" px="sm" py="xs">
                     <Thumbnail
                         onClick={() => props.onClick?.()}
                         title="Click to select this view."
@@ -136,87 +153,56 @@ export function ViewCard(props: ViewCardProps) {
                             props.metadata.title || `${props.index}. view`
                         } - thumbnail`}
                     />
-                </div>
+                </Group>
             )}
 
             {/* Camera position and status. */}
-            <CameraTextInputGroup cameraState={cameraState} />
-            <CameraStatus
-                doesReferenceCameraExist={
-                    props.metadata.referenceCamera !== undefined
-                }
-                isCameraMoved={isCameraMoved}
-            />
+            <Divider w="100%" />
+            <Stack gap="xs" w="100%" px="sm" py="xs">
+                <CameraStatus
+                    doesReferenceCameraExist={
+                        props.metadata.referenceCamera !== undefined
+                    }
+                    isCameraMoved={isCameraMoved}
+                />
+                <CameraTextInputGroup cameraState={cameraState} />
+            </Stack>
 
             {/* Buttons. */}
-            <div
-                style={{
-                    paddingBottom: "1em",
-                    paddingTop: "1em",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5em",
-                    width: "90%",
-                }}
-            >
-                {/* Primary button & utility action icons. */}
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "0.5em",
-                        alignItems: "stretch",
-                        justifyContent: "center",
-                    }}
+            <Divider w="100%" />
+            <Stack gap="xs" w="100%" px="sm" py="sm">
+                <Button
+                    variant="light"
+                    size="sm"
+                    fullWidth
+                    leftSection={<IconCamera size={16} stroke={1.75} />}
+                    title="Captures current camera position and saves it."
+                    onClick={handleCaptureCamera}
                 >
-                    <Button
-                        label="Capture camera"
-                        tooltip="Captures current camera position and saves it."
-                        size="small"
-                        variant="secondary"
-                        onClick={handleCaptureCamera}
-                    />
+                    Capture camera
+                </Button>
 
-                    {/* Revert action icon. */}
-                    <div style={{ display: "flex", gap: "0.5em" }}>
-                        {/* Copy action icon. */}
-                        <ActionableTile>
-                            <CopyActionIcon
-                                tooltip="Create copy of this view."
-                                onClick={() => props.onCopy?.()}
-                            />
-                        </ActionableTile>
-                    </div>
-                </div>
-
-                {/* Secondary buttons. */}
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "0.5em",
-                    }}
-                >
-                    {/* View Builder button. */}
+                <Group grow gap="xs" wrap="nowrap">
                     <Button
-                        size="small"
-                        tooltip="Open View Builder sidebar."
-                        label="Builder"
-                        variant="secondary"
-                        onClick={() =>
-                            props.onOpenBuilder?.(props.metadata.key!)
-                        }
-                    />
+                        variant="default"
+                        size="sm"
+                        leftSection={<IconTools size={16} stroke={1.75} />}
+                        title="Open View Builder sidebar."
+                        onClick={() => props.onOpenBuilder?.(props.metadata.key!)}
+                    >
+                        Builder
+                    </Button>
                     <Button
-                        size="small"
-                        tooltip="Open View Options dialogue."
-                        label="Options"
-                        variant="secondary"
-                        onClick={() =>
-                            props.onOpenOptions?.(props.metadata.key!)
-                        }
-                    />
-                </div>
-            </div>
+                        variant="default"
+                        size="sm"
+                        leftSection={<IconSettings size={16} stroke={1.75} />}
+                        title="Open View Options dialogue."
+                        onClick={() => props.onOpenOptions?.(props.metadata.key!)}
+                    >
+                        Options
+                    </Button>
+                </Group>
+            </Stack>
         </div>
     );
 }

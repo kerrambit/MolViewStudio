@@ -26,6 +26,8 @@ import {
     getAllDownloadUrlsFromSnapshot,
     getCurrentSnapshotIndex,
     getSnapshotChangeSubscription,
+    moveSnapshotInManager,
+    moveSnapshotInTree,
     removeSnapshotFromTree,
     removeSnapshotInManager,
     updateLiveBackgroundColor,
@@ -229,8 +231,7 @@ export function useViewsManagement({
         // When I delete view, and the builder is opened, it does not update and it is empty.
         if (isBuilderOpen && onOpenBuilder) {
             onOpenBuilder(
-                updatedTree.snapshots.at(index === 0 ? index : index - 1)
-                    ?.metadata.key,
+                updatedTree.snapshots.at(index === 0 ? index : index - 1)?.metadata.key,
             );
         }
     };
@@ -261,8 +262,7 @@ export function useViewsManagement({
         }
 
         // Increase count for copied assets.
-        const assetsIdsInCopiedSnapshot =
-            getAllDownloadUrlsFromSnapshot(newSnapshot);
+        const assetsIdsInCopiedSnapshot = getAllDownloadUrlsFromSnapshot(newSnapshot);
         assetsIdsInCopiedSnapshot.forEach((id) => {
             const a = getAsset(id);
             if (a) {
@@ -296,6 +296,65 @@ export function useViewsManagement({
         }
     };
 
+    const handleMoveView = (index: number, view: ViewMetadata, direction: -1 | 1) => {
+        // Ignore other non-viewing regime.
+        if (regime.kind !== "viewing") {
+            return;
+        }
+
+        // Create updated tree.
+        const { updatedTree, movedSnapshot } = moveSnapshotInTree(
+            regime.history.current().stateTree,
+            index,
+            direction,
+        );
+
+        // Internal bug in assigned index out of range, do not update anything.
+        if (!movedSnapshot) {
+            pushErrorNotification(
+                `Internal error occured! Unable to move the view. Try once more.`,
+            );
+            loggerUi.error(
+                `Internal error occured! Unable to move the view. Index <${index}> was out of range (there are currently only <${
+                    regime.history.current().stateTree.snapshots.length
+                }> snapshots)!`,
+            );
+            return;
+        }
+
+        // The moved view keeps its active state, the swapped neighbour takes over its old index.
+        const newActiveViewCardIndex =
+            activeViewCardIndex === index
+                ? index + direction
+                : activeViewCardIndex === index + direction
+                ? index
+                : activeViewCardIndex;
+
+        // Sync the reference before touching Molstar, otherwise the reorder is mistaken
+        // for a view switch (which would clear the viewer) and the builder would be
+        // handed the swapped neighbour from the stale order.
+        latestDataRef.current = {
+            isBuilderOpen,
+            viewItems: extractViewsFromMVS(updatedTree),
+            activeViewCardIndex: newActiveViewCardIndex,
+        };
+
+        // Update regime.
+        regime.commitStateTree(
+            updatedTree,
+            `Moved view "${view.title}" (${view.key}) ${
+                direction === -1 ? "up" : "down"
+            }.`,
+            newActiveViewCardIndex,
+        );
+
+        // Reorder snapshot in Molstar's snapshot manager.
+        moveSnapshotInManager(index, direction);
+
+        // Keep following the same view.
+        setActiveViewCardIndex(newActiveViewCardIndex);
+    };
+
     const handleCameraSave = (
         index: number,
         view: ViewMetadata,
@@ -310,25 +369,21 @@ export function useViewsManagement({
         // Create updated tree.
         const updatedTree = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === view.key!) {
-                        return {
-                            ...snap,
-                            root: applyCameraToNode(
-                                snap.root,
-                                referenceCamera,
-                                UiLocalStorageService.ViewOptions.getPending(
-                                    view.key!,
-                                )
-                                    ? thumbnail
-                                    : undefined,
-                            ),
-                        };
-                    }
-                    return snap;
-                }),
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === view.key!) {
+                    return {
+                        ...snap,
+                        root: applyCameraToNode(
+                            snap.root,
+                            referenceCamera,
+                            UiLocalStorageService.ViewOptions.getPending(view.key!)
+                                ? thumbnail
+                                : undefined,
+                        ),
+                    };
+                }
+                return snap;
+            }),
         };
 
         // Update state tree.
@@ -354,20 +409,18 @@ export function useViewsManagement({
         // Create updated tree.
         const updatedTree = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === view.key) {
-                        return {
-                            ...snap,
-                            metadata: {
-                                ...snap.metadata,
-                                title: title,
-                            },
-                        };
-                    }
-                    return snap;
-                }),
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === view.key) {
+                    return {
+                        ...snap,
+                        metadata: {
+                            ...snap.metadata,
+                            title: title,
+                        },
+                    };
+                }
+                return snap;
+            }),
         };
 
         // Update regime.
@@ -382,11 +435,7 @@ export function useViewsManagement({
         }
     };
 
-    const handleOpenOptions = async (
-        index: number,
-        view: ViewMetadata,
-        key: string,
-    ) => {
+    const handleOpenOptions = async (index: number, view: ViewMetadata, key: string) => {
         // Show dialogue.
         const result = await useDialogueStore
             .getState()
@@ -413,32 +462,26 @@ export function useViewsManagement({
         }
 
         // Saves the screenshot preference for the specific view.
-        UiLocalStorageService.ViewOptions.setPending(
-            view.key!,
-            result.captureScreenshot,
-        );
+        UiLocalStorageService.ViewOptions.setPending(view.key!, result.captureScreenshot);
 
         // Create updated tree.
         let updatedTree = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === key) {
-                        return {
-                            ...snap,
-                            metadata: {
-                                ...snap.metadata,
-                                linger_duration_ms: result.lingerDuration,
-                                transition_duration_ms:
-                                    result.transitionDuration,
-                                description: result.description,
-                                description_format: result.descriptionFormat,
-                            },
-                        };
-                    }
-                    return snap;
-                }),
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === key) {
+                    return {
+                        ...snap,
+                        metadata: {
+                            ...snap.metadata,
+                            linger_duration_ms: result.lingerDuration,
+                            transition_duration_ms: result.transitionDuration,
+                            description: result.description,
+                            description_format: result.descriptionFormat,
+                        },
+                    };
+                }
+                return snap;
+            }),
         };
 
         // Update also background color.
@@ -448,10 +491,7 @@ export function useViewsManagement({
                 if (snap.metadata.key === key) {
                     return {
                         ...snap,
-                        root: applyBackgroundColorToNode(
-                            snap.root,
-                            result.canvasColor,
-                        ),
+                        root: applyBackgroundColorToNode(snap.root, result.canvasColor),
                     };
                 }
                 return snap;
@@ -478,20 +518,14 @@ export function useViewsManagement({
         updateLiveBackgroundColor(result.canvasColor); // TODO: setBackgroundColor vs updateLiveBackgroundColor
     };
 
-    const handleSelectActiveView = async (
-        index: number,
-        view: ViewMetadata,
-    ) => {
+    const handleSelectActiveView = async (index: number, view: ViewMetadata) => {
         await applySnapshotByIndex(index);
         if (isBuilderOpen && onOpenBuilder) {
             onOpenBuilder(view.key);
         }
     };
 
-    const handleBackgroundColorChange = (
-        view: ViewMetadata,
-        color: HexColor,
-    ) => {
+    const handleBackgroundColorChange = (view: ViewMetadata, color: HexColor) => {
         // Ignore other non-viewing regime.
         if (regime.kind !== "viewing") {
             return;
@@ -503,17 +537,15 @@ export function useViewsManagement({
         // Create updated tree.
         const updatedTree = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === view.key) {
-                        return {
-                            ...snap,
-                            root: applyBackgroundColorToNode(snap.root, color),
-                        };
-                    }
-                    return snap;
-                }),
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === view.key) {
+                    return {
+                        ...snap,
+                        root: applyBackgroundColorToNode(snap.root, color),
+                    };
+                }
+                return snap;
+            }),
         };
 
         // Update regime.
@@ -529,6 +561,7 @@ export function useViewsManagement({
         handleCreateView,
         handleDeleteView,
         handleCopyView,
+        handleMoveView,
         handleCameraSave,
         handleBackgroundColorChange,
         handleTitleChange,
