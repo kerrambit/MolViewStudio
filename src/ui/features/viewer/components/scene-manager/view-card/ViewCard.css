@@ -3,19 +3,33 @@
     flex-direction: column;
     width: 100%;
     align-items: center;
-    border: 1px solid var(--mantine-color-default-border);
-    border-radius: var(--mantine-radius-md);
-    background-color: var(--mantine-color-body);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    border: 1px solid var(--color-grey-light);
+    border-radius: 6px;
+    background-color: var(--color-white);
+    transition: all 0.2s ease-in-out;
 }
 
-.viewCard:hover {
-    border-color: var(--mantine-color-gray-5);
+[data-mantine-color-scheme="dark"] .viewCard {
+    border: 1px solid var(--mantine-color-dark-3);
+    background-color: var(--color-grey-dark);
+}
+
+.viewCard:not(.viewCard--active):hover {
+    border-color: var(--color-grey-dark-hover-lighter);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
-.viewCard--active {
-    border-color: var(--mantine-primary-color-6);
-    box-shadow: 0 0 0 1px var(--mantine-primary-color-6), 0 8px 20px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+[data-mantine-color-scheme="dark"] .viewCard:not(.viewCard--active):hover {
+    border-color: var(--color-grey);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* 
+  By chaining the classes (.viewCard.viewCard--active) AND 
+  explicitly targeting the dark scheme, you guarantee this always wins.
+*/
+.viewCard.viewCard--active,
+[data-mantine-color-scheme="dark"] .viewCard.viewCard--active {
+    border-color: var(--mantine-primary-color-5);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }

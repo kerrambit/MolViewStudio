@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { ActionIcon, Badge, Button, Divider, Group, Stack, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Button, Divider, Group, Stack } from "@mantine/core";
 import {
     IconCamera,
     IconChevronDown,
@@ -66,16 +66,10 @@ export function ViewCard(props: ViewCardProps) {
     return (
         <div className={viewCardClasses}>
             {/* Header. */}
-            <Group
-                justify="space-between"
-                wrap="nowrap"
-                gap="xs"
-                w="100%"
-                px="sm"
-                pt="xs"
-            >
-                <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-                    <Badge size="sm" variant="light" circle style={{ flexShrink: 0 }}>
+            <Group justify="space-between" gap="xs" w="100%" px="sm" pt="xs" pb="xs">
+                {/* Left part. */}
+                <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                    <Badge size="md" variant="default" circle style={{ flexShrink: 0 }}>
                         {props.index + 1}
                     </Badge>
                     <UnstyledTextInput
@@ -94,52 +88,52 @@ export function ViewCard(props: ViewCardProps) {
                     />
                 </Group>
 
-                {/* Header actions. */}
-                <Group gap={4} wrap="nowrap">
-                    <Tooltip label="Move this view up." withArrow>
-                        <ActionIcon
-                            variant="subtle"
-                            size="sm"
-                            disabled={props.canMoveUp === false}
-                            onClick={() => props.onMoveUp?.()}
-                            aria-label="Move this view up."
-                        >
-                            <IconChevronUp size={16} stroke={1.75} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Move this view down." withArrow>
-                        <ActionIcon
-                            variant="subtle"
-                            size="sm"
-                            disabled={props.canMoveDown === false}
-                            onClick={() => props.onMoveDown?.()}
-                            aria-label="Move this view down."
-                        >
-                            <IconChevronDown size={16} stroke={1.75} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Create copy of this view." withArrow>
-                        <ActionIcon
-                            variant="subtle"
-                            size="sm"
-                            onClick={() => props.onCopy?.()}
-                            aria-label="Create copy of this view."
-                        >
-                            <IconCopy size={16} stroke={1.75} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Delete this view." withArrow>
-                        <ActionIcon
-                            variant="subtle"
-                            color="red"
-                            size="sm"
-                            onClick={() => props.onDelete?.()}
-                            aria-label="Delete this view."
-                        >
-                            <IconTrash size={16} stroke={1.75} />
-                        </ActionIcon>
-                    </Tooltip>
+                {/* Right part with header actions. */}
+                <Group gap={4}>
+                    <ActionIcon
+                        variant="default"
+                        size="sm"
+                        disabled={props.canMoveUp === false}
+                        onClick={() => props.onMoveUp?.()}
+                        aria-label="Move this view up."
+                        title="Move this view up."
+                    >
+                        <IconChevronUp size={16} stroke={1.75} />
+                    </ActionIcon>
+
+                    <ActionIcon
+                        variant="default"
+                        size="sm"
+                        disabled={props.canMoveDown === false}
+                        onClick={() => props.onMoveDown?.()}
+                        aria-label="Move this view down."
+                        title="Move this view down."
+                    >
+                        <IconChevronDown size={16} stroke={1.75} />
+                    </ActionIcon>
+
+                    <ActionIcon
+                        variant="default"
+                        size="sm"
+                        onClick={() => props.onCopy?.()}
+                        aria-label="Create copy of this view."
+                        title="Create copy of this view."
+                    >
+                        <IconCopy size={16} stroke={1.75} />
+                    </ActionIcon>
+
+                    <ActionIcon
+                        variant="filled"
+                        color="red"
+                        size="sm"
+                        onClick={() => props.onDelete?.()}
+                        aria-label="Delete this view."
+                        title="Delete this view."
+                    >
+                        <IconTrash size={16} stroke={1.75} />
+                    </ActionIcon>
                 </Group>
+                <Divider w="100%" />
             </Group>
 
             {/* Thumbnail. */}
@@ -153,11 +147,11 @@ export function ViewCard(props: ViewCardProps) {
                             props.metadata.title || `${props.index}. view`
                         } - thumbnail`}
                     />
+                    <Divider w="100%" />
                 </Group>
             )}
 
             {/* Camera position and status. */}
-            <Divider w="100%" />
             <Stack gap="xs" w="100%" px="sm" py="xs">
                 <CameraStatus
                     doesReferenceCameraExist={
@@ -172,7 +166,7 @@ export function ViewCard(props: ViewCardProps) {
             <Divider w="100%" />
             <Stack gap="xs" w="100%" px="sm" py="sm">
                 <Button
-                    variant="light"
+                    variant="default"
                     size="sm"
                     fullWidth
                     leftSection={<IconCamera size={16} stroke={1.75} />}

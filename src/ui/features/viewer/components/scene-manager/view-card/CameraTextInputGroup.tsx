@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { ActionIcon, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, TextInput } from "@mantine/core";
 import { IconCopy } from "@tabler/icons-react";
 import type { CameraState } from "../../../../../lib/molstar";
 import {
@@ -61,30 +61,26 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
                     title={field.tooltip}
                     variant="filled"
                     rightSection={
-                        <Tooltip
-                            label={`Copy camera ${field.label.toLowerCase()}.`}
-                            withArrow
+                        <ActionIcon
+                            variant="transparent"
+                            size="xs"
+                            aria-label={`Copy camera ${field.label.toLowerCase()}.`}
+                            title={`Copy camera ${field.label.toLowerCase()}.`}
+                            onClick={async () => {
+                                try {
+                                    await navigator.clipboard.writeText(field.value);
+                                    pushInfoNotification(
+                                        `Camera ${field.label.toLowerCase()} was copied.`,
+                                    );
+                                } catch (err) {
+                                    pushWarningNotification(
+                                        `Failed to copy camera ${field.label.toLowerCase()}! Details: "${err}".`,
+                                    );
+                                }
+                            }}
                         >
-                            <ActionIcon
-                                variant="subtle"
-                                size="xs"
-                                aria-label={`Copy camera ${field.label.toLowerCase()}.`}
-                                onClick={async () => {
-                                    try {
-                                        await navigator.clipboard.writeText(field.value);
-                                        pushInfoNotification(
-                                            `Camera ${field.label.toLowerCase()} was copied.`,
-                                        );
-                                    } catch (err) {
-                                        pushWarningNotification(
-                                            `Failed to copy camera ${field.label.toLowerCase()}! Details: "${err}".`,
-                                        );
-                                    }
-                                }}
-                            >
-                                <IconCopy size={14} stroke={1.75} />
-                            </ActionIcon>
-                        </Tooltip>
+                            <IconCopy size={14} stroke={1.75} />
+                        </ActionIcon>
                     }
                     style={{
                         width: "100%",
