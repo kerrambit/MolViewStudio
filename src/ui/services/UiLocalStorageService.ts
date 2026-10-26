@@ -14,20 +14,16 @@ const PREFIX = {
     VIEW_BUILDER_ASSET: "view-builder-expanded-asset-",
     VIEW_BUILDER_TAB: "view-builder-tab-",
     VIEW_BUILDER_VOLUME_GENERAL_SECTION: "view-builder-volume-general-section-",
-    VIEW_BUILDER_VOLUME_REPRESENTATION_SECTION:
-        "view-builder-volume-representation",
-    VIEW_BUILDER_VOLUME_TRANSFORM_SECTION:
-        "view-builder-volume-transform-section-",
-    VIEW_BUILDER_STRUCTURE_GENERAL_SECTION:
-        "view-builder-structure-general-section-",
+    VIEW_BUILDER_VOLUME_REPRESENTATION_SECTION: "view-builder-volume-representation",
+    VIEW_BUILDER_VOLUME_TRANSFORM_SECTION: "view-builder-volume-transform-section-",
+    VIEW_BUILDER_STRUCTURE_GENERAL_SECTION: "view-builder-structure-general-section-",
     VIEW_BUILDER_STRUCTURE_GENERAL_ADVANCED_SECTION:
         "view-builder-structure-general-advanced-section-",
     VIEW_BUILDER_STRUCTURE_COMPONENTS_SECTION:
         "view-builder-structure-components-section-",
     VIEW_BUILDER_STRUCTURE_TOOLTIPS_AND_LABELS_SECTION:
         "view-builder-structure-tooltips-and-labels-section",
-    VIEW_BUILDER_STRUCTURE_TRANSFORM_SECTION:
-        "view-builder-structure-transform-section-",
+    VIEW_BUILDER_STRUCTURE_TRANSFORM_SECTION: "view-builder-structure-transform-section-",
     VIEW_BUILDER_STRUCTURE_COMPONENT_REPRESENTATION_SECTION:
         "view-builder-structure-component-representation",
     VIEW_BUILDER_STRUCTURE_COMPONENT_FOCUS_SECTION:
@@ -36,13 +32,17 @@ const PREFIX = {
         "view-builder-structure-component-tooltips-and-labels-section",
     VIEW_BUILDER_STRUCTURE_COMPONENT_TRANSFORM_SECTION:
         "view-builder-structure-component-transform-section-",
-    VIEW_BUILDER_STRUCTURE_COMPONENT_CACHE:
-        "view-builder-structure-component-cache-",
+    VIEW_BUILDER_STRUCTURE_COMPONENT_CACHE: "view-builder-structure-component-cache-",
     VIEW_BUILDER_FILTER_SECTION: "view-builder-asset-filter-section-",
     VIEW_BUILDER_FILTERS: "view-builder-asset-filters-",
     VIEW_BUILDER_FOLDER: "view-builder-asset-folders-",
     ASSETS_TREE: "assets-tree-",
     PROCESSING_JOBS: "processing-jobs-",
+    EXPORT_VOLUMES: "export-volumes",
+    EXPORT_SEGMENTAIONS: "export-segmentations",
+    EXPORT_OUTPUT_DIRECTORY: "export-output-directory",
+    EXPORT_SUMMARY: "export-summary",
+    EXPORT_HELP: "export-help",
 };
 
 export const UiLocalStorageService = {
@@ -52,9 +52,7 @@ export const UiLocalStorageService = {
 
     ViewOptions: {
         getPending: (viewKey: string): boolean | undefined => {
-            const value = localStorage.getItem(
-                `${PREFIX.PENDING_SCREENSHOT}${viewKey}`,
-            );
+            const value = localStorage.getItem(`${PREFIX.PENDING_SCREENSHOT}${viewKey}`);
             if (value === null) {
                 return undefined;
             }
@@ -76,63 +74,41 @@ export const UiLocalStorageService = {
     SceneManager: {
         getTab: (): "storyOptions" | "assets" | "views" => {
             const value = localStorage.getItem(`${PREFIX.SCENE_MANAGER_TAB}`);
-            return (
-                (value as "storyOptions" | "assets" | "views") || "storyOptions"
-            );
+            return (value as "storyOptions" | "assets" | "views") || "storyOptions";
         },
 
         setTab: (tabType: "storyOptions" | "assets" | "views"): void => {
-            localStorage.setItem(
-                `${PREFIX.SCENE_MANAGER_TAB}`,
-                String(tabType),
-            );
+            localStorage.setItem(`${PREFIX.SCENE_MANAGER_TAB}`, String(tabType));
         },
 
         getBuilderSidebar: (): string | undefined => {
-            const value = localStorage.getItem(
-                `${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`,
-            );
+            const value = localStorage.getItem(`${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`);
             return value || undefined;
         },
 
         setBuilderSidebar: (viewKey: string | undefined): void => {
             if (viewKey) {
-                localStorage.setItem(
-                    `${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`,
-                    viewKey,
-                );
+                localStorage.setItem(`${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`, viewKey);
             } else {
-                localStorage.removeItem(
-                    `${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`,
-                );
+                localStorage.removeItem(`${PREFIX.SCENE_MANAGER_BUILDER_SIDEBAR}`);
             }
         },
     },
 
     ViewBuilder: {
         getExpandedAssetId: (viewKey: string): string | null => {
-            return localStorage.getItem(
-                `${PREFIX.VIEW_BUILDER_ASSET}${viewKey}`,
-            );
+            return localStorage.getItem(`${PREFIX.VIEW_BUILDER_ASSET}${viewKey}`);
         },
 
         setExpandedAssetId: (viewKey: string, assetId: string | null): void => {
             if (assetId) {
-                localStorage.setItem(
-                    `${PREFIX.VIEW_BUILDER_ASSET}${viewKey}`,
-                    assetId,
-                );
+                localStorage.setItem(`${PREFIX.VIEW_BUILDER_ASSET}${viewKey}`, assetId);
             } else {
-                localStorage.removeItem(
-                    `${PREFIX.VIEW_BUILDER_ASSET}${viewKey}`,
-                );
+                localStorage.removeItem(`${PREFIX.VIEW_BUILDER_ASSET}${viewKey}`);
             }
         },
 
-        getExpandedVolumeGeneralSection: (
-            assetId: string,
-            viewKey: string,
-        ): boolean => {
+        getExpandedVolumeGeneralSection: (assetId: string, viewKey: string): boolean => {
             const value = localStorage.getItem(
                 `${PREFIX.VIEW_BUILDER_VOLUME_GENERAL_SECTION}${viewKey}-${assetId}`,
             );
@@ -541,10 +517,7 @@ export const UiLocalStorageService = {
             return true;
         },
 
-        setExpandedFiltersSection: (
-            viewKey: string,
-            isExpanded: boolean,
-        ): void => {
+        setExpandedFiltersSection: (viewKey: string, isExpanded: boolean): void => {
             if (isExpanded) {
                 localStorage.setItem(
                     `${PREFIX.VIEW_BUILDER_FILTER_SECTION}${viewKey}`,
@@ -559,13 +532,9 @@ export const UiLocalStorageService = {
         },
     },
     Assets: {
-        getInitialTreeExpandedState: (
-            filepath: string,
-        ): Record<string, boolean> => {
+        getInitialTreeExpandedState: (filepath: string): Record<string, boolean> => {
             try {
-                const stored = localStorage.getItem(
-                    `${PREFIX.ASSETS_TREE}${filepath}`,
-                );
+                const stored = localStorage.getItem(`${PREFIX.ASSETS_TREE}${filepath}`);
                 return stored ? JSON.parse(stored) : {};
             } catch {
                 return {};
@@ -584,9 +553,7 @@ export const UiLocalStorageService = {
     },
     ProcessingJobs: {
         getJobExpandedState: (jobId: string) => {
-            const result = localStorage.getItem(
-                `${PREFIX.PROCESSING_JOBS}${jobId}`,
-            );
+            const result = localStorage.getItem(`${PREFIX.PROCESSING_JOBS}${jobId}`);
             if (result) {
                 return result === "true";
             }
@@ -595,16 +562,87 @@ export const UiLocalStorageService = {
 
         setJobExpandedState: (jobId: string, isExpanded: boolean): void => {
             if (isExpanded) {
-                localStorage.setItem(
-                    `${PREFIX.PROCESSING_JOBS}${jobId}`,
-                    "true",
-                );
+                localStorage.setItem(`${PREFIX.PROCESSING_JOBS}${jobId}`, "true");
             } else {
-                localStorage.setItem(
-                    `${PREFIX.PROCESSING_JOBS}${jobId}`,
-                    "false",
-                );
+                localStorage.setItem(`${PREFIX.PROCESSING_JOBS}${jobId}`, "false");
             }
+        },
+    },
+
+    Export: {
+        getVoumesExpandedState: () => {
+            const result = localStorage.getItem(`${PREFIX.EXPORT_VOLUMES}`);
+            if (result) {
+                return result === "true";
+            }
+            return false;
+        },
+
+        setVoumesExpandedState: (isExpanded: boolean): void => {
+            if (isExpanded) {
+                localStorage.setItem(`${PREFIX.EXPORT_VOLUMES}`, "true");
+            } else {
+                localStorage.setItem(`${PREFIX.EXPORT_VOLUMES}`, "false");
+            }
+        },
+
+        getSegmentationExpandedState: () => {
+            const result = localStorage.getItem(`${PREFIX.EXPORT_SEGMENTAIONS}`);
+            if (result) {
+                return result === "true";
+            }
+            return false;
+        },
+
+        setSegmentationExpandedState: (isExpanded: boolean): void => {
+            if (isExpanded) {
+                localStorage.setItem(`${PREFIX.EXPORT_SEGMENTAIONS}`, "true");
+            } else {
+                localStorage.setItem(`${PREFIX.EXPORT_SEGMENTAIONS}`, "false");
+            }
+        },
+
+        getSummaryExpandedState: () => {
+            const result = localStorage.getItem(`${PREFIX.EXPORT_SUMMARY}`);
+            if (result) {
+                return result === "true";
+            }
+            return false;
+        },
+
+        setSummaryExpandedState: (isExpanded: boolean): void => {
+            if (isExpanded) {
+                localStorage.setItem(`${PREFIX.EXPORT_SUMMARY}`, "true");
+            } else {
+                localStorage.setItem(`${PREFIX.EXPORT_SUMMARY}`, "false");
+            }
+        },
+
+        getHelpExpandedState: () => {
+            const result = localStorage.getItem(`${PREFIX.EXPORT_HELP}`);
+            if (result) {
+                return result === "true";
+            }
+            return false;
+        },
+
+        setHelpExpandedState: (isExpanded: boolean): void => {
+            if (isExpanded) {
+                localStorage.setItem(`${PREFIX.EXPORT_HELP}`, "true");
+            } else {
+                localStorage.setItem(`${PREFIX.EXPORT_HELP}`, "false");
+            }
+        },
+
+        // TODO: only in LocalStorage
+        getOutputDirectory: () => {
+            const result = localStorage.getItem(`${PREFIX.EXPORT_OUTPUT_DIRECTORY}`);
+            return result;
+        },
+
+        // TODO: only in LocalStorage
+        setOutputDirectory: (outputDirectory: string): void => {
+            localStorage.setItem(`${PREFIX.EXPORT_OUTPUT_DIRECTORY}`, outputDirectory);
         },
     },
 };

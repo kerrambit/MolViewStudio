@@ -12,7 +12,7 @@ import { getFilePathWithoutFile } from "../../../utils/fileDataUtils";
 import {
     getAllSupportedAssetsParsers,
     getParser,
-} from "../../../config/assetsDefinitions";
+} from "../../assets/domain/assetsDefinitions";
 import {
     addStructureNodeToTree,
     addVolumeNodeToTree,
@@ -37,7 +37,15 @@ import {
     type VolumeViewModel,
 } from "../models/MvsViewModels";
 
+/**
+ * Type of asset based on the MVS format.
+ */
 export type TabType = "structure" | "volume";
+
+/**
+ * Quality of the asset used for rendering. Preview refers to the (hidden) child asset created by downsampling.
+ */
+export type AssetQuality = "normal" | "preview";
 
 export function useViewBuilder(viewKey: string) {
     // Use regime.
@@ -58,9 +66,7 @@ export function useViewBuilder(viewKey: string) {
         return regime.kind === "viewing"
             ? regime.history
                   .current()
-                  .stateTree.snapshots.find(
-                      (snap) => snap.metadata.key === viewKey,
-                  )
+                  .stateTree.snapshots.find((snap) => snap.metadata.key === viewKey)
             : null;
     }, [regime, viewKey]);
 
@@ -69,10 +75,15 @@ export function useViewBuilder(viewKey: string) {
         UiLocalStorageService.ViewBuilder.getExpandedAssetId(viewKey),
     );
 
-    // State for all selected assets IDs in UI.
+    // State for all selected assets IDs in UI. These are the render asset IDs (preview child IDs when preview quality is active), matching the download URLs in the tree.
     const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(() =>
         view ? getAllDownloadUrlsFromSnapshot(view) : [],
     );
+
+    // State for quality overrides (parent asset ID -> chosen quality). By default the preview child is used when it exists.
+    const [assetQualityOverrides, setAssetQualityOverrides] = useState<
+        Record<AssetId, AssetQuality>
+    >({});
 
     // Current record of volumeview models for each asset.
     const [volumeViewModels, setVolumeViewModels] = useState<
@@ -99,20 +110,17 @@ export function useViewBuilder(viewKey: string) {
     );
 
     // Current selected asset relative paths.
-    const [selectedAssetRelativePaths, setSelectedAssetRelativePaths] =
-        useState<string[]>(
-            UiLocalStorageService.ViewBuilder.getAssetFolders(viewKey) ?? [
-                "All",
-            ],
-        );
+    const [selectedAssetRelativePaths, setSelectedAssetRelativePaths] = useState<
+        string[]
+    >(UiLocalStorageService.ViewBuilder.getAssetFolders(viewKey) ?? ["All"]);
 
     const [areFiltersExpanded, setAreFiltersExpanded] = useState(
         UiLocalStorageService.ViewBuilder.getExpandedFiltersSection(viewKey),
     );
 
-    // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...).
+    // Memoized assets filtered only by tag (local/remote) and extension (.cif/.map/...). Hidden assets (e.g. previews) are not shown.
     const assetsFilteredByType = useMemo(() => {
-        const allAssets = Array.from(assets.values());
+        const allAssets = Array.from(assets.values()).filter((asset) => !asset.hidden);
 
         if (selectedAssetFilters.length === 0) return [];
         if (selectedAssetFilters.includes("All")) return allAssets;
@@ -120,9 +128,7 @@ export function useViewBuilder(viewKey: string) {
         const hasLocationFilters = selectedAssetFilters.some(
             (f) => f === "Local assets" || f === "Remote assets",
         );
-        const hasExtensionFilters = selectedAssetFilters.some((f) =>
-            f.startsWith("."),
-        );
+        const hasExtensionFilters = selectedAssetFilters.some((f) => f.startsWith("."));
 
         return allAssets.filter((asset) => {
             let matchesLocation = !hasLocationFilters;
@@ -142,9 +148,7 @@ export function useViewBuilder(viewKey: string) {
             let matchesExtension = !hasExtensionFilters;
             if (hasExtensionFilters) {
                 matchesExtension = selectedAssetFilters.some(
-                    (ext) =>
-                        asset.extension.toLowerCase() ===
-                        ext.slice(1).toLowerCase(),
+                    (ext) => asset.extension.toLowerCase() === ext.slice(1).toLowerCase(),
                 );
             }
 
@@ -165,52 +169,6 @@ export function useViewBuilder(viewKey: string) {
         });
     }, [assetsFilteredByType, selectedAssetRelativePaths]);
 
-    // Function which returns safe volume view model based on asset ID.
-    const getVolumeViewModelForAsset = useCallback(
-        (assetId: AssetId): VolumeViewModel => {
-            if (volumeViewModels[assetId]) {
-                return volumeViewModels[assetId];
-            }
-
-            const fallback: VolumeViewModel = {
-                ...DEFAULT_VOLUME_VIEW_MODEL,
-                format:
-                    getParser(getAsset(assetId)?.extension || "unknown") ||
-                    "N/A",
-            };
-
-            if (!view) {
-                return fallback;
-            }
-
-            return getVolumeViewModel(view.root, assetId, fallback);
-        },
-        [volumeViewModels, getAsset, view],
-    );
-
-    // Function which returns safe structure view model based on asset ID.
-    const getStructureViewModelForAsset = useCallback(
-        (assetId: AssetId): StructureViewModel => {
-            if (structureViewModels[assetId]) {
-                return structureViewModels[assetId];
-            }
-
-            const fallback: StructureViewModel = {
-                ...DEFAULT_STRUCTURE_VIEW_MODEL,
-                format:
-                    getParser(getAsset(assetId)?.extension || "unknown") ||
-                    "N/A",
-            };
-
-            if (!view) {
-                return fallback;
-            }
-
-            return getStructureViewModel(view.root, assetId, fallback);
-        },
-        [structureViewModels, getAsset, view],
-    );
-
     // Handler for expanding the asset card.
     const toggleExpandAsset = (assetId: AssetId) => {
         const nextId = expandedAssetId === assetId ? null : assetId;
@@ -218,55 +176,131 @@ export function useViewBuilder(viewKey: string) {
         UiLocalStorageService.ViewBuilder.setExpandedAssetId(viewKey, nextId);
     };
 
+    /**
+     * Returns the asset ID which is used everywhere in the tree and view models for given parent asset ID:
+     * the preview child's ID when preview quality is active, otherwise the parent ID itself.
+     * This single ID is then used for selection, view models and node building, so all of them stay consistent.
+     * The only exception is export, which maps the preview child back to the full-quality parent.
+     * @param parentAssetId parent asset ID
+     * @returns asset ID which is used currently in the tree and view models for given parent ID
+     */
+    const resolveRenderAssetId = (parentAssetId: AssetId): AssetId => {
+        const parentAsset = getAsset(parentAssetId);
+        if (!parentAsset) {
+            return parentAssetId;
+        }
+
+        const previewChildId = parentAsset.children.find(
+            (child) => child.kind === "Preview",
+        )?.id;
+
+        if (!previewChildId) {
+            return parentAssetId;
+        }
+
+        // Default to the preview when it exists, unless the user explicitly chose normal quality.
+        const chosenQuality = assetQualityOverrides[parentAssetId];
+        return chosenQuality === "normal" ? parentAssetId : previewChildId;
+    };
+
+    const getVolumeViewModelForAsset = useCallback(
+        (parentAssetId: AssetId): VolumeViewModel => {
+            const renderAssetId = resolveRenderAssetId(parentAssetId);
+
+            if (volumeViewModels[renderAssetId]) {
+                return volumeViewModels[renderAssetId];
+            }
+
+            const fallback: VolumeViewModel = {
+                ...DEFAULT_VOLUME_VIEW_MODEL,
+                format:
+                    getParser(getAsset(renderAssetId)?.extension || "unknown") || "N/A",
+            };
+
+            if (!view) {
+                return fallback;
+            }
+
+            return getVolumeViewModel(view.root, renderAssetId, fallback);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [volumeViewModels, getAsset, view, assetQualityOverrides, assets],
+    );
+
+    const getStructureViewModelForAsset = useCallback(
+        (parentAssetId: AssetId): StructureViewModel => {
+            const renderAssetId = resolveRenderAssetId(parentAssetId);
+
+            if (structureViewModels[renderAssetId]) {
+                return structureViewModels[renderAssetId];
+            }
+
+            const fallback: StructureViewModel = {
+                ...DEFAULT_STRUCTURE_VIEW_MODEL,
+                format:
+                    getParser(getAsset(renderAssetId)?.extension || "unknown") || "N/A",
+            };
+
+            if (!view) {
+                return fallback;
+            }
+
+            return getStructureViewModel(view.root, renderAssetId, fallback);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [structureViewModels, getAsset, view, assetQualityOverrides, assets],
+    );
+
     // Function which updates volume view model and optionally sync it to Molstar.
     const updateVolumeViewModelForAsset = async (
-        assetId: AssetId,
+        parentAssetId: AssetId,
         paramKey: keyof VolumeViewModel,
         val: VolumeViewModel[keyof VolumeViewModel],
         syncToMolstar: boolean,
     ) => {
+        const renderAssetId = resolveRenderAssetId(parentAssetId);
+
         // Get updated view model .
         const updatedVm = {
-            ...getVolumeViewModelForAsset(assetId),
+            ...getVolumeViewModelForAsset(parentAssetId),
             [paramKey]: val,
         };
 
         // Update UI instantly.
-        setVolumeViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+        setVolumeViewModels((prev) => ({
+            ...prev,
+            [renderAssetId]: updatedVm,
+        }));
 
         // Sync to Molstar only if requested and the asset is checked.
         if (
             syncToMolstar &&
-            selectedAssetIds.includes(assetId) &&
+            selectedAssetIds.includes(renderAssetId) &&
             regime.kind === "viewing"
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(assetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getVolumeNode(assetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getVolumeNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    assetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             // Update regime.
@@ -294,52 +328,53 @@ export function useViewBuilder(viewKey: string) {
 
     // Function which updates structure view model and optionally sync it to Molstar.
     const updateStructureViewModelForAsset = async (
-        assetId: AssetId,
+        parentAssetId: AssetId,
         paramKey: keyof StructureViewModel,
         val: StructureViewModel[keyof StructureViewModel],
         syncToMolstar: boolean,
     ) => {
+        const renderAssetId = resolveRenderAssetId(parentAssetId);
+
         const updatedVm = {
-            ...getStructureViewModelForAsset(assetId),
+            ...getStructureViewModelForAsset(parentAssetId),
             [paramKey]: val,
         };
 
         // Update UI instantly.
-        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+        setStructureViewModels((prev) => ({
+            ...prev,
+            [renderAssetId]: updatedVm,
+        }));
 
         // Sync to Molstar only if requested and the asset is checked.
         if (
             syncToMolstar &&
-            selectedAssetIds.includes(assetId) &&
+            selectedAssetIds.includes(renderAssetId) &&
             regime.kind === "viewing"
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(assetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(assetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    assetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             // Update regime.
@@ -366,14 +401,16 @@ export function useViewBuilder(viewKey: string) {
     };
 
     const updateStructureComponentViewModel = async (
-        assetId: AssetId,
+        parentAssetId: AssetId,
         componentId: string,
         paramKey: keyof ComponentEntry,
         val: ComponentEntry[keyof ComponentEntry],
         syncToMolstar: boolean,
     ) => {
+        const renderAssetId = resolveRenderAssetId(parentAssetId);
+
         // Current view model.
-        const currentVm = getStructureViewModelForAsset(assetId);
+        const currentVm = getStructureViewModelForAsset(parentAssetId);
 
         //  Map over components to apply the change to the specific component ID.
         const updatedComponents = currentVm.components.map((comp) =>
@@ -386,41 +423,40 @@ export function useViewBuilder(viewKey: string) {
         };
 
         // Update UI.
-        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+        setStructureViewModels((prev) => ({
+            ...prev,
+            [renderAssetId]: updatedVm,
+        }));
 
         // Sync to Molstar if requested and viewing conditions are met
         if (
             syncToMolstar &&
-            selectedAssetIds.includes(assetId) &&
+            selectedAssetIds.includes(renderAssetId) &&
             regime.kind === "viewing"
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(assetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(assetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    assetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             // Update regime history
@@ -512,49 +548,50 @@ export function useViewBuilder(viewKey: string) {
      * silently drop all but one of the changes.
      */
     const updateStructureViewModelFieldsForAsset = async (
-        assetId: AssetId,
+        parentAssetId: AssetId,
         fields: Partial<StructureViewModel>,
         syncToMolstar: boolean,
     ) => {
+        const renderAssetId = resolveRenderAssetId(parentAssetId);
+
         const updatedVm: StructureViewModel = {
-            ...getStructureViewModelForAsset(assetId),
+            ...getStructureViewModelForAsset(parentAssetId),
             ...fields,
         };
 
-        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+        setStructureViewModels((prev) => ({
+            ...prev,
+            [renderAssetId]: updatedVm,
+        }));
 
         if (
             syncToMolstar &&
-            selectedAssetIds.includes(assetId) &&
+            selectedAssetIds.includes(renderAssetId) &&
             regime.kind === "viewing"
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(assetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(assetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    assetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             regime.commitStateTree(
@@ -585,12 +622,14 @@ export function useViewBuilder(viewKey: string) {
      * silently drop all but one of the changes.
      */
     const updateStructureComponentViewModelFields = async (
-        assetId: AssetId,
+        parentAssetId: AssetId,
         componentId: string,
         fields: Partial<ComponentEntry>,
         syncToMolstar: boolean,
     ) => {
-        const currentVm = getStructureViewModelForAsset(assetId);
+        const renderAssetId = resolveRenderAssetId(parentAssetId);
+
+        const currentVm = getStructureViewModelForAsset(parentAssetId);
         const updatedComponents = currentVm.components.map((comp) =>
             comp.id === componentId ? { ...comp, ...fields } : comp,
         );
@@ -599,40 +638,39 @@ export function useViewBuilder(viewKey: string) {
             components: updatedComponents,
         };
 
-        setStructureViewModels((prev) => ({ ...prev, [assetId]: updatedVm }));
+        setStructureViewModels((prev) => ({
+            ...prev,
+            [renderAssetId]: updatedVm,
+        }));
 
         if (
             syncToMolstar &&
-            selectedAssetIds.includes(assetId) &&
+            selectedAssetIds.includes(renderAssetId) &&
             regime.kind === "viewing"
         ) {
             const updatedTree: MVSData_States = {
                 ...regime.history.current().stateTree,
-                snapshots: regime.history
-                    .current()
-                    .stateTree.snapshots.map((snap) => {
-                        if (snap.metadata.key === viewKey) {
-                            const extension =
-                                getAsset(assetId)?.extension || "unknown";
-                            const format =
-                                getAllSupportedAssetsParsers()[extension] ??
-                                "bcif";
-                            const newNode = getStructureNode(assetId, {
-                                ...updatedVm,
-                                format,
-                            });
+                snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                    if (snap.metadata.key === viewKey) {
+                        const extension = getAsset(renderAssetId)?.extension || "unknown";
+                        const format =
+                            getAllSupportedAssetsParsers()[extension] ?? "bcif";
+                        const newNode = getStructureNode(renderAssetId, {
+                            ...updatedVm,
+                            format,
+                        });
 
-                            return {
-                                ...snap,
-                                root: replaceAssetNodeInRoot(
-                                    snap.root,
-                                    assetId,
-                                    newNode,
-                                ),
-                            };
-                        }
-                        return snap;
-                    }),
+                        return {
+                            ...snap,
+                            root: replaceAssetNodeInRoot(
+                                snap.root,
+                                renderAssetId,
+                                newNode,
+                            ),
+                        };
+                    }
+                    return snap;
+                }),
             };
 
             regime.commitStateTree(
@@ -655,24 +693,131 @@ export function useViewBuilder(viewKey: string) {
         }
     };
 
+    // Returns the currently chosen quality for given parent asset ID.
+    const getAssetQuality = (parentAssetId: AssetId): AssetQuality => {
+        return resolveRenderAssetId(parentAssetId) === parentAssetId
+            ? "normal"
+            : "preview";
+    };
+
+    // Returns true if the given parent asset is selected (its render asset ID is in the selected IDs).
+    const isAssetSelected = (parentAssetId: AssetId): boolean => {
+        return selectedAssetIds.includes(resolveRenderAssetId(parentAssetId));
+    };
+
+    // Handler when quality of an asset is changed. Replaces the download node of the parent asset in the tree
+    // with the chosen quality (preview child or the parent itself) and reloads Molstar.
+    const handleAssetQualityChange = async (
+        parentAssetId: AssetId,
+        quality: AssetQuality,
+    ) => {
+        // Which asset is currently rendered, so we know which node to replace in the tree.
+        const previousRenderAssetId = resolveRenderAssetId(parentAssetId);
+
+        // Resolve which asset should be rendered now.
+        const renderAssetId =
+            quality === "preview"
+                ? getAsset(parentAssetId)?.children.find(
+                      (child) => child.kind === "Preview",
+                  )?.id ?? parentAssetId
+                : parentAssetId;
+
+        // Update the quality override.
+        setAssetQualityOverrides((prev) => ({
+            ...prev,
+            [parentAssetId]: quality,
+        }));
+
+        // Swap the selected ID to the new render asset ID, so selection stays consistent with the tree.
+        setSelectedAssetIds((prev) =>
+            prev.map((id) => (id === previousRenderAssetId ? renderAssetId : id)),
+        );
+
+        // Only re-render if the asset is selected.
+        if (
+            !selectedAssetIds.includes(previousRenderAssetId) ||
+            regime.kind !== "viewing"
+        ) {
+            return;
+        }
+
+        const parentAsset = getAsset(parentAssetId);
+        if (!parentAsset) {
+            return;
+        }
+
+        // Build the new download node with the same view model, but for the render asset.
+        const extension = getAsset(renderAssetId)?.extension || "unknown";
+        const format = getAllSupportedAssetsParsers()[extension] ?? "bcif";
+
+        // Volume view model, keeping the user's adjustments.
+        const volumeModel = getVolumeViewModelForAsset(parentAssetId);
+        const newNode =
+            parentAsset.type === "Volume"
+                ? getVolumeNode(renderAssetId, { ...volumeModel, format })
+                : getStructureNode(renderAssetId, {
+                      ...getStructureViewModelForAsset(parentAssetId),
+                      format,
+                  } satisfies StructureViewModel);
+
+        // Replace the download node in the tree.
+        const updatedTree: MVSData_States = {
+            ...regime.history.current().stateTree,
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === viewKey) {
+                    return {
+                        ...snap,
+                        root: replaceAssetNodeInRoot(
+                            snap.root,
+                            previousRenderAssetId,
+                            newNode,
+                        ),
+                    };
+                }
+                return snap;
+            }),
+        };
+
+        // Update regime.
+        regime.commitStateTree(
+            updatedTree,
+            `Updated quality of asset "${parentAsset.name}" for view "${view?.metadata.title}" (${viewKey}).`,
+        );
+
+        // Try to reload Molstar viewer.
+        const result = await reloadMolstarAndRestoreIndex(
+            { key: viewKey },
+            Array.from(assets.values()),
+            updatedTree,
+        );
+
+        if (result instanceof Error) {
+            pushErrorNotification(
+                `Failed to apply quality change! For more information, check the logs.`,
+            );
+            loggerUi.error(result.message);
+            regime.undo();
+        }
+    };
+
     // Handler when asset is toggled.
     const handleAssetToggle = async (
-        toggledAssetId: string,
+        toggledParentAssetId: string,
         isChecked: boolean,
         tabType: TabType,
     ) => {
+        const renderAssetId = resolveRenderAssetId(toggledParentAssetId);
+
         // If it is checked, it means we need to add it, otherwise remove it.
         let newSelectedIds: string[];
         if (isChecked) {
-            newSelectedIds = [...selectedAssetIds, toggledAssetId];
+            newSelectedIds = [...selectedAssetIds, renderAssetId];
         } else {
-            newSelectedIds = selectedAssetIds.filter(
-                (id) => id !== toggledAssetId,
-            );
+            newSelectedIds = selectedAssetIds.filter((id) => id !== renderAssetId);
         }
 
         // Inform managed asset manager this given asset count was increased/decreased.
-        const a = getAsset(toggledAssetId);
+        const a = getAsset(toggledParentAssetId);
         if (a) {
             if (isChecked) {
                 incrementAssetUseCount(a.asset.url);
@@ -691,55 +836,48 @@ export function useViewBuilder(viewKey: string) {
         // Create updated state tree.
         const updatedTree: MVSData_States = {
             ...regime.history.current().stateTree,
-            snapshots: regime.history
-                .current()
-                .stateTree.snapshots.map((snap) => {
-                    if (snap.metadata.key === viewKey) {
-                        let newRoot;
+            snapshots: regime.history.current().stateTree.snapshots.map((snap) => {
+                if (snap.metadata.key === viewKey) {
+                    let newRoot;
 
-                        if (isChecked) {
-                            if (tabType === "volume") {
-                                // Get changes from our view model.
-                                const volumeModel =
-                                    getVolumeViewModelForAsset(toggledAssetId);
+                    if (isChecked) {
+                        if (tabType === "volume") {
+                            // Get changes from our view model.
+                            const volumeModel =
+                                getVolumeViewModelForAsset(toggledParentAssetId);
 
-                                // New root.
-                                newRoot = addVolumeNodeToTree(
-                                    snap.root,
-                                    toggledAssetId,
-                                    volumeModel,
-                                );
-                            } else {
-                                // Get changes from our view model.
-                                const volumeModel =
-                                    getStructureViewModelForAsset(
-                                        toggledAssetId,
-                                    );
-
-                                // New root.
-                                newRoot = addStructureNodeToTree(
-                                    snap.root,
-                                    toggledAssetId,
-                                    volumeModel,
-                                );
-                            }
-                        } else {
-                            newRoot = removeNodeFromTree(
+                            // New root.
+                            newRoot = addVolumeNodeToTree(
                                 snap.root,
-                                toggledAssetId,
+                                renderAssetId,
+                                volumeModel,
+                            );
+                        } else {
+                            // Get changes from our view model.
+                            const volumeModel =
+                                getStructureViewModelForAsset(toggledParentAssetId);
+
+                            // New root.
+                            newRoot = addStructureNodeToTree(
+                                snap.root,
+                                renderAssetId,
+                                volumeModel,
                             );
                         }
-
-                        return { ...snap, root: newRoot };
+                    } else {
+                        newRoot = removeNodeFromTree(snap.root, renderAssetId);
                     }
-                    return snap;
-                }),
+
+                    return { ...snap, root: newRoot };
+                }
+                return snap;
+            }),
         };
 
         // Update regime.
         regime.commitStateTree(
             updatedTree,
-            `Updated asset "${toggledAssetId}" for view "${view?.metadata.title}" (${viewKey}).`,
+            `Updated asset "${toggledParentAssetId}" for view "${view?.metadata.title}" (${viewKey}).`,
         );
 
         // Try to reload Molstar viewer.
@@ -779,6 +917,9 @@ export function useViewBuilder(viewKey: string) {
         selectedAssetRelativePaths,
         setSelectedAssetRelativePaths,
         selectedAssetIds,
+        isAssetSelected,
+        getAssetQuality,
+        handleAssetQualityChange,
         expandedAssetId,
         getVolumeViewModelForAsset,
         getStructureViewModelForAsset,

@@ -13,7 +13,7 @@ import { UiLocalStorageService } from "../../../../../services/UiLocalStorageSer
 import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
 import { useAppearance } from "../../../../../hooks/useAppearance";
-import { getAllExtensions } from "../../../../../config/assetsDefinitions";
+import { getAllExtensions } from "../../../../assets/domain/assetsDefinitions";
 
 interface ViewBuilderProps {
     viewKey: string;
@@ -36,7 +36,9 @@ export function ViewBuilder(props: ViewBuilderProps) {
         setSelectedAssetFilters,
         selectedAssetRelativePaths,
         setSelectedAssetRelativePaths,
-        selectedAssetIds,
+        isAssetSelected,
+        getAssetQuality,
+        handleAssetQualityChange,
         expandedAssetId,
         getVolumeViewModelForAsset,
         getStructureViewModelForAsset,
@@ -57,18 +59,17 @@ export function ViewBuilder(props: ViewBuilderProps) {
     // Computes index of first selected asset in the list, otherwise -1.
     const firstSelectedAssetIndex =
         expandedAssetId === null
-            ? assetsInView.findIndex((asset) =>
-                  selectedAssetIds.includes(asset.id),
-              )
+            ? assetsInView.findIndex((asset) => isAssetSelected(asset.id))
             : assetsInView.findIndex((asset) => asset.id === expandedAssetId);
 
     // Render the component.
     return (
         <div
             style={{
+                gap: ".5em",
+                padding: ".5em",
                 display: "flex",
                 flexDirection: "column",
-                padding: "0.5em",
             }}
         >
             <div
@@ -118,12 +119,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
             <Collapse expanded={areFiltersExpanded}>
                 <MultiSelect
                     label="Select asset type filters"
-                    data={[
-                        "All",
-                        "Local assets",
-                        "Remote assets",
-                        ...getAllExtensions(),
-                    ]}
+                    data={["All", "Local assets", "Remote assets", ...getAllExtensions()]}
                     value={selectedAssetFilters}
                     onChange={(filters) => {
                         setSelectedAssetFilters(filters);
@@ -210,9 +206,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                 <AutoScrollList
                     list={assetsInView}
                     activeIndex={
-                        firstSelectedAssetIndex === -1
-                            ? 0
-                            : firstSelectedAssetIndex
+                        firstSelectedAssetIndex === -1 ? 0 : firstSelectedAssetIndex
                     }
                     renderItem={(asset) => {
                         return (
@@ -222,22 +216,18 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 asset={asset}
                                 isDark={isDark}
                                 isExpanded={expandedAssetId === asset.id}
-                                isSelected={selectedAssetIds.includes(asset.id)}
-                                volumeViewModel={getVolumeViewModelForAsset(
-                                    asset.id,
-                                )}
+                                isSelected={isAssetSelected(asset.id)}
+                                volumeViewModel={getVolumeViewModelForAsset(asset.id)}
                                 structureViewModel={getStructureViewModelForAsset(
                                     asset.id,
                                 )}
-                                onToggleExpand={() =>
-                                    toggleExpandAsset(asset.id)
-                                }
+                                onToggleExpand={() => toggleExpandAsset(asset.id)}
                                 onToggleSelect={(checked, tabType) =>
-                                    handleAssetToggle(
-                                        asset.id,
-                                        checked,
-                                        tabType,
-                                    )
+                                    handleAssetToggle(asset.id, checked, tabType)
+                                }
+                                assetQuality={getAssetQuality(asset.id)}
+                                onQualityChange={(quality) =>
+                                    handleAssetQualityChange(asset.id, quality)
                                 }
                                 onUpdateVolumeParam={(key, val, sync) =>
                                     updateVolumeViewModelForAsset(
@@ -289,10 +279,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                     )
                                 }
                                 onAddStructureComponent={() =>
-                                    addStructureComponentForAsset(
-                                        asset.id,
-                                        true,
-                                    )
+                                    addStructureComponentForAsset(asset.id, true)
                                 }
                                 onDeleteStructureComponent={(component) =>
                                     deleteStructureComponentForAsset(

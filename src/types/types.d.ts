@@ -47,6 +47,18 @@ type IpcApiChannelMap = {
         type: "invoke";
     };
 
+    selectDirectory: {
+        args: [defaultPath?: string];
+        reply: string | null | Error;
+        type: "invoke";
+    };
+
+    checkFilesExist: {
+        args: [paths: string[]];
+        reply: boolean[] | Error;
+        type: "invoke";
+    };
+
     getFileData: {
         args: [paths: string[]];
         reply: FileData[] | Error;
@@ -61,6 +73,30 @@ type IpcApiChannelMap = {
 
     saveTemporaryData: {
         args: [data: ArrayBuffer, path: string];
+        reply: void | Error;
+        type: "invoke";
+    };
+
+    resolveAndStoreFileMapping: {
+        args: [assetId: AssetId, originalFilePath: string];
+        reply: string | Error;
+        type: "invoke";
+    };
+
+    storeFileMappingFromData: {
+        args: [assetId: AssetId, data: ArrayBuffer, extension: string];
+        reply: string | Error;
+        type: "invoke";
+    };
+
+    getFileMappings: {
+        args: [];
+        reply: Record<string, string> | Error;
+        type: "invoke";
+    };
+
+    removeFileMapping: {
+        args: [assetId: AssetId];
         reply: void | Error;
         type: "invoke";
     };
@@ -168,6 +204,34 @@ type UserSettings = {
         | "sky"
         | "emerald"
         | "amber";
+    export: {
+        bundleAllLocalAssets: boolean;
+        processAllLocalAssets: boolean;
+        showAdvancedExportOptions: boolean;
+    };
+    processing?: {
+        global: {
+            onLoadProcessing: boolean;
+            exportProcessing: {
+                downsamplingStrategy: string;
+                resolution: string;
+            };
+        };
+        perFormat: {
+            extension: string;
+            requireProcessing: {
+                downsamplingStrategy: string;
+            };
+            previewProcessing: {
+                downsamplingStrategy: string;
+                resolution: string;
+            };
+            exportProcessing: {
+                downsamplingStrategy: string;
+                resolution: string;
+            };
+        }[];
+    };
 };
 
 type TranslateFunction = TFunction<"translation", undefined>;
@@ -199,10 +263,38 @@ type Url = {
     headers?: Record<string, string>;
 };
 
-type AssetId = string;
+type AssetId = string; // TODO: rename to ManagedAssetId
+
+type ManagedAssetType =
+    | "Volume"
+    | "Segmentation"
+    | "Structure"
+    | "Annotation"
+    | "Other"
+    | "Unknown";
 
 /**
- * Object mirroring Assets as managed by Molstar Asset Manager.
+ * Kind of the child asset derived from its parent managed asset.
+ */
+type ManagedAssetChildKind = "Preview" | "NecessaryConversion" | "Other";
+
+/**
+ * Reference to a child asset derived from a parent managed asset, e.g. a downsampled preview.
+ */
+interface ManagedAssetChild {
+    /**
+     * ID of the child `ManagedAsset`.
+     */
+    id: AssetId;
+
+    /**
+     * Determines the kind of the child asset, e.g. a preview created by downsampling.
+     */
+    kind: ManagedAssetChildKind;
+}
+
+/**
+ * Object mirroring Assets as managed by Molstar Asset Manager enriched by some external information connected to preprocessing.
  */
 interface ManagedAsset {
     /**
@@ -215,6 +307,11 @@ interface ManagedAsset {
      * and local files are converted into assets in the form of `arcp` protocol and thus available via URL, too.
      */
     asset: Url;
+
+    /**
+     * Type of managed asset.
+     */
+    type: ManagedAssetType;
 
     /**
      * Relative path inside MVSX archive. E.g. "volume.bcif" or "volumes/volume.bcif".
@@ -242,4 +339,19 @@ interface ManagedAsset {
      * Determines how the data will be parsed and handled, usually mirrors extension from the `name`. Special value `unknown` tells that extension could not be detected from `name`.
      */
     extension: string;
+
+    /**
+     * Hidden assets are not shown in the assets sidebar or view builder and are not exported. E.g. preview assets created by downsampling.
+     */
+    hidden: boolean;
+
+    /**
+     * IDs of processing jobs currently running for this asset (e.g. preview downsampling). Empty when idle.
+     */
+    processingJobIds: ProcessingJobId[];
+
+    /**
+     * Child assets derived from this one, each with a kind flag. Usually empty.
+     */
+    children: ManagedAssetChild[];
 }

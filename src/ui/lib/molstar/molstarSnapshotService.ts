@@ -13,6 +13,7 @@ import { convertHexStringToColor } from "./utils";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { checkMolstarAfterLoading } from "./core";
 import { setMolstarReloading } from "./mvs";
+import { loggerUi } from "../../services/UiLoggingService";
 
 /**
  * Retrieves snapshot of manager state.
@@ -29,6 +30,7 @@ export function getSnapshotManagerStateSnapshot() {
 export function clearAllSnapshotsFromSnapshotManager() {
     const molstar = getMolstar();
     molstar.managers.snapshot.clear();
+    loggerUi.debug("All snapshots from Molstar snaphot manager were cleared.");
 }
 
 /**
@@ -80,9 +82,7 @@ export function updateSnapshotBackgroundColorInManager(
     if (index < 0 || index >= count) {
         return {
             success: false,
-            error: new Error(
-                `Index <${index}> is out of bounds in the entries list!`,
-            ),
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
         };
     }
 
@@ -94,10 +94,7 @@ export function updateSnapshotBackgroundColorInManager(
         };
     }
 
-    if (
-        entry.snapshot.canvas3d?.props?.renderer.backgroundColor &&
-        backgroundColor
-    ) {
+    if (entry.snapshot.canvas3d?.props?.renderer.backgroundColor && backgroundColor) {
         const numericColor = convertHexStringToColor(backgroundColor);
         entry.snapshot.canvas3d.props.renderer.backgroundColor = numericColor;
     }
@@ -116,9 +113,7 @@ export function removeSnapshotInManager(index: number): Result<null> {
     if (index < 0 || index >= count) {
         return {
             success: false,
-            error: new Error(
-                `Index <${index}> is out of bounds in the entries list!`,
-            ),
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
         };
     }
 
@@ -131,6 +126,38 @@ export function removeSnapshotInManager(index: number): Result<null> {
     }
 
     molstar.managers.snapshot.remove(entry.snapshot.id);
+
+    return { success: true, value: null };
+}
+
+/**
+ * Moves an existing snapshot in the Molstar's snapshot manager one position up or down.
+ * @param index index of the snapshot to move
+ * @param direction -1 to move the snapshot up, 1 to move it down
+ * @returns if there is error, result with `Error` is returned, otherwise null
+ */
+export function moveSnapshotInManager(index: number, direction: -1 | 1): Result<null> {
+    const molstar = getMolstar();
+
+    const entries = molstar.managers.snapshot.state.entries;
+    const count = entries.count();
+
+    if (index < 0 || index >= count) {
+        return {
+            success: false,
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
+        };
+    }
+
+    const entry = entries.get(index);
+    if (!entry) {
+        return {
+            success: false,
+            error: new Error(`Given entry on index <${index}> was not found!`),
+        };
+    }
+
+    molstar.managers.snapshot.move(entry.snapshot.id, direction);
 
     return { success: true, value: null };
 }
@@ -155,9 +182,7 @@ export function updateSnapshotDescriptionInManager(
     if (index < 0 || index >= count) {
         return {
             success: false,
-            error: new Error(
-                `Index <${index}> is out of bounds in the entries list!`,
-            ),
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
         };
     }
 
@@ -178,10 +203,7 @@ export function updateSnapshotDescriptionInManager(
     return { success: true, value: null };
 }
 
-export function updateSnapshotTitleInManager(
-    index: number,
-    title: string,
-): Result<null> {
+export function updateSnapshotTitleInManager(index: number, title: string): Result<null> {
     const molstar = getMolstar();
 
     const entries = molstar.managers.snapshot.state.entries;
@@ -190,9 +212,7 @@ export function updateSnapshotTitleInManager(
     if (index < 0 || index >= count) {
         return {
             success: false,
-            error: new Error(
-                `Index <${index}> is out of bounds in the entries list!`,
-            ),
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
         };
     }
 
@@ -221,9 +241,7 @@ export function updateSnapshotCameraInManager(index: number): Result<null> {
     if (index < 0 || index >= count) {
         return {
             success: false,
-            error: new Error(
-                `Index <${index}> is out of bounds in the entries list!`,
-            ),
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
         };
     }
 
@@ -272,9 +290,7 @@ export function getCurrentSnapshotIndex(): number {
  * @param index index of the snapshot
  * @returns if there is error, result with `Error` is returned, otherise null
  */
-export async function applySnapshotByIndex(
-    index: number,
-): Promise<Result<null>> {
+export async function applySnapshotByIndex(index: number): Promise<Result<null>> {
     setMolstarReloading(true);
 
     const molstar = getMolstar();
@@ -286,9 +302,7 @@ export async function applySnapshotByIndex(
         setMolstarReloading(false);
         return {
             success: false,
-            error: new Error(
-                `Index <${index}> is out of bounds in the entries list!`,
-            ),
+            error: new Error(`Index <${index}> is out of bounds in the entries list!`),
         };
     }
 

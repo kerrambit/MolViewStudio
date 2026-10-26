@@ -4,9 +4,9 @@
  * @author Marek Eibel
  */
 
-import { TextInput } from "@mantine/core";
+import { ActionIcon, TextInput } from "@mantine/core";
+import { IconCopy } from "@tabler/icons-react";
 import type { CameraState } from "../../../../../lib/molstar";
-import { CopyActionIcon } from "../../../../../components/common/actionables/actions-icons/CopyActionIcon";
 import {
     pushInfoNotification,
     pushWarningNotification,
@@ -18,17 +18,28 @@ interface CameraTextInputGroupProps {
 
 export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
     // Define strings for camera state.
-    const cameraPositionString = props.cameraState?.position
-        ? `[${props.cameraState.position[0].toFixed(1)}, ${props.cameraState.position[1].toFixed(1)}, ${props.cameraState.position[2].toFixed(1)}]`
-        : "Not defined";
+    const formatVec3 = (vec: readonly number[] | undefined) =>
+        vec
+            ? `[${vec[0].toFixed(1)}, ${vec[1].toFixed(1)}, ${vec[2].toFixed(1)}]`
+            : "Not defined";
 
-    const cameraUpString = props.cameraState?.position
-        ? `[${props.cameraState.up[0].toFixed(1)}, ${props.cameraState.up[1].toFixed(1)}, ${props.cameraState.up[2].toFixed(1)}]`
-        : "Not defined";
-
-    const cameraTargetString = props.cameraState?.position
-        ? `[${props.cameraState.target[0].toFixed(1)}, ${props.cameraState.target[1].toFixed(1)}, ${props.cameraState.target[2].toFixed(1)}]`
-        : "Not defined";
+    const cameraFields = [
+        {
+            label: "Position",
+            tooltip: "Camera position. Cannot edit this value!",
+            value: formatVec3(props.cameraState?.position),
+        },
+        {
+            label: "Up",
+            tooltip: "Camera up vector. Cannot edit this value!",
+            value: formatVec3(props.cameraState?.up),
+        },
+        {
+            label: "Target",
+            tooltip: "Camera target. Cannot edit this value!",
+            value: formatVec3(props.cameraState?.target),
+        },
+    ];
 
     // Render the component.
     return (
@@ -36,101 +47,46 @@ export function CameraTextInputGroup(props: CameraTextInputGroupProps) {
             style={{
                 display: "flex",
                 flexDirection: "column",
-                width: "95%",
-                paddingLeft: "0.5em",
-                paddingRight: "0.5em",
-                gap: "0.15em",
+                width: "100%",
+                gap: "0.25em",
             }}
         >
-            <TextInput
-                label="Camera position"
-                value={cameraPositionString}
-                onChange={() => {}}
-                title="Camera position. Cannot edit this value!"
-                variant="filled"
-                rightSection={
-                    <CopyActionIcon
-                        tooltip="Copy camera position."
-                        onClick={async () => {
-                            try {
-                                await navigator.clipboard.writeText(
-                                    cameraPositionString,
-                                );
-                                pushInfoNotification(
-                                    `Camera position was copied.`,
-                                );
-                            } catch (err) {
-                                pushWarningNotification(
-                                    `Failed to copy camera position! Details: "${err}".`,
-                                );
-                            }
-                        }}
-                    />
-                }
-                style={{
-                    width: "100%",
-                }}
-            />
-
-            <TextInput
-                label="Up"
-                value={cameraUpString}
-                onChange={() => {}}
-                title="Camera up vector. Cannot edit this value!"
-                variant="filled"
-                rightSection={
-                    <CopyActionIcon
-                        tooltip="Copy camera up vector."
-                        onClick={async () => {
-                            try {
-                                await navigator.clipboard.writeText(
-                                    cameraUpString,
-                                );
-                                pushInfoNotification(
-                                    `Camera up vector was copied.`,
-                                );
-                            } catch (err) {
-                                pushWarningNotification(
-                                    `Failed to copy camera up vector! Details: :${err}".`,
-                                );
-                            }
-                        }}
-                    />
-                }
-                style={{
-                    width: "100%",
-                }}
-            />
-
-            <TextInput
-                label="Target"
-                value={cameraTargetString}
-                onChange={() => {}}
-                title="Camera target. Cannot edit this value!"
-                variant="filled"
-                rightSection={
-                    <CopyActionIcon
-                        tooltip="Copy camera target."
-                        onClick={async () => {
-                            try {
-                                await navigator.clipboard.writeText(
-                                    cameraTargetString,
-                                );
-                                pushInfoNotification(
-                                    `Camera target was copied.`,
-                                );
-                            } catch (err) {
-                                pushWarningNotification(
-                                    `Failed to copy camera target! Details: "${err}".`,
-                                );
-                            }
-                        }}
-                    />
-                }
-                style={{
-                    width: "100%",
-                }}
-            />
+            {cameraFields.map((field) => (
+                <TextInput
+                    key={field.label}
+                    size="xs"
+                    label={field.label}
+                    value={field.value}
+                    onChange={() => {}}
+                    title={field.tooltip}
+                    variant="filled"
+                    rightSection={
+                        <ActionIcon
+                            variant="transparent"
+                            size="xs"
+                            aria-label={`Copy camera ${field.label.toLowerCase()}.`}
+                            title={`Copy camera ${field.label.toLowerCase()}.`}
+                            onClick={async () => {
+                                try {
+                                    await navigator.clipboard.writeText(field.value);
+                                    pushInfoNotification(
+                                        `Camera ${field.label.toLowerCase()} was copied.`,
+                                    );
+                                } catch (err) {
+                                    pushWarningNotification(
+                                        `Failed to copy camera ${field.label.toLowerCase()}! Details: "${err}".`,
+                                    );
+                                }
+                            }}
+                        >
+                            <IconCopy size={14} stroke={1.75} />
+                        </ActionIcon>
+                    }
+                    style={{
+                        width: "100%",
+                    }}
+                />
+            ))}
         </div>
     );
 }

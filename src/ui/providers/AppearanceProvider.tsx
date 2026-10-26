@@ -8,31 +8,28 @@ import { type ReactNode } from "react";
 import { themes, type ThemeType } from "../config/themes";
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import { useUserSettings } from "../hooks/useUserSettings";
+import { useUserSettingsStore } from "../stores/userSettingsStore";
 import { AppearanceContext } from "./AppearanceContext";
 
 /**
  * Provides all appearance-related state for the app: color theme and color scheme.
  *
  * - **Color theme** (ocean, charcoal, forest, …): fully managed here.
- *   Loaded from user settings on mount, persisted back on change.
+ *   Loaded from user settings, persisted back on change.
  *   Passed to `MantineProvider` as a static `theme` prop — Mantine itself
  *   has no built-in manager for this, which is why this provider exists.
  *
  * - **Color scheme** (light / dark): managed via a custom `colorSchemeManager`
  *   passed to `MantineProvider`, which overrides Mantine's default
- *   `localStorage` behaviour. Reads and writes through `UserSettingsContext`
- *   so the value is persisted to disk alongside other user settings.
+ *   `localStorage` behaviour. Reads and writes through the user settings
+ *   store so the value is persisted to disk alongside other user settings.
  *   Use Mantine's own `useMantineColorScheme()` or `useComputedColorScheme()`
  *   to read/set it, or use the `useAppearance()` hook which wraps both.
- *
- * ## Requirements
- * Must be rendered inside `UserSettingsProvider`, as it depends on
- * `useUserSettings()` to read and persist settings.
  */
 export function AppearanceProvider({ children }: { children: ReactNode }) {
     // User settings.
-    const { settings, setSettings } = useUserSettings();
+    const settings = useUserSettingsStore((state) => state.settings);
+    const setSettings = useUserSettingsStore((state) => state.setSettings);
 
     // Lists all available color themes.
     const availableColorThemes: ThemeType[] = Object.keys(

@@ -17,7 +17,7 @@ import {
 } from "@mantine/core";
 import type { VolumeViewModel } from "../../../../models/MvsViewModels";
 import { CollapseTrigger } from "../../../../../../components/common/collapse-trigger/CollapseTriger";
-import { getAllParserTypes } from "../../../../../../config/assetsDefinitions";
+import { getAllParserTypes } from "../../../../../assets/domain/assetsDefinitions";
 import { pushWarningNotification } from "../../../../../../services/NotificationService";
 import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
@@ -34,12 +34,7 @@ type VolumeTabProps = {
     ) => void;
 };
 
-export function VolumeTab({
-    viewKey,
-    asset,
-    viewModel,
-    onUpdateParam,
-}: VolumeTabProps) {
+export function VolumeTab({ viewKey, asset, viewModel, onUpdateParam }: VolumeTabProps) {
     // Store expanded sections.
     const [generalSectionExpanded, setGeneralSectionExpanded] = useState(
         UiLocalStorageService.ViewBuilder.getExpandedVolumeGeneralSection(
@@ -47,13 +42,12 @@ export function VolumeTab({
             viewKey,
         ),
     );
-    const [representationSectionExpanded, setRepresentationSectionExpanded] =
-        useState(
-            UiLocalStorageService.ViewBuilder.getExpandedVolumeRepresentationSection(
-                asset.id,
-                viewKey,
-            ),
-        );
+    const [representationSectionExpanded, setRepresentationSectionExpanded] = useState(
+        UiLocalStorageService.ViewBuilder.getExpandedVolumeRepresentationSection(
+            asset.id,
+            viewKey,
+        ),
+    );
     const [transformSectionExpanded, setTransformSectionExpanded] = useState(
         UiLocalStorageService.ViewBuilder.getExpandedVolumeTransformSection(
             asset.id,
@@ -102,26 +96,14 @@ export function VolumeTab({
                         placeholder="No channel ID assigned."
                         size="xs"
                         onChange={(e) =>
-                            onUpdateParam(
-                                "channel_id",
-                                e.currentTarget.value,
-                                false,
-                            )
+                            onUpdateParam("channel_id", e.currentTarget.value, false)
                         }
                         onBlur={() =>
-                            onUpdateParam(
-                                "channel_id",
-                                viewModel.channel_id,
-                                true,
-                            )
+                            onUpdateParam("channel_id", viewModel.channel_id, true)
                         }
                         onKeyDown={(e) =>
                             e.key === "Enter" &&
-                            onUpdateParam(
-                                "channel_id",
-                                viewModel.channel_id,
-                                true,
-                            )
+                            onUpdateParam("channel_id", viewModel.channel_id, true)
                         }
                     />
                     <Select
@@ -209,11 +191,7 @@ export function VolumeTab({
                             size="xs"
                             checked={viewModel.show_faces}
                             onChange={(e) =>
-                                onUpdateParam(
-                                    "show_faces",
-                                    e.currentTarget.checked,
-                                    true,
-                                )
+                                onUpdateParam("show_faces", e.currentTarget.checked, true)
                             }
                         />
                     </Group>
@@ -229,9 +207,7 @@ export function VolumeTab({
                         color={viewModel.color}
                         value={viewModel.opacity}
                         onChange={(val) => onUpdateParam("opacity", val, false)}
-                        onChangeEnd={(val) =>
-                            onUpdateParam("opacity", val, true)
-                        }
+                        onChangeEnd={(val) => onUpdateParam("opacity", val, true)}
                     ></AlphaSlider>
                 </AssetBuilderCardSectionGroup>
             </Collapse>

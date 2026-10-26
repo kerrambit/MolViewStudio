@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { Text } from "@mantine/core";
+import { Group, Text } from "@mantine/core";
 
 interface CameraStatusProps {
     doesReferenceCameraExist: boolean;
@@ -13,7 +13,7 @@ interface CameraStatusProps {
 
 export function CameraStatus(props: CameraStatusProps) {
     let statusText = "No camera saved.";
-    let statusColor = "var(--mantine-color-gray-6)";
+    let statusColor = "var(--mantine-color-gray-5)";
 
     if (props.doesReferenceCameraExist) {
         if (props.isCameraMoved) {
@@ -21,21 +21,17 @@ export function CameraStatus(props: CameraStatusProps) {
             statusColor = "var(--mantine-color-orange-5)";
         } else {
             statusText = "Camera saved.";
-            statusColor = "#33ff00";
+            statusColor = "var(--mantine-color-green-6)";
         }
     }
 
     // Render the component.
     return (
-        <div
+        <Group
+            gap="xs"
+            wrap="nowrap"
             title={statusText}
-            style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.5em",
-                marginTop: "0.5em",
-            }}
+            style={{ justifyContent: "center" }}
         >
             <div
                 style={{
@@ -43,9 +39,12 @@ export function CameraStatus(props: CameraStatusProps) {
                     height: "8px",
                     borderRadius: "50%",
                     backgroundColor: statusColor,
+                    flexShrink: 0,
                 }}
             />
-            <Text size="sm">{statusText}</Text>
-        </div>
+            <Text size="xs" c="dimmed">
+                {statusText}
+            </Text>
+        </Group>
     );
 }

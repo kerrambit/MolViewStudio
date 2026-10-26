@@ -51,6 +51,7 @@ class ProcessVolumeRequest(BaseModel):
     segmentation_volume_serializer: SerializerKind
     segmentation_mesh_serializer: SerializerKind
     bundling_approach: BundlingKind
+    output_path: Optional[str] = None
 
 
 class ProcessVolumeResponse(BaseModel):

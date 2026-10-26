@@ -6,13 +6,14 @@
 
 import { Stack, Paper, Group, Badge, Divider, Alert } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
-import { ServerStatus } from "../../system/components/server-status/ServerStatus";
-import { useUserSettings } from "../../../hooks/useUserSettings";
+import { ServerStatus } from "../../processing/processing-server-health/components/ServerStatus";
+import { useUserSettingsStore } from "../../../stores/userSettingsStore";
 
 export function ServerSettingsContent() {
     // Use settings.
-    const userSettings = useUserSettings();
-    const { preferredServerPort, serverPort } = userSettings.settings;
+    const { preferredServerPort, serverPort } = useUserSettingsStore(
+        (state) => state.settings,
+    );
 
     // Server might be running on different than preferred port.
     const isUsingAlternativePort = preferredServerPort !== serverPort;
@@ -34,10 +35,10 @@ export function ServerSettingsContent() {
                         title="Port change"
                         icon={<IconInfoCircle size={18} />}
                     >
-                        Your preferred port ({preferredServerPort}) was already
-                        used by another active window instance. The application
-                        automatically selected an empty runtime backup slot to
-                        prevent network collisions.
+                        Your preferred port ({preferredServerPort}) was already used by
+                        another active window instance. The application automatically
+                        selected an empty runtime backup slot to prevent network
+                        collisions.
                     </Alert>
                 )}
 

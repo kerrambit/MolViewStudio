@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
 
 const OPENAPI_URL = "http://localhost:41050/openapi.json";
-const OUTPUT_PATH = "./src/ui/api/generated-schemas.ts";
+const OUTPUT_PATH = "./src/ui/features/processing/api/generated-schemas.ts";
 
 try {
     console.log(`Generating API schema from '${OPENAPI_URL}'...\n`);

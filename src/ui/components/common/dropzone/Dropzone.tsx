@@ -16,7 +16,9 @@ export interface DropzoneProps {
     enableMultipleInputFiles?: boolean;
     children?: ReactNode;
     allowedExtensions?: string[];
-    getFilesFromEvent?: (event: DropEvent) => Promise<File[]>;
+    getFilesFromEvent?: (
+        event: DropEvent | Array<FileSystemFileHandle>,
+    ) => Promise<File[]>;
 }
 
 export function Dropzone(props: DropzoneProps) {

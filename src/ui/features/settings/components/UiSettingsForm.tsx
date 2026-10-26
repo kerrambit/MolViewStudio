@@ -42,12 +42,12 @@ export function UiSettingsForm() {
                 System maintenance:
             </Text>
             <Text size="xs" c="dimmed" style={{ lineHeight: 1 }}>
-                Clear all temporary UI preferences (such as resetting whether
-                the ViewBuilder sidebar has been opened).
+                Clear all temporary UI preferences (such as resetting whether the
+                ViewBuilder sidebar has been opened).
             </Text>
             <div>
                 <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="medium"
                     label="Clear"
                     tooltip="Clears all temporary UI settings."

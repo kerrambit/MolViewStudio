@@ -11,6 +11,7 @@ import { History } from "../lib/history/History";
 import type { PluginState } from "molstar/lib/mol-plugin/state";
 import type { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager/snapshots";
 import { useManagedAssetsStore } from "./managedAssetsStore";
+import { loggerUi } from "../services/UiLoggingService";
 
 export type SourceTreeHistoryNode = {
     stateTree: MVSData_States;
@@ -75,18 +76,17 @@ export type RestoringRegime = {
     redo: () => void;
 };
 
-export type Regime =
-    | IdlingRegime
-    | StagingRegime
-    | ViewingRegime
-    | RestoringRegime;
+export type Regime = IdlingRegime | StagingRegime | ViewingRegime | RestoringRegime;
 
 function makeIdling(set: (regime: Regime) => void): IdlingRegime {
     return {
         kind: "idling",
         stageFile: (stagedFile, stagedAsFile) =>
             set(makeStaging(set, stagedFile, stagedAsFile)),
-        reset: () => set(makeIdling(set)),
+        reset: () => {
+            set(makeIdling(set));
+            loggerUi.info("Idling regime was reset.");
+        },
     };
 }
 
@@ -116,7 +116,10 @@ function makeStaging(
                     }),
                 ),
             ),
-        reset: () => set(makeIdling(set)),
+        reset: () => {
+            set(makeIdling(set));
+            loggerUi.info("Staging regime was reset.");
+        },
     };
 }
 
@@ -135,7 +138,10 @@ function makeViewing(
         history,
         suspend: (session) =>
             set(makeRestoring(set, viewedFile, sourceUrl, history, session)),
-        reset: () => set(makeIdling(set)),
+        reset: () => {
+            set(makeIdling(set));
+            loggerUi.info("Viewing regime was reset.");
+        },
         commitStateTree: (newStateTree, description, viewIndex) =>
             set(
                 makeViewing(
@@ -144,9 +150,7 @@ function makeViewing(
                     sourceUrl,
                     history.add({
                         stateTree: newStateTree,
-                        viewIndex: viewIndex
-                            ? viewIndex
-                            : getCurrentViewIndex(),
+                        viewIndex: viewIndex ? viewIndex : getCurrentViewIndex(),
                         assetsUseCounts: useManagedAssetsStore
                             .getState()
                             .getAssetUseCounts(),
@@ -155,10 +159,8 @@ function makeViewing(
                     }),
                 ),
             ),
-        undo: () =>
-            set(makeViewing(set, viewedFile, sourceUrl, history.undo())),
-        redo: () =>
-            set(makeViewing(set, viewedFile, sourceUrl, history.redo())),
+        undo: () => set(makeViewing(set, viewedFile, sourceUrl, history.undo())),
+        redo: () => set(makeViewing(set, viewedFile, sourceUrl, history.redo())),
     };
 }
 
@@ -176,27 +178,14 @@ function makeRestoring(
         history,
         session,
         resume: () => set(makeViewing(set, viewedFile, sourceUrl, history)),
-        reset: () => set(makeIdling(set)),
+        reset: () => {
+            set(makeIdling(set));
+            loggerUi.info("Resoring regime was reset.");
+        },
         undo: () =>
-            set(
-                makeRestoring(
-                    set,
-                    viewedFile,
-                    sourceUrl,
-                    history.undo(),
-                    session,
-                ),
-            ),
+            set(makeRestoring(set, viewedFile, sourceUrl, history.undo(), session)),
         redo: () =>
-            set(
-                makeRestoring(
-                    set,
-                    viewedFile,
-                    sourceUrl,
-                    history.redo(),
-                    session,
-                ),
-            ),
+            set(makeRestoring(set, viewedFile, sourceUrl, history.redo(), session)),
     };
 }
 

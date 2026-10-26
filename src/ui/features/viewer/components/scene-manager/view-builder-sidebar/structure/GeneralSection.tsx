@@ -6,17 +6,14 @@
 
 import { useState } from "react";
 import { Select } from "@mantine/core";
-import { getAllParserTypes } from "../../../../../../config/assetsDefinitions";
+import { getAllParserTypes } from "../../../../../assets/domain/assetsDefinitions";
 import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { CollapsibleSection } from "../CollapsibleSection";
 import { AdvancedGeneralSection } from "./AdvancedGeneralSection";
 import { GlobalTooltipsAndLabelsSection } from "./GlobalTooltipsAndLabelsSection";
 import { GlobalTransformSection } from "./GlobalTransformSection";
-import type {
-    UpdateViewModelFields,
-    UpdateViewModelParam,
-} from "./structureTabHelpers";
+import type { UpdateViewModelFields, UpdateViewModelParam } from "./structureTabHelpers";
 import type { StructureViewModel } from "../../../../models/MvsViewModels";
 
 type GeneralSectionProps = {
@@ -44,30 +41,26 @@ export function GeneralSection({
         ),
     );
 
-    const [advancedGeneralSectionExpanded, setAdvancedGeneralSectionExpanded] =
-        useState(
-            UiLocalStorageService.ViewBuilder.getExpandedStructureAdvancedGeneralSection(
-                asset.id,
-                viewKey,
-            ),
-        );
-
-    const [
-        tooltipsAndLabelsSectionExpanded,
-        setTooltipsAndLabelsSectionExpanded,
-    ] = useState(() =>
-        UiLocalStorageService.ViewBuilder.getExpandedStructureTooltipsAndLabelsSection(
+    const [advancedGeneralSectionExpanded, setAdvancedGeneralSectionExpanded] = useState(
+        UiLocalStorageService.ViewBuilder.getExpandedStructureAdvancedGeneralSection(
             asset.id,
             viewKey,
         ),
     );
 
-    const [transformSectionExpanded, setTransformSectionExpanded] = useState(
-        () =>
-            UiLocalStorageService.ViewBuilder.getExpandedStructureTransformSection(
+    const [tooltipsAndLabelsSectionExpanded, setTooltipsAndLabelsSectionExpanded] =
+        useState(() =>
+            UiLocalStorageService.ViewBuilder.getExpandedStructureTooltipsAndLabelsSection(
                 asset.id,
                 viewKey,
             ),
+        );
+
+    const [transformSectionExpanded, setTransformSectionExpanded] = useState(() =>
+        UiLocalStorageService.ViewBuilder.getExpandedStructureTransformSection(
+            asset.id,
+            viewKey,
+        ),
     );
 
     // Render the component.

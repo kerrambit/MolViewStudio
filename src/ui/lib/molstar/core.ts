@@ -16,6 +16,7 @@ import { type Base64Png, type HexColor, type Session } from "./types";
 import { clearAllSnapshotsFromSnapshotManager } from "./molstarSnapshotService";
 import { Color } from "molstar/lib/mol-util/color";
 import { type Result } from "../../../types/Result";
+import { loggerUi } from "../../services/UiLoggingService";
 
 /**
  * Properties for `initMolstar` function.
@@ -91,6 +92,7 @@ export function updateRegionState(
 function clearMVSXFileAssets() {
     const molstar = getMolstar();
     molstar.managers.asset.clearTag("mvsx-file");
+    loggerUi.debug("All MVSX file assets were cleared from Molstar asset manager.");
 }
 
 /**
@@ -111,7 +113,10 @@ export async function clearViewer(clearContent: boolean = true) {
     const molstar = getMolstar();
     clearAllSnapshotsFromSnapshotManager();
     clearMVSXFileAssets();
-    if (clearContent) await molstar.clear();
+    if (clearContent) {
+        await molstar.clear();
+        loggerUi.debug("Viewer content was cleared.");
+    }
 }
 
 /**
@@ -144,12 +149,7 @@ export function checkMolstarAfterLoading(): Result<null> {
 
     if (erroredCells.length > 0) {
         const errorDetails = erroredCells
-            .map(
-                (c) =>
-                    `[${c.obj?.label || c.transform.transformer.id}]: ${
-                        c.errorText
-                    }`,
-            )
+            .map((c) => `[${c.obj?.label || c.transform.transformer.id}]: ${c.errorText}`)
             .join(", ");
 
         return {
@@ -187,8 +187,7 @@ export function setBackgroundColor(color: HexColor) {
 
     const snapshot = getMolstarStateSnapshot();
     if (snapshot.canvas3d?.props) {
-        snapshot.canvas3d.props.renderer.backgroundColor =
-            convertHexStringToColor(color);
+        snapshot.canvas3d.props.renderer.backgroundColor = convertHexStringToColor(color);
     }
     molstar.state.setSnapshot({ ...snapshot });
 }
@@ -197,9 +196,7 @@ export function setBackgroundColor(color: HexColor) {
  * Sets background color.
  * @param backgroundColor color to set
  */
-export function updateLiveBackgroundColor(
-    backgroundColor: HexColor | undefined,
-): void {
+export function updateLiveBackgroundColor(backgroundColor: HexColor | undefined): void {
     const molstar = getMolstar();
 
     if (!molstar.canvas3d) {

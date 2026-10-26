@@ -7,18 +7,11 @@
 import { router } from "../../router/router";
 import {
     pushErrorNotification,
-    pushInfoNotification,
-    pushSuccessNotification,
     pushWarningNotification,
 } from "../../services/NotificationService";
 import { AboutDialogueContent } from "../../features/about-dialogue/components/AboutDialogueContent";
 import { ConfirmationDialogueContent } from "../../components/common/dialogue/ConfirmationDialogueContent";
-import {
-    clearViewer,
-    exportStateTree,
-    injectRelativePathsBasedOnAssetIdsIntoTree,
-    reloadMolstarAndRestoreIndex,
-} from "../../lib/molstar";
+import { clearViewer, reloadMolstarAndRestoreIndex } from "../../lib/molstar";
 import { ShowMVSTreeDialogueContent } from "../../features/viewer/components/ShowMVSTreeDialogueContent";
 import {
     loadDefaultMVSJFile,
@@ -26,10 +19,7 @@ import {
     loadDefaultPDBFile,
 } from "../../features/viewer/services/defaultLoaderService";
 import { useRegimeStore } from "../../stores/regimeStore";
-import {
-    isManagedAssetLocal,
-    useManagedAssetsStore,
-} from "../../stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../stores/managedAssetsStore";
 import { useDialogueStore } from "../../stores/dialogueStore";
 import { useWorkspaceManagement } from "../../features/workspace/hooks/useWorkspaceManagement";
 import { useRecentFilesStore } from "../../stores/recentFilesStore";
@@ -46,7 +36,6 @@ import {
 } from "./systemMenuItems";
 import {
     createEditRootMenuItem,
-    createGeneralEditSection,
     createClearViwerMenuItem,
     createExportViwerMenuItem,
     createShowRawMVSTreeItemMenuItem,
@@ -57,6 +46,8 @@ import {
     createRedoMenuItem,
     createHistorySection,
     createShowSourceTreeHistoryMenuItem,
+    createViewerSection,
+    createExportSection,
 } from "./editMenuItems";
 import {
     createProjectActionsSection,
@@ -68,6 +59,12 @@ import {
     createOpenUserDataFolderMenuItem,
 } from "./fileMenuItems";
 import {
+    createGeneralWindowsActionsSection,
+    createToggleProcessingJobsItem,
+    createToggleSceneManagerItem,
+    createWindowsRootMenuItem,
+} from "./windowsMenuItems";
+import {
     createHomePageSection,
     createHomePageMenuItem,
     createGeneralHelpSection,
@@ -78,77 +75,98 @@ import {
     createCheckForUpdatesMenuItem,
 } from "./helpMenuItems";
 import { createSettingsRootMenuItem } from "./settingsRootMenuItem";
-import type {
-    Menu,
-    LiveMenuRenderProps,
-    Dropdown,
-} from "../../providers/MenuContext";
-import { useProcessingStore } from "../../stores/processingStore";
+import type { Menu, LiveMenuRenderProps, Dropdown } from "../../providers/MenuContext";
+import { useProcessingStore } from "../../features/processing/stores/processingStore";
 import { ShowSourceTreeHistoryDialogueContent } from "../../features/viewer/components/ShowSourceTreeHistoryDialogueContent";
+import { useWindowsStore } from "../../features/viewer/stores/WindowsStore";
+import { runExportFlow } from "../../features/viewer/export/services/exportService";
+import { useExportStore } from "../../features/viewer/export/stores/exportStore";
+import { useStartFileProcessingForExport } from "../../features/processing/export/hooks/useStartFileProcessingForExport";
 
 export function bindViewerMenu(): Menu {
     return [
         createFileRootMenuItem([
             createProjectActionsSection([
-                createCreateNewProjectMenuItem(
-                    ({ render }: LiveMenuRenderProps) => {
-                        const { createNewProjectInApp } =
-                            useWorkspaceManagement();
+                createCreateNewProjectMenuItem(({ render }: LiveMenuRenderProps) => {
+                    const { createNewProjectInApp } = useWorkspaceManagement();
 
-                        return render({
-                            action: async () => {
-                                const confirmed = await useDialogueStore
-                                    .getState()
-                                    .showDialogue<boolean>({
-                                        title: "Confirmation",
-                                        showCloseButton: false,
-                                        content: (close) => (
-                                            <ConfirmationDialogueContent
-                                                close={close}
-                                                doYouReallyWantToQuestion="Do you really want to create new project?"
-                                            />
-                                        ),
-                                    });
-                                if (confirmed) createNewProjectInApp();
-                            },
-                            type: "direct",
-                        });
-                    },
-                ),
+                    return render({
+                        action: async () => {
+                            if (useExportStore.getState().status === "processing") {
+                                pushWarningNotification(
+                                    "New project cannot be created as export is running. Try once again after export is finished.",
+                                );
+                                return;
+                            }
+
+                            const confirmed = await useDialogueStore
+                                .getState()
+                                .showDialogue<boolean>({
+                                    title: "Confirmation",
+                                    showCloseButton: false,
+                                    content: (close) => (
+                                        <ConfirmationDialogueContent
+                                            close={close}
+                                            doYouReallyWantToQuestion="Do you really want to create new project?"
+                                        />
+                                    ),
+                                });
+
+                            if (confirmed) {
+                                useManagedAssetsStore.getState().clearAssets();
+                                useProcessingStore.getState().clearAllJobs();
+                                useRegimeStore.getState().regime.reset();
+                                await clearViewer();
+
+                                createNewProjectInApp();
+                            }
+                        },
+                        type: "direct",
+                    });
+                }),
             ]),
             createFileImportSection([
-                createOpenFileInViewerMenuItem(
-                    ({ render }: LiveMenuRenderProps) => {
-                        const { openFileExplorerAndLoadFileInApp } =
-                            useWorkspaceManagement();
-                        return render({
-                            action: async () => {
-                                const confirmed = await useDialogueStore
-                                    .getState()
-                                    .showDialogue<boolean>({
-                                        title: "Confirmation",
-                                        showCloseButton: false,
-                                        content: (close) => (
-                                            <ConfirmationDialogueContent
-                                                close={close}
-                                                doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
-                                            />
-                                        ),
-                                    });
-                                if (confirmed)
-                                    openFileExplorerAndLoadFileInApp();
-                            },
-                            type: "secondary",
-                        });
-                    },
-                ),
+                createOpenFileInViewerMenuItem(({ render }: LiveMenuRenderProps) => {
+                    const { openFileExplorerAndLoadFileInApp } = useWorkspaceManagement();
+
+                    return render({
+                        action: async () => {
+                            if (useExportStore.getState().status === "processing") {
+                                pushWarningNotification(
+                                    "File cannot be opened as export is running. Try once again after export is finished.",
+                                );
+                                return;
+                            }
+
+                            const confirmed = await useDialogueStore
+                                .getState()
+                                .showDialogue<boolean>({
+                                    title: "Confirmation",
+                                    showCloseButton: false,
+                                    content: (close) => (
+                                        <ConfirmationDialogueContent
+                                            close={close}
+                                            doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                                        />
+                                    ),
+                                });
+                            if (confirmed) {
+                                useManagedAssetsStore.getState().clearAssets();
+                                useProcessingStore.getState().clearAllJobs();
+                                useRegimeStore.getState().regime.reset();
+                                await clearViewer();
+
+                                openFileExplorerAndLoadFileInApp();
+                            }
+                        },
+                        type: "secondary",
+                    });
+                }),
                 createOpenRecentFileInViewerMenuItem(
                     ({ render }: LiveMenuRenderProps) => {
-                        const { loadRecentFileInApp } =
-                            useWorkspaceManagement();
+                        const { loadRecentFileInApp } = useWorkspaceManagement();
 
-                        const recentFiles =
-                            useRecentFilesStore.getState().recentFiles;
+                        const recentFiles = useRecentFilesStore.getState().recentFiles;
                         if (recentFiles.length === 0) return null;
 
                         const liveDropdownTask: Dropdown = [
@@ -164,21 +182,40 @@ export function bindViewerMenu(): Menu {
                                     task: {
                                         type: "direct",
                                         action: async () => {
-                                            const confirmed =
-                                                await useDialogueStore
+                                            if (
+                                                useExportStore.getState().status ===
+                                                "processing"
+                                            ) {
+                                                pushWarningNotification(
+                                                    "File cannot be opened as export is running. Try once again after export is finished.",
+                                                );
+                                                return;
+                                            }
+
+                                            const confirmed = await useDialogueStore
+                                                .getState()
+                                                .showDialogue<boolean>({
+                                                    title: "Confirmation",
+                                                    showCloseButton: false,
+                                                    content: (close) => (
+                                                        <ConfirmationDialogueContent
+                                                            close={close}
+                                                            doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
+                                                        />
+                                                    ),
+                                                });
+                                            if (confirmed) {
+                                                useManagedAssetsStore
                                                     .getState()
-                                                    .showDialogue<boolean>({
-                                                        title: "Confirmation",
-                                                        showCloseButton: false,
-                                                        content: (close) => (
-                                                            <ConfirmationDialogueContent
-                                                                close={close}
-                                                                doYouReallyWantToQuestion="Do you really want to open different file in viewer?"
-                                                            />
-                                                        ),
-                                                    });
-                                            if (confirmed)
+                                                    .clearAssets();
+                                                useProcessingStore
+                                                    .getState()
+                                                    .clearAllJobs();
+                                                useRegimeStore.getState().regime.reset();
+                                                await clearViewer();
+
                                                 await loadRecentFileInApp(path);
+                                            }
                                         },
                                     },
                                 })),
@@ -191,8 +228,7 @@ export function bindViewerMenu(): Menu {
             ]),
             createUtilitiesSection([
                 createOpenUserDataFolderMenuItem(async () => {
-                    const result =
-                        await window.electron.requestToOpenUserDataFolder();
+                    const result = await window.electron.requestToOpenUserDataFolder();
                     if (result instanceof Error) {
                         pushErrorNotification(
                             `Not able to open user data folder! Details: <${result.message}>.`,
@@ -218,6 +254,22 @@ export function bindViewerMenu(): Menu {
                             ),
                         });
                     if (confirmed) window.electron.requestApplicationExit();
+                }),
+            ]),
+        ]),
+        createWindowsRootMenuItem([
+            createGeneralWindowsActionsSection([
+                createToggleSceneManagerItem(() => {
+                    const regime = useRegimeStore.getState().regime;
+                    if (regime.kind === "idling") {
+                        pushWarningNotification(
+                            "Nothing to show! File format is not supported (non-MVS), or the viewer is empty.",
+                        );
+                    }
+                    useWindowsStore.getState().toggleWindow("scene-manager");
+                }),
+                createToggleProcessingJobsItem(() => {
+                    useWindowsStore.getState().toggleWindow("processing-jobs");
                 }),
             ]),
         ]),
@@ -251,12 +303,9 @@ export function bindViewerMenu(): Menu {
 
                     await reloadMolstarAndRestoreIndex(
                         {
-                            index:
-                                updatedRegime.history.current().viewIndex || 0,
+                            index: updatedRegime.history.current().viewIndex || 0,
                         },
-                        Array.from(
-                            useManagedAssetsStore.getState().assets.values(),
-                        ),
+                        Array.from(useManagedAssetsStore.getState().assets.values()),
                         updatedRegime.history.current().stateTree,
                     );
                 }),
@@ -286,69 +335,11 @@ export function bindViewerMenu(): Menu {
 
                     await reloadMolstarAndRestoreIndex(
                         {
-                            index:
-                                updatedRegime.history.current().viewIndex || 0,
+                            index: updatedRegime.history.current().viewIndex || 0,
                         },
-                        Array.from(
-                            useManagedAssetsStore.getState().assets.values(),
-                        ),
+                        Array.from(useManagedAssetsStore.getState().assets.values()),
                         updatedRegime.history.current().stateTree,
                     );
-                }),
-            ]),
-            createGeneralEditSection([
-                createClearViwerMenuItem(async () => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to clear the viewer?"
-                                />
-                            ),
-                        });
-
-                    if (confirmed) {
-                        useManagedAssetsStore.getState().clearAssets();
-                        useProcessingStore.getState().clearAllJobs();
-                        await clearViewer();
-                        useRegimeStore.getState().regime.reset();
-                    }
-                }),
-                createExportViwerMenuItem(async () => {
-                    const regime = useRegimeStore.getState().regime;
-                    if (regime.kind === "viewing") {
-                        pushInfoNotification(`Preparing files for export...`);
-
-                        const result = await exportStateTree(
-                            injectRelativePathsBasedOnAssetIdsIntoTree(
-                                regime.history.current().stateTree,
-                                Array.from(
-                                    useManagedAssetsStore
-                                        .getState()
-                                        .assets.values(),
-                                ),
-                            ),
-                            Array.from(
-                                useManagedAssetsStore
-                                    .getState()
-                                    .assets.values(),
-                            ).filter(isManagedAssetLocal),
-                        );
-
-                        if (result.success) {
-                            pushSuccessNotification(`Export ready!`);
-                        } else {
-                            pushErrorNotification(result.error.message);
-                        }
-                    } else {
-                        pushWarningNotification(
-                            `Export is currently unavailable! This usually happens if data is still processing, the file format is not supported (non-MVS), or the viewer is empty.`,
-                        );
-                    }
                 }),
                 createShowRawMVSTreeItemMenuItem(async () => {
                     const regime = useRegimeStore.getState().regime;
@@ -369,6 +360,48 @@ export function bindViewerMenu(): Menu {
                     }
                 }),
             ]),
+            createViewerSection([
+                createClearViwerMenuItem(async () => {
+                    if (useExportStore.getState().status === "processing") {
+                        pushWarningNotification(
+                            "Viewer cannot be cleared as export is running! Try once again after export is finished.",
+                        );
+                        return;
+                    }
+
+                    const confirmed = await useDialogueStore
+                        .getState()
+                        .showDialogue<boolean>({
+                            title: "Confirmation",
+                            showCloseButton: false,
+                            content: (close) => (
+                                <ConfirmationDialogueContent
+                                    close={close}
+                                    doYouReallyWantToQuestion="Do you really want to clear the viewer?"
+                                />
+                            ),
+                        });
+
+                    if (confirmed) {
+                        useManagedAssetsStore.getState().clearAssets();
+                        useProcessingStore.getState().clearAllJobs();
+                        await clearViewer();
+                        useRegimeStore.getState().regime.reset();
+                    }
+                }),
+            ]),
+            createExportSection([
+                createExportViwerMenuItem(({ render }) => {
+                    const { startExportProcessing } = useStartFileProcessingForExport();
+
+                    return render({
+                        action: async () => {
+                            await runExportFlow(startExportProcessing);
+                        },
+                        type: "direct",
+                    });
+                }),
+            ]),
             createOnlyDevSection("edit-dev", "For developers", [
                 createShowSourceTreeHistoryMenuItem(async () => {
                     await useDialogueStore.getState().showDialogue({
@@ -377,9 +410,7 @@ export function bindViewerMenu(): Menu {
                         width: "1000px",
                         maxWidth: "1400px",
                         content: (close) => (
-                            <ShowSourceTreeHistoryDialogueContent
-                                close={close}
-                            />
+                            <ShowSourceTreeHistoryDialogueContent close={close} />
                         ),
                     });
                 }),
@@ -431,11 +462,28 @@ export function bindViewerMenu(): Menu {
             ]),
         ]),
         createSettingsRootMenuItem(() => {
+            if (
+                Array.from(useProcessingStore.getState().jobs.values()).some(
+                    (p) => p.status === "Running",
+                )
+            ) {
+                pushWarningNotification(
+                    "Settings cannot be opened as processing job is running. Try once again after job is finished.",
+                );
+                return;
+            }
             router.navigate("/settings");
         }),
         createHelpRootMenuItem([
             createHomePageSection([
                 createHomePageMenuItem(async () => {
+                    if (useExportStore.getState().status === "processing") {
+                        pushWarningNotification(
+                            "Home page cannot be opened as export is running. Try once again after export is finished.",
+                        );
+                        return;
+                    }
+
                     const confirmed = await useDialogueStore
                         .getState()
                         .showDialogue<boolean>({
@@ -448,7 +496,13 @@ export function bindViewerMenu(): Menu {
                                 />
                             ),
                         });
+
                     if (confirmed) {
+                        useManagedAssetsStore.getState().clearAssets();
+                        useProcessingStore.getState().clearAllJobs();
+                        useRegimeStore.getState().regime.reset();
+                        await clearViewer();
+
                         router.navigate("/home");
                     }
                 }),
@@ -464,9 +518,7 @@ export function bindViewerMenu(): Menu {
                     await useDialogueStore.getState().showDialogue({
                         title: "About",
                         showCloseButton: true,
-                        content: (close) => (
-                            <AboutDialogueContent close={close} />
-                        ),
+                        content: (close) => <AboutDialogueContent close={close} />,
                     });
                 }),
             ]),

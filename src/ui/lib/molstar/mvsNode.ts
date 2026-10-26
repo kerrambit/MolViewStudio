@@ -17,6 +17,7 @@ import {
     type VolumeViewModel,
 } from "../../features/viewer/models/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
+import { getParser } from "../../features/assets/domain/assetsDefinitions";
 
 /**
  * Creates a deep copy of `node`.
@@ -44,9 +45,7 @@ export function applyCameraToNode(
     if (referenceCamera) {
         const { position, target, up } = referenceCamera;
 
-        const cameraNode = nodeCopy.children?.find(
-            (child) => child.kind === "camera",
-        );
+        const cameraNode = nodeCopy.children?.find((child) => child.kind === "camera");
 
         if (cameraNode) {
             cameraNode.params = {
@@ -104,9 +103,7 @@ export function applyBackgroundColorToNode(
     const nodeCopy = copyNode(node);
 
     if (backgroundColor) {
-        const canvasNode = nodeCopy.children?.find(
-            (child) => child.kind === "canvas",
-        );
+        const canvasNode = nodeCopy.children?.find((child) => child.kind === "canvas");
 
         if (canvasNode) {
             canvasNode.params = {
@@ -144,16 +141,10 @@ export function applyBackgroundColorToNode(
  * @param newNode new node to replace the download node
  * @returns modified root node with the download node replaced
  */
-export const replaceAssetNodeInRoot = (
-    rootNode: any,
-    assetId: string,
-    newNode: any,
-) => ({
+export const replaceAssetNodeInRoot = (rootNode: any, assetId: string, newNode: any) => ({
     ...rootNode,
     children: rootNode.children?.map((child: any) =>
-        child.kind === "download" && child.params?.url === assetId
-            ? newNode
-            : child,
+        child.kind === "download" && child.params?.url === assetId ? newNode : child,
     ),
 });
 
@@ -167,15 +158,44 @@ export function removeNodeFromTree(rootNode: MVSTree, assetIdToRemove: string) {
     return {
         ...rootNode,
         children: rootNode.children?.filter((child: any) => {
-            if (
-                child.kind === "download" &&
-                child.params?.url === assetIdToRemove
-            ) {
+            if (child.kind === "download" && child.params?.url === assetIdToRemove) {
                 return false;
             }
             return true;
         }),
     };
+}
+
+/**
+ * Traverses an MVS node and its children and collects IDs of managed assets
+ * referenced from `url` or `uri` parameters.
+ * @param node node (state tree root or any of its descendants)
+ * @param knownIds IDs of assets we are interested in
+ * @param found accumulator, used by the recursion
+ * @returns set of referenced asset IDs
+ */
+export function collectReferencedAssetIdsFromNode(
+    node: any,
+    knownIds: Set<string>,
+    found: Set<string> = new Set(),
+): Set<string> {
+    const params = node?.params;
+    if (params) {
+        if (typeof params.url === "string" && knownIds.has(params.url)) {
+            found.add(params.url);
+        }
+        if (typeof params.uri === "string" && knownIds.has(params.uri)) {
+            found.add(params.uri);
+        }
+    }
+
+    if (Array.isArray(node?.children)) {
+        for (const child of node.children) {
+            collectReferencedAssetIdsFromNode(child, knownIds, found);
+        }
+    }
+
+    return found;
 }
 
 /**
@@ -195,13 +215,9 @@ export function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
             : currentUrl;
 
         const matchedAsset = assets.find((a) => {
-            const assetUrl =
-                typeof a.asset === "string" ? a.asset : a.asset?.url;
+            const assetUrl = typeof a.asset === "string" ? a.asset : a.asset?.url;
 
-            return (
-                assetUrl === currentUrl ||
-                a.relativePath === normalizedCurrentUrl
-            );
+            return assetUrl === currentUrl || a.relativePath === normalizedCurrentUrl;
         });
         if (matchedAsset) {
             newParams = {
@@ -216,13 +232,9 @@ export function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
             : currentUri;
 
         const matchedAsset = assets.find((a) => {
-            const assetUrl =
-                typeof a.asset === "string" ? a.asset : a.asset?.url;
+            const assetUrl = typeof a.asset === "string" ? a.asset : a.asset?.url;
 
-            return (
-                assetUrl === currentUri ||
-                a.relativePath === normalizedCurrentUrl
-            );
+            return assetUrl === currentUri || a.relativePath === normalizedCurrentUrl;
         });
 
         if (matchedAsset) {
@@ -253,10 +265,7 @@ export function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
  * @param assets list of assets
  * @returns modified node
  */
-export function replaceNodeIdsWithMolstarUrls(
-    node: any,
-    assets: ManagedAsset[],
-): any {
+export function replaceNodeIdsWithMolstarUrls(node: any, assets: ManagedAsset[]): any {
     let newParams = node.params;
 
     if (newParams) {
@@ -305,12 +314,78 @@ export function replaceNodeIdsWithMolstarUrls(
 
 /**
  * Traverses an MVS node and its children immutably.
- * Replaces any `url` or `uri` parameters matching an Asset ID back to its relative path.
+ * Replaces any `url` or `uri` parameters matching an asset ID to its parent asset ID.
+ * If the asset is already parent, no change is made.
  */
-export function replaceNodeIdsWithRelativePaths(
+export function resolveHiddenAssetIdsToParentAssetIds(
     node: any,
     assets: ManagedAsset[],
 ): any {
+    const resolveExportAsset = (assetId: string): ManagedAsset | undefined => {
+        const matchedAsset = assets.find((a) => a.id === assetId);
+        if (!matchedAsset) {
+            return undefined;
+        }
+        if (matchedAsset.hidden) {
+            const parent = assets.find((a) =>
+                a.children.some(
+                    (child) => child.id === matchedAsset.id && child.kind === "Preview",
+                ),
+            );
+            if (parent) {
+                return parent;
+            }
+        }
+        return matchedAsset;
+    };
+
+    let newParams = node.params;
+
+    if (newParams) {
+        if (typeof newParams.url === "string") {
+            const currentId = newParams.url;
+            const matchedAsset = resolveExportAsset(currentId);
+
+            if (matchedAsset) {
+                let newId = matchedAsset.id;
+                newParams = {
+                    ...newParams,
+                    url: newId,
+                };
+            }
+        } else if (typeof newParams.uri === "string") {
+            const currentId = newParams.uri;
+            const matchedAsset = resolveExportAsset(currentId);
+
+            if (matchedAsset) {
+                let newId = matchedAsset.id;
+                newParams = {
+                    ...newParams,
+                    url: newId,
+                };
+            }
+        }
+    }
+
+    let newChildren = node.children;
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        newChildren = node.children.map((child: any) =>
+            resolveHiddenAssetIdsToParentAssetIds(child, assets),
+        );
+    }
+
+    return {
+        ...node,
+        params: newParams,
+        children: newChildren,
+    };
+}
+
+/**
+ * Traverses an MVS node and its children immutably.
+ * Replaces any `url` or `uri` parameters matching an Asset ID back to its relative path.
+ */
+export function replaceNodeIdsWithRelativePaths(node: any, assets: ManagedAsset[]): any {
     let newParams = node.params;
 
     if (newParams) {
@@ -360,16 +435,120 @@ export function replaceNodeIdsWithRelativePaths(
 }
 
 /**
+ * Replace download node IDs of original unprocessed assets with IDs of referenced processed assets.
+ * Checks also `format` of `download` node, so it matched to processed asset extension.
+ * @param node node
+ * @param processedFiles map, where key is unprocessed asset ID, and value is processed asset ID
+ * @param assets assets
+ * @returns modified value
+ */
+export function substituteAssetDownloadsInNode(
+    node: any,
+    processedFiles: Map<AssetId, AssetId>,
+    assets: ManagedAsset[],
+): any {
+    let newNode = node;
+
+    if (node.kind === "download" && typeof node.params?.url === "string") {
+        const entry = [...processedFiles].find(([id]) => id === node.params.url);
+        if (entry) {
+            let newUrl = entry[1];
+            newNode = {
+                ...node,
+                params: {
+                    ...node.params,
+                    url: newUrl,
+                },
+                children: (node.children || []).map((child: any) =>
+                    child.kind === "parse"
+                        ? {
+                              ...child,
+                              params: {
+                                  ...child.params,
+                                  format: getParser(
+                                      assets.find((a) => a.id === entry[1])?.extension!,
+                                  ),
+                              },
+                          }
+                        : child,
+                ),
+            };
+        }
+    }
+
+    if (Array.isArray(newNode.children) && newNode.children.length > 0) {
+        newNode = {
+            ...newNode,
+            children: newNode.children.map((child: any) =>
+                substituteAssetDownloadsInNode(child, processedFiles, assets),
+            ),
+        };
+    }
+
+    return newNode;
+}
+
+/**
+ * Traverses an MVS node and its children immutably.
+ * For any `download` node whose `url` matches an asset ID with a processed file,
+ * replaces the URL with the processed file's archive path and fixes the child
+ * `parse` node's format to the processed file's parser (e.g. "map" for mrc).
+ * Apply before `injectRelativePathsBasedOnAssetIdsIntoTree`.
+ * @param node node
+ * @param processedFiles map of managed asset ID -> processed file
+ * @returns modified node
+ */
+// export function substituteAssetDownloadsInNode(
+//     node: any,
+//     processedFiles: Map<ManagedAsset, FileData>,
+// ): any {
+//     let newNode = node;
+
+//     if (node.kind === "download" && typeof node.params?.url === "string") {
+//         const entry = [...processedFiles].find(([asset]) => asset.id === node.params.url);
+//         if (entry) {
+//             const processedFile = processedFiles.get(node.params.url)!;
+//             newNode = {
+//                 ...node,
+//                 params: {
+//                     ...node.params,
+//                     url: `volumes/${processedFile.name}`,
+//                 },
+//                 children: (node.children || []).map((child: any) =>
+//                     child.kind === "parse"
+//                         ? {
+//                               ...child,
+//                               params: {
+//                                   ...child.params,
+//                                   format: "map",
+//                               },
+//                           }
+//                         : child,
+//                 ),
+//             };
+//         }
+//     }
+
+//     if (Array.isArray(newNode.children) && newNode.children.length > 0) {
+//         newNode = {
+//             ...newNode,
+//             children: newNode.children.map((child: any) =>
+//                 substituteAssetDownloadsInNode(child, processedFiles),
+//             ),
+//         };
+//     }
+
+//     return newNode;
+// }
+
+/**
  * Builds a full `download` node (download -> parse -> structure -> ...) from
  * a StructureViewModel.
  * @param assetId used as the download node's `url`
  * @param viewModel fully-resolved structure view model
  * @returns the built `download` node, ready to splice into a hand-maintained tree
  */
-export function getStructureNode(
-    assetId: string,
-    viewModel: StructureViewModel,
-): any {
+export function getStructureNode(assetId: string, viewModel: StructureViewModel): any {
     const builder = createMVSBuilder();
     const downloaded = builder.download({ url: assetId });
     const parsed = downloaded.parse({ format: viewModel.format as any });
@@ -428,8 +607,7 @@ export function getStructureNode(
         });
     }
 
-    if (viewModel.label_from_uri)
-        structureNode.labelFromUri(viewModel.label_from_uri);
+    if (viewModel.label_from_uri) structureNode.labelFromUri(viewModel.label_from_uri);
     if (viewModel.label_from_source)
         structureNode.labelFromSource(viewModel.label_from_source);
     if (viewModel.tooltip_from_uri)
@@ -452,11 +630,7 @@ export function getStructureNode(
 
         if (hasComponentTransform) {
             componentNode.transform({
-                translation: [
-                    comp.translationX,
-                    comp.translationY,
-                    comp.translationZ,
-                ],
+                translation: [comp.translationX, comp.translationY, comp.translationZ],
                 rotation: getRotationMatrix3x3(
                     comp.rotationX,
                     comp.rotationY,
@@ -489,12 +663,9 @@ export function getStructureNode(
         }
         if (comp.representationType === "surface")
             repParams.surface_type = comp.surface_type;
-        if (comp.representationType === "putty")
-            repParams.size_theme = comp.size_theme;
+        if (comp.representationType === "putty") repParams.size_theme = comp.size_theme;
 
-        const representationNode = componentNode.representation(
-            repParams as any,
-        );
+        const representationNode = componentNode.representation(repParams as any);
 
         // Color variants are mutually exclusive in MVS — the UI's selector-type
         // toggle pattern should ensure only one of these three is ever set.
@@ -548,10 +719,7 @@ export function addStructureNodeToTree(
  * @param viewModel fully-resolved volume view model
  * @returns the built `download` node, ready to splice into a hand-maintained tree
  */
-export function getVolumeNode(
-    assetId: string,
-    viewModel: VolumeViewModel,
-): any {
+export function getVolumeNode(assetId: string, viewModel: VolumeViewModel): any {
     const builder = createMVSBuilder();
 
     const downloaded = builder.download({ url: assetId });
@@ -638,12 +806,7 @@ function findNodeInAssetBranch(
         return node;
     }
     for (const child of node.children || []) {
-        const found = findNodeInAssetBranch(
-            child,
-            assetId,
-            targetKind,
-            isInBranch,
-        );
+        const found = findNodeInAssetBranch(child, assetId, targetKind, isInBranch);
         if (found) return found;
     }
     return undefined;
@@ -669,8 +832,7 @@ function readComponentEntry(
 
     for (const child of componentNode.children || []) {
         if (child.kind === "representation" && child.params) {
-            entry.representationType =
-                child.params.type ?? entry.representationType;
+            entry.representationType = child.params.type ?? entry.representationType;
             if (child.params.size_factor !== undefined)
                 entry.size_factor = child.params.size_factor;
             if (child.params.tubular_helices !== undefined)
@@ -700,10 +862,7 @@ function readComponentEntry(
                 if (grandchild.kind === "color_from_uri" && grandchild.params) {
                     entry.color_from_uri = { ...grandchild.params };
                 }
-                if (
-                    grandchild.kind === "color_from_source" &&
-                    grandchild.params
-                ) {
+                if (grandchild.kind === "color_from_source" && grandchild.params) {
                     entry.color_from_source = {
                         ...grandchild.params,
                         // Safely clone the nested field_remapping object
@@ -730,8 +889,7 @@ function readComponentEntry(
             entry.show_focus = true;
             if (Array.isArray(child.params?.direction))
                 entry.focus_direction = child.params.direction;
-            if (Array.isArray(child.params?.up))
-                entry.focus_up = child.params.up;
+            if (Array.isArray(child.params?.up)) entry.focus_up = child.params.up;
             entry.radius_factor = child.params.radius_factor;
         }
 
@@ -781,17 +939,12 @@ export function getStructureViewModel(
     const params: StructureViewModel = {
         ...defaultViewModel,
         type: structureNode.params?.type ?? defaultViewModel.type,
-        block_header:
-            structureNode.params?.block_header ?? defaultViewModel.block_header,
-        block_index:
-            structureNode.params?.block_index ?? defaultViewModel.block_index,
-        model_index:
-            structureNode.params?.model_index ?? defaultViewModel.model_index,
+        block_header: structureNode.params?.block_header ?? defaultViewModel.block_header,
+        block_index: structureNode.params?.block_index ?? defaultViewModel.block_index,
+        model_index: structureNode.params?.model_index ?? defaultViewModel.model_index,
         coordinates_ref:
-            structureNode.params?.coordinates_ref ??
-            defaultViewModel.coordinates_ref,
-        assembly_id:
-            structureNode.params?.assembly_id ?? defaultViewModel.assembly_id,
+            structureNode.params?.coordinates_ref ?? defaultViewModel.coordinates_ref,
+        assembly_id: structureNode.params?.assembly_id ?? defaultViewModel.assembly_id,
         radius: structureNode.params?.radius ?? defaultViewModel.radius,
         ijk_min: structureNode.params?.ijk_min ?? defaultViewModel.ijk_min,
         ijk_max: structureNode.params?.ijk_max ?? defaultViewModel.ijk_max,
@@ -857,11 +1010,7 @@ export function getStructureViewModel(
         const defaultComponent = defaultViewModel.components[0];
         let componentIdCounter = 0;
         params.components = componentNodes.map((c: any) =>
-            readComponentEntry(
-                c,
-                `component-${componentIdCounter++}`,
-                defaultComponent,
-            ),
+            readComponentEntry(c, `component-${componentIdCounter++}`, defaultComponent),
         );
     }
 
@@ -895,8 +1044,7 @@ export function getVolumeViewModel(
                 params.channel_id = node.params.channel_id;
 
             if (node.kind === "volume_representation" && node.params) {
-                if (node.params.type !== undefined)
-                    params.type = node.params.type;
+                if (node.params.type !== undefined) params.type = node.params.type;
                 if (node.params.relative_isovalue !== undefined)
                     params.relative_isovalue = node.params.relative_isovalue;
                 if (node.params.show_wireframe !== undefined)
@@ -932,8 +1080,7 @@ export function getVolumeViewModel(
             }
         }
 
-        for (const child of node.children || [])
-            traverse(child, currentInBranch);
+        for (const child of node.children || []) traverse(child, currentInBranch);
     }
 
     traverse(rootNode, false);

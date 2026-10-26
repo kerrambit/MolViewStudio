@@ -10,11 +10,7 @@ import {
     type MVSData_States,
     type Snapshot,
 } from "molstar/lib/extensions/mvs/mvs-data";
-import {
-    type DownloadAsset,
-    type LoadMVSXFileResult,
-    type ViewMetadata,
-} from "./types";
+import { type DownloadAsset, type LoadMVSXFileResult, type ViewMetadata } from "./types";
 import { unzip, Zip } from "molstar/lib/mol-util/zip/zip";
 import { type Result } from "../../../types/Result";
 import { getMolstar } from "./instance";
@@ -28,11 +24,9 @@ import { Asset } from "molstar/lib/mol-util/assets";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { buildRenderTreeForMolstar } from "./mvsTree";
 import { checkMolstarAfterLoading } from "./core";
-import {
-    getExtensionFromFileName,
-    getExtensionFromUrl,
-} from "../../utils/fileDataUtils";
-import { isExtensionSupported } from "../../config/assetsDefinitions";
+import { getExtensionFromFileName, getExtensionFromUrl } from "../../utils/fileDataUtils";
+import { isExtensionSupported } from "../../features/assets/domain/assetsDefinitions";
+import { collectReferencedAssetIds } from "./mvsTree";
 
 /**
  * Retrieves current view index.
@@ -71,9 +65,7 @@ export async function createMVSArchive(
 
     // Encode all files.
     const files: Record<string, Uint8Array<ArrayBuffer>> = {
-        "index.mvsj": encoder.encode(
-            JSON.stringify(index),
-        ) as Uint8Array<ArrayBuffer>,
+        "index.mvsj": encoder.encode(JSON.stringify(index)) as Uint8Array<ArrayBuffer>,
     };
 
     for (const asset of assets) {
@@ -94,11 +86,7 @@ export async function createMVSArchive(
  * @returns blob of data
  */
 export function createMVSBlob(
-    data:
-        | string
-        | MVSData
-        | Uint8Array<ArrayBuffer>
-        | Uint8Array<ArrayBufferLike>,
+    data: string | MVSData | Uint8Array<ArrayBuffer> | Uint8Array<ArrayBufferLike>,
 ): Blob {
     return data instanceof Uint8Array
         ? new Blob([data as Uint8Array<ArrayBuffer>], {
@@ -110,69 +98,91 @@ export function createMVSBlob(
 }
 
 /**
- * Exports `stateTree` with possible local `assets` in the form of MVS.
- * Opens a file explorer for user to choose file location.
- * @param stateTree state tree to export (contains valid relative paths as assets)
- * @param localAssets assets
- * @return Error if there is an internal error in Molstar asset cache, othewise it returns true
+ * Exports a state tree with possible local assets in the form of MVS.
+ * @param stateTreeWithRelativePaths state tree to export (assets referenced by relative paths)
+ * @param stateTreeWithIDs the same state tree, but assets referenced by ManagedAsset IDs; used to find which assets are used
+ * @param bundleAllLocalAssets if true, all local assets are bundled, including those not used in any view
+ * @param localAssets candidate local assets for bundling
+ * @param filepath name of the export file (without extension)
+ * @param outputPath optional folder to save the export into; when omitted, a browser download is used
+ * @return Error if there is an internal error in Molstar asset cache, otherwise it returns true
  */
 export async function exportStateTree(
-    stateTree: MVSData,
+    stateTreeWithRelativePaths: MVSData,
+    stateTreeWithIDs: MVSData_States,
+    bundleAllLocalAssets: boolean,
     localAssets: ManagedAsset[],
+    filepath: string,
+    outputPath?: string,
 ): Promise<Result<boolean>> {
     const molstar = getMolstar();
 
-    const internalCache = molstar.managers.asset.assets;
-    const localFiles: DownloadAsset[] = [];
+    // Decide which assets to bundle: everything, or only those whose IDs appear in the state tree.
+    const localOnly = localAssets.filter((asset) => asset.tag === "local");
+    let assetsToBundle: ManagedAsset[] = localOnly;
+    if (!bundleAllLocalAssets) {
+        const usedIds = collectReferencedAssetIds(stateTreeWithIDs, localAssets);
+        assetsToBundle = localOnly.filter((asset) => usedIds.has(asset.id));
+    }
 
-    // Find data (binary) for local assets (managed assets hold only virtual references to local assets which are actually stored inside Molstar' asset manager).
-    for (const managedAsset of localAssets) {
-        if (managedAsset.tag === "local") {
-            const targetUrl = managedAsset.asset.url;
-            let foundData: Uint8Array | undefined;
-            for (const wrapper of internalCache.values()) {
-                if (
-                    wrapper.asset.kind == "url" &&
-                    wrapper.asset.url === targetUrl &&
-                    wrapper.isStatic
-                ) {
-                    foundData = new Uint8Array(
-                        await wrapper.file.arrayBuffer(),
-                    );
-                    break;
-                }
-            }
-
-            if (foundData) {
-                localFiles.push({
-                    relativeUrl: managedAsset.relativePath,
-                    content: foundData as Uint8Array<ArrayBuffer>,
-                });
-            } else {
-                return {
-                    success: false,
-                    error: new Error(
-                        `Internal error: failed to find ${targetUrl} inside Molstar's cache! Please, consider reporting this bug.`,
-                    ),
-                };
-            }
+    // Managed assets hold only virtual references; the actual data is stored inside Molstar's asset manager.
+    // Index the static files by URL once, instead of scanning the whole cache for every asset.
+    const staticFilesByUrl = new Map<string, Blob>();
+    for (const wrapper of molstar.managers.asset.assets.values()) {
+        if (
+            wrapper.asset.kind === "url" &&
+            wrapper.isStatic &&
+            !staticFilesByUrl.has(wrapper.asset.url)
+        ) {
+            staticFilesByUrl.set(wrapper.asset.url, wrapper.file);
         }
     }
 
-    // Prepare state tree (either MVSData if .mvsj, otherwise Uint8Array<ArrayBuffer>> for .mvsx).
-    let data: MVSData | Uint8Array<ArrayBuffer> = stateTree;
+    // Collect binary data of the assets to bundle.
+    const localFiles: DownloadAsset[] = [];
+    for (const managedAsset of assetsToBundle) {
+        if (managedAsset.tag !== "local") continue; // Narrows the type.
+
+        const targetUrl = managedAsset.asset.url;
+        const file = staticFilesByUrl.get(targetUrl);
+        if (!file) {
+            return {
+                success: false,
+                error: new Error(
+                    `Internal error: failed to find ${targetUrl} inside Molstar's cache! Please, consider reporting this bug.`,
+                ),
+            };
+        }
+
+        localFiles.push({
+            relativeUrl: managedAsset.relativePath,
+            content: new Uint8Array(await file.arrayBuffer()) as Uint8Array<ArrayBuffer>,
+        });
+    }
+
+    // Prepare state tree (either MVSData if .mvsj, otherwise Uint8Array<ArrayBuffer> for .mvsx).
+    let data: MVSData | Uint8Array<ArrayBuffer> = stateTreeWithRelativePaths;
     if (localFiles.length > 0) {
-        data = await createMVSArchive(stateTree, localFiles);
+        data = await createMVSArchive(stateTreeWithRelativePaths, localFiles);
     }
 
     // Create data blob out of MVSStory.
     const blob = createMVSBlob(data);
 
-    // Let the user to download the story.
-    const filename = `${
-        stateTree.metadata.title ? stateTree.metadata.title : "export"
-    }.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
-    download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
+    // Let the user download the story or save it into the chosen output folder.
+    const filename = `${filepath}.${data instanceof Uint8Array ? "mvsx" : "mvsj"}`;
+    if (outputPath) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const saveResult = await window.electron.saveData(
+            arrayBuffer,
+            `${outputPath}/${filename}`,
+        );
+        if (saveResult instanceof Error) {
+            return { success: false, error: saveResult };
+        }
+    } else {
+        download(blob, filename); // TODO: can we create our own download function to verify if user clicked on Cancel before exporting?
+    }
 
     return { success: true, value: true };
 }
@@ -210,9 +220,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
     snapshots.forEach((snapshot) => {
         const { root, metadata } = snapshot;
 
-        const cameraNode = root.children?.find(
-            (node) => node.kind === "camera",
-        );
+        const cameraNode = root.children?.find((node) => node.kind === "camera");
 
         type CameraParams = {
             target: [number, number, number] | Vec3;
@@ -223,9 +231,7 @@ export function extractViewsFromMVS(mvsData: MVSData): ViewMetadata[] {
         const cameraParams = cameraNode?.params as CameraParams | undefined;
         const currentState = getCameraState() || getDefaultCameraState();
 
-        const canvasNode = root.children?.find(
-            (node) => node.kind === "canvas",
-        );
+        const canvasNode = root.children?.find((node) => node.kind === "canvas");
 
         type CanvasParams = {
             background_color: string;
@@ -448,16 +454,41 @@ async function _loadMVSXFile(
             isFile: true,
         }); // TODO: use my own addLocalAssetIntoMolstar?
 
+        const getAssetTypeBasedOnRelativePath = (path: string): ManagedAssetType => {
+            const normalizedPath = path.toLowerCase();
+
+            if (normalizedPath.startsWith("volumes/")) {
+                return "Volume";
+            }
+
+            if (normalizedPath.startsWith("segmentations/")) {
+                return "Segmentation";
+            }
+
+            if (normalizedPath.startsWith("structures/")) {
+                return "Structure";
+            }
+
+            if (normalizedPath.startsWith("annotations/")) {
+                return "Annotation";
+            }
+
+            return "Other";
+        };
+
         assets.push({
             id: crypto.randomUUID(),
             asset: asset,
+            type: getAssetTypeBasedOnRelativePath(path),
             relativePath: path, // E.g. "volumes/volume_0_0.bcif".
             tag: "local",
             name: path.split("/").pop() ?? path, // E.g. "volume_0_0.bcif".
             useCount: usedInAnyView ? 1 : 0,
             extension:
-                getExtensionFromFileName(path.split("/").pop() ?? path) ||
-                "unknown",
+                getExtensionFromFileName(path.split("/").pop() ?? path) || "unknown",
+            hidden: false,
+            processingJobIds: [],
+            children: [],
         });
     }
 
@@ -471,11 +502,15 @@ async function _loadMVSXFile(
         assets.push({
             id: crypto.randomUUID(),
             asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+            type: "Unknown",
             relativePath: remoteUrl,
             tag: "remote",
             name: remoteUrl,
             useCount: 1,
             extension: extension,
+            hidden: false,
+            processingJobIds: [],
+            children: [],
         });
     });
 
@@ -567,11 +602,15 @@ export async function loadMVSJFile(index: string): Promise<
             assets.push({
                 id: crypto.randomUUID(),
                 asset: Asset.getUrlAsset(molstar!.managers.asset, remoteUrl),
+                type: "Unknown",
                 relativePath: remoteUrl,
                 tag: "remote",
                 name: remoteUrl,
                 useCount: 1,
                 extension: extension,
+                hidden: false,
+                processingJobIds: [],
+                children: [],
             });
         });
 
@@ -653,11 +692,7 @@ export async function reloadMolstarAndRestoreIndex(
 
     // Build and load the tree.
     const renderTree = buildRenderTreeForMolstar(updatedTree, assets);
-    const result = await loadMVSIntoMolstar(
-        renderTree,
-        undefined,
-        currentIndex,
-    );
+    const result = await loadMVSIntoMolstar(renderTree, undefined, currentIndex);
 
     setMolstarReloading(false);
 

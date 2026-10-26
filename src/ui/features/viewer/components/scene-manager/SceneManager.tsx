@@ -5,15 +5,17 @@
  */
 
 import { useState } from "react";
-import { Text } from "@mantine/core";
+import { Divider, Text } from "@mantine/core";
 import { SegmentedController } from "../../../../components/common/segmented-controller/SegmentedController";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
 import { StoryOptions } from "./story-options/StoryOptions";
-import { Assets } from "./assets-sidebar/Assets";
 import { Views } from "./views-sidebar/Views";
 import { ViewBuilder } from "./view-builder-sidebar/ViewBuilder";
 import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
 import { useRegimeStore } from "../../../../stores/regimeStore";
+import { useWindowsStore } from "../../stores/WindowsStore";
+import { CloseActionIcon } from "../../../../components/common/actionables/actions-icons/CloseActionIcon";
+import { Assets } from "../../../assets/components/Assets";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;
@@ -24,11 +26,15 @@ export function SceneManager(props: SceneManagerProps) {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
 
+    // Use windows.
+    const isWindowOpened = useWindowsStore((state) =>
+        state.isWindowOpened("scene-manager"),
+    );
+    const closeWindow = useWindowsStore((state) => state.closeWindow);
+
     // Main sidebar state.
     type TabType = "storyOptions" | "assets" | "views";
-    const [tab, setTab] = useState<TabType>(
-        UiLocalStorageService.SceneManager.getTab(),
-    );
+    const [tab, setTab] = useState<TabType>(UiLocalStorageService.SceneManager.getTab());
 
     // Builder sidebar state.
     const [isBuilderOpen, setIsBuilderOpen] = useState<string | undefined>(
@@ -42,70 +48,84 @@ export function SceneManager(props: SceneManagerProps) {
 
     // Render the component.
     return (
-        <>
-            <Sidebar
-                style={{
-                    gap: ".5em",
-                    padding: ".5em",
-                }}
-            >
-                <Text size="xl" fw={520}>
-                    Scene Manager
-                </Text>
-
-                {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
-                {!props.isMolstarExpanded && (
-                    <SegmentedController<TabType>
-                        value={tab}
-                        onChange={(tab) => {
-                            setTab(tab);
-                            UiLocalStorageService.SceneManager.setTab(tab);
+        isWindowOpened && (
+            <>
+                <Sidebar
+                    style={{
+                        gap: ".5em",
+                        padding: ".5em",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
                         }}
-                        data={[
-                            { label: "Story Options", value: "storyOptions" },
-                            { label: "Assets", value: "assets" },
-                            { label: "Views", value: "views" },
-                        ]}
-                        widthWrapOrientationLimit={292}
-                    />
-                )}
+                    >
+                        <Text size="xl" fw={520}>
+                            Scene Manager
+                        </Text>
+                        <CloseActionIcon
+                            onClick={() => closeWindow("scene-manager")}
+                            tooltip="Close Scene Manager sidebar."
+                        />
+                    </div>
 
-                {tab === "storyOptions" && regime.kind === "viewing" && (
-                    <StoryOptions></StoryOptions>
-                )}
+                    <Divider style={{ paddingBottom: "1em" }} />
 
-                {tab === "assets" && regime.kind === "viewing" && (
-                    <Assets></Assets>
-                )}
+                    {/* Fix: segmented controller component was visible in Molstar Full-Screen, that is why we check if molstar is expanded. */}
+                    {!props.isMolstarExpanded && (
+                        <SegmentedController<TabType>
+                            value={tab}
+                            onChange={(tab) => {
+                                setTab(tab);
+                                UiLocalStorageService.SceneManager.setTab(tab);
+                            }}
+                            data={[
+                                { label: "Story Options", value: "storyOptions" },
+                                { label: "Assets", value: "assets" },
+                                { label: "Views", value: "views" },
+                            ]}
+                            widthWrapOrientationLimit={292}
+                        />
+                    )}
 
-                {tab === "views" && regime.kind === "viewing" && (
-                    <Views
-                        isMolstarLoading={props.isMolstarInitializing}
-                        onOpenBuilder={(key) => {
-                            setIsBuilderOpen(key);
-                            UiLocalStorageService.SceneManager.setBuilderSidebar(
-                                key,
-                            );
-                        }}
-                        isBuilderOpen={!!isBuilderOpen}
-                    ></Views>
-                )}
-            </Sidebar>
+                    {tab === "storyOptions" && regime.kind === "viewing" && (
+                        <StoryOptions></StoryOptions>
+                    )}
 
-            {regime.kind === "viewing" && tab === "views" && isBuilderOpen && (
-                <Sidebar style={{ maxWidth: "33%" }}>
-                    <ViewBuilder
-                        key={isBuilderOpen}
-                        viewKey={isBuilderOpen}
-                        onClose={() => {
-                            setIsBuilderOpen(undefined);
-                            UiLocalStorageService.SceneManager.setBuilderSidebar(
-                                undefined,
-                            );
-                        }}
-                    ></ViewBuilder>
+                    {tab === "assets" && regime.kind === "viewing" && <Assets></Assets>}
+
+                    {tab === "views" && regime.kind === "viewing" && (
+                        <Views
+                            isMolstarLoading={props.isMolstarInitializing}
+                            onOpenBuilder={(key) => {
+                                setIsBuilderOpen(key);
+                                UiLocalStorageService.SceneManager.setBuilderSidebar(key);
+                            }}
+                            isBuilderOpen={!!isBuilderOpen}
+                        ></Views>
+                    )}
                 </Sidebar>
-            )}
-        </>
+
+                {regime.kind === "viewing" && tab === "views" && isBuilderOpen && (
+                    <Sidebar style={{ maxWidth: "33%" }}>
+                        <ViewBuilder
+                            key={isBuilderOpen}
+                            viewKey={isBuilderOpen}
+                            onClose={() => {
+                                setIsBuilderOpen(undefined);
+                                UiLocalStorageService.SceneManager.setBuilderSidebar(
+                                    undefined,
+                                );
+                            }}
+                        ></ViewBuilder>
+                    </Sidebar>
+                )}
+            </>
+        )
     );
 }
