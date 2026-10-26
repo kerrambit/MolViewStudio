@@ -4,10 +4,9 @@
  * @author Marek Eibel
  */
 
-import { Text } from "@mantine/core";
-import { IconAlertOctagonFilled, IconWorldWww } from "@tabler/icons-react";
+import { Button, Text } from "@mantine/core";
+import { IconAlertHexagon, IconWorldWww } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
-import { Button } from "../../../components/common/button/Button";
 import { ActionableList } from "../../../components/common/actionables/ActionableList";
 import { ActionableListItem } from "../../../components/common/actionables/ActionableListItem";
 import { DeleteActionIcon } from "../../../components/common/actionables/actions-icons/DeleteActionIcon";
@@ -22,6 +21,7 @@ import {
     type AddRemoteAssetDialogueReturnType,
 } from "./AddRemoteAssetDialogueContent";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
+import { useAppearance } from "../../../hooks/useAppearance";
 
 /**
  * Returns the warning text for a remote asset with unknown extension and/or type.
@@ -45,6 +45,9 @@ function getWarningText(hasUnknownExtension: boolean, hasUnknownType: boolean): 
  * and the button to add a new remote asset.
  */
 export function RemoteAssetsList() {
+    // Use appearance.
+    const { colorScheme } = useAppearance();
+
     // Use managed assets.
     const assets = useManagedAssetsStore((state) => state.assets);
     const addRemoteAsset = useManagedAssetsStore((state) => state.addRemoteAsset);
@@ -161,8 +164,13 @@ export function RemoteAssetsList() {
                             key={asset.asset.id}
                             style={
                                 hasWarning
-                                    ? { backgroundColor: "rgba(251, 191, 36, 0.8)" }
-                                    : undefined
+                                    ? {
+                                          backgroundColor:
+                                              colorScheme === "light"
+                                                  ? "rgba(251, 191, 36, 0.8)"
+                                                  : "rgba(162, 123, 27, 0.8)",
+                                      }
+                                    : {}
                             }
                             titleSize="sm"
                             title={asset.asset.url}
@@ -181,7 +189,7 @@ export function RemoteAssetsList() {
                                             size={16}
                                             style={{ opacity: 0.6 }}
                                         />
-                                        <IconAlertOctagonFilled
+                                        <IconAlertHexagon
                                             size={16}
                                             style={{ opacity: 0.75 }}
                                         />
@@ -222,10 +230,11 @@ export function RemoteAssetsList() {
                 }}
             >
                 <Button
-                    variant="primary"
-                    size="medium"
+                    variant="filled"
+                    size="sm"
                     onClick={handleAddRemoteAsset}
-                    tooltip="Add new remote asset."
+                    title="Add new remote asset."
+                    leftSection={<IconWorldWww size={16} />}
                 >
                     Add...
                 </Button>

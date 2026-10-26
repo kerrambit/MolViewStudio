@@ -5,9 +5,8 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { Text, Group, Tree, useTree } from "@mantine/core";
+import { Text, Group, Tree, useTree, Button } from "@mantine/core";
 import { IconFile, IconFolder, IconFolderOpen } from "@tabler/icons-react";
-import { Button } from "../../../components/common/button/Button";
 import { DeleteActionIcon } from "../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { EditActionIcon } from "../../../components/common/actionables/actions-icons/EditActionIcon";
 import { computeOptimalYellow } from "../../../components/common/actionables/actions-icons/utils/computeOptimalYellow";
@@ -260,10 +259,11 @@ export function LocalAssetsTree() {
                 }}
             >
                 <Button
-                    variant="primary"
-                    size="medium"
+                    variant="filled"
+                    size="sm"
                     onClick={handleAddLocalAssets}
-                    tooltip="Open dialogue to add new local asset."
+                    title="Open dialogue to add new local asset."
+                    leftSection={<IconFile size={16} />}
                 >
                     Add...
                 </Button>
