@@ -5,7 +5,7 @@
  */
 
 import { useCallback } from "react";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../persistence/services/UiLocalStorageService";
 
 export type ComponentCacheAccessor = {
     readCache: (key: string) => unknown;
@@ -47,10 +47,7 @@ export function useStructureComponentCache(
         [assetId, viewKey, componentId],
     );
 
-    const readCache = useCallback(
-        (key: string): unknown => getCache()[key],
-        [getCache],
-    );
+    const readCache = useCallback((key: string): unknown => getCache()[key], [getCache]);
 
     const writeCache = useCallback(
         (key: string, value: unknown): void => {

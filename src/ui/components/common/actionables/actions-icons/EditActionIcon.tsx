@@ -6,7 +6,7 @@
 
 import { ActionIcon } from "@mantine/core";
 import { IconPencil } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../features/apperance/hooks/useAppearance";
 
 interface EditActionIconProps {
     tooltip?: string;

@@ -5,7 +5,7 @@
  */
 
 import { AxiosError, isAxiosError } from "axios";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../features/logger/services/UiLoggingService";
 
 /**
  * Constructs appropriate error message based on the AxiosError.
@@ -36,11 +36,7 @@ function constructErrorMessage(error: AxiosError<any, any>) {
  * @param endpoint used endpoint
  * @param method used method
  */
-export function handleApiResponseError(
-    error: unknown,
-    endpoint: string,
-    method: string,
-) {
+export function handleApiResponseError(error: unknown, endpoint: string, method: string) {
     if (isAxiosError(error)) {
         if (error.response) {
             // Server responded with an error.
@@ -56,11 +52,7 @@ export function handleApiResponseError(
             throw new Error(errorMessage);
         } else {
             // Network failure.
-            loggerUi.api.networkError(
-                endpoint,
-                method,
-                constructErrorMessage(error),
-            );
+            loggerUi.api.networkError(endpoint, method, constructErrorMessage(error));
 
             throw error;
         }

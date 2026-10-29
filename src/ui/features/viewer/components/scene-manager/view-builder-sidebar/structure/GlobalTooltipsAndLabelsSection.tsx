@@ -21,7 +21,7 @@ import {
     type UpdateViewModelFields,
     type UpdateViewModelParam,
 } from "./structureTabHelpers";
-import { useManagedAssetsStore } from "../../../../../../stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../../../../managed-assets/stores/managedAssetsStore";
 
 type GlobalTooltipsAndLabelsSectionProps = {
     viewModel: StructureViewModel;
@@ -47,10 +47,7 @@ export function GlobalTooltipsAndLabelsSection({
     const getDraft = (paramKey: string) =>
         remappingDrafts[paramKey] || { key: "", value: "" };
 
-    const handleSetDraft = (
-        paramKey: string,
-        draft: { key: string; value: string },
-    ) => {
+    const handleSetDraft = (paramKey: string, draft: { key: string; value: string }) => {
         setRemappingDrafts((prev) => ({ ...prev, [paramKey]: draft }));
     };
 
@@ -66,11 +63,7 @@ export function GlobalTooltipsAndLabelsSection({
             [draft.key.trim()]: draft.value.trim() || null,
         };
 
-        onUpdateParam(
-            paramKey,
-            { ...data, field_remapping: newRemapping },
-            true,
-        );
+        onUpdateParam(paramKey, { ...data, field_remapping: newRemapping }, true);
         handleSetDraft(paramKey, { key: "", value: "" }); // Reset draft.
     };
 
@@ -81,11 +74,7 @@ export function GlobalTooltipsAndLabelsSection({
     ) => {
         const newRemapping = { ...data.field_remapping };
         delete newRemapping[mappingKey];
-        onUpdateParam(
-            paramKey,
-            { ...data, field_remapping: newRemapping },
-            true,
-        );
+        onUpdateParam(paramKey, { ...data, field_remapping: newRemapping }, true);
     };
 
     const handleUpdateRemappingValue = (
@@ -99,11 +88,7 @@ export function GlobalTooltipsAndLabelsSection({
             ...(data.field_remapping || {}),
             [mappingKey]: newValue || null,
         };
-        onUpdateParam(
-            paramKey,
-            { ...data, field_remapping: newRemapping },
-            sync,
-        );
+        onUpdateParam(paramKey, { ...data, field_remapping: newRemapping }, sync);
     };
 
     // Shared source picker (None / From URI / From Source) for tooltips or labels.
@@ -292,69 +277,61 @@ export function GlobalTooltipsAndLabelsSection({
                 </Text>
 
                 {/* Render Existing Mappings */}
-                {Object.entries(data.field_remapping || {}).map(
-                    ([mapKey, mapVal]) => (
-                        <Group
-                            key={mapKey}
-                            align="flex-end"
-                            gap="0.33em"
-                            wrap="nowrap"
-                            mt={4}
-                        >
-                            <TextInput
-                                label="MVS Field"
-                                value={mapKey}
-                                size="xs"
-                                style={{ flex: 1 }}
-                                disabled // Keep key disabled to prevent record mutation bugs.
-                            />
-                            <TextInput
-                                label="Source Column"
-                                value={mapVal || ""}
-                                size="xs"
-                                style={{ flex: 1 }}
-                                onChange={(e) =>
-                                    handleUpdateRemappingValue(
-                                        paramKey,
-                                        data,
-                                        mapKey,
-                                        e.currentTarget.value,
-                                        false,
-                                    )
-                                }
-                                onBlur={(e) =>
-                                    handleUpdateRemappingValue(
-                                        paramKey,
-                                        data,
-                                        mapKey,
-                                        e.currentTarget.value,
-                                        true,
-                                    )
-                                }
-                                onKeyDown={(e) =>
-                                    e.key === "Enter" &&
-                                    handleUpdateRemappingValue(
-                                        paramKey,
-                                        data,
-                                        mapKey,
-                                        e.currentTarget.value,
-                                        true,
-                                    )
-                                }
-                            />
-                            <DeleteActionIcon
-                                onClick={() =>
-                                    handleRemoveRemapping(
-                                        paramKey,
-                                        data,
-                                        mapKey,
-                                    )
-                                }
-                                tooltip="Remove field mapping."
-                            />
-                        </Group>
-                    ),
-                )}
+                {Object.entries(data.field_remapping || {}).map(([mapKey, mapVal]) => (
+                    <Group
+                        key={mapKey}
+                        align="flex-end"
+                        gap="0.33em"
+                        wrap="nowrap"
+                        mt={4}
+                    >
+                        <TextInput
+                            label="MVS Field"
+                            value={mapKey}
+                            size="xs"
+                            style={{ flex: 1 }}
+                            disabled // Keep key disabled to prevent record mutation bugs.
+                        />
+                        <TextInput
+                            label="Source Column"
+                            value={mapVal || ""}
+                            size="xs"
+                            style={{ flex: 1 }}
+                            onChange={(e) =>
+                                handleUpdateRemappingValue(
+                                    paramKey,
+                                    data,
+                                    mapKey,
+                                    e.currentTarget.value,
+                                    false,
+                                )
+                            }
+                            onBlur={(e) =>
+                                handleUpdateRemappingValue(
+                                    paramKey,
+                                    data,
+                                    mapKey,
+                                    e.currentTarget.value,
+                                    true,
+                                )
+                            }
+                            onKeyDown={(e) =>
+                                e.key === "Enter" &&
+                                handleUpdateRemappingValue(
+                                    paramKey,
+                                    data,
+                                    mapKey,
+                                    e.currentTarget.value,
+                                    true,
+                                )
+                            }
+                        />
+                        <DeleteActionIcon
+                            onClick={() => handleRemoveRemapping(paramKey, data, mapKey)}
+                            tooltip="Remove field mapping."
+                        />
+                    </Group>
+                ))}
 
                 {/* Draft row to add a new mapping */}
                 <Group align="flex-end" gap="0.33em" wrap="nowrap" mt={4}>
@@ -372,8 +349,7 @@ export function GlobalTooltipsAndLabelsSection({
                         }
                         onBlur={() => handleAddRemapping(paramKey, data)}
                         onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            handleAddRemapping(paramKey, data)
+                            e.key === "Enter" && handleAddRemapping(paramKey, data)
                         }
                     />
                     <TextInput
@@ -390,14 +366,10 @@ export function GlobalTooltipsAndLabelsSection({
                         }
                         onBlur={() => handleAddRemapping(paramKey, data)}
                         onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            handleAddRemapping(paramKey, data)
+                            e.key === "Enter" && handleAddRemapping(paramKey, data)
                         }
                     />
-                    <DeleteActionIcon
-                        tooltip="Cannot remove draft."
-                        enabled={false}
-                    />
+                    <DeleteActionIcon tooltip="Cannot remove draft." enabled={false} />
                 </Group>
             </>
         );
@@ -406,11 +378,7 @@ export function GlobalTooltipsAndLabelsSection({
     // Render the component.
     return (
         <>
-            <AssetBuilderCardSectionGroup
-                divider={true}
-                bottomMargin="xs"
-                topMargin="xs"
-            >
+            <AssetBuilderCardSectionGroup divider={true} bottomMargin="xs" topMargin="xs">
                 <Text fw={550} size="sm">
                     Structure Tooltips
                 </Text>
@@ -452,10 +420,7 @@ export function GlobalTooltipsAndLabelsSection({
 
                 {getTooltipMode(viewModel) === "uri" &&
                     viewModel.tooltip_from_uri &&
-                    renderFromUriFields(
-                        "tooltip_from_uri",
-                        viewModel.tooltip_from_uri,
-                    )}
+                    renderFromUriFields("tooltip_from_uri", viewModel.tooltip_from_uri)}
 
                 {getTooltipMode(viewModel) === "source" &&
                     viewModel.tooltip_from_source &&
@@ -465,11 +430,7 @@ export function GlobalTooltipsAndLabelsSection({
                     )}
             </AssetBuilderCardSectionGroup>
 
-            <AssetBuilderCardSectionGroup
-                divider={true}
-                bottomMargin="sm"
-                topMargin="sm"
-            >
+            <AssetBuilderCardSectionGroup divider={true} bottomMargin="sm" topMargin="sm">
                 <Text fw={550} size="sm">
                     Structure Labels
                 </Text>
@@ -511,10 +472,7 @@ export function GlobalTooltipsAndLabelsSection({
 
                 {getLabelMode(viewModel) === "uri" &&
                     viewModel.label_from_uri &&
-                    renderFromUriFields(
-                        "label_from_uri",
-                        viewModel.label_from_uri,
-                    )}
+                    renderFromUriFields("label_from_uri", viewModel.label_from_uri)}
 
                 {getLabelMode(viewModel) === "source" &&
                     viewModel.label_from_source &&

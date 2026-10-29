@@ -5,7 +5,7 @@
  */
 
 import { useCallback } from "react";
-import { useEnvironment } from "../../../../hooks/useEnvironment";
+import { useEnvironment } from "../../../environment/hooks/useEnvironment";
 
 export function useProcessingTemporaryDirectory() {
     // Use environment.

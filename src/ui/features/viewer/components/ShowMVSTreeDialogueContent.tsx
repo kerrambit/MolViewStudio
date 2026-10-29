@@ -7,17 +7,15 @@
 import { useCallback, useState } from "react";
 import { Button } from "../../../components/common/button/Button";
 import { MVSData } from "molstar/lib/extensions/mvs/mvs-data";
-import { pushWarningNotification } from "../../../services/NotificationService";
+import { pushWarningNotification } from "../../notifications/services/NotificationService";
 import { PreformattedText } from "../../../components/common/preformatted-text/PreformattedText";
-import { useRegimeStore } from "../../../stores/regimeStore";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 interface ShowMVSTreeDialogueContentProps {
     close: () => void;
 }
 
-export function ShowMVSTreeDialogueContent({
-    close,
-}: ShowMVSTreeDialogueContentProps) {
+export function ShowMVSTreeDialogueContent({ close }: ShowMVSTreeDialogueContentProps) {
     // Use regime.
     const regime = useRegimeStore((state) => state.regime);
 
@@ -35,9 +33,7 @@ export function ShowMVSTreeDialogueContent({
             await navigator.clipboard.writeText(prettyString);
             setCopied(true);
         } catch (error) {
-            pushWarningNotification(
-                `Failed to copy the MVS tree! Details: <${error}>.`,
-            );
+            pushWarningNotification(`Failed to copy the MVS tree! Details: <${error}>.`);
         }
     }, [regime]);
 

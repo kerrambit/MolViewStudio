@@ -5,9 +5,9 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
-import { pushErrorNotification } from "../../../services/NotificationService";
-import { loggerUi } from "../../../services/UiLoggingService";
+import { UiLocalStorageService } from "../../persistence/services/UiLocalStorageService";
+import { pushErrorNotification } from "../../notifications/services/NotificationService";
+import { loggerUi } from "../../logger/services/UiLoggingService";
 import { getFilePathWithoutFile } from "../../../utils/fileDataUtils";
 import {
     getAllSupportedAssetsParsers,
@@ -26,8 +26,7 @@ import {
     replaceAssetNodeInRoot,
 } from "../../../lib/molstar";
 import { type MVSData_States } from "molstar/lib/extensions/mvs/mvs-data";
-import { useRegimeStore } from "../../../stores/regimeStore";
-import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
 import {
     createDefaultComponentEntry,
     DEFAULT_STRUCTURE_VIEW_MODEL,
@@ -36,6 +35,7 @@ import {
     type StructureViewModel,
     type VolumeViewModel,
 } from "../models/MvsViewModels";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 /**
  * Type of asset based on the MVS format.

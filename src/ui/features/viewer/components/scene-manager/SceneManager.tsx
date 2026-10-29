@@ -11,11 +11,11 @@ import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
 import { StoryOptions } from "./story-options/StoryOptions";
 import { Views } from "./views-sidebar/Views";
 import { ViewBuilder } from "./view-builder-sidebar/ViewBuilder";
-import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
-import { useRegimeStore } from "../../../../stores/regimeStore";
+import { UiLocalStorageService } from "../../../persistence/services/UiLocalStorageService";
 import { useWindowsStore } from "../../stores/WindowsStore";
 import { CloseActionIcon } from "../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { Assets } from "../../../assets/components/Assets";
+import { useRegimeStore } from "../../../regime/stores/regimeStore";
 
 interface SceneManagerProps {
     isMolstarExpanded: boolean;

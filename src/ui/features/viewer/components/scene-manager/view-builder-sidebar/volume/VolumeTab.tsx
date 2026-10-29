@@ -18,7 +18,7 @@ import {
 import type { VolumeViewModel } from "../../../../models/MvsViewModels";
 import { CollapseTrigger } from "../../../../../../components/common/collapse-trigger/CollapseTriger";
 import { getAllParserTypes } from "../../../../../assets/domain/assetsDefinitions";
-import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../../persistence/services/UiLocalStorageService";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { VolumeTransformControls } from "./VolumeTransformControls";
 import { TransferFunctionSection } from "./TransferFunctionSection";

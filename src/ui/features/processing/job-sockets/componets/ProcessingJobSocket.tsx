@@ -9,11 +9,11 @@ import {
     pushErrorNotification,
     pushSuccessNotification,
     pushWarningNotification,
-} from "../../../../services/NotificationService";
-import { loggerUi } from "../../../../services/UiLoggingService";
-import { useManagedAssetsStore } from "../../../../stores/managedAssetsStore";
+} from "../../../notifications/services/NotificationService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
+import { useManagedAssetsStore } from "../../../managed-assets/stores/managedAssetsStore";
 import { useProcessingStore } from "../../stores/processingStore";
-import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
+import { useFileMappingsStore } from "../../../workspace/stores/fileMappingsStore";
 import { handleExportJobFinished } from "../../../viewer/export/services/exportService";
 import { useProcessVolumeSocket } from "../../api/volume/useProcessVolumeSocket";
 

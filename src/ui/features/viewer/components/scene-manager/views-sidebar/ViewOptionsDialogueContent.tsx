@@ -18,8 +18,8 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "../../../../../components/common/button/Button";
 import { SegmentedController } from "../../../../../components/common/segmented-controller/SegmentedController";
 import type { HexColor } from "../../../../../lib/molstar";
-import { useRegimeStore } from "../../../../../stores/regimeStore";
-import { useAppearance } from "../../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../apperance/hooks/useAppearance";
+import { useRegimeStore } from "../../../../regime/stores/regimeStore";
 
 export interface ViewOptionsDialogueContentReturnType {
     lingerDuration: number;

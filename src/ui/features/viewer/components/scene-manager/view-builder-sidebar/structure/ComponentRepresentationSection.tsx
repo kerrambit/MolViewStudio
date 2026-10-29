@@ -31,7 +31,7 @@ import {
 } from "./structureTabHelpers";
 import { useStructureComponentCache } from "../../../../hooks/useStructureComponentCache";
 import { useState } from "react";
-import { useManagedAssetsStore } from "../../../../../../stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../../../../managed-assets/stores/managedAssetsStore";
 
 // Cache keys for stashing the color-mode state being switched away from.
 const COLOR_CACHE_KEY = "colorplain";
@@ -83,10 +83,7 @@ export function ComponentRepresentationSection({
         } else if (currentMode === "Color from URI") {
             writeCache(COLOR_FROM_URI_CACHE_KEY, component.color_from_uri);
         } else if (currentMode === "Color from source") {
-            writeCache(
-                COLOR_FROM_SOURCE_CACHE_KEY,
-                component.color_from_source,
-            );
+            writeCache(COLOR_FROM_SOURCE_CACHE_KEY, component.color_from_source);
         }
 
         // Restore whatever was cached for the mode being entered.
@@ -178,10 +175,7 @@ export function ComponentRepresentationSection({
         handleSetDraft({ key: "", value: "" }); // Reset draft.
     };
 
-    const handleRemoveRemapping = (
-        data: DataFromSourceParams,
-        mappingKey: string,
-    ) => {
+    const handleRemoveRemapping = (data: DataFromSourceParams, mappingKey: string) => {
         const newRemapping = { ...data.field_remapping };
         delete newRemapping[mappingKey];
 
@@ -404,8 +398,7 @@ export function ComponentRepresentationSection({
                                     "color_from_uri",
                                     {
                                         ...component.color_from_uri!,
-                                        category_name:
-                                            e.currentTarget.value || undefined,
+                                        category_name: e.currentTarget.value || undefined,
                                     },
                                     true,
                                 )
@@ -432,8 +425,7 @@ export function ComponentRepresentationSection({
                                     "color_from_uri",
                                     {
                                         ...component.color_from_uri!,
-                                        field_name:
-                                            e.currentTarget.value || undefined,
+                                        field_name: e.currentTarget.value || undefined,
                                     },
                                     true,
                                 )
@@ -584,12 +576,7 @@ export function ComponentRepresentationSection({
                         ))}
 
                         {/* Draft row to add a new mapping */}
-                        <Group
-                            align="flex-end"
-                            gap="0.33em"
-                            wrap="nowrap"
-                            mt={4}
-                        >
+                        <Group align="flex-end" gap="0.33em" wrap="nowrap" mt={4}>
                             <TextInput
                                 label="MVS Field"
                                 placeholder="e.g. label_asym_id"
@@ -603,15 +590,11 @@ export function ComponentRepresentationSection({
                                     })
                                 }
                                 onBlur={() =>
-                                    handleAddRemapping(
-                                        component.color_from_source!,
-                                    )
+                                    handleAddRemapping(component.color_from_source!)
                                 }
                                 onKeyDown={(e) =>
                                     e.key === "Enter" &&
-                                    handleAddRemapping(
-                                        component.color_from_source!,
-                                    )
+                                    handleAddRemapping(component.color_from_source!)
                                 }
                             />
                             <TextInput
@@ -627,15 +610,11 @@ export function ComponentRepresentationSection({
                                     })
                                 }
                                 onBlur={() =>
-                                    handleAddRemapping(
-                                        component.color_from_source!,
-                                    )
+                                    handleAddRemapping(component.color_from_source!)
                                 }
                                 onKeyDown={(e) =>
                                     e.key === "Enter" &&
-                                    handleAddRemapping(
-                                        component.color_from_source!,
-                                    )
+                                    handleAddRemapping(component.color_from_source!)
                                 }
                             />
                             <DeleteActionIcon

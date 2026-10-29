@@ -11,7 +11,7 @@ import type {
     ProcessingJobPurpose,
     ProcessingResultAssetType,
 } from "../domain/ProcessingJob";
-import { loggerUi } from "../../../services/UiLoggingService";
+import { loggerUi } from "../../logger/services/UiLoggingService";
 
 export type ProcessingState = Map<ProcessingJobId, ProcessingJob>;
 

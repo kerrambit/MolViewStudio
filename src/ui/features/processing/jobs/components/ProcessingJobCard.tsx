@@ -9,16 +9,16 @@ import { Collapse, Loader, Text } from "@mantine/core";
 import { IconAlertTriangle, IconCheck, IconX } from "@tabler/icons-react";
 import { Button } from "../../../../components/common/button/Button";
 import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
-import { ErrorDialogueContent } from "../../../../components/common/dialogue/ErrorDialogueContent";
-import { SimpleDialogueContent } from "../../../../components/common/dialogue/SimpleDialogueContent";
-import { useAppearance } from "../../../../hooks/useAppearance";
-import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
-import { useDialogueStore } from "../../../../stores/dialogueStore";
+import { useAppearance } from "../../../apperance/hooks/useAppearance";
+import { UiLocalStorageService } from "../../../persistence/services/UiLocalStorageService";
+import { useDialogueStore } from "../../../dialogue/stores/dialogueStore";
 import type { ProcessingJob } from "../../domain/ProcessingJob";
 import { useProcessingStore } from "../../stores/processingStore";
 import { ProcessingStagesList } from "./ProcessingStagesList";
 
 import "./ProcessingJobCard.css";
+import { ErrorDialogueContent } from "../../../dialogue/components/ErrorDialogueContent";
+import { SimpleDialogueContent } from "../../../dialogue/components/SimpleDialogueContent";
 
 export type ProcessingJobCardProps = {
     job: ProcessingJob;

@@ -7,9 +7,9 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { Subscription } from "rxjs";
 import { DeleteViewDialogueContent } from "../components/scene-manager/views-sidebar/DeleteViewDialogueContent";
-import { pushErrorNotification } from "../../../services/NotificationService";
-import { loggerUi } from "../../../services/UiLoggingService";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
+import { pushErrorNotification } from "../../notifications/services/NotificationService";
+import { loggerUi } from "../../logger/services/UiLoggingService";
+import { UiLocalStorageService } from "../../persistence/services/UiLocalStorageService";
 import {
     ViewOptionsDialogueContent,
     type ViewOptionsDialogueContentReturnType,
@@ -39,9 +39,9 @@ import {
     type HexColor,
     type ViewMetadata,
 } from "../../../lib/molstar";
-import { useRegimeStore } from "../../../stores/regimeStore";
-import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
-import { useDialogueStore } from "../../../stores/dialogueStore";
+import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 interface useViewsManagementProps {
     isBuilderOpen: boolean;

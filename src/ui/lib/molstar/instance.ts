@@ -5,7 +5,7 @@
  */
 
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../features/logger/services/UiLoggingService";
 
 /**
  * Instance of `PluginUIContext`.

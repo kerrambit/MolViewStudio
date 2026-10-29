@@ -11,17 +11,17 @@ import { ActionableList } from "../../../components/common/actionables/Actionabl
 import { ActionableListItem } from "../../../components/common/actionables/ActionableListItem";
 import { DeleteActionIcon } from "../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { EditActionIcon } from "../../../components/common/actionables/actions-icons/EditActionIcon";
-import { useDialogueStore } from "../../../stores/dialogueStore";
+import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
 import {
     useManagedAssetsStore,
     isManagedAssetRemote,
-} from "../../../stores/managedAssetsStore";
+} from "../../managed-assets/stores/managedAssetsStore";
 import {
     AddRemoteAssetDialogueContent,
     type AddRemoteAssetDialogueReturnType,
 } from "./AddRemoteAssetDialogueContent";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
-import { useAppearance } from "../../../hooks/useAppearance";
+import { useAppearance } from "../../apperance/hooks/useAppearance";
 
 /**
  * Returns the warning text for a remote asset with unknown extension and/or type.

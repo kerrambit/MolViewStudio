@@ -6,10 +6,7 @@
 
 import { useState } from "react";
 import { Scroller, Tabs } from "@mantine/core";
-import {
-    selectorToString,
-    type ComponentEntry,
-} from "../../../../models/MvsViewModels";
+import { selectorToString, type ComponentEntry } from "../../../../models/MvsViewModels";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { CollapsibleSection } from "../CollapsibleSection";
 import { ComponentSelectorSection } from "./ComponentSelectorSection";
@@ -17,13 +14,10 @@ import { ComponentRepresentationSection } from "./ComponentRepresentationSection
 import { ComponentTooltipsAndLabelsSection } from "./ComponentTooltipsAndLabelsSection";
 import { ComponentFocusSection } from "./ComponentFocusSection";
 import { StructureComponentEntryTransformControls } from "./StructureComponentEntryTransformControls";
-import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
-import type {
-    UpdateComponentFields,
-    UpdateComponentParam,
-} from "./structureTabHelpers";
+import { UiLocalStorageService } from "../../../../../persistence/services/UiLocalStorageService";
+import type { UpdateComponentFields, UpdateComponentParam } from "./structureTabHelpers";
 import { ComponentEntryTabContent } from "./ComponentEntryTabContent";
-import { useAppearance } from "../../../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../../apperance/hooks/useAppearance";
 
 type ComponentsSectionProps = {
     viewKey: string;
@@ -53,13 +47,10 @@ export function ComponentsSection({
     const colorScheme = useAppearance().colorScheme;
 
     // Active component tab; falls back to the first available component.
-    const [currentComponentId, setCurrentComponentId] = useState<
-        string | undefined
-    >();
+    const [currentComponentId, setCurrentComponentId] = useState<string | undefined>();
 
     const activeComponentId =
-        currentComponentId &&
-        components.some((c) => c.id === currentComponentId)
+        currentComponentId && components.some((c) => c.id === currentComponentId)
             ? currentComponentId
             : components.at(0)?.id;
 
@@ -68,16 +59,14 @@ export function ComponentsSection({
     );
 
     // UI sections expanded states.
-    const [componentsSectionExpanded, setComponentsSectionExpanded] = useState(
-        () => {
-            if (!activeComponentId) return true;
-            return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentsSection(
-                asset.id,
-                viewKey,
-                activeComponentId,
-            );
-        },
-    );
+    const [componentsSectionExpanded, setComponentsSectionExpanded] = useState(() => {
+        if (!activeComponentId) return true;
+        return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentsSection(
+            asset.id,
+            viewKey,
+            activeComponentId,
+        );
+    });
 
     const [
         componentRepresentationSectionExpanded,
@@ -103,27 +92,26 @@ export function ComponentsSection({
         );
     });
 
-    const [componentFocusSectionExpanded, setComponentFocusSectionExpanded] =
-        useState(() => {
+    const [componentFocusSectionExpanded, setComponentFocusSectionExpanded] = useState(
+        () => {
             if (!activeComponentId) return false;
             return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentFocusSection(
                 asset.id,
                 viewKey,
                 activeComponentId,
             );
-        });
+        },
+    );
 
-    const [
-        componentTransformSectionExpanded,
-        setComponentTransformSectionExpanded,
-    ] = useState(() => {
-        if (!activeComponentId) return false;
-        return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentTransformSection(
-            asset.id,
-            viewKey,
-            activeComponentId,
-        );
-    });
+    const [componentTransformSectionExpanded, setComponentTransformSectionExpanded] =
+        useState(() => {
+            if (!activeComponentId) return false;
+            return UiLocalStorageService.ViewBuilder.getExpandedStructureComponentTransformSection(
+                asset.id,
+                viewKey,
+                activeComponentId,
+            );
+        });
 
     // Toggle a per-component section and persist its state.
     const toggleComponentSection = (
@@ -144,15 +132,13 @@ export function ComponentsSection({
             titleTextSize="md"
             expanded={componentsSectionExpanded}
             onToggle={() =>
-                toggleComponentSection(
-                    setComponentsSectionExpanded,
-                    (nextState) =>
-                        UiLocalStorageService.ViewBuilder.setExpandedStructureComponentsSection(
-                            asset.id,
-                            viewKey,
-                            activeComponentId!,
-                            nextState,
-                        ),
+                toggleComponentSection(setComponentsSectionExpanded, (nextState) =>
+                    UiLocalStorageService.ViewBuilder.setExpandedStructureComponentsSection(
+                        asset.id,
+                        viewKey,
+                        activeComponentId!,
+                        nextState,
+                    ),
                 )
             }
         >
@@ -179,11 +165,7 @@ export function ComponentsSection({
                 >
                     <Tabs.List>
                         <Scroller>
-                            <Tabs.Tab
-                                key={"+"}
-                                value={"+"}
-                                title="Add new component."
-                            >
+                            <Tabs.Tab key={"+"} value={"+"} title="Add new component.">
                                 <b>+</b>
                             </Tabs.Tab>
                             {components.map((component) => (
@@ -211,9 +193,7 @@ export function ComponentsSection({
                     component={currentComponent}
                     assetId={asset.id}
                     viewKey={viewKey}
-                    onUpdateStructureComponentParam={
-                        onUpdateStructureComponentParam
-                    }
+                    onUpdateStructureComponentParam={onUpdateStructureComponentParam}
                 />
 
                 <CollapsibleSection
@@ -238,9 +218,7 @@ export function ComponentsSection({
                         activeComponentId={activeComponentId}
                         assetId={asset.id}
                         viewKey={viewKey}
-                        onUpdateStructureComponentParam={
-                            onUpdateStructureComponentParam
-                        }
+                        onUpdateStructureComponentParam={onUpdateStructureComponentParam}
                         onUpdateStructureComponentFields={
                             onUpdateStructureComponentFields
                         }
@@ -267,9 +245,7 @@ export function ComponentsSection({
                     <ComponentTooltipsAndLabelsSection
                         component={currentComponent}
                         activeComponentId={activeComponentId}
-                        onUpdateStructureComponentParam={
-                            onUpdateStructureComponentParam
-                        }
+                        onUpdateStructureComponentParam={onUpdateStructureComponentParam}
                     />
                 </CollapsibleSection>
 
@@ -293,9 +269,7 @@ export function ComponentsSection({
                     <ComponentFocusSection
                         component={currentComponent}
                         activeComponentId={activeComponentId}
-                        onUpdateStructureComponentParam={
-                            onUpdateStructureComponentParam
-                        }
+                        onUpdateStructureComponentParam={onUpdateStructureComponentParam}
                     />
                 </CollapsibleSection>
 
@@ -318,9 +292,7 @@ export function ComponentsSection({
                 >
                     <StructureComponentEntryTransformControls
                         component={currentComponent}
-                        onUpdateStructureComponentParam={
-                            onUpdateStructureComponentParam
-                        }
+                        onUpdateStructureComponentParam={onUpdateStructureComponentParam}
                     />
                 </CollapsibleSection>
             </AssetBuilderCardSectionGroup>

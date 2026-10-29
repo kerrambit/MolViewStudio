@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Select, Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../components/common/input/UnstyledTextInput";
 import { PathSegmentsBuilder } from "../../../components/common/path-segments-builder/PathSegmentsBuilder";
-import { compileFinalPath } from "../../../components/common/path-segments-builder/utils/compileFinalPath";
+import { compileFinalPath } from "../../../components/common/path-segments-builder/compileFinalPath";
 import {
     getFilenameWithoutExtension,
     addExtensionToFilename,

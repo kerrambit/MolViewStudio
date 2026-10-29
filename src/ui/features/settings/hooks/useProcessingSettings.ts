@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { useUserSettingsStore } from "../../../stores/userSettingsStore";
+import { useUserSettingsStore } from "../stores/userSettingsStore";
 import type { PerFormatProcessingSettingsEntry } from "../domain/PerFormatProcessingSettingsEntry";
 import type { DownsamplingStrategy } from "../../processing/downsampling/config/DownsamplingStrategy";
 import type { ResolutionLevel } from "../../processing/resolution/domain/ResolutionLevel";

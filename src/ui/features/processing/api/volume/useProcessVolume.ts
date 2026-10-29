@@ -6,7 +6,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { handleApiResponseError } from "../../../../api/utils/handleApiResponseError";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
 import { useProcessingApiClient } from "../hooks/useProcessingApiClient";
 import type { ProcessVolumeRequest } from "./ProcessVolumeRequest";
 

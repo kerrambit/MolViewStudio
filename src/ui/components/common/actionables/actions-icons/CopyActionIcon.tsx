@@ -6,7 +6,7 @@
 
 import { ActionIcon } from "@mantine/core";
 import { IconCopy } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../features/apperance/hooks/useAppearance";
 import { computeOptimalYellow } from "./utils/computeOptimalYellow";
 
 interface CopyActionIconProps {
@@ -23,11 +23,7 @@ export function CopyActionIcon(props: CopyActionIconProps) {
             variant="subtle"
             onClick={props.onClick}
             title={props.tooltip}
-            color={
-                colorScheme === "dark"
-                    ? "var(--color-light)"
-                    : "var(--color-dark)"
-            }
+            color={colorScheme === "dark" ? "var(--color-light)" : "var(--color-dark)"}
         >
             <IconCopy size={18} color={optimalYellow} />
         </ActionIcon>

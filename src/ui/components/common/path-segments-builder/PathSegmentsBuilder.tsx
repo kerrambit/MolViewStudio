@@ -21,10 +21,7 @@ export function PathSegmentsBuilder({
 }: PathSegmentsBuilderProps) {
     // State for up to  path segments for a relative path of asset.
     const [pathSegments, setPathSegments] = useState<string[]>(() =>
-        Array.from(
-            { length: count },
-            (_, index) => inputPathSegments[index] || "",
-        ),
+        Array.from({ length: count }, (_, index) => inputPathSegments[index] || ""),
     );
 
     // State for storing possible error on a given path segment.
@@ -41,10 +38,7 @@ export function PathSegmentsBuilder({
     }, [pathSegments, hasGlobalError, onChange]);
 
     // Handler for segment change.
-    const handleSegmentChange = (
-        index: number,
-        newValue: string | undefined,
-    ) => {
+    const handleSegmentChange = (index: number, newValue: string | undefined) => {
         const updatedSegments = [...pathSegments];
         updatedSegments[index] = newValue || "";
         setPathSegments(updatedSegments);
@@ -81,9 +75,7 @@ export function PathSegmentsBuilder({
                 >
                     <UnstyledTextInput
                         value={segment}
-                        enabled={
-                            index === 0 || pathSegments[index - 1].trim() !== ""
-                        }
+                        enabled={index === 0 || pathSegments[index - 1].trim() !== ""}
                         canBeEmpty={pathSegments
                             .slice(index + 1)
                             .every((seg) => seg.trim() === "")}
@@ -94,9 +86,7 @@ export function PathSegmentsBuilder({
                         }
                         style={{ width: "11em" }}
                     />
-                    {index < pathSegments.length - 1 && (
-                        <Text c="dimmed">/</Text>
-                    )}
+                    {index < pathSegments.length - 1 && <Text c="dimmed">/</Text>}
                 </div>
             ))}
         </div>

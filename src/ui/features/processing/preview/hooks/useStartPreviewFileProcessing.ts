@@ -6,11 +6,11 @@
 
 import { useCallback } from "react";
 import { pickFileIndexByResolution } from "../../resolution/domain/pickFileByResolution";
-import { useStartFileProcessing } from "../../../hooks/useStartFileProcessing";
 import { getFilenameWithoutExtension } from "../../../../utils/fileDataUtils";
 import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
 import { checkOffersProcessing } from "../../../assets/domain/assetsDefinitions";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
+import { useStartFileProcessing } from "../../hooks/useStartFileProcessing";
 
 export function useStartPreviewFileProcessing() {
     // Use processing settings.

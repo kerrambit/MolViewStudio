@@ -18,7 +18,7 @@ import {
     type HexColor,
     isMolstarReloading,
 } from "../../../lib/molstar";
-import { pushWarningNotification } from "../../../services/NotificationService";
+import { pushWarningNotification } from "../../notifications/services/NotificationService";
 
 export function useViewCard(props: ViewCardProps) {
     // Deconstruct the props.
@@ -26,17 +26,14 @@ export function useViewCard(props: ViewCardProps) {
     const { backgroundColor } = metadata;
 
     // Local display state for the view title.
-    const [currentName, setCurrentName] = useState<string>(
-        props.metadata.title || "",
-    );
+    const [currentName, setCurrentName] = useState<string>(props.metadata.title || "");
     const [prevName, setPrevName] = useState(metadata.title || "");
 
     // Local display state for the background color.
     const [currentBackgroundColor, setCurrentBackgroundColor] = useState<
         HexColor | undefined
     >(backgroundColor);
-    const [prevBackgroundColor, setPrevBackgroundColor] =
-        useState(backgroundColor);
+    const [prevBackgroundColor, setPrevBackgroundColor] = useState(backgroundColor);
 
     // Camera hook.
     const cameraState = useLiveCameraState();
@@ -83,10 +80,7 @@ export function useViewCard(props: ViewCardProps) {
             }),
         };
 
-        return !areCameraStatesEqual(
-            metadata.referenceCamera,
-            liveCameraReferenced,
-        );
+        return !areCameraStatesEqual(metadata.referenceCamera, liveCameraReferenced);
     })();
 
     // Handler to title change.

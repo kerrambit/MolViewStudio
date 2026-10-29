@@ -28,7 +28,7 @@ import {
     type VolumeViewModel,
 } from "../../../../models/MvsViewModels";
 import { CollapseTrigger } from "../../../../../../components/common/collapse-trigger/CollapseTriger";
-import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../../persistence/services/UiLocalStorageService";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { DeleteActionIcon } from "../../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 

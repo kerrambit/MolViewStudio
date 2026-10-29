@@ -6,7 +6,7 @@
 
 import { SimpleGrid, UnstyledButton, Text } from "@mantine/core";
 import { IconCheck } from "@tabler/icons-react";
-import { useAppearance } from "../../../hooks/useAppearance";
+import { useAppearance } from "../../apperance/hooks/useAppearance";
 
 export function ThemeSelector() {
     // Use apperance.
@@ -23,9 +23,7 @@ export function ThemeSelector() {
 
     // Safely extract the active theme string name from the Mantine configuration object.
     const activeThemeName =
-        typeof colorTheme === "string"
-            ? colorTheme
-            : colorTheme?.primaryColor || "";
+        typeof colorTheme === "string" ? colorTheme : colorTheme?.primaryColor || "";
 
     // Render the component.
     return (
@@ -42,21 +40,23 @@ export function ThemeSelector() {
                 const buttonBorder = isSelected
                     ? itemColorFilled
                     : isDark
-                      ? "var(--mantine-color-dark-4)"
-                      : "var(--mantine-color-gray-3)";
+                    ? "var(--mantine-color-dark-4)"
+                    : "var(--mantine-color-gray-3)";
 
                 const buttonBg = isSelected
                     ? itemColorLight
                     : isDark
-                      ? "var(--mantine-color-dark-6)"
-                      : "var(--mantine-color-gray-0)";
+                    ? "var(--mantine-color-dark-6)"
+                    : "var(--mantine-color-gray-0)";
 
                 // Render one theme button.
                 return (
                     <UnstyledButton
                         key={theme}
                         onClick={() => setColorTheme(theme)}
-                        title={`Choose color theme "${niceColorThemeNames[theme] || theme}".`}
+                        title={`Choose color theme "${
+                            niceColorThemeNames[theme] || theme
+                        }".`}
                         style={{
                             padding: "1em",
                             borderRadius: "12px",
@@ -99,10 +99,7 @@ export function ThemeSelector() {
                             }}
                         >
                             {isSelected && (
-                                <IconCheck
-                                    size={14}
-                                    color="var(--mantine-color-white)"
-                                />
+                                <IconCheck size={14} color="var(--mantine-color-white)" />
                             )}
                         </div>
                     </UnstyledButton>

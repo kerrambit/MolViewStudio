@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { useUserSettingsStore } from "../../../stores/userSettingsStore";
+import { useUserSettingsStore } from "../stores/userSettingsStore";
 
 export function useExportSettings() {
     // Use user settings.

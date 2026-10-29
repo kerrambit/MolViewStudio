@@ -5,17 +5,15 @@
  */
 
 import { useState } from "react";
-import { Collapse, Group, List, Select, Text, Checkbox } from "@mantine/core";
+import { Collapse, Group, List, Select, Text, Checkbox, Button } from "@mantine/core";
 import { IconFileDescription, IconHelpCircle } from "@tabler/icons-react";
 import { UnstyledTextInput } from "../../../../components/common/input/UnstyledTextInput";
-import { useEnvironment } from "../../../../hooks/useEnvironment";
+import { useEnvironment } from "../../../environment/hooks/useEnvironment";
 import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
 import { CollapsibleBlock } from "../../../../components/common/collapsible-block/CollapsibleBlock";
-import { Button } from "../../../../components/common/button/Button";
 import { useExportSettings } from "../../../settings/hooks/useExportSettings";
 import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
 import { resolveExportProcessingSettings } from "../../../settings/domain/resolveProcessingSettings";
-import { useRegimeStore } from "../../../../stores/regimeStore";
 import {
     getResolutionLevelOptions,
     type ResolutionLevel,
@@ -31,9 +29,10 @@ import {
 } from "../../../processing/downsampling/config/DownsamplingStrategy";
 import type { SerializerKind } from "../../../processing/serializer/config/SerializerKind";
 import { WarningMessage } from "../../../../components/common/messages/WarningMessage";
-import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../persistence/services/UiLocalStorageService";
 import { FileOverrideWarningMessage } from "./FileOverrideWarningMessage";
 import type { ProcessVolumeRequestWithoutFilepathsAndBundlingApproach } from "../../../processing/api/volume/ProcessVolumeRequest";
+import { useRegimeStore } from "../../../regime/stores/regimeStore";
 
 /**
  * Result of the export processing properties dialogue.
@@ -584,8 +583,8 @@ export function ExportDialogueContent({
                                 style={{ flexGrow: 1 }}
                             />
                             <Button
-                                variant="ghost"
-                                size="small"
+                                variant="outline"
+                                size="xs"
                                 onClick={async () => {
                                     const selected =
                                         await window.electron.selectDirectory(outputPath);
@@ -701,12 +700,11 @@ export function ExportDialogueContent({
 
             {/* Actions. */}
             <Group justify="center" mt="xl">
-                <Button variant="secondary" size="small" onClick={() => close(undefined)}>
+                <Button variant="default" onClick={() => close(undefined)}>
                     Close
                 </Button>
                 <Button
-                    variant="primary"
-                    size="small"
+                    variant="filled"
                     disabled={!filename}
                     onClick={() => {
                         close({

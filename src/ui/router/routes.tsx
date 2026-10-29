@@ -8,12 +8,12 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import HomePage from "../pages/home-page/HomePage.tsx";
 import SettingsPage from "../pages/settings/SettingsPage.tsx";
 import ViewerPage from "../pages/viewer/ViewerPage.tsx";
-import { BackNavigationLayout } from "../layouts/BackNavigationLayout.tsx";
+import BackNavigationLayout from "../layouts/BackNavigationLayout.tsx";
 import UiSettingsPage from "../pages/settings/UiSettingsPage.tsx";
 import LanguageSettingsPage from "../pages/settings/LanguageSettingsPage.tsx";
-import { MainLayout } from "../layouts/MainLayout.tsx";
+import HomePageLayout from "../layouts/HomePageLayout.tsx";
 import ServerSettingsPage from "../pages/settings/ServerSettingsPage.tsx";
-import { ErrorPage } from "../pages/error-page/ErrorPage.tsx";
+import ErrorPage from "../pages/error-page/ErrorPage.tsx";
 import ViewerPageLayout from "../layouts/ViewerPageLayout.tsx";
 import ExportSettingsPage from "../pages/settings/ExportSettingsPage.tsx";
 import ProcessingGeneralSettingsPage from "../pages/settings/ProcessingGeneralSettingsPage.tsx";
@@ -26,7 +26,7 @@ const routes: RouteObject[] = [
     },
     {
         path: "/",
-        Component: MainLayout,
+        Component: HomePageLayout,
         errorElement: <ErrorPage />,
         children: [{ path: "home", Component: HomePage }],
     },

@@ -6,8 +6,8 @@
 
 import { useMemo } from "react";
 import { Text } from "@mantine/core";
-import { useRegimeStore } from "../../../stores/regimeStore";
 import { Button } from "../../../components/common/button/Button";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 interface ShowSourceTreeHistoryDialogueContentProps {
     close: () => void;

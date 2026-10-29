@@ -7,12 +7,12 @@
 import { useCallback } from "react";
 import { router } from "../../../router/router";
 import { MVSFilters, StructuralFilters } from "../../../../types/fileFilters";
-import { loggerUi } from "../../../services/UiLoggingService";
+import { loggerUi } from "../../logger/services/UiLoggingService";
 import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
-} from "../../../services/NotificationService";
+} from "../../notifications/services/NotificationService";
 import {
     clearViewer,
     createBlankMVSDataAsString,
@@ -20,10 +20,10 @@ import {
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../../lib/molstar";
-import { useRegimeStore } from "../../../stores/regimeStore";
-import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
-import { useRecentFilesStore } from "../../../stores/recentFilesStore";
-import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
+import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { useRecentFilesStore } from "../stores/recentFilesStore";
+import { useFileMappingsStore } from "../stores/fileMappingsStore";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 export function useWorkspaceManagement() {
     const loadFileInApp = useCallback(async (fileData: FileData[] | Error) => {

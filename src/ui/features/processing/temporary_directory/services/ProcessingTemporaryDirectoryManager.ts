@@ -5,7 +5,7 @@
  */
 
 import { useEffect } from "react";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
 import { useClearTemporaryDirectory } from "../api/useClearTemporaryDirectory";
 
 let cleanupStarted = false;

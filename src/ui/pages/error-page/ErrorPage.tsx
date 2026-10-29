@@ -5,7 +5,7 @@
  */
 
 import { useRouteError, isRouteErrorResponse } from "react-router-dom";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../features/logger/services/UiLoggingService";
 import { Button } from "../../components/common/button/Button";
 import { IconAlertHexagonFilled } from "@tabler/icons-react";
 
@@ -65,8 +65,8 @@ export const ErrorPage = () => {
                     margin: "0 0 1.5em 0",
                 }}
             >
-                We apologize for the inconvenience. The application encountered
-                an unexpected error and needs to be restarted.
+                We apologize for the inconvenience. The application encountered an
+                unexpected error and needs to be restarted.
             </p>
 
             {/* Error box. */}
@@ -101,3 +101,5 @@ export const ErrorPage = () => {
         </div>
     );
 };
+
+export default ErrorPage;

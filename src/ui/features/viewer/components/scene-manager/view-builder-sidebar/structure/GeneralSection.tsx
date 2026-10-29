@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Select } from "@mantine/core";
 import { getAllParserTypes } from "../../../../../assets/domain/assetsDefinitions";
-import { UiLocalStorageService } from "../../../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../../persistence/services/UiLocalStorageService";
 import { AssetBuilderCardSectionGroup } from "../AssetBuilderCardSectionGroup";
 import { CollapsibleSection } from "../CollapsibleSection";
 import { AdvancedGeneralSection } from "./AdvancedGeneralSection";

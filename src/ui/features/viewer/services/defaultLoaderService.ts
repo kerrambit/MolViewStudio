@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { useRegimeStore } from "../../../stores/regimeStore";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 export async function loadDefaultMVSJFile() {
     const response = await fetch(

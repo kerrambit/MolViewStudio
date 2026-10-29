@@ -10,15 +10,14 @@ import { IconFile, IconFolder, IconFolderOpen } from "@tabler/icons-react";
 import { DeleteActionIcon } from "../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { EditActionIcon } from "../../../components/common/actionables/actions-icons/EditActionIcon";
 import { computeOptimalYellow } from "../../../components/common/actionables/actions-icons/utils/computeOptimalYellow";
-import { useAppearance } from "../../../hooks/useAppearance";
-import { pushErrorNotification } from "../../../services/NotificationService";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
-import { useDialogueStore } from "../../../stores/dialogueStore";
+import { useAppearance } from "../../apperance/hooks/useAppearance";
+import { pushErrorNotification } from "../../notifications/services/NotificationService";
+import { UiLocalStorageService } from "../../persistence/services/UiLocalStorageService";
+import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
 import {
     useManagedAssetsStore,
     isManagedAssetLocal,
-} from "../../../stores/managedAssetsStore";
-import { useRegimeStore } from "../../../stores/regimeStore";
+} from "../../managed-assets/stores/managedAssetsStore";
 import { buildAssetTree, type AssetTreeNode } from "../../viewer/utils/buildAssetTree";
 import { useAddLocalAssets } from "../hooks/useAddLocalAssets";
 import {
@@ -30,6 +29,7 @@ import {
     type EditAssetDialogueReturnType,
     EditAssetDialogueContent,
 } from "./EditAssetDialogueContent";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 type LocalAsset = NonNullable<AssetTreeNode["assetRef"]>;
 

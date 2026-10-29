@@ -6,7 +6,7 @@
 
 import { createMemoryRouter } from "react-router-dom";
 import routes from "./routes";
-import { loggerUi } from "../services/UiLoggingService";
+import { loggerUi } from "../features/logger/services/UiLoggingService";
 
 export const router = createMemoryRouter(routes);
 

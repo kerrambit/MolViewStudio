@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import WorkspaceLanding from "../../features/workspace/components/WorkspaceLanding";
+import WorkspaceLanding from "../../features/home-page/components/WorkspaceLanding";
 
 import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";

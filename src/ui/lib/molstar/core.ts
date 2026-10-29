@@ -16,7 +16,7 @@ import { type Base64Png, type HexColor, type Session } from "./types";
 import { clearAllSnapshotsFromSnapshotManager } from "./molstarSnapshotService";
 import { Color } from "molstar/lib/mol-util/color";
 import { type Result } from "../../../types/Result";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../features/logger/services/UiLoggingService";
 
 /**
  * Properties for `initMolstar` function.

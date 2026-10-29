@@ -8,10 +8,8 @@ import { useState } from "react";
 import { Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../../../components/common/input/UnstyledTextInput";
 import { UnstyledTextArea } from "../../../../../components/common/input/UnstyledTextArea";
-import {
-    useRegimeStore,
-    type ViewingRegime,
-} from "../../../../../stores/regimeStore";
+import type { ViewingRegime } from "../../../../regime/domain/Regime";
+import { useRegimeStore } from "../../../../regime/stores/regimeStore";
 
 export function StoryOptions() {
     // Use regime.
@@ -20,10 +18,7 @@ export function StoryOptions() {
 
     // Render the component.
     return (
-        <StoryOptionsFields
-            key={regime.history.current().timestamp}
-            regime={regime}
-        />
+        <StoryOptionsFields key={regime.history.current().timestamp} regime={regime} />
     );
 }
 
@@ -36,14 +31,10 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
     const [description, setDescription] = useState(metadata?.description);
 
     // Handler for change of metadata from UI.
-    const commitMetadata = (
-        key: "title" | "description",
-        value: string | undefined,
-    ) => {
+    const commitMetadata = (key: "title" | "description", value: string | undefined) => {
         if (regime.kind !== "viewing") return;
 
-        const currentMetadata =
-            regime.history.current().stateTree.metadata || {};
+        const currentMetadata = regime.history.current().stateTree.metadata || {};
         const prev = currentMetadata[key] ?? "";
         const next = value ?? "";
 
@@ -57,8 +48,7 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
             if (key === "description") delete newMetadata.description_format;
         } else {
             newMetadata[key] = value;
-            if (key === "description")
-                newMetadata.description_format = "plaintext";
+            if (key === "description") newMetadata.description_format = "plaintext";
         }
 
         regime.commitStateTree(
@@ -90,12 +80,8 @@ function StoryOptionsFields({ regime }: { regime: ViewingRegime }) {
                 tooltip="Write your story description here..."
                 minRows={31}
                 maxRows={31}
-                onValueChange={(newDescription) =>
-                    setDescription(newDescription)
-                }
-                onBlur={(newDescription) =>
-                    commitMetadata("description", newDescription)
-                }
+                onValueChange={(newDescription) => setDescription(newDescription)}
+                onBlur={(newDescription) => commitMetadata("description", newDescription)}
             />
         </div>
     );

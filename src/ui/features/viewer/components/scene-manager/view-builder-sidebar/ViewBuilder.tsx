@@ -9,10 +9,10 @@ import { CloseActionIcon } from "../../../../../components/common/actionables/ac
 import { useViewBuilder } from "../../../hooks/useViewBuilder";
 import { AssetBuilderCard } from "./AssetBuilderCard";
 import { AutoScrollList } from "../../../../../components/common/auto-scroll-list/AutoScrollList";
-import { UiLocalStorageService } from "../../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../../persistence/services/UiLocalStorageService";
 import { getFilePathWithoutFile } from "../../../../../utils/fileDataUtils";
 import { CollapseTrigger } from "../../../../../components/common/collapse-trigger/CollapseTriger";
-import { useAppearance } from "../../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../apperance/hooks/useAppearance";
 import { getAllExtensions } from "../../../../assets/domain/assetsDefinitions";
 
 interface ViewBuilderProps {

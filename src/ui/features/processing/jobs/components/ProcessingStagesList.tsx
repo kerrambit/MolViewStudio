@@ -7,7 +7,7 @@
 import { useMemo } from "react";
 import { Text } from "@mantine/core";
 import { IconArrowDown } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../apperance/hooks/useAppearance";
 
 export type ProcessingStagesListProps = {
     stages: string[];

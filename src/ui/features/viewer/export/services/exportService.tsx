@@ -17,18 +17,17 @@ import {
     pushErrorNotification,
     pushInfoNotification,
     pushSuccessNotification,
-} from "../../../../services/NotificationService";
-import { loggerUi } from "../../../../services/UiLoggingService";
-import { useDialogueStore } from "../../../../stores/dialogueStore";
+} from "../../../notifications/services/NotificationService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
+import { useDialogueStore } from "../../../dialogue/stores/dialogueStore";
 import { useExportStore } from "../stores/exportStore";
-import { useFileMappingsStore } from "../../../../stores/fileMappingsStore";
+import { useFileMappingsStore } from "../../../workspace/stores/fileMappingsStore";
 import {
     isManagedAssetLocal,
     useManagedAssetsStore,
-} from "../../../../stores/managedAssetsStore";
+} from "../../../managed-assets/stores/managedAssetsStore";
 import { useProcessingStore } from "../../../processing/stores/processingStore";
-import { useRegimeStore } from "../../../../stores/regimeStore";
-import { useUserSettingsStore } from "../../../../stores/userSettingsStore";
+import { useUserSettingsStore } from "../../../settings/stores/userSettingsStore";
 import {
     ExportDialogueContent,
     type ExportDialogueResultType,
@@ -42,6 +41,7 @@ import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
 import type { useStartFileProcessingForExport } from "../../../processing/export/hooks/useStartFileProcessingForExport";
 import { useWindowsStore } from "../../stores/WindowsStore";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/api/volume/ProcessVolumeRequest";
+import { useRegimeStore } from "../../../regime/stores/regimeStore";
 
 /**
  * Runs the full export flow: shows the processing properties dialogue prefilled

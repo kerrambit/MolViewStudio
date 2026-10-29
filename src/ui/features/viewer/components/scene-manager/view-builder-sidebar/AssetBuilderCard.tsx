@@ -19,9 +19,9 @@ import type {
     VolumeViewModel,
 } from "../../../models/MvsViewModels";
 import type { AssetQuality, TabType } from "../../../hooks/useViewBuilder";
-import { pushInfoNotification } from "../../../../../services/NotificationService";
+import { pushInfoNotification } from "../../../../notifications/services/NotificationService";
 import { VolumeTab } from "./volume/VolumeTab";
-import { useAppearance } from "../../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../apperance/hooks/useAppearance";
 
 interface AssetBuilderCardProps {
     viewKey: string;

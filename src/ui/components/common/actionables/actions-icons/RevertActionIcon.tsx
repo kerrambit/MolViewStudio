@@ -6,7 +6,7 @@
 
 import { ActionIcon } from "@mantine/core";
 import { IconArrowBack } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../features/apperance/hooks/useAppearance";
 
 interface RevertIconProps {
     tooltip?: string;
@@ -26,10 +26,7 @@ export function RevertActionIcon(props: RevertIconProps) {
             onClick={props.onClick}
             title={props.tooltip}
         >
-            <IconArrowBack
-                size={23}
-                color={colorScheme === "dark" ? "white" : "black"}
-            />
+            <IconArrowBack size={23} color={colorScheme === "dark" ? "white" : "black"} />
         </ActionIcon>
     );
 }

@@ -16,7 +16,7 @@ import {
     clearViewer,
     disposeMolstar,
 } from "../../../lib/molstar";
-import { useRegimeStore } from "../../../stores/regimeStore";
+import { useRegimeStore } from "../../regime/stores/regimeStore";
 
 const MOLSTAR_SHOW_CONTROLS = true;
 const MOLSTAR_EXPANDED = false;
@@ -82,8 +82,7 @@ export function useMolstarInit() {
                     regime.suspend({
                         snapshot: getMolstarStateSnapshot(),
                         arcpAssets: await serializeMVSXAssets(),
-                        snapshotManagerState:
-                            await getSnapshotManagerStateSnapshot(),
+                        snapshotManagerState: await getSnapshotManagerStateSnapshot(),
                     });
                 }
                 clearViewer();

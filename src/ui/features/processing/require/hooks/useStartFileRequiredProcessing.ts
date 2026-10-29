@@ -5,13 +5,13 @@
  */
 
 import { useCallback } from "react";
-import { useStartFileProcessing } from "../../../hooks/useStartFileProcessing";
 import { pickFileIndexByResolution } from "../../resolution/domain/pickFileByResolution";
 import { getHighestPossibleResolution } from "../../resolution/domain/ResolutionLevel";
 import { getFilenameWithoutExtension } from "../../../../utils/fileDataUtils";
 import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
 import { checkRequiresProcessing } from "../../../assets/domain/assetsDefinitions";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
+import { useStartFileProcessing } from "../../hooks/useStartFileProcessing";
 
 export function useStartFileRequiredProcessing() {
     // Use processing settings.
