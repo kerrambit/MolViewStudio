@@ -26,6 +26,7 @@ import { useAppearance } from "../../../../../hooks/useAppearance";
 interface AssetBuilderCardProps {
     viewKey: string;
     asset: ManagedAsset;
+    renderAssetId: string;
     isDark: boolean;
     isExpanded: boolean;
     isSelected: boolean;
@@ -67,6 +68,7 @@ interface AssetBuilderCardProps {
 export function AssetBuilderCard({
     viewKey,
     asset,
+    renderAssetId,
     isDark,
     isExpanded,
     isSelected,
@@ -242,6 +244,7 @@ export function AssetBuilderCard({
                         <VolumeTab
                             viewKey={viewKey}
                             asset={asset}
+                            renderAssetId={renderAssetId}
                             viewModel={volumeViewModel}
                             onUpdateParam={onUpdateVolumeParam}
                         ></VolumeTab>

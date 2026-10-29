@@ -39,6 +39,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
         isAssetSelected,
         getAssetQuality,
         handleAssetQualityChange,
+        resolveRenderAssetId,
         expandedAssetId,
         getVolumeViewModelForAsset,
         getStructureViewModelForAsset,
@@ -214,6 +215,7 @@ export function ViewBuilder(props: ViewBuilderProps) {
                                 viewKey={props.viewKey}
                                 key={asset.id}
                                 asset={asset}
+                                renderAssetId={resolveRenderAssetId(asset.id)}
                                 isDark={isDark}
                                 isExpanded={expandedAssetId === asset.id}
                                 isSelected={isAssetSelected(asset.id)}
