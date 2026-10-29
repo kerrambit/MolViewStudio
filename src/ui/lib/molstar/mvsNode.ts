@@ -18,11 +18,8 @@ import {
 } from "../../features/viewer/models/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
 import { getParser } from "../../features/assets/domain/assetsDefinitions";
-import {
-    customToTransferFunction,
-    transferFunctionToCustom,
-    VOLUME_NODE_REF_PREFIX,
-} from "./directVolume";
+import { customToTransferFunction, transferFunctionToCustom } from "./directVolume";
+import { STRUCTURE_NODE_REF_PREFIX, VOLUME_NODE_REF_PREFIX } from "./nodeRefs";
 
 /**
  * Creates a deep copy of `node`.
@@ -265,6 +262,80 @@ export function replaceNodeUrlsWithIds(node: any, assets: ManagedAsset[]): any {
 }
 
 /**
+ * Assigns refs derived from managed asset IDs to asset-kind nodes in the tree
+ * (`volume` -> `vol-<assetId>`, `structure` -> `struct-<assetId>`, of the
+ * closest ancestor `download` node's asset), matching each download by its
+ * URL - the same matching `replaceNodeUrlsWithIds` uses.
+ *
+ * Trees loaded from `.mvsj`/`.mvsx` files carry the file's own refs, which do
+ * not correspond to the managed assets created on import, so the nodes could
+ * not be located in Molstar state (via the `mvs-ref:<prefix><assetId>` tag)
+ * until they happened to be rebuilt by an edit. Existing refs are never
+ * duplicated, so tree validity is preserved.
+ * @param node node
+ * @param assets list of assets
+ * @returns modified node
+ */
+export function assignAssetNodeRefsToAssetIds(node: any, assets: ManagedAsset[]): any {
+    // Ref prefix per asset-kind node; kinds not listed keep their file ref.
+    const refPrefixForKind: Record<string, string> = {
+        volume: VOLUME_NODE_REF_PREFIX,
+        structure: STRUCTURE_NODE_REF_PREFIX,
+    };
+
+    // Pre-collect refs already used in the tree - MVS requires refs to be
+    // unique within a snapshot, so collisions keep the file's original ref.
+    const usedRefs = new Set<string>();
+    const collectRefs = (n: any) => {
+        if (typeof n.ref === "string") usedRefs.add(n.ref);
+        for (const child of n.children ?? []) collectRefs(child);
+    };
+    collectRefs(node);
+
+    const assetIdForUrl = (url: string): string | undefined => {
+        const normalizedUrl = url.startsWith("./") ? url.slice(2) : url;
+        return assets.find((a) => {
+            const assetUrl = typeof a.asset === "string" ? a.asset : a.asset?.url;
+            return assetUrl === url || a.relativePath === normalizedUrl;
+        })?.id;
+    };
+
+    const walk = (n: any, downloadAssetId: string | undefined): any => {
+        // Remember the asset of the closest ancestor `download` node so
+        // nested asset-kind nodes can derive their ref from it.
+        let nextAssetId = downloadAssetId;
+        if (n.params && typeof n.params.url === "string") {
+            nextAssetId = assetIdForUrl(n.params.url) ?? nextAssetId;
+        } else if (n.params && typeof n.params.uri === "string") {
+            nextAssetId = assetIdForUrl(n.params.uri) ?? nextAssetId;
+        }
+
+        let ref = n.ref;
+        const refPrefix = refPrefixForKind[n.kind];
+        if (refPrefix && nextAssetId) {
+            const candidate = `${refPrefix}${nextAssetId}`;
+            if (!usedRefs.has(candidate)) {
+                ref = candidate;
+                usedRefs.add(candidate);
+            }
+        }
+
+        let newChildren = n.children;
+        if (Array.isArray(n.children) && n.children.length > 0) {
+            newChildren = n.children.map((child: any) => walk(child, nextAssetId));
+        }
+
+        return {
+            ...n,
+            ref,
+            children: newChildren,
+        };
+    };
+
+    return walk(node, undefined);
+}
+
+/**
  * Replace asset IDs in node with arcp protocol url value.
  * @param node node
  * @param assets list of assets
@@ -352,7 +423,7 @@ export function resolveHiddenAssetIdsToParentAssetIds(
             const matchedAsset = resolveExportAsset(currentId);
 
             if (matchedAsset) {
-                let newId = matchedAsset.id;
+                const newId = matchedAsset.id;
                 newParams = {
                     ...newParams,
                     url: newId,
@@ -363,10 +434,10 @@ export function resolveHiddenAssetIdsToParentAssetIds(
             const matchedAsset = resolveExportAsset(currentId);
 
             if (matchedAsset) {
-                let newId = matchedAsset.id;
+                const newId = matchedAsset.id;
                 newParams = {
                     ...newParams,
-                    url: newId,
+                    uri: newId,
                 };
             }
         }
@@ -457,7 +528,8 @@ export function substituteAssetDownloadsInNode(
     if (node.kind === "download" && typeof node.params?.url === "string") {
         const entry = [...processedFiles].find(([id]) => id === node.params.url);
         if (entry) {
-            let newUrl = entry[1];
+            const newUrl = entry[1];
+            const processedAsset = assets.find((a) => a.id === newUrl);
             newNode = {
                 ...node,
                 params: {
@@ -470,9 +542,9 @@ export function substituteAssetDownloadsInNode(
                               ...child,
                               params: {
                                   ...child.params,
-                                  format: getParser(
-                                      assets.find((a) => a.id === entry[1])?.extension!,
-                                  ),
+                                  format: processedAsset
+                                      ? getParser(processedAsset.extension)
+                                      : undefined,
                               },
                           }
                         : child,
@@ -494,59 +566,6 @@ export function substituteAssetDownloadsInNode(
 }
 
 /**
- * Traverses an MVS node and its children immutably.
- * For any `download` node whose `url` matches an asset ID with a processed file,
- * replaces the URL with the processed file's archive path and fixes the child
- * `parse` node's format to the processed file's parser (e.g. "map" for mrc).
- * Apply before `injectRelativePathsBasedOnAssetIdsIntoTree`.
- * @param node node
- * @param processedFiles map of managed asset ID -> processed file
- * @returns modified node
- */
-// export function substituteAssetDownloadsInNode(
-//     node: any,
-//     processedFiles: Map<ManagedAsset, FileData>,
-// ): any {
-//     let newNode = node;
-
-//     if (node.kind === "download" && typeof node.params?.url === "string") {
-//         const entry = [...processedFiles].find(([asset]) => asset.id === node.params.url);
-//         if (entry) {
-//             const processedFile = processedFiles.get(node.params.url)!;
-//             newNode = {
-//                 ...node,
-//                 params: {
-//                     ...node.params,
-//                     url: `volumes/${processedFile.name}`,
-//                 },
-//                 children: (node.children || []).map((child: any) =>
-//                     child.kind === "parse"
-//                         ? {
-//                               ...child,
-//                               params: {
-//                                   ...child.params,
-//                                   format: "map",
-//                               },
-//                           }
-//                         : child,
-//                 ),
-//             };
-//         }
-//     }
-
-//     if (Array.isArray(newNode.children) && newNode.children.length > 0) {
-//         newNode = {
-//             ...newNode,
-//             children: newNode.children.map((child: any) =>
-//                 substituteAssetDownloadsInNode(child, processedFiles),
-//             ),
-//         };
-//     }
-
-//     return newNode;
-// }
-
-/**
  * Builds a full `download` node (download -> parse -> structure -> ...) from
  * a StructureViewModel.
  * @param assetId used as the download node's `url`
@@ -559,6 +578,10 @@ export function getStructureNode(assetId: string, viewModel: StructureViewModel)
     const parsed = downloaded.parse({ format: viewModel.format as any });
 
     const baseStructureParams = {
+        // Deterministic ref so the created structure can be found in the
+        // Molstar state via the `mvs-ref:struct-<assetId>` tag, mirroring
+        // `volume` nodes (see `assignAssetNodeRefsToAssetIds`).
+        ref: `${STRUCTURE_NODE_REF_PREFIX}${assetId}`,
         block_header: viewModel.block_header ?? undefined,
         block_index: viewModel.block_index,
         model_index: viewModel.model_index,

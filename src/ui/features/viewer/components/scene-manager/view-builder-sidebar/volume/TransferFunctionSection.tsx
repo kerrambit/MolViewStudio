@@ -20,7 +20,6 @@ import {
     getMolstar,
     getTransferFunctionPresets,
     getVolumeDataForAsset,
-    isMolstarReloading,
 } from "../../../../../../lib/molstar";
 import "./TransferFunctionSection.css";
 import {
@@ -56,8 +55,7 @@ const STRIP_HEIGHT = 45;
 /** Linearly interpolates the gradient color at normalized position `x`. */
 function interpolateColor(stops: TransferColorStop[], x: number): string {
     const sorted = [...stops].sort((a, b) => a.x - b.x);
-    if (sorted.length === 0) {
-    }
+    if (sorted.length === 0) return "#ffffff";
 
     if (x <= sorted[0].x) {
         return sorted[0].color;
@@ -119,20 +117,27 @@ export function TransferFunctionSection({
         const molstar = getMolstar();
         if (!molstar) return;
 
-        const refresh = () => setVolume(getVolumeDataForAsset(renderAssetId));
+        let found = false;
+        const refresh = () => {
+            const resolved = getVolumeDataForAsset(renderAssetId);
+            if (resolved !== undefined) {
+                setVolume((prev) => (prev === resolved ? prev : resolved));
+                found = true;
+            }
+        };
+
+        // The volume is often not resolvable yet when this mounts (Molstar is
+        // still loading the state, or a reload is in progress), so keep
+        // trying until it shows up.
         refresh();
+        const interval = setInterval(() => {
+            if (found) return;
+            refresh();
+        }, 250);
 
         // Fires whenever Molstar finishes (re)building the state after a view
         // reload, so the volume data (histogram) follows the current tree.
         const subscription = molstar.state.data.events.changed.subscribe(refresh);
-
-        // Watch the app's reload flag: it flips to false exactly when a reload has finished and the new volume data is available.
-        let wasReloading = isMolstarReloading();
-        const interval = setInterval(() => {
-            const reloading = isMolstarReloading();
-            if (wasReloading && !reloading) refresh();
-            wasReloading = reloading;
-        }, 250);
 
         return () => {
             subscription.unsubscribe();

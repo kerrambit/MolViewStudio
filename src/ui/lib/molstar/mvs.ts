@@ -23,6 +23,7 @@ import { ensureUrlAsset } from "./molstarAssetService";
 import { Asset } from "molstar/lib/mol-util/assets";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
 import { DirectVolumeLoadingExtension } from "./directVolume";
+import { assignAssetNodeRefsToAssetIds } from "./mvsNode";
 import { buildRenderTreeForMolstar } from "./mvsTree";
 import { checkMolstarAfterLoading } from "./core";
 import { getExtensionFromFileName, getExtensionFromUrl } from "../../utils/fileDataUtils";
@@ -518,10 +519,14 @@ async function _loadMVSXFile(
     // Extract views.
     const views = extractViewsFromMVS(mvsData);
 
+    // Give volume nodes refs derived from the managed asset IDs, so their
+    // data can be found in Molstar state right after the first load.
+    const stateTree = withAssetNodeRefs(mvsData, assets);
+
     return {
         success: true,
         value: {
-            stateTree: mvsData,
+            stateTree,
             sourceUrl: arcpUri(archiveId, indexFilePath),
             views,
             assets,
@@ -572,6 +577,30 @@ export async function loadMVSXFile(
 }
 
 /**
+ * Rewrites asset-kind node refs in the tree to managed asset IDs (see
+ * `assignAssetNodeRefsToAssetIds`), handling both `single` and `multiple`
+ * MVS data kinds.
+ * @param mvsData MVS data
+ * @param assets managed assets
+ * @returns modified MVS data
+ */
+function withAssetNodeRefs(mvsData: MVSData, assets: ManagedAsset[]): MVSData {
+    if (mvsData.kind === "multiple") {
+        return {
+            ...mvsData,
+            snapshots: mvsData.snapshots.map((snapshot) => ({
+                ...snapshot,
+                root: assignAssetNodeRefsToAssetIds(snapshot.root, assets),
+            })),
+        };
+    }
+    return {
+        ...mvsData,
+        root: assignAssetNodeRefsToAssetIds(mvsData.root, assets),
+    };
+}
+
+/**
  * Loads MVSJ file.
  * @param rawData data of `.mvsj` file
  * @returns views and remote assets if success, else Error
@@ -615,15 +644,19 @@ export async function loadMVSJFile(index: string): Promise<
             });
         });
 
+        // Give asset-kind nodes refs derived from the managed asset IDs, so their
+        // data can be found in Molstar state right after the first load.
+        const stateTree = withAssetNodeRefs(mvsData, assets);
+
         // Load MVS into viewer.
-        const result = await loadMVSIntoMolstar(mvsData);
+        const result = await loadMVSIntoMolstar(stateTree);
         if (result.success) {
             return {
                 success: true,
                 value: {
                     assets,
                     views: extractViewsFromMVS(mvsData),
-                    stateTree: mvsData,
+                    stateTree,
                 },
             };
         } else {

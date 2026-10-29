@@ -10,14 +10,11 @@ import { Grid, type Volume } from "molstar/lib/mol-model/volume";
 import { DirectVolumeParams } from "molstar/lib/mol-repr/volume/direct-volume";
 import { ParamDefinition as PD } from "molstar/lib/mol-util/param-definition";
 import type { MolstarLoadingExtension } from "molstar/lib/extensions/mvs/load";
-import { UpdateTarget } from "molstar/lib/extensions/mvs/load-generic";
 import { alphaForNode, clippingForNode } from "molstar/lib/extensions/mvs/load-helpers";
-import { Mat4, Tensor, Vec3 } from "molstar/lib/mol-math/linear-algebra";
-import { CustomProperties } from "molstar/lib/mol-model/custom-property";
 import { PluginStateObject as SO } from "molstar/lib/mol-plugin-state/objects";
-import { VolumeRepresentation3D } from "molstar/lib/mol-plugin-state/transforms/representation";
-import { StateTransformer, StateTree } from "molstar/lib/mol-state";
+import { StateTree } from "molstar/lib/mol-state";
 import { getMolstar } from "./instance";
+import { VOLUME_NODE_REF_PREFIX } from "./nodeRefs";
 import {
     type TransferColorStop,
     type TransferControlPoint,
@@ -141,284 +138,45 @@ function buildDirectVolumeRepresentationParams(
     };
 }
 
-// Direct volume rendering uploads the whole grid into a WebGL 3D texture
-// (RGBA, one texel per voxel), which easily exceeds GPU limits for large
-// maps (e.g. a 2048x2048x76 grid needs ~1.3 GB). Mol* itself just refuses to
-// render such volumes ("volume too large for direct-volume rendering"), so
-// we transparently downsample the grid before the representation is built.
-
-/** Voxel budget for the 3D texture (~128 MB as an RGBA uint8 texture). */
-const MAX_DIRECT_VOLUME_VOXELS = 32_000_000;
-
-/** Per-axis cap; also comfortably below Mol*'s max3dTextureSize / 2 check. */
-const MAX_DIRECT_VOLUME_DIMENSION = 512;
-
-/**
- * Computes integer per-axis strides so that the downsampled grid stays within
- * the voxel and per-dimension budgets. The axis with the currently largest
- * dimension is coarsened first, so anisotropic grids (e.g. 2048x2048x76) keep
- * their thin axes at full resolution.
- * @param dimensions grid dimensions
- * @param maxDimension per-axis cap after downsampling
- * @returns per-axis strides (all 1 when the grid already fits)
- */
-function computeDownsamplingStrides(
-    dimensions: ReadonlyArray<number>,
-    maxDimension: number,
-): [number, number, number] {
-    const strides: [number, number, number] = [1, 1, 1];
-
-    const fits = () => {
-        let voxels = 1;
-        for (let i = 0; i < 3; i++) {
-            const d = Math.ceil(dimensions[i] / strides[i]);
-            if (d > maxDimension) return false;
-            voxels *= d;
-        }
-        return voxels <= MAX_DIRECT_VOLUME_VOXELS;
-    };
-
-    let guard = 0;
-    while (!fits() && guard++ < 4096) {
-        let axis = 0;
-        for (let i = 1; i < 3; i++) {
-            if (
-                Math.ceil(dimensions[i] / strides[i]) >
-                Math.ceil(dimensions[axis] / strides[axis])
-            ) {
-                axis = i;
-            }
-        }
-        strides[axis]++;
-    }
-
-    return strides;
-}
-
-/**
- * Downsamples a volume by block-averaging `strides[i]` voxels along each
- * axis, preserving the grid's position and extent in cartesian space.
- * Statistics (min/max/mean/sigma) are recomputed for the new data.
- * @param volume volume to downsample
- * @param strides per-axis strides
- * @returns downsampled volume
- */
-function downsampleVolume(volume: Volume, strides: [number, number, number]): Volume {
-    const cells = volume.grid.cells;
-    const oldDims = cells.space.dimensions;
-    const oldData = cells.data;
-    const oldOffset = cells.space.dataOffset;
-
-    const newDims: [number, number, number] = [
-        Math.ceil(oldDims[0] / strides[0]),
-        Math.ceil(oldDims[1] / strides[1]),
-        Math.ceil(oldDims[2] / strides[2]),
-    ];
-    const newSpace = Tensor.Space(
-        newDims,
-        cells.space.axisOrderSlowToFast.slice() as number[],
-        Float32Array,
-    );
-    const newData = newSpace.create();
-    const newOffset = newSpace.dataOffset;
-
-    let min = Infinity;
-    let max = -Infinity;
-    let sum = 0;
-    let sumSq = 0;
-    let count = 0;
-
-    for (let z = 0; z < newDims[2]; z++) {
-        const z0 = z * strides[2];
-        const z1 = Math.min(z0 + strides[2], oldDims[2]);
-        for (let y = 0; y < newDims[1]; y++) {
-            const y0 = y * strides[1];
-            const y1 = Math.min(y0 + strides[1], oldDims[1]);
-            for (let x = 0; x < newDims[0]; x++) {
-                const x0 = x * strides[0];
-                const x1 = Math.min(x0 + strides[0], oldDims[0]);
-
-                let acc = 0;
-                let samples = 0;
-                for (let zz = z0; zz < z1; zz++) {
-                    for (let yy = y0; yy < y1; yy++) {
-                        for (let xx = x0; xx < x1; xx++) {
-                            acc += oldData[oldOffset(xx, yy, zz)];
-                            samples++;
-                        }
-                    }
-                }
-
-                const value = samples > 0 ? acc / samples : 0;
-                newData[newOffset(x, y, z)] = value;
-                if (value < min) min = value;
-                if (value > max) max = value;
-                sum += value;
-                sumSq += value * value;
-                count++;
-            }
-        }
-    }
-
-    const mean = count > 0 ? sum / count : 0;
-
-    // 'spacegroup' transforms derive the per-voxel scale from the grid's own
-    // dimensions, so they need no adjustment. 'matrix' transforms map grid
-    // indices directly to cartesian space and must be rescaled instead.
-    let transform = volume.grid.transform;
-    if (transform.kind === "matrix") {
-        const scale = Mat4.fromScaling(
-            Mat4(),
-            Vec3.create(
-                oldDims[0] / newDims[0],
-                oldDims[1] / newDims[1],
-                oldDims[2] / newDims[2],
-            ),
-        );
-        transform = {
-            kind: "matrix",
-            matrix: Mat4.mul(Mat4(), transform.matrix, scale),
-        };
-    }
-
-    const grid: Grid = {
-        transform,
-        cells: Tensor.create(newSpace, newData),
-        stats: {
-            min: Number.isFinite(min) ? min : 0,
-            max: Number.isFinite(max) ? max : 0,
-            mean,
-            sigma: count > 0 ? Math.sqrt(Math.max(0, sumSq / count - mean * mean)) : 0,
-        },
-        periodicity: volume.grid.periodicity,
-    };
-
-    return {
-        label: volume.label,
-        entryId: volume.entryId,
-        grid,
-        instances: volume.instances,
-        sourceData: volume.sourceData,
-        customProperties: new CustomProperties(),
-        _propertyData: Object.create(null),
-        _localPropertyData: Object.create(null),
-    };
-}
-
-const MolViewStudioTransforms = StateTransformer.Builder.build("molviewstudio");
-
-/**
- * `Volume -> Volume` state transformer that downsamples the input grid so it
- * fits into a WebGL 3D texture. Applied (via the loading extension below)
- * between the `volume` node and its direct-volume representation; volumes
- * that already fit pass through unchanged.
- */
-const DownsampleVolumeForDirectVolume = MolViewStudioTransforms({
-    name: "downsample-volume-for-direct-volume",
-    display: {
-        name: "Downsample Volume",
-        description: "Downsample a volume grid for direct volume rendering.",
-    },
-    from: SO.Volume.Data,
-    to: SO.Volume.Data,
-    params: {},
-})({
-    apply({ a }, plugin: any) {
-        const volume = a.data;
-        const max3dTextureSize = plugin?.canvas3d?.webgl?.max3dTextureSize;
-        const maxDimension = Math.min(
-            MAX_DIRECT_VOLUME_DIMENSION,
-            Math.floor((max3dTextureSize ?? 2048) / 2),
-        );
-
-        const strides = computeDownsamplingStrides(
-            volume.grid.cells.space.dimensions,
-            maxDimension,
-        );
-
-        if (strides[0] === 1 && strides[1] === 1 && strides[2] === 1) {
-            return new SO.Volume.Data(volume);
-        }
-        return new SO.Volume.Data(downsampleVolume(volume, strides));
-    },
-});
-
-/**
- * Context shared across the extension's `action` calls while a single tree is
- * being loaded.
- */
-interface DirectVolumeExtensionContext {
-    /** Target of the most recently loaded `volume` MVS node (post-transform). */
-    volumeTarget?: UpdateTarget;
-}
-
 /**
  * MVS loading extension which renders `volume_representation` nodes carrying
- * `custom.transfer_function` as Mol* direct volumes (via the `volume-value`
- * color theme).
+ * `custom.transfer_function` as Mol* direct volumes.
  *
  * The stock MVS loader first creates the isosurface representation from the
- * official `params.type: "isosurface"` fallback; this extension then deletes
- * it and rebuilds the branch as:
+ * official `params.type: "isosurface"` fallback; this extension rewrites that
+ * node's params in place to direct-volume params (the `volume-value` color
+ * theme with the custom color stops, and the control points as the alpha
+ * curve).
  *
- *   volume -> downsample-for-direct-volume -> volume-representation-3d
- *
- * so that even grids too large for a WebGL 3D texture (which Mol* outright
- * refuses to render) display correctly.
+ * Grids too large for a WebGL 3D texture are NOT handled here: Mol* itself
+ * refuses to render them ("volume too large for direct-volume rendering"),
+ * and the volume is expected to be downsampled in Processing first.
  */
-export const DirectVolumeLoadingExtension: MolstarLoadingExtension<DirectVolumeExtensionContext> =
-    {
-        id: "molviewstudio/direct-volume",
-        description:
-            "Render volume_representation nodes with custom.transfer_function as direct volumes.",
-        createExtensionContext: () => ({}),
-        action: (updateTarget, node, _context, extensionContext) => {
-            // `volume_representation` nodes are always children of a `volume`
-            // node, which the loader visits first - remember where its data
-            // landed so the replacement branch can be attached there.
-            if (node.kind === "volume") {
-                extensionContext.volumeTarget = updateTarget;
-                return;
-            }
+export const DirectVolumeLoadingExtension: MolstarLoadingExtension<void> = {
+    id: "molviewstudio/direct-volume",
+    description:
+        "Render volume_representation nodes with custom.transfer_function as direct volumes.",
+    createExtensionContext: () => undefined,
+    action: (updateTarget, node) => {
+        if (node.kind !== "volume_representation") return;
 
-            if (node.kind !== "volume_representation") return;
+        const custom = (node as any).custom?.transfer_function;
+        if (!custom?.control_points || !custom?.color_stops) return;
 
-            const custom = (node as any).custom?.transfer_function;
-            if (!custom?.control_points || !custom?.color_stops) return;
+        const params = buildDirectVolumeRepresentationParams(
+            custom,
+            alphaForNode(node as any),
+            clippingForNode(node as any),
+        );
 
-            const params = buildDirectVolumeRepresentationParams(
-                custom,
-                alphaForNode(node as any),
-                clippingForNode(node as any),
-            );
-
-            const volumeTarget = extensionContext.volumeTarget;
-            if (!volumeTarget) {
-                // No volume target recorded (should not happen for valid MVS
-                // trees) - fall back to rewriting the fallback representation's
-                // params in place, without the downsampling safety net.
-                updateTarget.update.to(updateTarget.selector).update((old: any) => ({
-                    ...old,
-                    ...params,
-                }));
-                return;
-            }
-
-            // Replace the isosurface fallback representation created by the stock
-            // loader with the downsampled direct-volume chain. Delete by the raw
-            // ref string: resolving the selector object would look the ref up in
-            // the LIVE state, where it does not exist yet (nothing is committed
-            // during the virtual load), silently turning the delete into a no-op
-            // and leaving the isosurface rendered next to the direct volume.
-            updateTarget.update.delete(updateTarget.selector.ref);
-            const downsampled = UpdateTarget.apply(
-                volumeTarget,
-                DownsampleVolumeForDirectVolume,
-                {},
-            );
-            UpdateTarget.apply(downsampled, VolumeRepresentation3D, params);
-        },
-    };
+        // Rewrite the fallback representation in place - same state node,
+        // direct-volume params.
+        updateTarget.update.to(updateTarget.selector).update((old: any) => ({
+            ...old,
+            ...params,
+        }));
+    },
+};
 
 /**
  * Retrieves the `VolumeData` currently loaded in Molstar for a given asset,
@@ -433,13 +191,7 @@ export function getVolumeDataForAsset(assetId: string): Volume | undefined {
 
     const state = molstar.state.data;
 
-    // Preferred: the tag set on the volume node. Resolve through the state
-    // TREE, not the cells: on a reload, `updateTree` keeps cells whose params
-    // (and therefore transform version) did not change, and kept cells retain
-    // their STALE tags from an earlier load (e.g. the ref from a freshly
-    // opened .mvsj). The tree always reflects the latest loaded tags, and the
-    // cell for the (deterministic) ref still holds the volume object.
-    const tag = `mvs-ref:vol-${assetId}`;
+    const tag = `mvs-ref:${VOLUME_NODE_REF_PREFIX}${assetId}`;
     let found: Volume | undefined;
     StateTree.doPreOrder(state.tree, state.tree.root, undefined, (transform) => {
         if (found !== undefined || !transform.tags?.includes(tag)) return;
@@ -481,9 +233,6 @@ export function getVolumeDataForAsset(assetId: string): Volume | undefined {
     }
     return undefined;
 }
-
-/** Companion of `getVolumeDataForAsset` - the tag `getVolumeNode` sets on the volume node. */
-export const VOLUME_NODE_REF_PREFIX = "vol-";
 
 /** Normalizes a value into [0, 1] given the volume's [min, max] range. */
 function toNormalized(value: number, min: number, max: number): number {
