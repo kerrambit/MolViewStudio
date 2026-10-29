@@ -282,8 +282,9 @@ export function ExportDialogueContent({
                             </>
                         ) : (
                             <List.Item>
-                                <b>Downsampling quality:</b> the smaller the quality, the
-                                smaller (and faster to load) the exported volume.
+                                <b>Downsampling strength:</b> the stronger the
+                                downsampling, the smaller (and faster to load) the
+                                exported volume.
                             </List.Item>
                         )}
                     </List>
@@ -459,7 +460,7 @@ export function ExportDialogueContent({
                                             />
                                             {isStrategySimple ? (
                                                 <Select
-                                                    label="Downsampling quality:"
+                                                    label="Downsampling strength:"
                                                     data={downsamplingLevelOptions}
                                                     value={downsamplingLevel}
                                                     allowDeselect={false}
