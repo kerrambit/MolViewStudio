@@ -1,17 +1,11 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { useState } from "react";
-import {
-    ColorInput,
-    Group,
-    NumberInput,
-    Select,
-    TextInput,
-} from "@mantine/core";
+import { ColorInput, Group, NumberInput, Select, TextInput } from "@mantine/core";
 import {
     createDefaultColorOverride,
     isSingleSelectorExpression,
@@ -62,12 +56,7 @@ export function ColorOverridesSection({
 
     // Write the whole colorOverrides array back to the component.
     const setOverrides = (overrides: ColorOverride[], sync: boolean) => {
-        onUpdateStructureComponentParam(
-            component.id,
-            "colorOverrides",
-            overrides,
-            sync,
-        );
+        onUpdateStructureComponentParam(component.id, "colorOverrides", overrides, sync);
     };
 
     const handleAddColorOverride = () => {
@@ -111,9 +100,7 @@ export function ColorOverridesSection({
         overrideIndex: number,
         mode: "PredefinedSelector" | "ExpressionSelector",
     ) => {
-        const current = (component.colorOverrides || []).find(
-            (o) => o.id === overrideId,
-        );
+        const current = (component.colorOverrides || []).find((o) => o.id === overrideId);
         if (!current) return;
         const currentIsPredefined = typeof current.selector === "string";
         if (currentIsPredefined === (mode === "PredefinedSelector")) return;
@@ -121,19 +108,13 @@ export function ColorOverridesSection({
         // Stash the selector of the mode being left and restore the cached one.
         let nextSelector: Selector;
         if (currentIsPredefined) {
-            writeCache(
-                overridePredefinedCacheKey(overrideIndex),
-                current.selector,
-            );
+            writeCache(overridePredefinedCacheKey(overrideIndex), current.selector);
             nextSelector =
                 (readCache(overrideExpressionCacheKey(overrideIndex)) as
                     | Selector
                     | undefined) ?? {};
         } else {
-            writeCache(
-                overrideExpressionCacheKey(overrideIndex),
-                current.selector,
-            );
+            writeCache(overrideExpressionCacheKey(overrideIndex), current.selector);
             nextSelector =
                 (readCache(overridePredefinedCacheKey(overrideIndex)) as
                     | PredefinedSelector
@@ -214,10 +195,7 @@ export function ColorOverridesSection({
     };
 
     const [overrideFieldDrafts, setOverrideFieldDrafts] = useState<
-        Record<
-            string,
-            { field: keyof SelectorExpression | null; value: string }
-        >
+        Record<string, { field: keyof SelectorExpression | null; value: string }>
     >({});
 
     const handleSaveNewOverrideExpressionField = (overrideId: string) => {
@@ -226,11 +204,8 @@ export function ColorOverridesSection({
             value: "",
         };
         if (!draft.field || draft.value === "") return;
-        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
-            (f) => f.key === draft.field,
-        );
-        const value =
-            fieldDef?.type === "number" ? Number(draft.value) : draft.value;
+        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find((f) => f.key === draft.field);
+        const value = fieldDef?.type === "number" ? Number(draft.value) : draft.value;
         if (fieldDef?.type === "number" && Number.isNaN(value)) return;
         setOverrides(
             (component.colorOverrides || []).map((o) => {
@@ -264,20 +239,14 @@ export function ColorOverridesSection({
                     if (!fieldDef) return null;
 
                     const fieldOptions = SELECTOR_EXPRESSION_FIELDS.filter(
-                        (f) =>
-                            f.key === fieldKey || !usedFields.includes(f.key),
+                        (f) => f.key === fieldKey || !usedFields.includes(f.key),
                     ).map((f) => ({
                         value: f.key,
                         label: f.label,
                     }));
 
                     return (
-                        <Group
-                            key={fieldKey}
-                            align="flex-end"
-                            gap="0.33em"
-                            wrap="nowrap"
-                        >
+                        <Group key={fieldKey} align="flex-end" gap="0.33em" wrap="nowrap">
                             <Select
                                 label="Field"
                                 data={fieldOptions}
@@ -335,9 +304,7 @@ export function ColorOverridesSection({
                                         handleColorOverrideExpressionFieldChange(
                                             override.id,
                                             fieldKey,
-                                            typeof val === "number"
-                                                ? val
-                                                : undefined,
+                                            typeof val === "number" ? val : undefined,
                                             false,
                                         )
                                     }
@@ -345,8 +312,7 @@ export function ColorOverridesSection({
                                         handleColorOverrideExpressionFieldChange(
                                             override.id,
                                             fieldKey,
-                                            e.currentTarget
-                                                .value as unknown as number,
+                                            e.currentTarget.value as unknown as number,
                                             true,
                                         )
                                     }
@@ -355,8 +321,7 @@ export function ColorOverridesSection({
                                         handleColorOverrideExpressionFieldChange(
                                             override.id,
                                             fieldKey,
-                                            e.currentTarget
-                                                .value as unknown as number,
+                                            e.currentTarget.value as unknown as number,
                                             true,
                                         )
                                     }
@@ -393,9 +358,7 @@ export function ColorOverridesSection({
                                 ...prev,
                                 [override.id]: {
                                     ...(prev[override.id] || { value: "" }),
-                                    field:
-                                        (val as keyof SelectorExpression) ??
-                                        null,
+                                    field: (val as keyof SelectorExpression) ?? null,
                                 },
                             }))
                         }
@@ -422,9 +385,7 @@ export function ColorOverridesSection({
                             e.key === "Enter" &&
                             handleSaveNewOverrideExpressionField(override.id)
                         }
-                        onBlur={() =>
-                            handleSaveNewOverrideExpressionField(override.id)
-                        }
+                        onBlur={() => handleSaveNewOverrideExpressionField(override.id)}
                     />
                     <DeleteActionIcon
                         tooltip="Cannot remove empty field."
@@ -452,18 +413,14 @@ export function ColorOverridesSection({
                             titleSize="sm"
                             rightComponent={
                                 <DeleteActionIcon
-                                    onClick={() =>
-                                        handleRemoveColorOverride(override.id)
-                                    }
+                                    onClick={() => handleRemoveColorOverride(override.id)}
                                     tooltip="Remove color override."
                                 />
                             }
                         />
                     </ActionableList>
                     <Group justify="space-between" align="center">
-                        <SegmentedController<
-                            "PredefinedSelector" | "ExpressionSelector"
-                        >
+                        <SegmentedController<"PredefinedSelector" | "ExpressionSelector">
                             size="xs"
                             value={
                                 typeof override.selector === "string"
@@ -514,20 +471,10 @@ export function ColorOverridesSection({
                         size="xs"
                         format="hex"
                         onChange={(val) =>
-                            val &&
-                            handleColorOverrideColorChange(
-                                override.id,
-                                val,
-                                false,
-                            )
+                            val && handleColorOverrideColorChange(override.id, val, false)
                         }
                         onChangeEnd={(val) =>
-                            val &&
-                            handleColorOverrideColorChange(
-                                override.id,
-                                val,
-                                true,
-                            )
+                            val && handleColorOverrideColorChange(override.id, val, true)
                         }
                     />
                 </AssetBuilderCardSectionGroup>

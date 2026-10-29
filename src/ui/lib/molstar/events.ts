@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -14,9 +14,7 @@ import { PluginStateSnapshotManager } from "molstar/lib/mol-plugin-state/manager
  * @warning Take care of the unsubscription.
  * @returns `Subscription` object
  */
-export function getFullScreenSubscription(
-    callback: (isExpanded: boolean) => void,
-) {
+export function getFullScreenSubscription(callback: (isExpanded: boolean) => void) {
     const molstar = getMolstar();
 
     const sub = molstar.layout.events.updated.subscribe(() => {
@@ -63,26 +61,24 @@ export function getSnapshotChangeSubscription(
 ) {
     const molstar = getMolstar();
 
-    const subscription = molstar.managers.snapshot.events.changed.subscribe(
-        () => {
-            if (!molstar) return;
-            const current = molstar.managers.snapshot.state.current;
+    const subscription = molstar.managers.snapshot.events.changed.subscribe(() => {
+        if (!molstar) return;
+        const current = molstar.managers.snapshot.state.current;
 
-            if (current) {
-                const entries = molstar.managers.snapshot.state.entries;
-                let currentIndex;
+        if (current) {
+            const entries = molstar.managers.snapshot.state.entries;
+            let currentIndex;
 
-                for (let i = 0; i < entries.count(); i++) {
-                    const entry = entries.get(i);
-                    if (entry?.snapshot?.id === current) {
-                        currentIndex = i;
-                        callback(currentIndex, entry);
-                        break;
-                    }
+            for (let i = 0; i < entries.count(); i++) {
+                const entry = entries.get(i);
+                if (entry?.snapshot?.id === current) {
+                    currentIndex = i;
+                    callback(currentIndex, entry);
+                    break;
                 }
             }
-        },
-    );
+        }
+    });
 
     return subscription;
 }

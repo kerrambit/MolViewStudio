@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -66,10 +66,7 @@ export function ComponentSelectorSection({
             // Stash the expression selector and restore the predefined one.
             writeCache(EXPRESSION_SELECTOR_CACHE_KEY, component.selector);
             const cached = readCache(PREDEFINED_SELECTOR_CACHE_KEY);
-            setSelector(
-                (cached as PredefinedSelector | undefined) ?? "all",
-                true,
-            );
+            setSelector((cached as PredefinedSelector | undefined) ?? "all", true);
         } else {
             if (!currentIsPredefined) return;
             // Stash the predefined selector and restore the expression one.
@@ -95,12 +92,7 @@ export function ComponentSelectorSection({
 
     const setSelector = (selector: Selector, sync: boolean) => {
         if (!component) return;
-        onUpdateStructureComponentParam(
-            component.id,
-            "selector",
-            selector,
-            sync,
-        );
+        onUpdateStructureComponentParam(component.id, "selector", selector, sync);
     };
 
     const handleExpressionFieldChange = (
@@ -111,9 +103,7 @@ export function ComponentSelectorSection({
     ) => {
         if (!component) return;
         const nextExpressions = currentExpressions.map((expr, i) =>
-            i === index
-                ? { ...expr, [field]: val === "" ? undefined : val }
-                : expr,
+            i === index ? { ...expr, [field]: val === "" ? undefined : val } : expr,
         );
         setSelector(collapseExpressions(nextExpressions), sync);
     };
@@ -124,18 +114,13 @@ export function ComponentSelectorSection({
 
     const handleRemoveExpression = (index: number) => {
         setSelector(
-            collapseExpressions(
-                currentExpressions.filter((_, i) => i !== index),
-            ),
+            collapseExpressions(currentExpressions.filter((_, i) => i !== index)),
             true,
         );
     };
 
     const [newFieldDrafts, setNewFieldDrafts] = useState<
-        Record<
-            number,
-            { field: keyof SelectorExpression | null; value: string }
-        >
+        Record<number, { field: keyof SelectorExpression | null; value: string }>
     >({});
 
     const getDraft = (exprIndex: number) =>
@@ -153,14 +138,9 @@ export function ComponentSelectorSection({
         newField: keyof SelectorExpression,
     ) => {
         if (!component) return;
-        const expr = { ...currentExpressions[exprIndex] } as Record<
-            string,
-            unknown
-        >;
+        const expr = { ...currentExpressions[exprIndex] } as Record<string, unknown>;
         const rawValue = expr[oldField];
-        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
-            (f) => f.key === newField,
-        );
+        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find((f) => f.key === newField);
         delete expr[oldField];
         expr[newField] =
             fieldDef?.type === "number"
@@ -191,11 +171,8 @@ export function ComponentSelectorSection({
         if (!component) return;
         const draft = getDraft(exprIndex);
         if (!draft.field || draft.value === "") return;
-        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
-            (f) => f.key === draft.field,
-        );
-        const value =
-            fieldDef?.type === "number" ? Number(draft.value) : draft.value;
+        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find((f) => f.key === draft.field);
+        const value = fieldDef?.type === "number" ? Number(draft.value) : draft.value;
         if (fieldDef?.type === "number" && Number.isNaN(value)) return;
         const expr = { ...currentExpressions[exprIndex], [draft.field]: value };
         const nextExpressions = currentExpressions.map((e, i) =>
@@ -245,8 +222,7 @@ export function ComponentSelectorSection({
                         data={PREDEFINED_SELECTOR_OPTIONS}
                         value={component.selector}
                         onChange={(val) => {
-                            if (val)
-                                setSelector(val as PredefinedSelector, true);
+                            if (val) setSelector(val as PredefinedSelector, true);
                         }}
                         size="xs"
                     />
@@ -263,10 +239,7 @@ export function ComponentSelectorSection({
                             const draft = getDraft(index);
 
                             return (
-                                <AssetBuilderCardSectionGroup
-                                    key={index}
-                                    divider={false}
-                                >
+                                <AssetBuilderCardSectionGroup key={index} divider={false}>
                                     <ActionableList>
                                         <ActionableListItem
                                             title={`${index + 1}. expression `}
@@ -274,9 +247,7 @@ export function ComponentSelectorSection({
                                             rightComponent={
                                                 <DeleteActionIcon
                                                     onClick={() =>
-                                                        handleRemoveExpression(
-                                                            index,
-                                                        )
+                                                        handleRemoveExpression(index)
                                                     }
                                                     tooltip="Remove expression."
                                                 />
@@ -285,10 +256,9 @@ export function ComponentSelectorSection({
                                     </ActionableList>
 
                                     {usedFields.map((fieldKey) => {
-                                        const fieldDef =
-                                            SELECTOR_EXPRESSION_FIELDS.find(
-                                                (f) => f.key === fieldKey,
-                                            );
+                                        const fieldDef = SELECTOR_EXPRESSION_FIELDS.find(
+                                            (f) => f.key === fieldKey,
+                                        );
                                         if (!fieldDef) return null;
 
                                         return (
@@ -320,9 +290,8 @@ export function ComponentSelectorSection({
                                                     <TextInput
                                                         label="Value"
                                                         value={
-                                                            (expr[
-                                                                fieldKey
-                                                            ] as string) ?? ""
+                                                            (expr[fieldKey] as string) ??
+                                                            ""
                                                         }
                                                         size="xs"
                                                         style={{ flex: 1 }}
@@ -330,8 +299,7 @@ export function ComponentSelectorSection({
                                                             handleExpressionFieldChange(
                                                                 index,
                                                                 fieldKey,
-                                                                e.currentTarget
-                                                                    .value,
+                                                                e.currentTarget.value,
                                                                 false,
                                                             )
                                                         }
@@ -341,9 +309,7 @@ export function ComponentSelectorSection({
                                                                 fieldKey,
                                                                 currentExpressions[
                                                                     index
-                                                                ]?.[
-                                                                    fieldKey
-                                                                ] as string,
+                                                                ]?.[fieldKey] as string,
                                                                 true,
                                                             )
                                                         }
@@ -354,9 +320,7 @@ export function ComponentSelectorSection({
                                                                 fieldKey,
                                                                 currentExpressions[
                                                                     index
-                                                                ]?.[
-                                                                    fieldKey
-                                                                ] as string,
+                                                                ]?.[fieldKey] as string,
                                                                 true,
                                                             )
                                                         }
@@ -375,8 +339,7 @@ export function ComponentSelectorSection({
                                                             handleExpressionFieldChange(
                                                                 index,
                                                                 fieldKey,
-                                                                typeof val ===
-                                                                    "number"
+                                                                typeof val === "number"
                                                                     ? val
                                                                     : undefined,
                                                                 false,
@@ -388,9 +351,7 @@ export function ComponentSelectorSection({
                                                                 fieldKey,
                                                                 currentExpressions[
                                                                     index
-                                                                ]?.[
-                                                                    fieldKey
-                                                                ] as number,
+                                                                ]?.[fieldKey] as number,
                                                                 true,
                                                             )
                                                         }
@@ -401,9 +362,7 @@ export function ComponentSelectorSection({
                                                                 fieldKey,
                                                                 currentExpressions[
                                                                     index
-                                                                ]?.[
-                                                                    fieldKey
-                                                                ] as number,
+                                                                ]?.[fieldKey] as number,
                                                                 true,
                                                             )
                                                         }
@@ -422,17 +381,12 @@ export function ComponentSelectorSection({
                                         );
                                     })}
 
-                                    <Group
-                                        align="flex-end"
-                                        gap="0.33em"
-                                        wrap="nowrap"
-                                    >
+                                    <Group align="flex-end" gap="0.33em" wrap="nowrap">
                                         <Select
                                             label="Add field"
                                             placeholder="Choose field"
                                             data={SELECTOR_EXPRESSION_FIELDS.filter(
-                                                (f) =>
-                                                    !usedFields.includes(f.key),
+                                                (f) => !usedFields.includes(f.key),
                                             ).map((f) => ({
                                                 value: f.key,
                                                 label: f.label,
@@ -459,20 +413,15 @@ export function ComponentSelectorSection({
                                             onChange={(e) =>
                                                 setDraft(index, {
                                                     ...draft,
-                                                    value: e.currentTarget
-                                                        .value,
+                                                    value: e.currentTarget.value,
                                                 })
                                             }
                                             onKeyDown={(e) =>
                                                 e.key === "Enter" &&
-                                                handleSaveNewExpressionField(
-                                                    index,
-                                                )
+                                                handleSaveNewExpressionField(index)
                                             }
                                             onBlur={() =>
-                                                handleSaveNewExpressionField(
-                                                    index,
-                                                )
+                                                handleSaveNewExpressionField(index)
                                             }
                                         />
                                         <DeleteActionIcon
@@ -480,9 +429,7 @@ export function ComponentSelectorSection({
                                             enabled={false}
                                         />
                                     </Group>
-                                    {index < currentExpressions.length - 1 && (
-                                        <Divider />
-                                    )}
+                                    {index < currentExpressions.length - 1 && <Divider />}
                                 </AssetBuilderCardSectionGroup>
                             );
                         })}

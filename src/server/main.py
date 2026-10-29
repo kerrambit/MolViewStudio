@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+# Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
 #
 # @author Marek Eibel
 #
@@ -18,7 +18,7 @@ def get_cors_origins(settings: Config):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MolView Studio Server")
+    parser = argparse.ArgumentParser(description="VolSegStudio Server")
 
     parser.add_argument(
         "--host", default="localhost", help="Host to bind to (default: localhost)"
@@ -51,7 +51,7 @@ def main():
     reload = args.reload if args.env == "dev" else False
 
     print(
-        f">>> Starting MolView Studio Server on <{args.host}:{args.port}> with log level set to <info>."
+        f">>> Starting VolSegStudio Server on <{args.host}:{args.port}> with log level set to <info>."
     )
     print(
         f">>> Other settings: environment: <{config.env}>, CORS: <{config.cors}>, reloading: {reload}."

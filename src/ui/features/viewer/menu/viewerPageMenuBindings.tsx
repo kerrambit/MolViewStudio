@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -69,7 +69,7 @@ import {
     createWindowsRootMenuItem,
 } from "./windowsMenuItems";
 import {
-    createMolViewStudioMenuItem,
+    createVolSegStudioMenuItem,
     createMolstarMenuItem,
 } from "../../brand/menu/brandMenuItems";
 import { createSettingsRootMenuItem } from "../../settings/menu/settingsRootMenuItem";
@@ -514,7 +514,7 @@ export function bindViewerMenu(): Menu {
                 }),
             ]),
             createGeneralHelpSection([
-                createMolViewStudioMenuItem(),
+                createVolSegStudioMenuItem(),
                 createMolstarMenuItem(),
                 createReportIssueMenuItem(
                     "https://github.com/kerrambit/MolStarApp/issues",

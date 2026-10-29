@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -17,9 +17,7 @@ type StructureTransformControlsProps = {
     ) => void;
 };
 
-export function StructureTransformControls(
-    props: StructureTransformControlsProps,
-) {
+export function StructureTransformControls(props: StructureTransformControlsProps) {
     // Render the view model.
     return (
         <TransformControls
@@ -30,28 +28,22 @@ export function StructureTransformControls(
             rotationY={props.viewModel?.rotationY ?? 0.0}
             rotationZ={props.viewModel?.rotationZ ?? 0.0}
             onTranslationXChange={(val, sync) => {
-                if (props.viewModel)
-                    props.onUpdateParam("translationX", val, sync);
+                if (props.viewModel) props.onUpdateParam("translationX", val, sync);
             }}
             onTranslationYChange={(val, sync) => {
-                if (props.viewModel)
-                    props.onUpdateParam("translationY", val, sync);
+                if (props.viewModel) props.onUpdateParam("translationY", val, sync);
             }}
             onTranslationZChange={(val, sync) => {
-                if (props.viewModel)
-                    props.onUpdateParam("translationZ", val, sync);
+                if (props.viewModel) props.onUpdateParam("translationZ", val, sync);
             }}
             onRotationXChange={(val, sync) => {
-                if (props.viewModel)
-                    props.onUpdateParam("rotationX", val, sync);
+                if (props.viewModel) props.onUpdateParam("rotationX", val, sync);
             }}
             onRotationYChange={(val, sync) => {
-                if (props.viewModel)
-                    props.onUpdateParam("rotationY", val, sync);
+                if (props.viewModel) props.onUpdateParam("rotationY", val, sync);
             }}
             onRotationZChange={(val, sync) => {
-                if (props.viewModel)
-                    props.onUpdateParam("rotationZ", val, sync);
+                if (props.viewModel) props.onUpdateParam("rotationZ", val, sync);
             }}
         ></TransformControls>
     );

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -58,22 +58,18 @@ export function Dropzone(props: DropzoneProps) {
                                     stroke={2}
                                 />
                                 <p className="dropzone__error">
-                                    Some files were rejected. Please check the
-                                    file types and try again.
+                                    Some files were rejected. Please check the file types
+                                    and try again.
                                     <br />
                                     Details: <br />
                                     {fileRejections
                                         .flatMap((rej) =>
-                                            rej.errors.map(
-                                                (err) => err.message,
-                                            ),
+                                            rej.errors.map((err) => err.message),
                                         )
                                         .map((msg, idx, arr) => (
                                             <span key={idx}>
                                                 {msg}
-                                                {idx < arr.length - 1
-                                                    ? ", "
-                                                    : null}
+                                                {idx < arr.length - 1 ? ", " : null}
                                                 <br />
                                             </span>
                                         ))}

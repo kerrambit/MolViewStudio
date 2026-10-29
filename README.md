@@ -1,13 +1,13 @@
 <div align="center">
 
-# MolView Studio
+# VolSegStudio
 
 **Desktop-native structural biology workspace — volumes, segmentations, and MolViewSpec views, all in one app.**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Build and Release MolView Studio](https://github.com/kerrambit/MolViewStudio/actions/workflows/build-release.yml/badge.svg?branch=main)](https://github.com/kerrambit/MolViewStudio/actions/workflows/build-release.yml)
-[![Release](https://img.shields.io/github/v/release/kerrambit/MolViewStudio?label=release)](https://github.com/kerrambit/MolViewStudio/releases/latest)
-[![Issues](https://img.shields.io/badge/issues-welcome-green.svg)](https://github.com/kerrambit/MolViewStudio/issues)
+[![Build and Release VolSegStudio](https://github.com/kerrambit/VolSegStudio/actions/workflows/build-release.yml/badge.svg?branch=main)](https://github.com/kerrambit/VolSegStudio/actions/workflows/build-release.yml)
+[![Release](https://img.shields.io/github/v/release/kerrambit/VolSegStudio?label=release)](https://github.com/kerrambit/VolSegStudio/releases/latest)
+[![Issues](https://img.shields.io/badge/issues-welcome-green.svg)](https://github.com/kerrambit/VolSegStudio/issues)
 
 [About](#about) · [Download](#download) · [Development](#development) · [Contributing](#contributing) · [License](#license)
 
@@ -16,12 +16,12 @@
 ---
 
 <p align="center">
-  <img alt="MolView Studio in action" src="docs/assets/MolViewStudio-viewer.png" width="1000">
+  <img alt="VolSegStudio in action" src="docs/assets/VolSegStudio-viewer.png" width="1000">
 </p>
 
 ## About
 
-MolView Studio is a cross-platform desktop application for working with structural biology data. It lets you:
+VolSegStudio is a cross-platform desktop application for working with structural biology data. It lets you:
 
 -   **Load structures and density volumes** and explore them interactively with the modern [Mol\* (Molstar)](https://github.com/molstar/molstar) viewer.
 -   **Process volumes and run segmentations** locally, powered by the [volseg-tools](https://github.com/DanielKriz/volseg-tools) Python library through a bundled FastAPI server.
@@ -31,7 +31,7 @@ The app ships as a self-contained Electron desktop application with a local Pyth
 
 ## Download
 
-MolView Studio is available for **Windows** and **Linux** (**macOS** builds coming in a future releases). Grab the latest installer from the [Releases page](https://github.com/kerrambit/MolViewStudio/releases), or update in place using the app's built-in auto-update feature!
+VolSegStudio is available for **Windows** and **Linux** (**macOS** builds coming in a future releases). Grab the latest installer from the [Releases page](https://github.com/kerrambit/VolSegStudio/releases), or update in place using the app's built-in auto-update feature!
 
 ## Development
 
@@ -109,17 +109,17 @@ The app is split into three main parts:
 -   `src/electron` — Electron main process (window management, IPC, file storage, auto-update)
 -   `src/server` — Python FastAPI service for volume processing and segmentation
 
-More details on the individual parts, scripts, and the server are available on the [project wiki](https://github.com/kerrambit/MolViewStudio/wiki).
+More details on the individual parts, scripts, and the server are available on the [project wiki](https://github.com/kerrambit/VolSegStudio/wiki).
 
 ## Contributing
 
 There are many ways to participate in this project:
 
--   [Submit bugs and feature requests](https://github.com/kerrambit/MolViewStudio/issues)
--   Improve documentation on the [wiki](https://github.com/kerrambit/MolViewStudio/wiki)
+-   [Submit bugs and feature requests](https://github.com/kerrambit/VolSegStudio/issues)
+-   Improve documentation on the [wiki](https://github.com/kerrambit/VolSegStudio/wiki)
 
 ## License
 
 Licensed under the [MIT](LICENSE) license.
 
-Copyright (c) 2025 – present, MolView Studio contributors.
+Copyright (c) 2025 – present, VolSegStudio contributors.

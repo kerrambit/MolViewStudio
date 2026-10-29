@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -51,9 +51,8 @@ export function FocusControls(props: FocusControlsProps) {
                         <NumberInput
                             key={`min-${idx}`}
                             value={
-                                props.component?.focus_direction[
-                                    idx as 0 | 1 | 2
-                                ] ?? (idx === 2 ? "-1.0" : "0.0")
+                                props.component?.focus_direction[idx as 0 | 1 | 2] ??
+                                (idx === 2 ? "-1.0" : "0.0")
                             }
                             disabled={!enabled}
                             size="xs"
@@ -69,9 +68,8 @@ export function FocusControls(props: FocusControlsProps) {
                                 handleUpdate(
                                     "focus_direction",
                                     idx as 0 | 1 | 2,
-                                    props.component?.focus_direction[
-                                        idx as 0 | 1 | 2
-                                    ] ?? (idx === 2 ? "-1.0" : "0.0"),
+                                    props.component?.focus_direction[idx as 0 | 1 | 2] ??
+                                        (idx === 2 ? "-1.0" : "0.0"),
                                     true,
                                 )
                             }
@@ -108,20 +106,14 @@ export function FocusControls(props: FocusControlsProps) {
                             disabled={!enabled}
                             size="xs"
                             onChange={(val) =>
-                                handleUpdate(
-                                    "focus_up",
-                                    idx as 0 | 1 | 2,
-                                    val,
-                                    false,
-                                )
+                                handleUpdate("focus_up", idx as 0 | 1 | 2, val, false)
                             }
                             onBlur={() =>
                                 handleUpdate(
                                     "focus_up",
                                     idx as 0 | 1 | 2,
-                                    props.component?.focus_up[
-                                        idx as 0 | 1 | 2
-                                    ] ?? (idx === 1 ? "1.0" : "0.0"),
+                                    props.component?.focus_up[idx as 0 | 1 | 2] ??
+                                        (idx === 1 ? "1.0" : "0.0"),
                                     true,
                                 )
                             }
@@ -130,9 +122,8 @@ export function FocusControls(props: FocusControlsProps) {
                                     handleUpdate(
                                         "focus_up",
                                         idx as 0 | 1 | 2,
-                                        props.component?.focus_up[
-                                            idx as 0 | 1 | 2
-                                        ] ?? (idx === 1 ? "1.0" : "0.0"),
+                                        props.component?.focus_up[idx as 0 | 1 | 2] ??
+                                            (idx === 1 ? "1.0" : "0.0"),
                                         true,
                                     );
                                 }

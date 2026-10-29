@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -28,6 +28,7 @@ import type {
 import { useViewCard } from "../../../hooks/useViewCard";
 
 import "./ViewCard.css";
+import { DeleteActionIcon } from "../../../../../components/common/actionables/actions-icons/DeleteActionIcon";
 
 export interface ViewCardProps {
     metadata: ViewMetadata;
@@ -122,16 +123,11 @@ export function ViewCard(props: ViewCardProps) {
                         <IconCopy size={16} stroke={1.75} />
                     </ActionIcon>
 
-                    <ActionIcon
-                        variant="filled"
-                        color="red"
-                        size="sm"
+                    <DeleteActionIcon
+                        tooltip="Delete this view."
+                        variant="default"
                         onClick={() => props.onDelete?.()}
-                        aria-label="Delete this view."
-                        title="Delete this view."
-                    >
-                        <IconTrash size={16} stroke={1.75} />
-                    </ActionIcon>
+                    ></DeleteActionIcon>
                 </Group>
                 <Divider w="100%" />
             </Group>

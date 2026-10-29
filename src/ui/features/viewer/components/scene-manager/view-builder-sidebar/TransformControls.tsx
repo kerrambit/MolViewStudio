@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -32,11 +32,7 @@ const ROTATION_MAX = 180;
 export function TransformControls(props: TransformControlsProps) {
     return (
         <AssetBuilderCardSectionGroup divider={false}>
-            <AssetBuilderCardSectionGroup
-                gap={"0.25em"}
-                bottomMargin="xs"
-                topMargin="xs"
-            >
+            <AssetBuilderCardSectionGroup gap={"0.25em"} bottomMargin="xs" topMargin="xs">
                 <Text fw={550} size="sm" mb="xs">
                     Translation (Å)
                 </Text>
@@ -48,12 +44,8 @@ export function TransformControls(props: TransformControlsProps) {
                     sliderMax={TRANSLATION_MAX}
                     sliderStep={0.5}
                     textInputStep={0.5}
-                    onChange={(val: number) =>
-                        props.onTranslationXChange(val, false)
-                    }
-                    onChangeEnd={(val: number) =>
-                        props.onTranslationXChange(val, true)
-                    }
+                    onChange={(val: number) => props.onTranslationXChange(val, false)}
+                    onChangeEnd={(val: number) => props.onTranslationXChange(val, true)}
                 />
                 <SliderInputGroup
                     label="Y axis"
@@ -63,12 +55,8 @@ export function TransformControls(props: TransformControlsProps) {
                     sliderMax={TRANSLATION_MAX}
                     sliderStep={0.5}
                     textInputStep={0.5}
-                    onChange={(val: number) =>
-                        props.onTranslationYChange(val, false)
-                    }
-                    onChangeEnd={(val: number) =>
-                        props.onTranslationYChange(val, true)
-                    }
+                    onChange={(val: number) => props.onTranslationYChange(val, false)}
+                    onChangeEnd={(val: number) => props.onTranslationYChange(val, true)}
                 />
                 <SliderInputGroup
                     label="Z axis"
@@ -78,12 +66,8 @@ export function TransformControls(props: TransformControlsProps) {
                     sliderMax={TRANSLATION_MAX}
                     sliderStep={0.5}
                     textInputStep={0.5}
-                    onChange={(val: number) =>
-                        props.onTranslationZChange(val, false)
-                    }
-                    onChangeEnd={(val: number) =>
-                        props.onTranslationZChange(val, true)
-                    }
+                    onChange={(val: number) => props.onTranslationZChange(val, false)}
+                    onChangeEnd={(val: number) => props.onTranslationZChange(val, true)}
                 />
             </AssetBuilderCardSectionGroup>
 
@@ -104,12 +88,8 @@ export function TransformControls(props: TransformControlsProps) {
                     sliderMax={ROTATION_MAX}
                     sliderStep={1}
                     textInputStep={1}
-                    onChange={(val: number) =>
-                        props.onRotationXChange(val, false)
-                    }
-                    onChangeEnd={(val: number) =>
-                        props.onRotationXChange(val, true)
-                    }
+                    onChange={(val: number) => props.onRotationXChange(val, false)}
+                    onChangeEnd={(val: number) => props.onRotationXChange(val, true)}
                 />
                 <SliderInputGroup
                     label="Yaw (Y)"
@@ -119,12 +99,8 @@ export function TransformControls(props: TransformControlsProps) {
                     sliderMax={ROTATION_MAX}
                     sliderStep={1}
                     textInputStep={1}
-                    onChange={(val: number) =>
-                        props.onRotationYChange(val, false)
-                    }
-                    onChangeEnd={(val: number) =>
-                        props.onRotationYChange(val, true)
-                    }
+                    onChange={(val: number) => props.onRotationYChange(val, false)}
+                    onChangeEnd={(val: number) => props.onRotationYChange(val, true)}
                 />
                 <SliderInputGroup
                     label="Roll (Z)"
@@ -134,12 +110,8 @@ export function TransformControls(props: TransformControlsProps) {
                     sliderMax={ROTATION_MAX}
                     sliderStep={1}
                     textInputStep={1}
-                    onChange={(val: number) =>
-                        props.onRotationZChange(val, false)
-                    }
-                    onChangeEnd={(val: number) =>
-                        props.onRotationZChange(val, true)
-                    }
+                    onChange={(val: number) => props.onRotationZChange(val, false)}
+                    onChangeEnd={(val: number) => props.onRotationZChange(val, true)}
                 />
             </AssetBuilderCardSectionGroup>
         </AssetBuilderCardSectionGroup>

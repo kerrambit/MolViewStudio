@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -16,14 +16,7 @@ export function readFiles(filePaths: string[]): FileData[] | Error {
         try {
             const fileName = path.basename(filePath);
             const fileExtension = path.extname(filePath).toLowerCase().slice(1);
-            const isBinary = [
-                "mvsx",
-                "cvsx",
-                "bcif",
-                "map",
-                "ccp4",
-                "mrc",
-            ].includes(
+            const isBinary = ["mvsx", "cvsx", "bcif", "map", "ccp4", "mrc"].includes(
                 // TODO: put it into some domain/config file
                 fileExtension,
             );

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -64,10 +64,7 @@ export function BaseDialogue({
     if (!isOpen) return null;
 
     return (
-        <div
-            className="base-dialogue__blurred-background"
-            onClick={handleBackdropClick}
-        >
+        <div className="base-dialogue__blurred-background" onClick={handleBackdropClick}>
             <div
                 className="base-dialogue"
                 style={{ width, maxWidth }}
@@ -75,9 +72,7 @@ export function BaseDialogue({
             >
                 {(title || showCloseButton) && (
                     <div className="base-dialogue__header">
-                        {title && (
-                            <h3 className="base-dialogue__title">{title}</h3>
-                        )}
+                        {title && <h3 className="base-dialogue__title">{title}</h3>}
                         {showCloseButton && (
                             <button
                                 className="base-dialogue__close-button"

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -100,9 +100,9 @@ export function areCameraStatesEqual(
  * @returns current camera state or undefined if camera is not available
  */
 export function useLiveCameraState(): CameraState | undefined {
-    const [liveCameraState, setLiveCameraState] = useState<
-        CameraState | undefined
-    >(undefined);
+    const [liveCameraState, setLiveCameraState] = useState<CameraState | undefined>(
+        undefined,
+    );
 
     useEffect(() => {
         let handle: number;
@@ -173,9 +173,7 @@ export function fromMVSPosition(
     const delta = Vec3.sub(Vec3(), mvsPosition, mvsTarget);
 
     const scaleRefToReal =
-        mode === "orthographic"
-            ? 0.5 / Math.tan(fovRad / 2)
-            : 0.5 / Math.sin(fovRad / 2);
+        mode === "orthographic" ? 0.5 / Math.tan(fovRad / 2) : 0.5 / Math.sin(fovRad / 2);
 
     return Vec3.scaleAndAdd(Vec3(), mvsTarget, delta, scaleRefToReal);
 }

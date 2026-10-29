@@ -4,9 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const executable =
-    process.platform === "win32"
-        ? "MolViewStudioServer.exe"
-        : "MolViewStudioServer";
+    process.platform === "win32" ? "VolSegStudioServer.exe" : "VolSegStudioServer";
 
 const serverPath = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),

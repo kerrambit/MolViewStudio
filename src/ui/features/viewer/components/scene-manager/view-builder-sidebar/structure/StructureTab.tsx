@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -56,12 +56,8 @@ export function StructureTab({
                 viewKey={viewKey}
                 asset={asset}
                 components={viewModel.components}
-                onUpdateStructureComponentParam={
-                    onUpdateStructureComponentParam
-                }
-                onUpdateStructureComponentFields={
-                    onUpdateStructureComponentFields
-                }
+                onUpdateStructureComponentParam={onUpdateStructureComponentParam}
+                onUpdateStructureComponentFields={onUpdateStructureComponentFields}
                 onAddStructureComponent={onAddStructureComponent}
                 onDeleteStructureComponent={onDeleteStructureComponent}
             />

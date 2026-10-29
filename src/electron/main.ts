@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -72,36 +72,32 @@ app.on("ready", async () => {
         userDataPath,
         userSettingsFilePath,
     );
-    logger.info(
-        `User settings has been loaded from <${userSettingsFilePath}>.`,
-    );
+    logger.info(`User settings has been loaded from <${userSettingsFilePath}>.`);
 
     // Check if the prefered port from user settings is free.
     const serverPort = await getAvailablePort(userSettings.preferredServerPort);
     logger.info(`Resolved server port to use: <${serverPort}>.`);
 
     // Inject valid CSP.
-    mainWindow.webContents.session.webRequest.onHeadersReceived(
-        (details, callback) => {
-            // Choose script restrictions depending on environment: Vite development server requires 'unsafe-inline' to run the dev script tags.
-            const scriptSourceDirective = isDev()
-                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval';"
-                : "script-src 'self';";
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+        // Choose script restrictions depending on environment: Vite development server requires 'unsafe-inline' to run the dev script tags.
+        const scriptSourceDirective = isDev()
+            ? "script-src 'self' 'unsafe-inline' 'unsafe-eval';"
+            : "script-src 'self';";
 
-            callback({
-                responseHeaders: {
-                    ...details.responseHeaders,
-                    "Content-Security-Policy": [
-                        `default-src 'self' https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
-                            `connect-src 'self' http://localhost:${serverPort} ws://localhost:${serverPort} http://localhost:5123 ws://localhost:5123 https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
-                            `img-src 'self' data: blob: https:; ` +
-                            `style-src 'self' 'unsafe-inline'; ` +
-                            `${scriptSourceDirective}`, // Inject the conditional rules safely here.
-                    ],
-                },
-            });
-        },
-    );
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                "Content-Security-Policy": [
+                    `default-src 'self' https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
+                        `connect-src 'self' http://localhost:${serverPort} ws://localhost:${serverPort} http://localhost:5123 ws://localhost:5123 https://files.rcsb.org https://webchem.ncbr.muni.cz https://raw.githubusercontent.com https://www.ebi.ac.uk https://molstar.org; ` +
+                        `img-src 'self' data: blob: https:; ` +
+                        `style-src 'self' 'unsafe-inline'; ` +
+                        `${scriptSourceDirective}`, // Inject the conditional rules safely here.
+                ],
+            },
+        });
+    });
 
     // Registers all IPC handlers.
     registerAllIpcHandlers(mainWindow, updater, userSettings, serverPort, {
@@ -137,9 +133,7 @@ app.on("ready", async () => {
                 setTimeout(async () => {
                     logger.info("Checking for updates on startup...");
                     try {
-                        const updateResult = await updater.checkForUpdates(
-                            false,
-                        );
+                        const updateResult = await updater.checkForUpdates(false);
                         if (updateResult) {
                             logger.info(
                                 `Update is available: <${updateResult.isUpdateAvailable}>. Info about update: <{ version: ${updateResult.updateInfo.version}, releaseDate: ${updateResult.updateInfo.releaseDate} }>.`,
@@ -183,8 +177,8 @@ function runServer(serverPort: number): Promise<ChildProcess> {
 
         // For Vite Hot-Reloading.
         if (isDev()) {
-            ["http://localhost:5123", "http://127.0.0.1:5123"].forEach(
-                (origin) => args.push(origin),
+            ["http://localhost:5123", "http://127.0.0.1:5123"].forEach((origin) =>
+                args.push(origin),
             );
         }
 
@@ -193,16 +187,12 @@ function runServer(serverPort: number): Promise<ChildProcess> {
             windowsHide: true,
         });
         logger.info(
-            `Server process has been spawned with arguments: <${args.join(
-                " ",
-            )}>`,
+            `Server process has been spawned with arguments: <${args.join(" ")}>`,
         );
 
         serverProcess.on("error", (err) => {
             reject(
-                new Error(
-                    `Failed to start server process! Details: <${err.message}>.`,
-                ),
+                new Error(`Failed to start server process! Details: <${err.message}>.`),
             );
         });
 
@@ -218,9 +208,7 @@ function runServer(serverPort: number): Promise<ChildProcess> {
                 const attempt = () => {
                     http.get(url, () => res()).on("error", () => {
                         if (retries <= 0)
-                            return rej(
-                                new Error("Failed to start server process!"),
-                            );
+                            return rej(new Error("Failed to start server process!"));
                         retries--;
                         setTimeout(attempt, delay);
                     });
@@ -274,13 +262,9 @@ function quitServerProcess(serverProcess: ChildProcess | null) {
     if (serverProcess) {
         // Kill entire process tree on Windows.
         if (process.platform === "win32" && serverProcess.pid) {
-            spawn(
-                "taskkill",
-                ["/pid", serverProcess.pid.toString(), "/t", "/f"],
-                {
-                    stdio: "ignore",
-                },
-            );
+            spawn("taskkill", ["/pid", serverProcess.pid.toString(), "/t", "/f"], {
+                stdio: "ignore",
+            });
         } else {
             serverProcess.kill();
         }

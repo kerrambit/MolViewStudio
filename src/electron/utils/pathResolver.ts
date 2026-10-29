@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -22,9 +22,7 @@ export function getUiPath(): string {
 
 export function getServerPath(): string {
     const executable =
-        process.platform === "win32"
-            ? "MolViewStudioServer.exe"
-            : "MolViewStudioServer";
+        process.platform === "win32" ? "VolSegStudioServer.exe" : "VolSegStudioServer";
 
     if (isDev()) {
         return path.join(app.getAppPath(), "dist-server", executable);

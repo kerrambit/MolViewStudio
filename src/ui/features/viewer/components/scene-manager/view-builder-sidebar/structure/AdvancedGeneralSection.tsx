@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -37,9 +37,7 @@ export function AdvancedGeneralSection({
             size="xs"
             onChange={(e) => onUpdateParam(key, e.currentTarget.value, false)}
             onBlur={() => onUpdateParam(key, value, true)}
-            onKeyDown={(e) =>
-                e.key === "Enter" && onUpdateParam(key, value, true)
-            }
+            onKeyDown={(e) => e.key === "Enter" && onUpdateParam(key, value, true)}
         />
     );
 
@@ -54,52 +52,29 @@ export function AdvancedGeneralSection({
             value={value}
             min={0.0}
             size="xs"
-            onChange={(val) =>
-                typeof val === "number" && onUpdateParam(key, val, false)
-            }
+            onChange={(val) => typeof val === "number" && onUpdateParam(key, val, false)}
             onBlur={() => onUpdateParam(key, value, true)}
-            onKeyDown={(e) =>
-                e.key === "Enter" && onUpdateParam(key, value, true)
-            }
+            onKeyDown={(e) => e.key === "Enter" && onUpdateParam(key, value, true)}
         />
     );
 
     // Render the component.
     return (
         <AssetBuilderCardSectionGroup gap="0.25em" divider={false}>
-            {renderTextField(
-                "Block header",
-                "block_header",
-                viewModel.block_header,
-            )}
-            {renderNumberField(
-                "Block index",
-                "block_index",
-                viewModel.block_index,
-            )}
-            {renderNumberField(
-                "Model index",
-                "model_index",
-                viewModel.model_index,
-            )}
+            {renderTextField("Block header", "block_header", viewModel.block_header)}
+            {renderNumberField("Block index", "block_index", viewModel.block_index)}
+            {renderNumberField("Model index", "model_index", viewModel.model_index)}
             {renderTextField(
                 "Coordinates reference",
                 "coordinates_ref",
                 viewModel.coordinates_ref,
             )}
             {viewModel.type === "assembly" &&
-                renderTextField(
-                    "Assembly Id",
-                    "assembly_id",
-                    viewModel.assembly_id,
-                )}
+                renderTextField("Assembly Id", "assembly_id", viewModel.assembly_id)}
             {viewModel.type === "symmetry_mates" &&
                 renderNumberField("Radius", "radius", viewModel.radius)}
             {viewModel.type === "symmetry" && (
-                <IJKControls
-                    viewModel={viewModel}
-                    onUpdateParam={onUpdateParam}
-                />
+                <IJKControls viewModel={viewModel} onUpdateParam={onUpdateParam} />
             )}
         </AssetBuilderCardSectionGroup>
     );

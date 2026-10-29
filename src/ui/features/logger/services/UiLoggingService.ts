@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -18,11 +18,7 @@ export const loggerUi = {
      * Methods to use when logging API operations.
      */
     api: {
-        request: (
-            endpoint: string,
-            method: string,
-            args?: Record<string, unknown>,
-        ) => {
+        request: (endpoint: string, method: string, args?: Record<string, unknown>) => {
             loggerUi.info(`API Request: ${method} ${endpoint}`);
 
             if (args) {
@@ -44,28 +40,18 @@ export const loggerUi = {
             loggerUi.error(`  - Status: ${status}`);
             loggerUi.error(`  - Error: ${errorMessage}`);
         },
-        networkError: (
-            endpoint: string,
-            method: string,
-            errorMessage: string,
-        ) => {
-            loggerUi.error(
-                `API Request: ${method} ${endpoint} - Network error`,
-            );
+        networkError: (endpoint: string, method: string, errorMessage: string) => {
+            loggerUi.error(`API Request: ${method} ${endpoint} - Network error`);
             loggerUi.error(`  - Error: ${errorMessage}`);
         },
         unexpectedError: (endpoint: string, method: string, error: unknown) => {
-            loggerUi.error(
-                `API Request: ${method} ${endpoint} - Unexpected error`,
-            );
+            loggerUi.error(`API Request: ${method} ${endpoint} - Unexpected error`);
             loggerUi.error(`  - Error: ${error}`);
         },
     },
     websockets: {
         parserError: (endpoint: string, errorMessage: string) => {
-            loggerUi.error(
-                `API Response: WEBSOCKET ${endpoint} - Parser failure`,
-            );
+            loggerUi.error(`API Response: WEBSOCKET ${endpoint} - Parser failure`);
             loggerUi.error(`  - Error: ${errorMessage}`);
         },
     },

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -44,12 +44,7 @@ export function IJKControls(props: IJKControlsProps) {
                             value={props.viewModel.ijk_min[idx as 0 | 1 | 2]}
                             size="xs"
                             onChange={(val) =>
-                                handleUpdate(
-                                    "ijk_min",
-                                    idx as 0 | 1 | 2,
-                                    val,
-                                    false,
-                                )
+                                handleUpdate("ijk_min", idx as 0 | 1 | 2, val, false)
                             }
                             onBlur={() =>
                                 handleUpdate(
@@ -64,9 +59,7 @@ export function IJKControls(props: IJKControlsProps) {
                                     handleUpdate(
                                         "ijk_min",
                                         idx as 0 | 1 | 2,
-                                        props.viewModel.ijk_min[
-                                            idx as 0 | 1 | 2
-                                        ],
+                                        props.viewModel.ijk_min[idx as 0 | 1 | 2],
                                         true,
                                     );
                                 }
@@ -88,12 +81,7 @@ export function IJKControls(props: IJKControlsProps) {
                             value={props.viewModel.ijk_max[idx as 0 | 1 | 2]}
                             size="xs"
                             onChange={(val) =>
-                                handleUpdate(
-                                    "ijk_max",
-                                    idx as 0 | 1 | 2,
-                                    val,
-                                    false,
-                                )
+                                handleUpdate("ijk_max", idx as 0 | 1 | 2, val, false)
                             }
                             onBlur={() =>
                                 handleUpdate(
@@ -108,9 +96,7 @@ export function IJKControls(props: IJKControlsProps) {
                                     handleUpdate(
                                         "ijk_max",
                                         idx as 0 | 1 | 2,
-                                        props.viewModel.ijk_max[
-                                            idx as 0 | 1 | 2
-                                        ],
+                                        props.viewModel.ijk_max[idx as 0 | 1 | 2],
                                         true,
                                     );
                                 }
