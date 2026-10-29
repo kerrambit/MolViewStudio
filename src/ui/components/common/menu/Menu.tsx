@@ -42,11 +42,15 @@ export function Menu({ className = "" }: MenuProps) {
     // Render the component.
     return (
         <div className={className}>
-            <span
-                title={`MolView Studio (Version ${info.appVersion})`}
-                className="menu__title"
-            >
-                MolView Studio{" "}
+            <span className="menu__title">
+                {info.app}
+                <Badge
+                    ml="xs"
+                    mr={isDev ? "xs" : undefined}
+                    color={colorTheme.primaryColor}
+                >
+                    {info.appVersion}
+                </Badge>
                 {isDev ? (
                     <Badge
                         title="You are in developer mode."
