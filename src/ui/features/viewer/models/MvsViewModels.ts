@@ -30,14 +30,9 @@ export interface SelectorExpression {
     type_symbol?: string;
 }
 
-export type Selector =
-    | PredefinedSelector
-    | SelectorExpression
-    | SelectorExpression[];
+export type Selector = PredefinedSelector | SelectorExpression | SelectorExpression[];
 
-export function isPredefinedSelector(
-    selector: Selector,
-): selector is PredefinedSelector {
+export function isPredefinedSelector(selector: Selector): selector is PredefinedSelector {
     return typeof selector === "string";
 }
 export function isSelectorExpressionList(
@@ -118,7 +113,7 @@ export interface DataFromSourceParams {
  * calls stack rather than replace.
  */
 export interface ColorOverride {
-    id: string; // UI-only, never written to the tree — MVS has no node identity
+    id: string; // UI-only, never written to the tree — MVS has no node identity.
     selector: Selector;
     color: string;
 }
@@ -169,7 +164,7 @@ export interface ComponentEntry {
     /** Used ONLY when representationType is "putty". */
     size_theme: "uniform" | "uncertainty";
 
-    // --- Color (mutually exclusive in MVS — UI must ensure only one is set) ---
+    /** Color (mutually exclusive in MVS — UI must ensure only one is set). */
     color: string;
     colorOverrides: ColorOverride[];
     color_from_uri?: DataFromUriParams;
@@ -177,23 +172,23 @@ export interface ComponentEntry {
 
     opacity: number;
 
-    // --- Focus ---
+    /** Focus. */
     show_focus: boolean;
     focus_direction: [number, number, number];
     focus_up: [number, number, number];
     radius_factor: number;
 
-    // --- Inline label/tooltip only — no *_from_uri/*_from_source at component level ---
+    /** Inline label/tooltip only — no *_from_uri/*_from_source at component level. */
     label: string;
     tooltip: string;
 
-    // --- Component-level transform ---
+    /** Component-level transform. */
     translationX: number;
     translationY: number;
     translationZ: number;
-    rotationX: number; // Pitch (Degrees)
-    rotationY: number; // Yaw (Degrees)
-    rotationZ: number; // Roll (Degrees)
+    rotationX: number; // Pitch (Degrees).
+    rotationY: number; // Yaw (Degrees).
+    rotationZ: number; // Roll (Degrees).
 }
 
 export type ComponenentEntryColorProperty =
@@ -291,22 +286,22 @@ export interface StructureViewModel {
     model_index: number;
     coordinates_ref?: string;
 
-    /** Used ONLY when type === "assembly" */
+    /** Used ONLY when type === "assembly". */
     assembly_id?: string;
-    /** Used ONLY when type === "symmetry_mates" */
+    /** Used ONLY when type === "symmetry_mates". */
     radius: number;
-    /** Used ONLY when type === "symmetry" */
+    /** Used ONLY when type === "symmetry". */
     ijk_min: [number, number, number];
-    /** Used ONLY when type === "symmetry" */
+    /** Used ONLY when type === "symmetry" .*/
     ijk_max: [number, number, number];
 
-    // --- Structure-wide annotation-driven tooltip/label (mutually exclusive per pair) ---
+    /** Structure-wide annotation-driven tooltip/label (mutually exclusive per pair) */
     tooltip_from_uri?: DataFromUriParams;
     tooltip_from_source?: DataFromSourceParams;
     label_from_uri?: DataFromUriParams;
     label_from_source?: DataFromSourceParams;
 
-    // --- Structure-level transform (independent of any component's own transform) ---
+    /** Structure-level transform (independent of any component's own transform) */
     translationX: number;
     translationY: number;
     translationZ: number;
@@ -334,6 +329,51 @@ export const DEFAULT_STRUCTURE_VIEW_MODEL: StructureViewModel = {
     components: [createDefaultComponentEntry("component-default")],
 };
 
+/**
+ * One control point of a volume transfer function: `[x, alpha]`, both
+ * normalized to [0, 1]. `x` spans the volume's [min, max] value range,
+ * `alpha` is the opacity at that value. Mol* smooths the points with a
+ * Catmull-Rom spline into a 256-entry 1D texture (see Mol*'s
+ * `mol-geo/geometry/direct-volume/transfer-function`).
+ */
+export type TransferControlPoint = [number, number];
+
+/** One color stop of a volume transfer function gradient, at normalized value `x` in [0, 1]. */
+export interface TransferColorStop {
+    x: number;
+    color: string;
+}
+
+/**
+ * Transfer function for direct volume rendering: an opacity curve over the
+ * volume's value range plus a color gradient over the same range. Colors map
+ * onto Mol*'s `volume-value` color theme, opacity onto the `direct-volume`
+ * representation's `controlPoints`.
+ */
+export interface TransferFunction {
+    controlPoints: TransferControlPoint[];
+    colorStops: TransferColorStop[];
+}
+
+export const DEFAULT_TRANSFER_FUNCTION: TransferFunction = {
+    // Same fallback shape Mol* uses for direct volumes without data-aware defaults.
+    controlPoints: [
+        [0.19, 0.0],
+        [0.2, 0.05],
+        [0.25, 0.05],
+        [0.26, 0.0],
+        [0.79, 0.0],
+        [0.8, 0.05],
+        [0.85, 0.05],
+        [0.86, 0.0],
+    ],
+    colorStops: [
+        { x: 0.0, color: "#1d4ed8" },
+        { x: 0.5, color: "#38bdf8" },
+        { x: 1.0, color: "#fde047" },
+    ],
+};
+
 export interface VolumeViewModel {
     format: string;
     type: string;
@@ -343,6 +383,8 @@ export interface VolumeViewModel {
     show_faces: boolean;
     color: string;
     opacity: number;
+    /** Used ONLY when type is "direct_volume". */
+    transferFunction: TransferFunction;
     translationX: number;
     translationY: number;
     translationZ: number;
@@ -360,6 +402,7 @@ export const DEFAULT_VOLUME_VIEW_MODEL: VolumeViewModel = {
     show_faces: true,
     color: "#ffffff",
     opacity: 1.0,
+    transferFunction: structuredClone(DEFAULT_TRANSFER_FUNCTION),
     translationX: 0,
     translationY: 0,
     translationZ: 0,

@@ -18,6 +18,11 @@ import {
 } from "../../features/viewer/models/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
 import { getParser } from "../../features/assets/domain/assetsDefinitions";
+import {
+    customToTransferFunction,
+    transferFunctionToCustom,
+    VOLUME_NODE_REF_PREFIX,
+} from "./directVolume";
 
 /**
  * Creates a deep copy of `node`.
@@ -724,10 +729,16 @@ export function getVolumeNode(assetId: string, viewModel: VolumeViewModel): any 
 
     const downloaded = builder.download({ url: assetId });
     const parsed = downloaded.parse({ format: viewModel.format as any });
-    const volumeNodeParams = viewModel.channel_id
-        ? { channel_id: viewModel.channel_id }
-        : {};
-    const volumeNode = parsed.volume(volumeNodeParams);
+    const volumeNodeParams: Record<string, unknown> = {
+        // Deterministic ref so the loaded VolumeData can be found in the Molstar
+        // state via the `mvs-ref:vol-<assetId>` tag (used for the transfer
+        // function editor's histogram).
+        ref: `${VOLUME_NODE_REF_PREFIX}${assetId}`,
+    };
+    if (viewModel.channel_id) {
+        volumeNodeParams.channel_id = viewModel.channel_id;
+    }
+    const volumeNode = parsed.volume(volumeNodeParams as any);
 
     const hasTransform =
         viewModel.translationX !== 0 ||
@@ -752,12 +763,28 @@ export function getVolumeNode(assetId: string, viewModel: VolumeViewModel): any 
         });
     }
 
+    // Direct volume (transfer function) representations are stored with the
+    // official "isosurface" params as a graceful fallback for stock MVS
+    // viewers, plus the transfer function in the node's custom fields - the
+    // same pattern as the camera thumbnail. MolViewStudio's loading extension
+    // upgrades the representation to a direct volume from the custom data.
+    const isDirectVolume = viewModel.type === "direct_volume";
+
     const representationNode = volumeNode.representation({
-        type: viewModel.type as never,
+        type: (isDirectVolume ? "isosurface" : viewModel.type) as never,
         relative_isovalue: viewModel.relative_isovalue,
-        show_wireframe: viewModel.show_wireframe,
-        show_faces: viewModel.show_faces,
-    });
+        show_wireframe: isDirectVolume ? false : viewModel.show_wireframe,
+        show_faces: isDirectVolume ? true : viewModel.show_faces,
+        ...(isDirectVolume
+            ? {
+                  custom: {
+                      transfer_function: transferFunctionToCustom(
+                          viewModel.transferFunction,
+                      ),
+                  },
+              }
+            : {}),
+    } as any);
 
     representationNode.color({ color: viewModel.color as any });
     representationNode.opacity({ opacity: viewModel.opacity });
@@ -1044,7 +1071,17 @@ export function getVolumeViewModel(
                 params.channel_id = node.params.channel_id;
 
             if (node.kind === "volume_representation" && node.params) {
-                if (node.params.type !== undefined) params.type = node.params.type;
+                // A transfer function in the custom fields marks a direct
+                // volume, regardless of the official (fallback) params type.
+                const transferFunction = customToTransferFunction(
+                    (node as any).custom?.transfer_function,
+                );
+                if (transferFunction) {
+                    params.type = "direct_volume";
+                    params.transferFunction = transferFunction;
+                } else if (node.params.type !== undefined) {
+                    params.type = node.params.type;
+                }
                 if (node.params.relative_isovalue !== undefined)
                     params.relative_isovalue = node.params.relative_isovalue;
                 if (node.params.show_wireframe !== undefined)

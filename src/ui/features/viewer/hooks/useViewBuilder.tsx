@@ -920,6 +920,7 @@ export function useViewBuilder(viewKey: string) {
         isAssetSelected,
         getAssetQuality,
         handleAssetQualityChange,
+        resolveRenderAssetId,
         expandedAssetId,
         getVolumeViewModelForAsset,
         getStructureViewModelForAsset,

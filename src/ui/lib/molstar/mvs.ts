@@ -22,6 +22,7 @@ import { arcpUri, decodeUtf8, generateArchiveID } from "./utils";
 import { ensureUrlAsset } from "./molstarAssetService";
 import { Asset } from "molstar/lib/mol-util/assets";
 import { loadMVS } from "molstar/lib/extensions/mvs/load";
+import { DirectVolumeLoadingExtension } from "./directVolume";
 import { buildRenderTreeForMolstar } from "./mvsTree";
 import { checkMolstarAfterLoading } from "./core";
 import { getExtensionFromFileName, getExtensionFromUrl } from "../../utils/fileDataUtils";
@@ -721,7 +722,7 @@ export async function loadMVSIntoMolstar(
             keepCamera: false,
             sourceUrl: sourceUrl,
             keepCameraOrientation: false,
-            extensions: [],
+            extensions: [DirectVolumeLoadingExtension],
             sanityChecks: true,
             defaultSnapshotIndex: currentIndex,
         });

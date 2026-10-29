@@ -15,6 +15,8 @@ const PREFIX = {
     VIEW_BUILDER_TAB: "view-builder-tab-",
     VIEW_BUILDER_VOLUME_GENERAL_SECTION: "view-builder-volume-general-section-",
     VIEW_BUILDER_VOLUME_REPRESENTATION_SECTION: "view-builder-volume-representation",
+    VIEW_BUILDER_VOLUME_TRANSFER_FUNCTION_SECTION:
+        "view-builder-volume-transfer-function-section-",
     VIEW_BUILDER_VOLUME_TRANSFORM_SECTION: "view-builder-volume-transform-section-",
     VIEW_BUILDER_STRUCTURE_GENERAL_SECTION: "view-builder-structure-general-section-",
     VIEW_BUILDER_STRUCTURE_GENERAL_ADVANCED_SECTION:
@@ -271,6 +273,30 @@ export const UiLocalStorageService = {
         ): void => {
             localStorage.setItem(
                 `${PREFIX.VIEW_BUILDER_VOLUME_REPRESENTATION_SECTION}${viewKey}-${assetId}`,
+                String(expanded),
+            );
+        },
+
+        getExpandedVolumeTransferFunctionSection: (
+            assetId: string,
+            viewKey: string,
+        ): boolean => {
+            const value = localStorage.getItem(
+                `${PREFIX.VIEW_BUILDER_VOLUME_TRANSFER_FUNCTION_SECTION}${viewKey}-${assetId}`,
+            );
+            if (value === null || value === "true") {
+                return true;
+            }
+            return false;
+        },
+
+        setExpandedVolumeTransferFunctionSection: (
+            assetId: string,
+            viewKey: string,
+            expanded: boolean,
+        ): void => {
+            localStorage.setItem(
+                `${PREFIX.VIEW_BUILDER_VOLUME_TRANSFER_FUNCTION_SECTION}${viewKey}-${assetId}`,
                 String(expanded),
             );
         },

@@ -6,6 +6,7 @@
 
 export * from "./camera";
 export * from "./core";
+export * from "./directVolume";
 export * from "./events";
 export * from "./instance";
 export * from "./io";
