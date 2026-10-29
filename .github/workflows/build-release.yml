@@ -2,7 +2,7 @@ name: Build and Release MolView Studio
 
 on:
   push:
-    branches: [ main, dev, feat-* ]
+    branches: [ main, dev, feat-*, fix-* ]
     tags:
       - 'v*.*.*'
   pull_request:
