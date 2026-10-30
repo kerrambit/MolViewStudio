@@ -19,7 +19,7 @@ import {
     type TransferColorStop,
     type TransferControlPoint,
     type TransferFunction,
-} from "../../features/viewer/models/MvsViewModels";
+} from "../../features/viewer/view-builder/domain/MvsViewModels";
 import { convertHexStringToColor } from "./utils";
 
 /**

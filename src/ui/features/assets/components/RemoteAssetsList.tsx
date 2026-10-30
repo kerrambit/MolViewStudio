@@ -15,7 +15,7 @@ import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
 import {
     useManagedAssetsStore,
     isManagedAssetRemote,
-} from "../../managed-assets/stores/managedAssetsStore";
+} from "../stores/managedAssetsStore";
 import {
     AddRemoteAssetDialogueContent,
     type AddRemoteAssetDialogueReturnType,

@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import type { DownsamplingStrategy } from "../../downsampling/config/DownsamplingStrategy";
+import type { DownsamplingStrategy } from "../../downsampling/domain/DownsamplingStrategy";
 
 export const DEFAULT_REQUIRES_PROCESSING_DOWNSAMPLING_STRATEGY: DownsamplingStrategy =
     "null";

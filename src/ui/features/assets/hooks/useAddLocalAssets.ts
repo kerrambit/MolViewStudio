@@ -6,7 +6,7 @@
 
 import { useCallback } from "react";
 import { useFileMappingsStore } from "../../workspace/stores/fileMappingsStore";
-import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../stores/managedAssetsStore";
 import { useStartPreviewFileProcessing } from "../../processing/preview/hooks/useStartPreviewFileProcessing";
 import { useStartFileRequiredProcessing } from "../../processing/require/hooks/useStartFileRequiredProcessing";
 import type { AddLocalAssetDialogueReturnType } from "../components/AddLocalAssetDialogueContent";
@@ -26,7 +26,7 @@ import {
 import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../processing/preview/domain/constants";
 import { useProcessingSettings } from "../../settings/hooks/useProcessingSettings";
 import { pickFileIndexByResolution } from "../../processing/resolution/domain/pickFileByResolution";
-import { useWindowsStore } from "../../viewer/stores/WindowsStore";
+import { useWindowsStore } from "../../viewer/windows/stores/WindowsStore";
 import { useStartFileProcessing } from "../../processing/hooks/useStartFileProcessing";
 
 export function useAddLocalAssets() {

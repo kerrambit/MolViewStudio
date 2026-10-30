@@ -14,11 +14,8 @@ import { useAppearance } from "../../apperance/hooks/useAppearance";
 import { pushErrorNotification } from "../../notifications/services/NotificationService";
 import { UiLocalStorageService } from "../../persistence/services/UiLocalStorageService";
 import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
-import {
-    useManagedAssetsStore,
-    isManagedAssetLocal,
-} from "../../managed-assets/stores/managedAssetsStore";
-import { buildAssetTree, type AssetTreeNode } from "../../viewer/utils/buildAssetTree";
+import { useManagedAssetsStore, isManagedAssetLocal } from "../stores/managedAssetsStore";
+import { buildAssetTree, type AssetTreeNode } from "./buildAssetTree";
 import { useAddLocalAssets } from "../hooks/useAddLocalAssets";
 import {
     type AddLocalAssetDialogueReturnType,

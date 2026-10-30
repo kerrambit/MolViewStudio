@@ -11,13 +11,8 @@ import {
     pushWarningNotification,
 } from "../../notifications/services/NotificationService";
 import { clearViewer, reloadMolstarAndRestoreIndex } from "../../../lib/molstar";
-import { ShowMVSTreeDialogueContent } from "../components/ShowMVSTreeDialogueContent";
-import {
-    loadDefaultMVSJFile,
-    loadDefaultMVSXFile,
-    loadDefaultPDBFile,
-} from "../services/defaultLoaderService";
-import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { ShowMVSTreeDialogueContent } from "../show-mvs-tree/components/ShowMVSTreeDialogueContent";
+import { useManagedAssetsStore } from "../../assets/stores/managedAssetsStore";
 import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
 import { useWorkspaceManagement } from "../../workspace/hooks/useWorkspaceManagement";
 import { useRecentFilesStore } from "../../workspace/stores/recentFilesStore";
@@ -79,14 +74,17 @@ import type {
     Dropdown,
 } from "../../menu/providers/MenuContext";
 import { useProcessingStore } from "../../processing/stores/processingStore";
-import { ShowSourceTreeHistoryDialogueContent } from "../components/ShowSourceTreeHistoryDialogueContent";
-import { useWindowsStore } from "../stores/WindowsStore";
+import { ShowSourceTreeHistoryDialogueContent } from "../show-source-tree-history/components/ShowSourceTreeHistoryDialogueContent";
+import { useWindowsStore } from "../windows/stores/WindowsStore";
 import { runExportFlow } from "../export/services/exportService";
 import { useExportStore } from "../export/stores/exportStore";
 import { useStartFileProcessingForExport } from "../../processing/export/hooks/useStartFileProcessingForExport";
 import { AboutDialogueContent } from "../../brand/about-dialogue/components/AboutDialogueContent";
 import { ConfirmationDialogueContent } from "../../dialogue/components/ConfirmationDialogueContent";
 import { useRegimeStore } from "../../regime/stores/regimeStore";
+import { loadDefaultMvsjFile } from "../default-files-loaders/domain/loadDefaultMvsjFile";
+import { loadDefaultMvsxFile } from "../default-files-loaders/domain/loadDefaultMvsxFile";
+import { loadDefaultPdbFile } from "../default-files-loaders/domain/loadDefaultPdbFile";
 
 // TODO: implementations of given items has to be in different file, this is a code smell
 export function bindViewerMenu(): Menu {
@@ -420,51 +418,9 @@ export function bindViewerMenu(): Menu {
                         ),
                     });
                 }),
-                createLoadDefaultPDBItemMenuItem(async () => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to load default PDB file?"
-                                />
-                            ),
-                        });
-                    if (confirmed) await loadDefaultPDBFile();
-                }),
-                createLoadDefaultMVSJtemMenuItem(async () => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to load default MVSJ file?"
-                                />
-                            ),
-                        });
-                    if (confirmed) await loadDefaultMVSJFile();
-                }),
-                createLoadDefaultMVSXtemMenuItem(async () => {
-                    const confirmed = await useDialogueStore
-                        .getState()
-                        .showDialogue<boolean>({
-                            title: "Confirmation",
-                            showCloseButton: false,
-                            content: (close) => (
-                                <ConfirmationDialogueContent
-                                    close={close}
-                                    doYouReallyWantToQuestion="Do you really want to load default MVSX file?"
-                                />
-                            ),
-                        });
-                    if (confirmed) await loadDefaultMVSXFile();
-                }),
+                createLoadDefaultPDBItemMenuItem(loadDefaultPdbFile),
+                createLoadDefaultMVSJtemMenuItem(loadDefaultMvsjFile),
+                createLoadDefaultMVSXtemMenuItem(loadDefaultMvsxFile),
             ]),
         ]),
         createSettingsRootMenuItem(() => {

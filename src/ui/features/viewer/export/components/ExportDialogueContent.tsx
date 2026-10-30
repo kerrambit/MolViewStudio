@@ -22,12 +22,12 @@ import {
     DOWNSAMPLING_LEVEL_TO_STRATEGY,
     getDownsamplingLevelOptions,
     type DownsamplingLevel,
-} from "../../../processing/downsampling/config/DownsamplingLevel";
+} from "../../../processing/downsampling/domain/DownsamplingLevel";
 import {
     getDownsamplingStrategyOptions,
     type DownsamplingStrategy,
-} from "../../../processing/downsampling/config/DownsamplingStrategy";
-import type { SerializerKind } from "../../../processing/serializer/config/SerializerKind";
+} from "../../../processing/downsampling/domain/DownsamplingStrategy";
+import type { SerializerKind } from "../../../processing/serializer/domain/SerializerKind";
 import { WarningMessage } from "../../../../components/common/messages/WarningMessage";
 import { UiLocalStorageService } from "../../../persistence/services/UiLocalStorageService";
 import { FileOverrideWarningMessage } from "./FileOverrideWarningMessage";

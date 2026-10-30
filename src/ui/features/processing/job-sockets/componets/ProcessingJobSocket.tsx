@@ -11,7 +11,7 @@ import {
     pushWarningNotification,
 } from "../../../notifications/services/NotificationService";
 import { loggerUi } from "../../../logger/services/UiLoggingService";
-import { useManagedAssetsStore } from "../../../managed-assets/stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../../assets/stores/managedAssetsStore";
 import { useProcessingStore } from "../../stores/processingStore";
 import { useFileMappingsStore } from "../../../workspace/stores/fileMappingsStore";
 import { handleExportJobFinished } from "../../../viewer/export/services/exportService";

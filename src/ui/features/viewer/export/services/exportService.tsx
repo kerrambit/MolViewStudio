@@ -25,7 +25,7 @@ import { useFileMappingsStore } from "../../../workspace/stores/fileMappingsStor
 import {
     isManagedAssetLocal,
     useManagedAssetsStore,
-} from "../../../managed-assets/stores/managedAssetsStore";
+} from "../../../assets/stores/managedAssetsStore";
 import { useProcessingStore } from "../../../processing/stores/processingStore";
 import { useUserSettingsStore } from "../../../settings/stores/userSettingsStore";
 import {
@@ -39,7 +39,7 @@ import {
 import { pickFileByResolution } from "../../../processing/resolution/domain/pickFileByResolution";
 import type { ProcessingJobId } from "../../../processing/domain/ProcessingJob";
 import type { useStartFileProcessingForExport } from "../../../processing/export/hooks/useStartFileProcessingForExport";
-import { useWindowsStore } from "../../stores/WindowsStore";
+import { useWindowsStore } from "../../windows/stores/WindowsStore";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../../processing/api/volume/ProcessVolumeRequest";
 import { useRegimeStore } from "../../../regime/stores/regimeStore";
 

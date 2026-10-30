@@ -8,7 +8,7 @@ import { Checkbox, Divider, Paper, Select, Stack, Text } from "@mantine/core";
 import {
     getDownsamplingStrategyOptions,
     type DownsamplingStrategy,
-} from "../../processing/downsampling/config/DownsamplingStrategy";
+} from "../../processing/downsampling/domain/DownsamplingStrategy";
 import { getResolutionLevelOptions } from "../../processing/resolution/domain/ResolutionLevel";
 import { useProcessingSettings } from "../hooks/useProcessingSettings";
 

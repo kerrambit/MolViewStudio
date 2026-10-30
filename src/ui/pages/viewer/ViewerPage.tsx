@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import { ViewerEditor } from "../../features/viewer/components/ViewerEditor";
+import { ViewerEditor } from "../../features/viewer/editor/components/ViewerEditor";
 
 import "./ViewerPage.css";
 

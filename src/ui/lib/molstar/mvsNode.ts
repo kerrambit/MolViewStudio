@@ -15,7 +15,7 @@ import {
     type ComponentEntry,
     type StructureViewModel,
     type VolumeViewModel,
-} from "../../features/viewer/models/MvsViewModels";
+} from "../../features/viewer/view-builder/domain/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
 import { getParser } from "../../features/assets/domain/assetsDefinitions";
 import { customToTransferFunction, transferFunctionToCustom } from "./directVolume";

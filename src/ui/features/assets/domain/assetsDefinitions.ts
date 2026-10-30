@@ -4,7 +4,7 @@
  * @author Marek Eibel
  */
 
-import type { DownsamplingStrategy } from "../../processing/downsampling/config/DownsamplingStrategy";
+import type { DownsamplingStrategy } from "../../processing/downsampling/domain/DownsamplingStrategy";
 import type { ResolutionLevel } from "../../processing/resolution/domain/ResolutionLevel";
 
 /**

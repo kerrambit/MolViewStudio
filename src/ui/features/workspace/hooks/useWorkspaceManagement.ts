@@ -20,7 +20,7 @@ import {
     injectAssetIdsIntoTree,
     loadFromFile,
 } from "../../../lib/molstar";
-import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../assets/stores/managedAssetsStore";
 import { useRecentFilesStore } from "../stores/recentFilesStore";
 import { useFileMappingsStore } from "../stores/fileMappingsStore";
 import { useRegimeStore } from "../../regime/stores/regimeStore";

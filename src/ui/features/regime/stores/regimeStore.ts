@@ -8,7 +8,7 @@ import { create } from "zustand";
 import { History } from "../../../lib/history/History";
 import { getCurrentViewIndex } from "../../../lib/molstar";
 import { loggerUi } from "../../logger/services/UiLoggingService";
-import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../assets/stores/managedAssetsStore";
 import type {
     Regime,
     IdlingRegime,

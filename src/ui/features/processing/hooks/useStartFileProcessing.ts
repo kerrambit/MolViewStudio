@@ -7,7 +7,7 @@
 import { useCallback } from "react";
 import { pushErrorNotification } from "../../notifications/services/NotificationService";
 import { loggerUi } from "../../logger/services/UiLoggingService";
-import { useManagedAssetsStore } from "../../managed-assets/stores/managedAssetsStore";
+import { useManagedAssetsStore } from "../../assets/stores/managedAssetsStore";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../api/volume/ProcessVolumeRequest";
 import { useProcessVolume } from "../api/volume/useProcessVolume";
 import type { ProcessingJobPurpose } from "../domain/ProcessingJob";
