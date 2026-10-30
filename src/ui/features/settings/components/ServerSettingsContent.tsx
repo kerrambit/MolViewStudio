@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -7,7 +7,7 @@
 import { Stack, Paper, Group, Badge, Divider, Alert } from "@mantine/core";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { ServerStatus } from "../../processing/processing-server-health/components/ServerStatus";
-import { useUserSettingsStore } from "../../../stores/userSettingsStore";
+import { useUserSettingsStore } from "../stores/userSettingsStore";
 
 export function ServerSettingsContent() {
     // Use settings.

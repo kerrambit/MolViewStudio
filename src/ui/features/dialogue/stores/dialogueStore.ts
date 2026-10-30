@@ -1,0 +1,65 @@
+/**
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Marek Eibel
+ */
+
+import { create } from "zustand";
+import type React from "react";
+import { loggerUi } from "../../logger/services/UiLoggingService";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface DialogueProps<ReturnValueType = any> {
+    title?: string;
+    content: (close: (value?: ReturnValueType) => void) => React.ReactNode;
+    showCloseButton?: boolean;
+    closeOnBackdropClick?: boolean;
+    closeOnEscapeEntered?: boolean;
+    width?: string;
+    maxWidth?: string;
+}
+
+type StackedDialogue = {
+    id: string;
+    options: DialogueProps;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolve: (value?: any) => void;
+};
+
+export type ShowDialogueType = <T = void>(
+    options: DialogueProps<T>,
+) => Promise<T | undefined>;
+
+type DialogueStore = {
+    stack: StackedDialogue[];
+    showDialogue: ShowDialogueType;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    closeDialogue: (id: string, value?: any) => void;
+};
+
+export const useDialogueStore = create<DialogueStore>((set, get) => ({
+    stack: [],
+
+    showDialogue: (options) => {
+        const id = crypto.randomUUID();
+        loggerUi.info(`Dialogue <${id}> (with title: <${options.title}>) was shown.`);
+        return new Promise((resolve) => {
+            set((state) => ({
+                stack: [
+                    ...state.stack,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    { id, options: options as DialogueProps<any>, resolve },
+                ],
+            }));
+        });
+    },
+
+    closeDialogue: (id, value) => {
+        const dialogue = get().stack.find((d) => d.id === id);
+        dialogue?.resolve(value);
+        set((state) => ({ stack: state.stack.filter((d) => d.id !== id) }));
+        loggerUi.info(
+            `Dialogue <${id}> (with title: <${dialogue?.options.title}>) was closed.`,
+        );
+    },
+}));

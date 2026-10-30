@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -13,7 +13,7 @@ import { convertHexStringToColor } from "./utils";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 import { checkMolstarAfterLoading } from "./core";
 import { setMolstarReloading } from "./mvs";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../features/logger/services/UiLoggingService";
 
 /**
  * Retrieves snapshot of manager state.

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { Divider, Paper, Select, Stack, Text } from "@mantine/core";
 import { getAssetConfig } from "../../assets/domain/assetsDefinitions";
-import { getDownsamplingStrategyOptions } from "../../processing/downsampling/config/DownsamplingStrategy";
+import { getDownsamplingStrategyOptions } from "../../processing/downsampling/domain/DownsamplingStrategy";
 import { getResolutionLevelOptions } from "../../processing/resolution/domain/ResolutionLevel";
 import { useProcessingSettings } from "../hooks/useProcessingSettings";
 

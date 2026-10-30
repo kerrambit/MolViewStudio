@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { ActionIcon } from "@mantine/core";
 import { IconCopy } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../features/apperance/hooks/useAppearance";
 import { computeOptimalYellow } from "./utils/computeOptimalYellow";
 
 interface CopyActionIconProps {
@@ -23,11 +23,7 @@ export function CopyActionIcon(props: CopyActionIconProps) {
             variant="subtle"
             onClick={props.onClick}
             title={props.tooltip}
-            color={
-                colorScheme === "dark"
-                    ? "var(--color-light)"
-                    : "var(--color-dark)"
-            }
+            color={colorScheme === "dark" ? "var(--color-light)" : "var(--color-dark)"}
         >
             <IconCopy size={18} color={optimalYellow} />
         </ActionIcon>

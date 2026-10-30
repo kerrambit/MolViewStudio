@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -13,10 +13,7 @@ import { logger } from "../utils/logger.js";
  * @param recentFilesPath file path to the .json file
  * @returns recent file paths
  */
-export function loadRecentFiles(
-    userDataPath: string,
-    recentFilesPath: string,
-): string[] {
+export function loadRecentFiles(userDataPath: string, recentFilesPath: string): string[] {
     try {
         if (!existsSync(userDataPath)) {
             mkdirSync(userDataPath, { recursive: true });

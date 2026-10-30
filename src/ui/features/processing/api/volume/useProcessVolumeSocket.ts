@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { useWebSocket } from "react-use-websocket/dist/lib/use-websocket";
 import { z } from "zod";
 import { useProcessingApiClient } from "../hooks/useProcessingApiClient";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
 
 const ProcessVolumeProgressMessageSchema = z.object({
     stage: z.string(),

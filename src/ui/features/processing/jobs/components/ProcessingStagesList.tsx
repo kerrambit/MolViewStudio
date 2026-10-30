@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -7,7 +7,7 @@
 import { useMemo } from "react";
 import { Text } from "@mantine/core";
 import { IconArrowDown } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../apperance/hooks/useAppearance";
 
 export type ProcessingStagesListProps = {
     stages: string[];

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -29,10 +29,10 @@ export class AutoUpdater {
             this._isManualCheck = false;
 
             logger.info("AutoUpdater: Update is available.");
-            logger.info("Show dialogue <MolViewStudio Update Available>.");
+            logger.info("Show dialogue <VolSegStudio Update Available>.");
             const { response } = await dialog.showMessageBox({
                 type: "info",
-                title: "MolViewStudio Update Available",
+                title: "VolSegStudio Update Available",
                 message: `Version ${info.version} is available. Do you want to download it now?`,
                 buttons: ["Yes", "No"],
                 cancelId: 1,
@@ -52,10 +52,10 @@ export class AutoUpdater {
             }
 
             logger.info("AutoUpdater: Update is downloaded.");
-            logger.info("Show dialogue <MolViewStudio Update Ready>.");
+            logger.info("Show dialogue <VolSegStudio Update Ready>.");
             const { response } = await dialog.showMessageBox({
                 type: "info",
-                title: "MolViewStudio Update Ready",
+                title: "VolSegStudio Update Ready",
                 message:
                     "The update has been downloaded. Do you want to restart and install it now?",
                 buttons: ["Restart Now", "Later"],
@@ -86,10 +86,10 @@ export class AutoUpdater {
             );
 
             if (this._isManualCheck) {
-                logger.info("Show dialogue <MolViewStudio No Updates>.");
+                logger.info("Show dialogue <VolSegStudio No Updates>.");
                 dialog.showMessageBox({
                     type: "info",
-                    title: "MolViewStudio No Updates",
+                    title: "VolSegStudio No Updates",
                     message: `You are running the latest version (${app.getVersion()}).`,
                     buttons: ["OK"],
                 });
@@ -108,15 +108,13 @@ export class AutoUpdater {
             }
 
             logger.error(
-                `AutoUpdater: Error during check/download: <${
-                    err?.message || err
-                }>!`,
+                `AutoUpdater: Error during check/download: <${err?.message || err}>!`,
             );
 
             if (this._isManualCheck) {
-                logger.info("Show dialogue <MolViewStudio Update Error>.");
+                logger.info("Show dialogue <VolSegStudio Update Error>.");
                 dialog.showErrorBox(
-                    "MolViewStudio Update Error",
+                    "VolSegStudio Update Error",
                     err?.message || "Unknown updater error",
                 );
             }

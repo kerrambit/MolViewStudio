@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { useCallback } from "react";
-import { pushErrorNotification } from "../../../../services/NotificationService";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { pushErrorNotification } from "../../../notifications/services/NotificationService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
 import type { ProcessVolumeRequestWithoutFilepaths } from "../../api/volume/ProcessVolumeRequest";
 import { useProcessVolume } from "../../api/volume/useProcessVolume";
 import { useProcessingTemporaryDirectory } from "../../temporary_directory/hooks/useProcessingTemporaryDirectory";

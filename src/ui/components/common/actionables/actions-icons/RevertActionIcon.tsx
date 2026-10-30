@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { ActionIcon } from "@mantine/core";
 import { IconArrowBack } from "@tabler/icons-react";
-import { useAppearance } from "../../../../hooks/useAppearance";
+import { useAppearance } from "../../../../features/apperance/hooks/useAppearance";
 
 interface RevertIconProps {
     tooltip?: string;
@@ -26,10 +26,7 @@ export function RevertActionIcon(props: RevertIconProps) {
             onClick={props.onClick}
             title={props.tooltip}
         >
-            <IconArrowBack
-                size={23}
-                color={colorScheme === "dark" ? "white" : "black"}
-            />
+            <IconArrowBack size={23} color={colorScheme === "dark" ? "white" : "black"} />
         </ActionIcon>
     );
 }

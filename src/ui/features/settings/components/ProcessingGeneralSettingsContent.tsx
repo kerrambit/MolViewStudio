@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -8,7 +8,7 @@ import { Checkbox, Divider, Paper, Select, Stack, Text } from "@mantine/core";
 import {
     getDownsamplingStrategyOptions,
     type DownsamplingStrategy,
-} from "../../processing/downsampling/config/DownsamplingStrategy";
+} from "../../processing/downsampling/domain/DownsamplingStrategy";
 import { getResolutionLevelOptions } from "../../processing/resolution/domain/ResolutionLevel";
 import { useProcessingSettings } from "../hooks/useProcessingSettings";
 

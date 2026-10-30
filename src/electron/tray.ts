@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -14,14 +14,12 @@ export function createTray(mainWindow: BrowserWindow, updater: AutoUpdater) {
     const tray = new Tray(
         path.join(
             getAssetsPath(),
-            process.platform === "darwin"
-                ? "trayIconTemplate.png"
-                : "trayIcon.png",
+            process.platform === "darwin" ? "trayIconTemplate.png" : "trayIcon.png",
         ),
     );
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: "MolView Studio",
+            label: "VolSegStudio",
             type: "header",
             enabled: false,
             click: () => {
@@ -30,7 +28,7 @@ export function createTray(mainWindow: BrowserWindow, updater: AutoUpdater) {
         },
         { type: "separator" },
         {
-            label: "Show MolView Studio",
+            label: "Show VolSegStudio",
             click: () => {
                 mainWindow.show();
                 if (app.dock) {
@@ -46,13 +44,13 @@ export function createTray(mainWindow: BrowserWindow, updater: AutoUpdater) {
         },
         { type: "separator" },
         {
-            label: "Quit MolView Studio",
+            label: "Quit VolSegStudio",
             click: () => {
                 app.quit();
             },
         },
     ]);
 
-    tray.setToolTip("MolView Studio");
+    tray.setToolTip("VolSegStudio");
     tray.setContextMenu(contextMenu);
 }

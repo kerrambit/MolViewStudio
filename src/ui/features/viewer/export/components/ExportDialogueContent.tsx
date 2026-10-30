@@ -1,21 +1,19 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { useState } from "react";
-import { Collapse, Group, List, Select, Text, Checkbox } from "@mantine/core";
+import { Collapse, Group, List, Select, Text, Checkbox, Button } from "@mantine/core";
 import { IconFileDescription, IconHelpCircle } from "@tabler/icons-react";
 import { UnstyledTextInput } from "../../../../components/common/input/UnstyledTextInput";
-import { useEnvironment } from "../../../../hooks/useEnvironment";
+import { useEnvironment } from "../../../environment/hooks/useEnvironment";
 import { CollapseTrigger } from "../../../../components/common/collapse-trigger/CollapseTriger";
 import { CollapsibleBlock } from "../../../../components/common/collapsible-block/CollapsibleBlock";
-import { Button } from "../../../../components/common/button/Button";
 import { useExportSettings } from "../../../settings/hooks/useExportSettings";
 import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
 import { resolveExportProcessingSettings } from "../../../settings/domain/resolveProcessingSettings";
-import { useRegimeStore } from "../../../../stores/regimeStore";
 import {
     getResolutionLevelOptions,
     type ResolutionLevel,
@@ -24,16 +22,17 @@ import {
     DOWNSAMPLING_LEVEL_TO_STRATEGY,
     getDownsamplingLevelOptions,
     type DownsamplingLevel,
-} from "../../../processing/downsampling/config/DownsamplingLevel";
+} from "../../../processing/downsampling/domain/DownsamplingLevel";
 import {
     getDownsamplingStrategyOptions,
     type DownsamplingStrategy,
-} from "../../../processing/downsampling/config/DownsamplingStrategy";
-import type { SerializerKind } from "../../../processing/serializer/config/SerializerKind";
+} from "../../../processing/downsampling/domain/DownsamplingStrategy";
+import type { SerializerKind } from "../../../processing/serializer/domain/SerializerKind";
 import { WarningMessage } from "../../../../components/common/messages/WarningMessage";
-import { UiLocalStorageService } from "../../../../services/UiLocalStorageService";
+import { UiLocalStorageService } from "../../../persistence/services/UiLocalStorageService";
 import { FileOverrideWarningMessage } from "./FileOverrideWarningMessage";
 import type { ProcessVolumeRequestWithoutFilepathsAndBundlingApproach } from "../../../processing/api/volume/ProcessVolumeRequest";
+import { useRegimeStore } from "../../../regime/stores/regimeStore";
 
 /**
  * Result of the export processing properties dialogue.
@@ -584,8 +583,8 @@ export function ExportDialogueContent({
                                 style={{ flexGrow: 1 }}
                             />
                             <Button
-                                variant="ghost"
-                                size="small"
+                                variant="outline"
+                                size="xs"
                                 onClick={async () => {
                                     const selected =
                                         await window.electron.selectDirectory(outputPath);
@@ -701,12 +700,11 @@ export function ExportDialogueContent({
 
             {/* Actions. */}
             <Group justify="center" mt="xl">
-                <Button variant="secondary" size="small" onClick={() => close(undefined)}>
+                <Button variant="default" onClick={() => close(undefined)}>
                     Close
                 </Button>
                 <Button
-                    variant="primary"
-                    size="small"
+                    variant="filled"
                     disabled={!filename}
                     onClick={() => {
                         close({

@@ -1,21 +1,20 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { useCallback } from "react";
-import { useFileMappingsStore } from "../../../stores/fileMappingsStore";
-import { useManagedAssetsStore } from "../../../stores/managedAssetsStore";
-import { useStartFileProcessing } from "../../hooks/useStartFileProcessing";
+import { useFileMappingsStore } from "../../workspace/stores/fileMappingsStore";
+import { useManagedAssetsStore } from "../stores/managedAssetsStore";
 import { useStartPreviewFileProcessing } from "../../processing/preview/hooks/useStartPreviewFileProcessing";
 import { useStartFileRequiredProcessing } from "../../processing/require/hooks/useStartFileRequiredProcessing";
 import type { AddLocalAssetDialogueReturnType } from "../components/AddLocalAssetDialogueContent";
 import {
     pushErrorNotification,
     pushInfoNotification,
-} from "../../../services/NotificationService";
-import { loggerUi } from "../../../services/UiLoggingService";
+} from "../../notifications/services/NotificationService";
+import { loggerUi } from "../../logger/services/UiLoggingService";
 import {
     getFilenameWithoutExtension,
     getFileSizeInBytes,
@@ -27,7 +26,8 @@ import {
 import { PREVIEW_DOWNSAMPLING_SIZE_THRESHOLD } from "../../processing/preview/domain/constants";
 import { useProcessingSettings } from "../../settings/hooks/useProcessingSettings";
 import { pickFileIndexByResolution } from "../../processing/resolution/domain/pickFileByResolution";
-import { useWindowsStore } from "../../viewer/stores/WindowsStore";
+import { useWindowsStore } from "../../viewer/windows/stores/WindowsStore";
+import { useStartFileProcessing } from "../../processing/hooks/useStartFileProcessing";
 
 export function useAddLocalAssets() {
     // Use managed assets.

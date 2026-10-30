@@ -1,4 +1,4 @@
-name: Build and Release MolView Studio
+name: Build and Release VolSegStudio
 
 on:
   push:

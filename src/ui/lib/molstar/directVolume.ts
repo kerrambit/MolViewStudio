@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -19,7 +19,7 @@ import {
     type TransferColorStop,
     type TransferControlPoint,
     type TransferFunction,
-} from "../../features/viewer/models/MvsViewModels";
+} from "../../features/viewer/view-builder/domain/MvsViewModels";
 import { convertHexStringToColor } from "./utils";
 
 /**
@@ -153,7 +153,7 @@ function buildDirectVolumeRepresentationParams(
  * and the volume is expected to be downsampled in Processing first.
  */
 export const DirectVolumeLoadingExtension: MolstarLoadingExtension<void> = {
-    id: "molviewstudio/direct-volume",
+    id: "volsegstudio/direct-volume",
     description:
         "Render volume_representation nodes with custom.transfer_function as direct volumes.",
     createExtensionContext: () => undefined,

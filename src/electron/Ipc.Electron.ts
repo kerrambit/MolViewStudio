@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -22,9 +22,7 @@ export class Ipc {
             key: Key,
             handler: (
                 ...args: IpcApiChannelMap[Key]["args"]
-            ) =>
-                | Promise<IpcApiChannelMap[Key]["reply"]>
-                | IpcApiChannelMap[Key]["reply"],
+            ) => Promise<IpcApiChannelMap[Key]["reply"]> | IpcApiChannelMap[Key]["reply"],
         ) {
             ipcMain.handle(key, (event, ...args) => {
                 validateEventFrame(event.senderFrame);
@@ -87,9 +85,7 @@ export function validateEventFrame(frame: WebFrameMain | null) {
     }
     // Otherwise, we checek event comes from the renderer process.
     if (frame.url !== pathToFileURL(getUiPath()).toString()) {
-        logger.error(
-            `While validating event frame, malicious event may have occured!`,
-        );
+        logger.error(`While validating event frame, malicious event may have occured!`);
         throw new Error("Malicious event cccured!");
     }
 }

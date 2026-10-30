@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -31,9 +31,7 @@ export async function loadFromFile(
         if (result.success) {
             return {
                 stateTree: ensureAllSnapshotsHaveKeys(
-                    convertStateTreeFromSingleToMultipleKind(
-                        result.value.stateTree,
-                    ),
+                    convertStateTreeFromSingleToMultipleKind(result.value.stateTree),
                 ),
                 views: result.value.views,
                 assets: result.value.assets,
@@ -42,15 +40,11 @@ export async function loadFromFile(
         }
         return result.error;
     } else if (fileData.extension === "mvsx") {
-        const result = await loadMVSXFile(
-            fileData.content as Uint8Array<ArrayBuffer>,
-        );
+        const result = await loadMVSXFile(fileData.content as Uint8Array<ArrayBuffer>);
         if (result.success) {
             return {
                 stateTree: ensureAllSnapshotsHaveKeys(
-                    convertStateTreeFromSingleToMultipleKind(
-                        result.value.stateTree,
-                    ),
+                    convertStateTreeFromSingleToMultipleKind(result.value.stateTree),
                 ),
                 views: result.value.views,
                 assets: result.value.assets,
@@ -77,10 +71,7 @@ export async function loadFromFile(
             fileData.extension as any,
         );
 
-        await molstar.builders.structure.hierarchy.applyPreset(
-            trajectory,
-            "default",
-        );
+        await molstar.builders.structure.hierarchy.applyPreset(trajectory, "default");
     } catch (error) {
         return new Error(
             `Error occured when loading data from file "${fileData.path}! Details: "${error}"."`,

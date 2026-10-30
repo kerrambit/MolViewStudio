@@ -1,13 +1,13 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { Divider, Text } from "@mantine/core";
 import { Button } from "../../../components/common/button/Button";
-import { pushInfoNotification } from "../../../services/NotificationService";
-import { UiLocalStorageService } from "../../../services/UiLocalStorageService";
+import { pushInfoNotification } from "../../notifications/services/NotificationService";
+import { UiLocalStorageService } from "../../persistence/services/UiLocalStorageService";
 import { SchemeSelector } from "./SchemeSelector";
 import { ThemeSelector } from "./ThemeSelector";
 

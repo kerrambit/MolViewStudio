@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { getAssetConfig } from "../../assets/domain/assetsDefinitions";
-import type { DownsamplingStrategy } from "../../processing/downsampling/config/DownsamplingStrategy";
-import { parseDownsamplingStrategy } from "../../processing/downsampling/config/parseDownsamplingStrategy";
+import type { DownsamplingStrategy } from "../../processing/downsampling/domain/DownsamplingStrategy";
+import { parseDownsamplingStrategy } from "../../processing/downsampling/domain/parseDownsamplingStrategy";
 import { parseResolutionLevel } from "../../processing/resolution/domain/parseResolutionLevel";
 import type { ResolutionLevel } from "../../processing/resolution/domain/ResolutionLevel";
 import { DEFAULT_REQUIRES_PROCESSING_DOWNSAMPLING_STRATEGY } from "../../processing/require/domain/constants";

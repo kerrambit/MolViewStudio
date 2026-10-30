@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -11,17 +11,17 @@ import { ActionableList } from "../../../components/common/actionables/Actionabl
 import { ActionableListItem } from "../../../components/common/actionables/ActionableListItem";
 import { DeleteActionIcon } from "../../../components/common/actionables/actions-icons/DeleteActionIcon";
 import { EditActionIcon } from "../../../components/common/actionables/actions-icons/EditActionIcon";
-import { useDialogueStore } from "../../../stores/dialogueStore";
+import { useDialogueStore } from "../../dialogue/stores/dialogueStore";
 import {
     useManagedAssetsStore,
     isManagedAssetRemote,
-} from "../../../stores/managedAssetsStore";
+} from "../stores/managedAssetsStore";
 import {
     AddRemoteAssetDialogueContent,
     type AddRemoteAssetDialogueReturnType,
 } from "./AddRemoteAssetDialogueContent";
 import { DeleteAssetDialogueContent } from "./DeleteAssetDialogueContent";
-import { useAppearance } from "../../../hooks/useAppearance";
+import { useAppearance } from "../../apperance/hooks/useAppearance";
 
 /**
  * Returns the warning text for a remote asset with unknown extension and/or type.

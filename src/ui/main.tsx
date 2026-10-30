@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -8,10 +8,10 @@ import { RouterProvider } from "react-router-dom";
 import { createRoot } from "react-dom/client";
 import { router } from "./router/router.ts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AppearanceProvider } from "./providers/AppearanceProvider.tsx";
-import { DialogueHost } from "./components/common/dialogue/DialogueHost.tsx";
+import { AppearanceProvider } from "./features/apperance/providers/AppearanceProvider.tsx";
 import { ProcessingJobSocketsManager } from "./features/processing/job-sockets/services/ProcessingJobSocketsManager.tsx";
-import { FileMappingsLoader } from "./features/workspace/services/FileMappingsLoader.tsx";
+import { DialogueManager } from "./features/dialogue/services/DialogueManager.tsx";
+import { FileMappingsManager } from "./features/workspace/services/FileMappingsManager.ts";
 import { ProcessingTemporaryDirectoryManager } from "./features/processing/temporary_directory/services/ProcessingTemporaryDirectoryManager.ts";
 
 import "@mantine/core/styles.css";
@@ -26,8 +26,8 @@ createRoot(document.getElementById("root")!).render(
             <RouterProvider router={router} />
             <ProcessingJobSocketsManager />
             <ProcessingTemporaryDirectoryManager />
-            <FileMappingsLoader />
-            <DialogueHost />
+            <FileMappingsManager />
+            <DialogueManager />
         </AppearanceProvider>
     </QueryClientProvider>,
 );

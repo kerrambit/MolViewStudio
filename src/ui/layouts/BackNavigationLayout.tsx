@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -7,11 +7,11 @@
 import { Outlet } from "react-router-dom";
 import { router } from "../router/router";
 import { TopBar } from "../components/common/topbar/TopBar";
-import { MenuProvider } from "../providers/MenuProvider";
+import { MenuProvider } from "../features/menu/providers/MenuProvider";
 
 import "./BackNavigationLayout.css";
 
-export function BackNavigationLayout() {
+export default function BackNavigationLayout() {
     return (
         <MenuProvider initialMenu={[]}>
             <div className="layout">

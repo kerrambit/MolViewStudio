@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Select, Text } from "@mantine/core";
 import { UnstyledTextInput } from "../../../components/common/input/UnstyledTextInput";
 import { PathSegmentsBuilder } from "../../../components/common/path-segments-builder/PathSegmentsBuilder";
-import { compileFinalPath } from "../../../components/common/path-segments-builder/utils/compileFinalPath";
+import { compileFinalPath } from "../../../components/common/path-segments-builder/compileFinalPath";
 import {
     getFilenameWithoutExtension,
     addExtensionToFilename,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -7,7 +7,7 @@
 import { Divider, Text } from "@mantine/core";
 import { CloseActionIcon } from "../../../../components/common/actionables/actions-icons/CloseActionIcon";
 import { Sidebar } from "../../../../components/common/sidebar/Sidebar";
-import { useWindowsStore } from "../../../viewer/stores/WindowsStore";
+import { useWindowsStore } from "../../../viewer/windows/stores/WindowsStore";
 import { useProcessingStore } from "../../stores/processingStore";
 import { ProcessingJobCard } from "./ProcessingJobCard";
 

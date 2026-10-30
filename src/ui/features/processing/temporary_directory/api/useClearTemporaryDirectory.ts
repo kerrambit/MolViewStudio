@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { useMutation } from "@tanstack/react-query";
 import { handleApiResponseError } from "../../../../api/utils/handleApiResponseError";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
 import { useProcessingApiClient } from "../../api/hooks/useProcessingApiClient";
 import { useProcessingTemporaryDirectory } from "../hooks/useProcessingTemporaryDirectory";
 import type z from "zod";

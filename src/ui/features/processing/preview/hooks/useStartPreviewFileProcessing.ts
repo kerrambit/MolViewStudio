@@ -1,16 +1,16 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { useCallback } from "react";
 import { pickFileIndexByResolution } from "../../resolution/domain/pickFileByResolution";
-import { useStartFileProcessing } from "../../../hooks/useStartFileProcessing";
 import { getFilenameWithoutExtension } from "../../../../utils/fileDataUtils";
 import { useProcessingSettings } from "../../../settings/hooks/useProcessingSettings";
 import { checkOffersProcessing } from "../../../assets/domain/assetsDefinitions";
-import { loggerUi } from "../../../../services/UiLoggingService";
+import { loggerUi } from "../../../logger/services/UiLoggingService";
+import { useStartFileProcessing } from "../../hooks/useStartFileProcessing";
 
 export function useStartPreviewFileProcessing() {
     // Use processing settings.

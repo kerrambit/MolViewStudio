@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -149,9 +149,7 @@ export function UnstyledTextInput({
     return (
         <div className="unstyledTextInput" style={style} title={tooltip}>
             <div className="unstyledTextInput__wrapper">
-                {prefix && (
-                    <span className="unstyledTextInput__prefix">{prefix}</span>
-                )}
+                {prefix && <span className="unstyledTextInput__prefix">{prefix}</span>}
                 <input
                     type="text"
                     disabled={!enabled}

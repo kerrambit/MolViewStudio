@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -16,7 +16,7 @@ import { type Base64Png, type HexColor, type Session } from "./types";
 import { clearAllSnapshotsFromSnapshotManager } from "./molstarSnapshotService";
 import { Color } from "molstar/lib/mol-util/color";
 import { type Result } from "../../../types/Result";
-import { loggerUi } from "../../services/UiLoggingService";
+import { loggerUi } from "../../features/logger/services/UiLoggingService";
 
 /**
  * Properties for `initMolstar` function.

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
 
 import { createMemoryRouter } from "react-router-dom";
 import routes from "./routes";
-import { loggerUi } from "../services/UiLoggingService";
+import { loggerUi } from "../features/logger/services/UiLoggingService";
 
 export const router = createMemoryRouter(routes);
 

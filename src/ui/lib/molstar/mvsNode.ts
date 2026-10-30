@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -15,7 +15,7 @@ import {
     type ComponentEntry,
     type StructureViewModel,
     type VolumeViewModel,
-} from "../../features/viewer/models/MvsViewModels";
+} from "../../features/viewer/view-builder/domain/MvsViewModels";
 import { createMVSBuilder } from "molstar/lib/extensions/mvs/tree/mvs/mvs-builder";
 import { getParser } from "../../features/assets/domain/assetsDefinitions";
 import { customToTransferFunction, transferFunctionToCustom } from "./directVolume";
@@ -789,7 +789,7 @@ export function getVolumeNode(assetId: string, viewModel: VolumeViewModel): any 
     // Direct volume (transfer function) representations are stored with the
     // official "isosurface" params as a graceful fallback for stock MVS
     // viewers, plus the transfer function in the node's custom fields - the
-    // same pattern as the camera thumbnail. MolViewStudio's loading extension
+    // same pattern as the camera thumbnail. VolSegStudio's loading extension
     // upgrades the representation to a direct volume from the custom data.
     const isDirectVolume = viewModel.type === "direct_volume";
 

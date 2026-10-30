@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -37,9 +37,7 @@ export function getRotationMatrix3x3(
 /**
  * Converts a flat 9-element 3x3 rotation matrix back to Euler angles (Pitch, Yaw, Roll) in degrees.
  */
-export function getEulerAnglesFromMatrix3x3(
-    matrix: number[],
-): [number, number, number] {
+export function getEulerAnglesFromMatrix3x3(matrix: number[]): [number, number, number] {
     if (!matrix || matrix.length !== 9) return [0, 0, 0];
 
     const m00 = matrix[0],

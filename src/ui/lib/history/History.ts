@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-now MolViewStudio contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2025-now VolSegStudio contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Marek Eibel
  */
@@ -9,11 +9,7 @@ export class History<T> {
     private readonly present: T;
     private readonly future: Readonly<T[]>;
 
-    private constructor(
-        past: Readonly<T[]>,
-        present: T,
-        future: Readonly<T[]>,
-    ) {
+    private constructor(past: Readonly<T[]>, present: T, future: Readonly<T[]>) {
         this.past = past;
         this.present = present;
         this.future = future;
@@ -53,11 +49,7 @@ export class History<T> {
         if (!this.canRedo()) return this;
 
         const next = this.future[0];
-        return new History<T>(
-            [...this.past, this.present],
-            next,
-            this.future.slice(1),
-        );
+        return new History<T>([...this.past, this.present], next, this.future.slice(1));
     }
 
     toString(): string {
